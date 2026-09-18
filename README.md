@@ -1,254 +1,76 @@
 # UTextEditor
 
-## 1. Призначення
+UTextEditor is a lightweight desktop text editor inspired by GEdit, with built-in local AI assistance powered by Ollama and the `gemma4:12b` model.
 
-**UTextEditor** — це локальний графічний текстовий редактор для desktop, візуально та функціонально схожий на **GEdit**, але з інтегрованим локальним AI-помічником на базі **Ollama + Gemma 4 12B**.
+The application must remain fully usable as a normal text editor when AI functionality is unavailable.
 
-Основні можливості AI:
+The primary AI features are:
 
-1. перевірка правопису та базових граматичних помилок;
-2. виправлення помилок за запитом;
-3. передбачення продовження тексту;
-4. відображення передбаченого тексту **inline ("ghost text")**;
-5. застосування передбачення клавішею **Tab**;
-6. повністю локальна обробка тексту через Ollama без передачі тексту до зовнішніх сервісів.
+* spelling and basic grammar checking;
+* inline text completion;
+* keyboard-based completion acceptance;
+* fully local AI processing through Ollama.
 
 ---
 
-# 2. Цілі MVP
+# 1. Project Goals
 
-MVP повинен забезпечувати:
+The first release is an MVP desktop text editor with the following capabilities:
 
-* створення нового документа;
-* відкриття текстового файлу;
-* редагування тексту;
-* збереження файлу;
-* роботу з кількома відкритими файлами через вкладки;
-* undo/redo;
-* copy/paste/cut;
-* пошук та заміну;
-* інтеграцію з локальним Ollama;
-* перевірку правопису;
-* inline-підказки наступного тексту;
-* застосування підказки клавішею `Tab`;
-* роботу UI без зависання під час звернення до AI.
+1. Create, open, edit, and save text files.
+2. Open multiple documents in tabs.
+3. Provide standard text-editing functionality.
+4. Search and replace text.
+5. Connect to a local Ollama instance.
+6. Use `gemma4:12b` as the default AI model.
+7. Generate inline text completions.
+8. Display completions as non-destructive ghost text.
+9. Accept a completion using `Tab`.
+10. Reject a completion using `Esc`.
+11. Detect spelling and basic grammar errors.
+12. Allow users to apply or ignore suggested corrections.
+13. Keep the GUI responsive while AI requests are running.
+14. Continue functioning normally when Ollama is unavailable.
 
 ---
 
-# 3. Платформа
+# 2. Target Platforms
 
-Цільова платформа MVP:
+The MVP should target:
 
 * Linux
 * macOS
 
-Windows бажано підтримати архітектурно, але вона не є обов'язковою для першого релізу.
+The architecture should not prevent future Windows support.
 
-Редактор має бути **нативним desktop application**, а не web application.
-
----
-
-# 4. Рекомендований технологічний стек
-
-Рекомендований стек:
-
-* **Python 3.12+**
-* **PySide6 / Qt 6** — GUI
-* **Ollama** — локальний AI runtime
-* HTTP API Ollama — взаємодія з моделлю
-* `QThread`, `QThreadPool` або `QtConcurrent` — асинхронна AI-обробка
-* Git — version control
-* pytest — unit tests
-
-Для текстового редактора бажано використовувати Qt text editing component, наприклад `QPlainTextEdit` або `QTextEdit`.
-
-Для MVP перевага надається `QPlainTextEdit`, оскільки редактор орієнтований насамперед на plain text.
+The application must be a native desktop application, not a web application.
 
 ---
 
-# 5. Загальна архітектура
+# 3. Technology Stack
 
-```text
-┌───────────────────────────────┐
-│           UTextEditor         │
-│                               │
-│  ┌─────────┐  ┌─────────────┐ │
-│  │   Menu  │  │  Toolbar    │ │
-│  └─────────┘  └─────────────┘ │
-│                               │
-│  ┌───────────────────────────┐│
-│  │        Tab Manager        ││
-│  │                           ││
-│  │ ┌─────────────┐           ││
-│  │ │ Text Editor │           ││
-│  │ │             │           ││
-│  │ │ text text...│           ││
-│  │ │             │           ││
-│  │ └─────────────┘           ││
-│  └───────────────────────────┘│
-│                               │
-│  ┌───────────────────────────┐│
-│  │ AI / status information   ││
-│  └───────────────────────────┘│
-└───────────────┬───────────────┘
-                │
-                │ HTTP
-                ▼
-       ┌───────────────────┐
-       │      Ollama       │
-       │ localhost:11434   │
-       │                   │
-       │  gemma4:12b       │
-       └───────────────────┘
-```
+Use the following technology stack unless there is a strong technical reason to change it:
 
-AI integration повинна бути винесена в окремий сервісний шар, щоб GUI не залежав безпосередньо від Ollama API.
+* Python 3.12+
+* PySide6 / Qt 6
+* Ollama
+* pytest
+* `pyproject.toml`
+* Git
 
-Рекомендована структура:
+The preferred text widget for MVP is `QPlainTextEdit`.
 
-```text
-UTextEditor/
-├── app/
-│   ├── main.py
-│   ├── ui/
-│   │   ├── main_window.py
-│   │   ├── editor_widget.py
-│   │   ├── tab_widget.py
-│   │   └── ...
-│   │
-│   ├── ai/
-│   │   ├── ollama_client.py
-│   │   ├── completion_service.py
-│   │   ├── spellcheck_service.py
-│   │   └── prompts.py
-│   │
-│   ├── document/
-│   │   ├── document.py
-│   │   ├── file_manager.py
-│   │   └── encoding.py
-│   │
-│   └── settings/
-│       └── settings.py
-│
-├── tests/
-├── requirements.txt
-├── README.md
-└── pyproject.toml
-```
+The application should avoid unnecessary dependencies.
 
 ---
 
-# 6. Основне вікно
+# 4. Design Principles
 
-Інтерфейс має нагадувати GEdit:
+## 4.1 Local-first
 
-```text
-┌───────────────────────────────────────────────────────┐
-│ File  Edit  Search  View  AI  Help                    │
-├───────────────────────────────────────────────────────┤
-│ New Open Save | Undo Redo | Find Replace               │
-├───────────────────────────────────────────────────────┤
-│ file1.txt   │ file2.txt   │ +                          │
-├───────────────────────────────────────────────────────┤
-│                                                       │
-│ Hello world.                                          │
-│ This is my text...                                    │
-│                                                       │
-│ The predicted text is shown here...                  │
-│                                                       │
-│                                                       │
-├───────────────────────────────────────────────────────┤
-│ UTF-8     LF     Ln 12, Col 8       AI: Connected     │
-└───────────────────────────────────────────────────────┘
-```
+All AI processing must happen locally through Ollama.
 
----
-
-# 7. Робота з файлами
-
-Редактор повинен підтримувати:
-
-### New
-
-Створення нового документа.
-
-### Open
-
-Відкриття текстового файлу.
-
-### Save
-
-Збереження поточного документа.
-
-### Save As
-
-Збереження документа під новим ім'ям.
-
-### Close
-
-Закриття поточного документа.
-
-### Multiple tabs
-
-Кожен відкритий документ працює в окремій вкладці.
-
-Назва вкладки повинна відображати:
-
-```text
-example.txt
-```
-
-Для незбережених змін:
-
-```text
-example.txt *
-```
-
----
-
-# 8. Робота з текстом
-
-Потрібна стандартна функціональність:
-
-* введення тексту;
-* виділення;
-* copy;
-* cut;
-* paste;
-* undo;
-* redo;
-* select all;
-* delete;
-* navigation;
-* keyboard shortcuts.
-
-Стандартні комбінації:
-
-```text
-Ctrl/Cmd + N
-Ctrl/Cmd + O
-Ctrl/Cmd + S
-Ctrl/Cmd + Shift + S
-
-Ctrl/Cmd + Z
-Ctrl/Cmd + Shift + Z
-
-Ctrl/Cmd + C
-Ctrl/Cmd + X
-Ctrl/Cmd + V
-Ctrl/Cmd + A
-
-Ctrl/Cmd + F
-Ctrl/Cmd + H
-```
-
----
-
-# 9. AI інтеграція
-
-## 9.1 Ollama
-
-За замовчуванням редактор використовує:
+Default configuration:
 
 ```text
 Provider: Ollama
@@ -256,396 +78,191 @@ Host: http://localhost:11434
 Model: gemma4:12b
 ```
 
-Модель повинна бути конфігурованою через Settings.
+The application must not send document contents to external cloud services.
 
-Наприклад:
+## 4.2 AI is assistive
+
+AI functionality must never take control away from the user.
+
+The editor must remain useful as a normal text editor when:
+
+* AI is disabled;
+* Ollama is unavailable;
+* the model is unavailable;
+* an AI request fails.
+
+## 4.3 Responsive UI
+
+No network or AI operation may block the Qt GUI thread.
+
+The editor must remain responsive while:
+
+* generating completions;
+* checking spelling;
+* communicating with Ollama;
+* processing AI responses.
+
+## 4.4 Clear separation of concerns
+
+GUI code must not directly contain Ollama API logic.
+
+AI functionality must be implemented behind an abstraction layer so that additional providers can be added later.
+
+---
+
+# 5. Application Layout
+
+The main window should follow the general layout and interaction patterns of GEdit.
+
+Expected layout:
 
 ```text
-Ollama host:
-http://localhost:11434
-
-Model:
-gemma4:12b
+┌─────────────────────────────────────────────────────────┐
+│ File  Edit  Search  View  AI  Help                     │
+├─────────────────────────────────────────────────────────┤
+│ New Open Save | Undo Redo | Find Replace               │
+├─────────────────────────────────────────────────────────┤
+│ file1.txt   │ file2.txt   │ +                          │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ Text editor                                             │
+│                                                         │
+│ The quick brown fox...                                  │
+│                                                         │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│ UTF-8   LF   Ln 12, Col 8              AI: Connected   │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Перед початком роботи редактор повинен перевірити доступність Ollama.
+The exact visual appearance does not need to be identical to GEdit.
 
-Стани:
+The important characteristics are:
+
+* menu bar;
+* optional toolbar;
+* tabbed documents;
+* central text editor;
+* status bar;
+* unobtrusive AI indicators.
+
+---
+
+# 6. Document Management
+
+The editor must support:
+
+## New
+
+Create a new empty document.
+
+## Open
+
+Open an existing text file.
+
+## Save
+
+Save the current document.
+
+## Save As
+
+Save the current document using a new file path.
+
+## Close
+
+Close the current document.
+
+If the document contains unsaved changes, the application must ask the user whether to:
+
+* Save
+* Discard
+* Cancel
+
+## Multiple Documents
+
+Each open document must have its own tab.
+
+Example:
 
 ```text
-AI: Connected
-AI: Connecting...
-AI: Offline
-AI: Error
+document1.txt | document2.txt | notes.md
+```
+
+Modified documents should be visually marked:
+
+```text
+document1.txt *
+```
+
+The implementation must keep document state isolated between tabs.
+
+---
+
+# 7. Text Editing
+
+The editor must support standard text-editing operations:
+
+* typing;
+* selection;
+* copy;
+* cut;
+* paste;
+* delete;
+* undo;
+* redo;
+* select all;
+* cursor navigation.
+
+Expected keyboard shortcuts:
+
+```text
+Ctrl/Cmd + N       New
+Ctrl/Cmd + O       Open
+Ctrl/Cmd + S       Save
+Ctrl/Cmd + Shift + S   Save As
+
+Ctrl/Cmd + Z       Undo
+Ctrl/Cmd + Shift + Z   Redo
+
+Ctrl/Cmd + C       Copy
+Ctrl/Cmd + X       Cut
+Ctrl/Cmd + V       Paste
+Ctrl/Cmd + A       Select All
+
+Ctrl/Cmd + F       Find
+Ctrl/Cmd + H       Replace
+```
+
+Use platform-appropriate modifier keys where required.
+
+---
+
+# 8. File Encoding
+
+The MVP should use UTF-8 as the default encoding.
+
+The implementation should keep encoding handling isolated so that additional encodings can be supported later.
+
+The status bar should display at least:
+
+* encoding;
+* line ending style;
+* current line;
+* current column.
+
+Example:
+
+```text
+UTF-8    LF    Ln 12, Col 8
 ```
 
 ---
 
-# 10. AI completion
+# 9. AI Integration
 
-AI completion — це основна AI-функція редактора.
+AI integration must be implemented independently from the GUI.
 
-Після введення тексту редактор через коротку затримку повинен запросити Ollama для прогнозування можливого продовження.
-
-Наприклад, користувач пише:
-
-```text
-Today I want to
-```
-
-AI може запропонувати:
-
-```text
-write a short description of my project.
-```
-
-У редакторі це має виглядати як:
-
-```text
-Today I want to write a short description of my project.
-            └──────────────────────────────────────────┘
-                        ghost text
-```
-
-Ghost text не є частиною основного документа до моменту підтвердження.
-
----
-
-# 11. Inline suggestion
-
-AI-передбачення повинно:
-
-* відображатися безпосередньо в позиції курсора;
-* мати візуально відмінний стиль від основного тексту;
-* не змінювати документ;
-* автоматично зникати при зміні тексту;
-* автоматично оновлюватися після нового введення.
-
-Suggestion повинна бути прив'язана до конкретної позиції курсора.
-
----
-
-# 12. Застосування suggestion
-
-Основний спосіб підтвердження:
-
-```text
-Tab
-```
-
-Після натискання `Tab`:
-
-```text
-ghost text
-     ↓
-real text
-```
-
-Suggestion додається до документа, а курсор переміщується в кінець вставленого тексту.
-
----
-
-# 13. Скасування suggestion
-
-Suggestion повинна автоматично зникати при:
-
-* натисканні будь-якої клавіші, яка змінює текст;
-* переміщенні курсора;
-* зміні виділення;
-* переході на іншу вкладку;
-* натисканні Escape.
-
-`Esc` повинен явно означати:
-
-```text
-Cancel suggestion
-```
-
----
-
-# 14. Асинхронна генерація
-
-AI-запити **ніколи не повинні блокувати GUI thread**.
-
-Наприклад:
-
-```text
-User types
-    ↓
-300–800 ms debounce
-    ↓
-start AI request
-    ↓
-GUI remains responsive
-    ↓
-AI response
-    ↓
-validate response
-    ↓
-display suggestion
-```
-
-Якщо користувач продовжив друкувати до завершення AI-запиту, старий запит повинен бути скасований або його результат повинен бути проігнорований.
-
-Кожен AI request повинен мати revision/version identifier документа.
-
-Приклад:
-
-```text
-Document revision = 154
-
-request revision = 154
-
-document changes
-
-Document revision = 155
-
-response for revision 154 arrives
-        ↓
-discard response
-```
-
-Це запобігає появі застарілих підказок.
-
----
-
-# 15. Контекст для completion
-
-AI повинен отримувати достатньо контексту для коректного продовження.
-
-Мінімально:
-
-* текст навколо курсора;
-* поточний абзац;
-* кілька попередніх речень;
-* бажано частину поточного документа.
-
-Необхідно уникати надсилання всього документа при кожному натисканні клавіші, якщо це не потрібно.
-
-Бажано використовувати контекстне вікно:
-
-```text
-previous context
-+
-current paragraph
-+
-text before cursor
-+
-cursor
-+
-optional text after cursor
-```
-
----
-
-# 16. Prompt для completion
-
-Промпт повинен змушувати модель генерувати **тільки продовження тексту**, без пояснень.
-
-Приклад логіки:
-
-```text
-You are an inline text completion engine.
-
-Continue the user's text naturally.
-
-Rules:
-- Generate only the continuation.
-- Do not repeat existing text.
-- Do not add explanations.
-- Do not use markdown unless the user is writing markdown.
-- Preserve the language of the document.
-- Keep the continuation concise.
-- Prefer 1-2 sentences.
-```
-
-Контекст документа передається окремо.
-
----
-
-# 17. Кількість тексту в suggestion
-
-Для MVP suggestion повинна бути короткою.
-
-Рекомендований діапазон:
-
-```text
-5–100 tokens
-```
-
-Оптимально починати з невеликих пропозицій і не генерувати великі абзаци.
-
----
-
-# 18. Spell checking
-
-Редактор повинен автоматично перевіряти текст на орфографічні та базові граматичні помилки.
-
-Помилки повинні бути візуально позначені.
-
-Наприклад:
-
-```text
-This sentense contains a mistake.
-     ~~~~~~~
-```
-
-Для помилки AI повинен повертати структуровану інформацію:
-
-```json
-{
-  "start": 5,
-  "end": 12,
-  "replacement": "sentence",
-  "type": "spelling",
-  "explanation": "..."
-}
-```
-
-GUI не повинен намагатися розбирати довільний текстовий response моделі.
-
-AI повинен відповідати у визначеному JSON-форматі.
-
----
-
-# 19. Виправлення помилки
-
-Користувач повинен мати можливість:
-
-* побачити помилку;
-* побачити запропоноване виправлення;
-* застосувати виправлення;
-* проігнорувати його.
-
-Мінімальна UX:
-
-```text
-right click
-    ↓
-Replace "sentense" with "sentence"
-Ignore
-```
-
----
-
-# 20. Режими AI
-
-В меню `AI`:
-
-```text
-AI
-├── Enable AI
-├── Check Spelling
-├── Generate Completion
-├── Accept Suggestion
-├── Reject Suggestion
-└── Settings
-```
-
-Також бажано мати кнопку:
-
-```text
-AI: ON
-```
-
-у status bar.
-
----
-
-# 21. Мови
-
-AI повинен працювати щонайменше з:
-
-* English
-* Ukrainian
-
-Мова може визначатися автоматично.
-
-Користувач також може вибрати мову вручну:
-
-```text
-Language:
-Auto
-English
-Ukrainian
-```
-
-У майбутньому можна додати інші мови без зміни архітектури AI layer.
-
----
-
-# 22. Налаштування
-
-Settings повинні містити:
-
-### AI
-
-```text
-Enable AI
-Ollama host
-Model
-Completion enabled
-Spell checking enabled
-```
-
-### Completion
-
-```text
-Debounce delay
-Maximum suggestion length
-Context size
-Temperature
-```
-
-### Editor
-
-```text
-Font
-Font size
-Tab width
-Show line numbers
-Word wrap
-Dark mode
-```
-
----
-
-# 23. Помилки AI
-
-При недоступному Ollama редактор **не повинен падати**.
-
-Наприклад:
-
-```text
-Ollama is not available.
-
-AI features are disabled.
-```
-
-Редактор при цьому продовжує працювати як звичайний текстовий редактор.
-
-Помилки повинні відображатися у status bar або notification area.
-
----
-
-# 24. Продуктивність
-
-Основні вимоги:
-
-* GUI не блокується під час AI-запитів;
-* введення тексту має залишатися плавним;
-* completion не повинен запускатися на кожне натискання клавіші окремим запитом;
-* AI-запити повинні використовувати debounce;
-* застарілі AI responses повинні відкидатися;
-* великі документи не повинні повністю передаватися моделі при кожній зміні.
-
----
-
-# 25. AI Service interface
-
-GUI не повинен напряму викликати Ollama.
-
-Повинен існувати abstraction layer:
+Recommended interfaces:
 
 ```python
 class AIProvider(Protocol):
@@ -661,302 +278,857 @@ class AIProvider(Protocol):
         self,
         text: str,
         language: str,
-    ) -> list[Suggestion]:
+    ) -> list["Suggestion"]:
         ...
 ```
 
-Реалізація:
+Ollama implementation:
 
-```python
-class OllamaProvider(AIProvider):
-    ...
+```text
+app/ai/ollama_client.py
 ```
 
-Це дозволить у майбутньому додати:
+Suggested services:
+
+```text
+app/ai/
+├── ollama_client.py
+├── completion_service.py
+├── spellcheck_service.py
+└── prompts.py
+```
+
+The GUI should communicate with `CompletionService` and `SpellcheckService`, not directly with `OllamaProvider`.
+
+This architecture must make it possible to add future providers such as:
 
 ```text
 OpenAIProvider
 AnthropicProvider
 LMStudioProvider
-LocalModelProvider
 ```
 
-без зміни GUI.
+without rewriting the GUI.
 
 ---
 
-# 26. Completion Service
+# 10. Ollama Configuration
 
-Completion service відповідає за:
-
-1. отримання cursor position;
-2. формування контексту;
-3. debounce;
-4. запуск AI request;
-5. cancellation / invalidation;
-6. перевірку response;
-7. передачу suggestion UI.
-
-Приблизний flow:
+Default values:
 
 ```text
-Editor changed
-      ↓
-CompletionService
-      ↓
-Debounce
-      ↓
-Build Context
-      ↓
-OllamaProvider
-      ↓
-Gemma 4 12B
-      ↓
-Completion Result
-      ↓
-Validate
-      ↓
-Editor.showSuggestion()
+Host: http://localhost:11434
+Model: gemma4:12b
 ```
+
+The user must be able to change the Ollama host and model from application settings.
+
+At startup, the application should check whether Ollama is reachable.
+
+Possible states:
+
+```text
+AI: Connected
+AI: Connecting...
+AI: Offline
+AI: Error
+```
+
+If Ollama is unavailable, the editor must remain fully functional.
 
 ---
 
-# 27. Spellcheck Service
+# 11. AI Completion
 
-Окремий сервіс:
+Inline completion is the primary AI interaction.
+
+When the user pauses after typing, the application should request a possible continuation from the AI model.
+
+Example user text:
 
 ```text
-Editor text
-    ↓
-SpellcheckService
-    ↓
-OllamaProvider
-    ↓
-Gemma 4 12B
-    ↓
-Structured JSON
-    ↓
-Validation
-    ↓
-Highlight errors
+Today I want to
 ```
 
-Spellcheck не повинен викликатися на кожну клавішу.
+Possible completion:
 
-Можливі тригери:
+```text
+write a short description of my project.
+```
 
-* пауза після введення;
-* завершення речення;
-* зміна абзацу;
-* ручна команда `Check Spelling`.
+The completion must appear visually as ghost text:
+
+```text
+Today I want towrite a short description of my project.
+             └────────────────────────────────────────┘
+                         ghost text
+```
+
+The ghost text must not become part of the document until explicitly accepted.
 
 ---
 
-# 28. Безпека та приватність
+# 12. Inline Suggestion Requirements
 
-Усі AI-запити виконуються локально.
+A completion suggestion must:
 
-За замовчуванням:
+* be displayed at the current cursor position;
+* visually differ from normal document text;
+* not modify the underlying document;
+* disappear when the relevant document state changes;
+* be associated with the cursor position and document revision.
 
-```text
-UTextEditor
-      ↓
-localhost
-      ↓
-Ollama
-```
-
-Редактор не повинен передавати текст документа в Internet.
-
-У MVP не потрібна авторизація або cloud backend.
+The completion must not overwrite or alter existing document content.
 
 ---
 
-# 29. Логи
+# 13. Accepting a Completion
 
-AI errors повинні логуватися.
-
-Наприклад:
-
-```text
-logs/utexteditor.log
-```
-
-Лог повинен містити:
-
-* timestamp;
-* operation;
-* provider;
-* model;
-* duration;
-* error;
-* request id.
-
-За замовчуванням повний текст документа не повинен записуватися в лог.
-
----
-
-# 30. Тестування
-
-Необхідні unit tests для:
-
-* file manager;
-* document state;
-* dirty state;
-* tab management;
-* prompt generation;
-* context generation;
-* JSON parsing;
-* spellcheck result validation;
-* completion result validation;
-* stale response handling.
-
-Integration tests:
-
-```text
-UTextEditor
-    ↓
-mock Ollama
-    ↓
-completion
-```
-
-В Ollama-independent tests реальний AI не повинен використовуватися.
-
----
-
-# 31. MVP acceptance criteria
-
-Проєкт вважається готовим до MVP, коли:
-
-### Editor
-
-* можна створити документ;
-* можна відкрити файл;
-* можна редагувати файл;
-* можна зберегти файл;
-* працюють вкладки;
-* працює undo/redo;
-* працює пошук.
-
-### Ollama
-
-При запущеному:
-
-```text
-ollama serve
-```
-
-і встановленій:
-
-```text
-gemma4:12b
-```
-
-модель повинна бути доступною UTextEditor.
-
-### Completion
-
-Для тексту:
-
-```text
-The weather today is
-```
-
-AI може повернути приблизне продовження:
-
-```text
-sunny and warm.
-```
-
-Це продовження відображається як ghost text.
-
-Натискання:
+Pressing:
 
 ```text
 Tab
 ```
 
-перетворює його на реальний текст.
+must accept the currently displayed inline completion.
 
-### Spellcheck
+After acceptance:
 
-Текст з помилкою:
+1. the suggested text becomes real document text;
+2. the ghost text disappears;
+3. the cursor moves to the end of the inserted text;
+4. the change becomes part of the normal undo history.
 
-```text
-This is teh test.
-```
-
-повинен бути ідентифікований, а користувачу повинно бути запропоновано:
-
-```text
-the
-```
-
-### Responsiveness
-
-Під час генерації AI GUI залишається працездатним.
+If there is no active completion, `Tab` should behave according to the editor's normal tab/indent behavior.
 
 ---
 
-# 32. Майбутній розвиток
+# 14. Rejecting a Completion
 
-Після MVP можна додати:
+Pressing:
+
+```text
+Esc
+```
+
+must reject the current completion.
+
+After rejection:
+
+* the suggestion disappears;
+* the document remains unchanged.
+
+A completion must also be invalidated when:
+
+* the user changes the text;
+* the cursor moves;
+* the selection changes;
+* the active document changes.
+
+---
+
+# 15. Completion Debounce
+
+The editor must not send an Ollama request after every keystroke.
+
+Use a short debounce interval.
+
+Recommended initial value:
+
+```text
+300–800 ms
+```
+
+The exact default should be configurable.
+
+Example flow:
+
+```text
+User types
+    ↓
+Debounce timer
+    ↓
+No new input
+    ↓
+Request completion
+    ↓
+Display result
+```
+
+---
+
+# 16. Stale Completion Protection
+
+Every document must maintain a revision identifier.
+
+Example:
+
+```text
+Document revision = 154
+```
+
+When a completion request starts, the request records the current revision:
+
+```text
+Request revision = 154
+```
+
+If the document changes:
+
+```text
+Document revision = 155
+```
+
+and a response for revision `154` later arrives, that response must be discarded.
+
+The application must never display an AI suggestion generated from stale document state.
+
+---
+
+# 17. Completion Context
+
+The completion service must provide the model with relevant context around the cursor.
+
+The context should include:
+
+* text before the cursor;
+* current paragraph;
+* recent preceding sentences;
+* optionally text after the cursor;
+* document language.
+
+Do not send the entire document on every request unless necessary.
+
+The context-building logic must be isolated from the GUI.
+
+---
+
+# 18. Completion Prompt
+
+Completion prompts should instruct the model to produce only the continuation.
+
+Conceptually:
+
+```text
+You are an inline text completion engine.
+
+Continue the user's text naturally.
+
+Rules:
+- Generate only the continuation.
+- Do not repeat existing text.
+- Do not explain the answer.
+- Preserve the language of the document.
+- Keep the continuation concise.
+- Prefer a short continuation.
+- Do not introduce unrelated content.
+```
+
+The implementation may refine this prompt during development.
+
+Prompt construction should be centralized in:
+
+```text
+app/ai/prompts.py
+```
+
+---
+
+# 19. Completion Length
+
+Suggestions should remain short.
+
+Recommended initial range:
+
+```text
+5–100 tokens
+```
+
+The default should favor short completions.
+
+The maximum completion length should be configurable.
+
+---
+
+# 20. Streaming
+
+The architecture should support streaming responses from Ollama.
+
+For the MVP, either streaming or non-streaming completion is acceptable, provided that:
+
+* the UI remains responsive;
+* stale responses are ignored;
+* partial responses cannot corrupt the document;
+* only accepted text is inserted into the document.
+
+---
+
+# 21. Spell Checking
+
+The editor should provide AI-assisted spelling and basic grammar checking.
+
+Errors should be visually highlighted.
+
+Example:
+
+```text
+This sentense contains a mistake.
+     ~~~~~~~
+```
+
+The AI should return structured information rather than arbitrary explanatory text.
+
+Example:
+
+```json
+{
+  "start": 5,
+  "end": 12,
+  "replacement": "sentence",
+  "type": "spelling",
+  "explanation": "Possible spelling error."
+}
+```
+
+The exact schema may be extended, but the response must remain machine-parseable.
+
+---
+
+# 22. Spellcheck Result Validation
+
+AI responses must be validated before being used by the editor.
+
+Invalid responses must be rejected safely.
+
+The application must never:
+
+* blindly execute model output;
+* assume that offsets are valid;
+* modify document text without validation.
+
+Before applying a correction, verify that:
+
+* the referenced document revision is still current;
+* the specified text range is valid;
+* the expected original text still matches the document.
+
+---
+
+# 23. Applying Corrections
+
+When a spelling or grammar error is selected, the user must be able to:
+
+* apply the suggested replacement;
+* ignore the suggestion.
+
+Suggested UX:
+
+```text
+Right click
+
+Replace "sentense" with "sentence"
+Ignore
+```
+
+Applying a correction must create a normal undoable editor operation.
+
+---
+
+# 24. Spellcheck Scheduling
+
+Spellcheck must not run after every keystroke.
+
+Possible triggers:
+
+* short pause after editing;
+* completion of a sentence;
+* completion of a paragraph;
+* switching focus;
+* explicit `Check Spelling` command.
+
+The implementation may choose an appropriate scheduling strategy for the MVP.
+
+---
+
+# 25. Supported Languages
+
+The MVP should support:
+
+* English
+* Ukrainian
+
+Language selection:
+
+```text
+Auto
+English
+Ukrainian
+```
+
+Automatic language detection may be used when `Auto` is selected.
+
+The AI layer must pass the selected language to the relevant service.
+
+The architecture should allow additional languages to be added later.
+
+---
+
+# 26. AI Menu
+
+The `AI` menu should contain:
+
+```text
+AI
+├── Enable AI
+├── Check Spelling
+├── Generate Completion
+├── Accept Suggestion
+├── Reject Suggestion
+└── Settings
+```
+
+The exact menu layout may be adapted to Qt conventions.
+
+---
+
+# 27. AI Settings
+
+The settings dialog should provide at least:
+
+## Provider
+
+```text
+Provider:
+Ollama
+```
+
+## Connection
+
+```text
+Host:
+http://localhost:11434
+```
+
+## Model
+
+```text
+Model:
+gemma4:12b
+```
+
+## Completion
+
+```text
+Completion enabled
+Debounce delay
+Maximum suggestion length
+Temperature
+Context size
+```
+
+## Spellcheck
+
+```text
+Spell checking enabled
+Automatic spellcheck enabled
+```
+
+All settings should have safe defaults.
+
+---
+
+# 28. Editor Settings
+
+The editor settings should include:
+
+```text
+Font
+Font size
+Tab width
+Word wrap
+Show line numbers
+Theme / Dark mode
+```
+
+These settings should be independent of the AI settings.
+
+---
+
+# 29. Error Handling
+
+AI failures must never crash the application.
+
+Examples:
+
+```text
+Ollama is not available.
+AI features are temporarily disabled.
+```
+
+Possible failure cases include:
+
+* Ollama is not running;
+* model is missing;
+* connection timeout;
+* malformed model response;
+* invalid JSON;
+* cancelled request;
+* unexpected HTTP error.
+
+All failures should be handled gracefully.
+
+The editor must continue functioning.
+
+---
+
+# 30. Concurrency
+
+All Ollama operations must execute outside the GUI thread.
+
+The implementation may use:
+
+* `QThread`;
+* `QThreadPool`;
+* `QtConcurrent`;
+* asyncio integrated appropriately with Qt.
+
+Choose one concurrency model and use it consistently.
+
+Avoid mixing concurrency mechanisms without a clear reason.
+
+---
+
+# 31. Project Structure
+
+A recommended initial structure:
+
+```text
+UTextEditor/
+├── README.md
+├── AGENTS.md
+├── pyproject.toml
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   │
+│   ├── ui/
+│   │   ├── __init__.py
+│   │   ├── main_window.py
+│   │   ├── editor_widget.py
+│   │   ├── tab_widget.py
+│   │   └── ...
+│   │
+│   ├── ai/
+│   │   ├── __init__.py
+│   │   ├── ollama_client.py
+│   │   ├── completion_service.py
+│   │   ├── spellcheck_service.py
+│   │   └── prompts.py
+│   │
+│   ├── document/
+│   │   ├── __init__.py
+│   │   ├── document.py
+│   │   ├── file_manager.py
+│   │   └── encoding.py
+│   │
+│   └── settings/
+│       ├── __init__.py
+│       └── settings.py
+│
+└── tests/
+    ├── test_document.py
+    ├── test_file_manager.py
+    ├── test_completion_service.py
+    ├── test_spellcheck_service.py
+    └── ...
+```
+
+The exact structure may evolve as implementation progresses.
+
+Do not create unnecessary modules solely to match this example.
+
+---
+
+# 32. Testing Requirements
+
+Use `pytest`.
+
+Unit tests are required for:
+
+* document state;
+* dirty state;
+* file operations;
+* tab management;
+* context generation;
+* prompt generation;
+* completion response parsing;
+* spellcheck response parsing;
+* validation of AI responses;
+* stale response handling;
+* suggestion acceptance;
+* suggestion rejection.
+
+Ollama should not be required for unit tests.
+
+Use mocks or fake providers for AI-related tests.
+
+---
+
+# 33. Integration Testing
+
+The architecture should allow integration testing with a fake Ollama server or mocked provider.
+
+Integration tests should verify at least:
+
+```text
+Editor
+  ↓
+CompletionService
+  ↓
+AIProvider
+  ↓
+Completion
+  ↓
+Inline suggestion
+  ↓
+Tab
+  ↓
+Document update
+```
+
+and:
+
+```text
+Editor
+  ↓
+SpellcheckService
+  ↓
+AIProvider
+  ↓
+Structured result
+  ↓
+Validation
+  ↓
+Correction
+```
+
+---
+
+# 34. Logging
+
+Application logs should be written to:
+
+```text
+logs/utexteditor.log
+```
+
+Logs should include:
+
+* timestamp;
+* operation;
+* provider;
+* model;
+* request identifier;
+* request duration;
+* error information.
+
+Do not log full document contents by default.
+
+Do not write secrets or credentials to logs.
+
+---
+
+# 35. Security and Privacy
+
+The application must not execute arbitrary instructions returned by the AI model.
+
+AI output is untrusted data.
+
+The application must:
+
+* validate structured AI responses;
+* validate document revisions;
+* validate text ranges before applying changes;
+* avoid executing model-generated shell commands;
+* avoid writing arbitrary model output to executable files automatically.
+
+All AI requests should remain local by default.
+
+---
+
+# 36. UX Requirements for AI
+
+AI functionality should be unobtrusive.
+
+The normal interaction should feel like:
+
+```text
+Type → AI suggests → Tab accepts
+```
+
+The user must not be forced to interact with the AI.
+
+The editor should not automatically:
+
+* rewrite user text;
+* insert completions;
+* change spelling;
+* change grammar;
+* open AI dialogs while typing.
+
+The user always controls whether generated content becomes part of the document.
+
+---
+
+# 37. Performance Requirements
+
+The application should remain responsive during AI activity.
+
+Requirements:
+
+* no blocking AI calls on the GUI thread;
+* debounce completion requests;
+* discard stale responses;
+* avoid unnecessary full-document processing;
+* avoid sending the entire document on every keystroke;
+* avoid excessive simultaneous AI requests.
+
+Only the latest relevant completion request should normally be considered valid.
+
+---
+
+# 38. MVP Acceptance Criteria
+
+The MVP is complete when all of the following are true.
+
+## Basic Editor
+
+* [ ] Application starts successfully.
+* [ ] A new document can be created.
+* [ ] Existing text files can be opened.
+* [ ] Files can be saved.
+* [ ] Save As works.
+* [ ] Multiple documents can be open in tabs.
+* [ ] Unsaved changes are clearly indicated.
+* [ ] Undo and redo work.
+* [ ] Copy, cut, paste, and select all work.
+* [ ] Find and replace work.
+
+## Ollama
+
+* [ ] UTextEditor can connect to `http://localhost:11434`.
+* [ ] `gemma4:12b` can be selected as the model.
+* [ ] Ollama connection status is visible.
+* [ ] Missing Ollama does not crash the editor.
+* [ ] Missing AI does not prevent normal text editing.
+
+## Completion
+
+* [ ] Completion requests are triggered after a typing pause.
+* [ ] Requests do not block the GUI.
+* [ ] A completion is displayed as ghost text.
+* [ ] Ghost text does not modify the document.
+* [ ] `Tab` accepts the completion.
+* [ ] `Esc` rejects the completion.
+* [ ] Completion disappears when the document state changes.
+* [ ] Stale responses are ignored.
+* [ ] Accepted completion is undoable.
+
+## Spellcheck
+
+* [ ] Text can be checked for spelling errors.
+* [ ] Errors are visually highlighted.
+* [ ] Corrections are returned in a structured format.
+* [ ] Invalid AI results are rejected safely.
+* [ ] Users can apply corrections.
+* [ ] Users can ignore corrections.
+* [ ] Applied corrections are undoable.
+
+## Responsiveness
+
+* [ ] The application remains responsive during AI requests.
+* [ ] The editor remains usable when Ollama is offline.
+* [ ] AI errors do not crash the application.
+
+## Testing
+
+* [ ] Unit tests exist for core document logic.
+* [ ] Unit tests exist for AI response validation.
+* [ ] Unit tests do not require a live Ollama instance.
+* [ ] `pytest` passes before an MVP release.
+
+---
+
+# 39. Definition of Done
+
+A feature is considered complete only when:
+
+1. The implementation matches this specification.
+2. The code follows the project architecture.
+3. Relevant tests have been added or updated.
+4. Tests pass.
+5. The GUI remains responsive.
+6. AI failures are handled safely.
+7. No unrelated files are modified.
+8. Documentation is updated when project behavior changes.
+
+---
+
+# 40. Future Features
+
+The architecture should leave room for future features such as:
 
 * AI rewrite;
-* Translate;
-* Summarize;
-* Explain selected text;
-* AI chat sidebar;
-* code syntax highlighting;
+* AI translation;
+* summarization;
+* explain selected text;
+* AI sidebar/chat;
 * Markdown preview;
+* syntax highlighting;
 * multiple completion candidates;
-* completion через streaming;
-* custom system prompt;
-* project-specific AI context;
-* document-aware suggestions;
-* autocomplete для програмного коду;
-* plugins;
-* Windows support.
+* project-aware context;
+* custom system prompts;
+* additional AI providers;
+* Windows support;
+* plugin architecture.
+
+These features are outside the MVP scope and should not be implemented unless explicitly requested.
 
 ---
 
-# 33. Основний принцип UX
+# 41. Development Priority
 
-UTextEditor повинен залишатися **звичайним текстовим редактором навіть без AI**.
+Implement the project incrementally in this order:
 
-AI має бути допоміжною функцією, а не перехоплювати керування редактором.
+## Phase 1 — Editor
 
-Користувач повинен завжди мати можливість:
+Build the basic desktop editor:
 
-```text
-type → ignore AI → continue writing
-```
+* main window;
+* menus;
+* text editing;
+* tabs;
+* open/save;
+* undo/redo;
+* search/replace;
+* status bar.
 
-а AI повинен працювати максимально ненав'язливо.
+## Phase 2 — Ollama Integration
 
----
+Implement:
 
-# 34. Definition of Done
+* provider abstraction;
+* Ollama client;
+* connection checking;
+* model configuration;
+* error handling.
 
-Перший реліз UTextEditor повинен запускатися як desktop application і дозволяти користувачу:
+## Phase 3 — Completion
 
-```text
-1. Open editor
-2. Create/open text file
-3. Write text
-4. Receive inline AI completion
-5. Accept completion with Tab
-6. See spelling errors
-7. Apply corrections
-8. Save document
-```
+Implement:
 
-При цьому AI працює локально через:
-
-```text
-Ollama
-└── gemma4:12b
-```
-
-і відмова/недоступність AI не повинна впливати на базову роботу текстового редактора.
+* context extraction;
+* prompt generation;
+* async requests;
+* debounce;
+* stale
