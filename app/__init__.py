@@ -1,0 +1,1 @@
+"""UTextEditor application package."""

@@ -616,10 +616,9 @@ Before applying a correction, verify that:
 
 # 23. Applying Corrections
 
-When a spelling or grammar error is selected, the user must be able to:
-
-* apply the suggested replacement;
-* ignore the suggestion.
+When the user explicitly chooses `Check Spelling`, validated spelling and
+grammar suggestions are applied as one normal undoable editor operation. The
+user can revert the full check with Undo. Background checks never rewrite text.
 
 Suggested UX:
 
@@ -684,10 +683,16 @@ AI
 ├── Generate Completion
 ├── Accept Suggestion
 ├── Reject Suggestion
+├── Ollama Debug
 └── Settings
 ```
 
 The exact menu layout may be adapted to Qt conventions.
+
+`Ollama Debug` opens a non-modal, in-memory view of the local Ollama request
+payloads, responses, and errors for the current application session. Requests
+may include document text; this information is never written to the log file
+by the debug view and can be cleared from the window.
 
 ---
 
@@ -715,6 +720,24 @@ http://localhost:11434
 Model:
 gemma4:12b
 ```
+
+## AI Role
+
+The completion role is editable. By default it is:
+
+```text
+You are a medium. Predict what I will say next.
+```
+
+The role is sent as the local Ollama chat system message; completion safety and
+formatting rules remain separate from it.
+
+## Context Template
+
+The completion context template is editable in AI Settings. Use `{context}` for
+the text near the cursor (required) and `{language}` for the selected language.
+The default template supplies the inline-completion instructions and the current
+document context.
 
 ## Completion
 
@@ -1093,6 +1116,12 @@ The architecture should leave room for future features such as:
 * plugin architecture.
 
 These features are outside the MVP scope and should not be implemented unless explicitly requested.
+
+## 40.1 MVP implementation notes
+
+The MVP uses `QThreadPool`/`QRunnable` for Ollama operations. Results are delivered to the Qt GUI thread and are accepted only when their request generation, active document, revision, cursor position, and selection still match.
+
+Inline completions are painted by a `QPlainTextEdit` subclass and are inserted only through an explicit `Tab` acceptance. Spellcheck results are parsed as untrusted JSON, validated against the captured document snapshot, and applied through normal undoable text edits.
 
 ---
 
