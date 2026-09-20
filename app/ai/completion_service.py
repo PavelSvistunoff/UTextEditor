@@ -41,3 +41,18 @@ class CompletionService:
             maximum_tokens=maximum_tokens,
             temperature=temperature,
         )
+
+    def generate(
+        self,
+        prompt: str,
+        *,
+        role: str = DEFAULT_AI_ROLE,
+        maximum_tokens: int = 300,
+        temperature: float = 0.2,
+    ) -> str:
+        return self.provider.generate(
+            prompt,
+            role=role,
+            maximum_tokens=maximum_tokens,
+            temperature=temperature,
+        )

@@ -192,6 +192,35 @@ def test_ollama_debug_window_copies_its_content(application: QApplication) -> No
     assert QApplication.clipboard().text() == debug_window.output.toPlainText()
 
 
+def test_generate_action_is_present_in_the_ai_menu(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+
+    ai_menu = next(action.menu() for action in window.menuBar().actions() if action.text() == "AI")
+    generate_action = next(action for action in ai_menu.actions() if action.text() == "Generate..")
+
+    assert generate_action is not None
+    window.close()
+
+
+def test_generated_text_is_inserted_into_the_current_document(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("Start")
+    cursor = editor.textCursor()
+    cursor.setPosition(5)
+    editor.setTextCursor(cursor)
+    window._generate_generation = 7
+    window._apply_generated_text(7, editor, " text")
+
+    assert editor.toPlainText() == "Start text"
+    editor.document_state.dirty = False
+    window.close()
+
+
 def test_ai_settings_action_stays_in_the_ai_menu(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()

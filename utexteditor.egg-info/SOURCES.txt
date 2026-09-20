@@ -29,6 +29,7 @@ tests/test_ai.py
 tests/test_completion_service.py
 tests/test_document.py
 tests/test_editor_widget.py
+tests/test_negative_scenarios.py
 tests/test_ollama_client.py
 tests/test_prompts.py
 tests/test_settings.py

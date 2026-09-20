@@ -9,6 +9,7 @@ The primary AI features are:
 * spelling and basic grammar checking;
 * inline text completion;
 * keyboard-based completion acceptance;
+* custom prompt-based generation into the current document via the AI menu;
 * fully local AI processing through Ollama.
 
 ---

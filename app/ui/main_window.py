@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt, Signal
 from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QStatusBar
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox, QStatusBar
 
 from app.ai.completion_service import CompletionService, build_context
 from app.ai.ollama_client import OllamaClient
@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         self.completion_service = CompletionService(self.provider)
         self.spellcheck_service = SpellcheckService(self.provider)
         self._completion_generation = 0
+        self._generate_generation = 0
         self._completion_worker = None
         self._completion_timer = QTimer(self)
         self._completion_timer.setSingleShot(True)
@@ -72,6 +73,7 @@ class MainWindow(QMainWindow):
             (edit_menu, "Paste", lambda: self._edit("paste"), QKeySequence.StandardKey.Paste),
             (edit_menu, "Select All", lambda: self._edit("selectAll"), QKeySequence.StandardKey.SelectAll),
             (search_menu, "Find / Replace", self.show_find_replace, QKeySequence("Ctrl+H")),
+            (ai_menu, "Generate..", self.generate_from_prompt, QKeySequence()),
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
             (ai_menu, "Accept Suggestion", self.accept_completion, QKeySequence()),
@@ -188,6 +190,66 @@ class MainWindow(QMainWindow):
         editor = self.tabs.current_editor()
         if editor:
             editor.clear_completion()
+
+    def generate_from_prompt(self) -> None:
+        editor = self.tabs.current_editor()
+        if not editor or not self.settings.ai_enabled:
+            return
+        prompt, accepted = QInputDialog.getMultiLineText(
+            self,
+            "Generate..",
+            "Describe what you want the AI to write:",
+            "",
+        )
+        if not accepted or not prompt.strip():
+            return
+        self._generate_generation += 1
+        generation = self._generate_generation
+        self.ai_status = "AI: Generating..."
+        self._update_status()
+        worker = FunctionWorker(
+            self.provider.generate,
+            prompt.strip(),
+            role=self.settings.ai_role,
+            maximum_tokens=self.settings.maximum_suggestion_length,
+            temperature=self.settings.temperature,
+        )
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda result: self._apply_generated_text(generation, editor, result),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda exc: self._generation_failed(exc),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _apply_generated_text(self, generation: int, editor, text: str) -> None:
+        if generation != self._generate_generation:
+            return
+        if editor is not self.tabs.current_editor():
+            return
+        if not isinstance(text, str):
+            self._generation_failed("Ollama returned an invalid response")
+            return
+        if not text.strip():
+            self.ai_status = "AI: Connected"
+            self._update_status()
+            return
+        result = text
+        cursor = editor.textCursor()
+        cursor.beginEditBlock()
+        if cursor.hasSelection():
+            cursor.removeSelectedText()
+        cursor.insertText(result)
+        cursor.endEditBlock()
+        self.ai_status = "AI: Connected"
+        self._update_status()
+
+    def _generation_failed(self, error) -> None:
+        self.ai_status = "AI: Error"
+        self.status.showMessage(f"AI generation failed: {error}")
 
     def show_settings(self) -> None:
         if SettingsDialog(self.settings, self).exec():

@@ -92,6 +92,33 @@ class OllamaClient:
         # would join a word at the cursor to the first suggested word.
         return result
 
+    def generate(
+        self,
+        prompt: str,
+        *,
+        role: str = DEFAULT_AI_ROLE,
+        maximum_tokens: int = 300,
+        temperature: float = 0.2,
+    ) -> str:
+        response = self._post(
+            "/api/chat",
+            {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": role},
+                    {"role": "user", "content": prompt},
+                ],
+                "stream": False,
+                "think": False,
+                "options": {"num_predict": maximum_tokens, "temperature": temperature},
+            },
+        )
+        message = response.get("message")
+        result = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(result, str):
+            raise OllamaError("Ollama returned no generated text")
+        return result
+
     def check_spelling(self, text: str, language: str) -> list[Suggestion]:
         response = self._post(
             "/api/chat",

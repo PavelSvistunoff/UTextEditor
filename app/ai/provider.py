@@ -19,6 +19,16 @@ class AIProvider(Protocol):
     ) -> str:
         ...
 
+    def generate(
+        self,
+        prompt: str,
+        *,
+        role: str = DEFAULT_AI_ROLE,
+        maximum_tokens: int = 300,
+        temperature: float = 0.2,
+    ) -> str:
+        ...
+
     def check_spelling(self, text: str, language: str) -> list[Suggestion]:
         ...
 
