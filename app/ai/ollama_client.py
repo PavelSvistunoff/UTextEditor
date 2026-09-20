@@ -1,6 +1,8 @@
 """Small Ollama HTTP client. It is deliberately free of Qt dependencies."""
 
 import json
+import logging
+import time
 from collections.abc import Callable
 from typing import Any
 from urllib import request
@@ -8,6 +10,8 @@ from urllib import request
 from .models import Suggestion
 from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE, completion_prompt, spellcheck_prompt
 from .validation import parse_suggestions
+
+logger = logging.getLogger("utexteditor.ai")
 
 
 class OllamaError(RuntimeError):
@@ -42,16 +46,23 @@ class OllamaClient:
         self._observe("Request", path, payload)
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(f"{self.host}{path}", data=body, headers={"Content-Type": "application/json"})
+        start = time.time()
         try:
             with request.urlopen(req, timeout=self.timeout) as response:
-                result = json.loads(response.read().decode("utf-8"))
+                raw = response.read()
+                result = json.loads(raw.decode("utf-8"))
         except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-            self._observe("Error", path, {"message": str(exc)})
+            duration = time.time() - start
+            self._observe("Error", path, {"message": str(exc), "duration": duration})
+            logger.error("Ollama request failed %s %s (%.3fs): %s", path, self.model, duration, exc)
             raise OllamaError(str(exc)) from exc
+        duration = time.time() - start
         if not isinstance(result, dict):
-            self._observe("Error", path, {"message": "Ollama returned an invalid response"})
+            self._observe("Error", path, {"message": "Ollama returned an invalid response", "duration": duration})
+            logger.error("Ollama returned invalid response for %s %s (%.3fs)", path, self.model, duration)
             raise OllamaError("Ollama returned an invalid response")
         self._observe("Response", path, result)
+        logger.info("Ollama %s %s completed in %.3fs", path, self.model, duration)
         return result
 
     def check_connection(self) -> bool:

@@ -17,6 +17,14 @@ else:
 
 
 def main() -> int:
+    # Configure logging early so modules can emit diagnostics
+    try:
+        from app.logging_config import configure_logging
+
+        configure_logging()
+    except Exception:
+        pass
+
     app = QApplication(sys.argv)
     # Set application icon from bundled resources so the window and dock show it
     icon_path = Path(__file__).resolve().parents[1] / "app" / "resources" / "icon.svg"

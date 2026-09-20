@@ -25,7 +25,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("UTextEditor")
         self.resize(1000, 700)
-        self.settings = AppSettings()
+        # Load persisted settings if available; fall back to defaults.
+        self.settings = AppSettings.load()
         self.file_manager = FileManager()
         self.tabs = DocumentTabWidget(self)
         self.setCentralWidget(self.tabs)
@@ -47,6 +48,10 @@ class MainWindow(QMainWindow):
         self._completion_timer = QTimer(self)
         self._completion_timer.setSingleShot(True)
         self._completion_timer.timeout.connect(self.request_completion)
+        # Spellcheck timer for automatic spell checking on pause
+        self._spellcheck_timer = QTimer(self)
+        self._spellcheck_timer.setSingleShot(True)
+        self._spellcheck_timer.timeout.connect(self.check_spelling)
         self._build_actions()
         self._build_status_bar()
         self.tabs.editor_created.connect(self._wire_editor)
@@ -61,6 +66,15 @@ class MainWindow(QMainWindow):
         edit_menu = self.menuBar().addMenu("Edit")
         search_menu = self.menuBar().addMenu("Search")
         ai_menu = self.menuBar().addMenu("AI")
+
+        # Enable AI (checkable) — allows quick disabling of all AI features.
+        enable_ai_action = QAction("Enable AI", self)
+        enable_ai_action.setCheckable(True)
+        enable_ai_action.setChecked(self.settings.ai_enabled)
+        enable_ai_action.setMenuRole(QAction.MenuRole.NoRole)
+        enable_ai_action.toggled.connect(self._toggle_ai)
+        ai_menu.addAction(enable_ai_action)
+
         actions = [
             (file_menu, "New", self.new_document, QKeySequence.StandardKey.New),
             (file_menu, "Open", self.open_document, QKeySequence.StandardKey.Open),
@@ -94,8 +108,43 @@ class MainWindow(QMainWindow):
     def _build_status_bar(self) -> None:
         self.status = QStatusBar(self)
         self.setStatusBar(self.status)
-        self.ai_status = "AI: Connecting..."
+        # Reflect whether AI is enabled in the initial status message.
+        self.ai_status = "AI: Disabled" if not self.settings.ai_enabled else "AI: Connecting..."
         self._update_status()
+
+    def _toggle_ai(self, enabled: bool) -> None:
+        """Enable or disable AI features at runtime.
+
+        When disabling, cancel outstanding AI workers and clear suggestions so
+        the editor behaves as a plain text editor.
+        """
+        self.settings.ai_enabled = bool(enabled)
+        if not self.settings.ai_enabled:
+            # Stop any pending completion timer and cancel running workers.
+            self._completion_timer.stop()
+            self._spellcheck_timer.stop()
+            self._completion_generation += 1
+            if self._completion_worker:
+                self._completion_worker.cancel()
+            # Cancel all tracked workers cooperatively
+            for worker in list(self._workers):
+                try:
+                    worker.cancel()
+                except Exception:
+                    pass
+            # Clear visible ghost text in all editors.
+            for index in range(self.tabs.count()):
+                editor = self.tabs.widget(index)
+                if editor:
+                    editor.clear_completion()
+                    editor.set_spell_suggestions([])
+            self.ai_status = "AI: Disabled"
+            self._update_status()
+        else:
+            # Re-check connection when AI is re-enabled.
+            self.ai_status = "AI: Connecting..."
+            self._update_status()
+            self._check_connection()
 
     def _update_status(self) -> None:
         editor = self.tabs.current_editor()
@@ -110,6 +159,8 @@ class MainWindow(QMainWindow):
 
     def _wire_editor(self, editor) -> None:
         editor.content_changed.connect(self.schedule_completion)
+        # Automatic spellcheck scheduling when enabled
+        editor.content_changed.connect(lambda: self.schedule_spellcheck(editor))
 
     def _edit(self, method: str) -> None:
         editor = self.tabs.current_editor()
@@ -253,6 +304,11 @@ class MainWindow(QMainWindow):
 
     def show_settings(self) -> None:
         if SettingsDialog(self.settings, self).exec():
+            # Persist settings and apply connection changes
+            try:
+                self.settings.save()
+            except Exception:
+                pass
             self.provider.host = self.settings.ollama_host.rstrip("/")
             self.provider.model = self.settings.ollama_model
             self._check_connection()
@@ -329,6 +385,17 @@ class MainWindow(QMainWindow):
 
     def schedule_completion(self) -> None:
         self._completion_timer.start(self.settings.completion_debounce_ms)
+
+    def schedule_spellcheck(self, editor) -> None:
+        """Schedule an automatic spellcheck after a short pause when enabled."""
+        if not self.settings.ai_enabled or not self.settings.spellcheck_enabled or not self.settings.automatic_spellcheck:
+            return
+        # Use a slightly longer debounce for spellchecking to avoid excessive requests.
+        delay = max(500, int(self.settings.completion_debounce_ms * 2))
+        # Only schedule for the active editor to avoid unnecessary background checks.
+        if editor is not self.tabs.current_editor():
+            return
+        self._spellcheck_timer.start(delay)
 
     def _on_active_document_changed(self, _: int) -> None:
         self._completion_generation += 1

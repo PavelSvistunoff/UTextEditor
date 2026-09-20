@@ -11,23 +11,62 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("AI Settings")
         self.settings = settings
+        # Connection
         self.host = QLineEdit(settings.ollama_host)
         self.model = QLineEdit(settings.ollama_model)
+        # Role and template
         self.role = QPlainTextEdit(settings.ai_role)
         self.role.setPlaceholderText("Instructions that define the AI's completion role")
         self.role.setFixedHeight(70)
         self.template = QPlainTextEdit(settings.completion_template)
         self.template.setPlaceholderText("Use {context} and {language} placeholders")
         self.template.setFixedHeight(140)
+        # Completion settings
+        from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QComboBox
+
+        self.completion_enabled = QCheckBox("Enable completion")
+        self.completion_enabled.setChecked(settings.completion_enabled)
         self.debounce = QSpinBox()
         self.debounce.setRange(100, 5000)
         self.debounce.setValue(settings.completion_debounce_ms)
+        self.max_length = QSpinBox()
+        self.max_length.setRange(1, 10000)
+        self.max_length.setValue(settings.maximum_suggestion_length)
+        self.temperature = QDoubleSpinBox()
+        self.temperature.setRange(0.0, 2.0)
+        self.temperature.setSingleStep(0.05)
+        self.temperature.setValue(settings.temperature)
+        self.context_size = QSpinBox()
+        self.context_size.setRange(64, 65536)
+        self.context_size.setValue(settings.context_size)
+        # Spellcheck settings
+        self.spellcheck_enabled = QCheckBox("Enable spellchecking")
+        self.spellcheck_enabled.setChecked(settings.spellcheck_enabled)
+        self.automatic_spellcheck = QCheckBox("Automatic spellcheck")
+        self.automatic_spellcheck.setChecked(settings.automatic_spellcheck)
+        # Language selection
+        self.language = QComboBox()
+        self.language.addItems(["Auto", "English", "Ukrainian"])
+        try:
+            idx = ["Auto", "English", "Ukrainian"].index(settings.language)
+        except ValueError:
+            idx = 0
+        self.language.setCurrentIndex(idx)
+
         form = QFormLayout(self)
         form.addRow("Ollama host", self.host)
         form.addRow("Model", self.model)
+        form.addRow(self.completion_enabled)
+        form.addRow("Debounce (ms)", self.debounce)
+        form.addRow("Maximum suggestion length", self.max_length)
+        form.addRow("Temperature", self.temperature)
+        form.addRow("Context size (chars)", self.context_size)
+        form.addRow(self.spellcheck_enabled)
+        form.addRow(self.automatic_spellcheck)
+        form.addRow("Language", self.language)
         form.addRow("AI role", self.role)
         form.addRow("Context template", self.template)
-        form.addRow("Debounce (ms)", self.debounce)
+
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -43,9 +82,17 @@ class SettingsDialog(QDialog):
         except ValueError as exc:
             QMessageBox.warning(self, "Invalid context template", str(exc))
             return
+        # Save settings back to the AppSettings instance
         self.settings.ollama_host = self.host.text().strip() or self.settings.ollama_host
         self.settings.ollama_model = self.model.text().strip() or self.settings.ollama_model
         self.settings.ai_role = self.role.toPlainText().strip() or self.settings.ai_role
         self.settings.completion_template = template
-        self.settings.completion_debounce_ms = self.debounce.value()
+        self.settings.completion_debounce_ms = int(self.debounce.value())
+        self.settings.maximum_suggestion_length = int(self.max_length.value())
+        self.settings.temperature = float(self.temperature.value())
+        self.settings.context_size = int(self.context_size.value())
+        self.settings.completion_enabled = bool(self.completion_enabled.isChecked())
+        self.settings.spellcheck_enabled = bool(self.spellcheck_enabled.isChecked())
+        self.settings.automatic_spellcheck = bool(self.automatic_spellcheck.isChecked())
+        self.settings.language = self.language.currentText()
         super().accept()
