@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
         self.tabs.remove_tab(index)
 
     def show_find_replace(self) -> None:
-        bar = FindReplaceWidget(self.tabs.current_editor, self)
+        bar = FindReplaceWidget(lambda: self.tabs.current_editor(), self)
         self.statusBar().addPermanentWidget(bar)
         bar.find_edit.setFocus()
 
