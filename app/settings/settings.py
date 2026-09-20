@@ -6,7 +6,7 @@ import platform
 import os
 from pathlib import Path
 
-from app.ai.prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
+from app.ai.prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE, resolve_language
 
 
 @dataclass
@@ -24,6 +24,12 @@ class AppSettings:
     spellcheck_enabled: bool = True
     automatic_spellcheck: bool = True
     language: str = "Auto"
+    font_family: str = "Monospace"
+    font_size: int = 13
+    tab_width: int = 4
+    word_wrap: bool = False
+    show_line_numbers: bool = True
+    dark_mode: bool = False
 
     @staticmethod
     def _default_settings_path() -> Path:
@@ -37,6 +43,9 @@ class AppSettings:
             base = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")) / "utexteditor"
         base.mkdir(parents=True, exist_ok=True)
         return base / "settings.json"
+
+    def resolve_language_for_text(self, text: str) -> str:
+        return resolve_language(self.language, text)
 
     def save(self, path: Path | str | None = None) -> None:
         target = Path(path) if path is not None else self._default_settings_path()

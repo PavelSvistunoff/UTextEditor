@@ -62,7 +62,7 @@ class OllamaClient:
             logger.error("Ollama returned invalid response for %s %s (%.3fs)", path, self.model, duration)
             raise OllamaError("Ollama returned an invalid response")
         self._observe("Response", path, result)
-        logger.info("Ollama %s %s completed in %.3fs", path, self.model, duration)
+        logger.debug("Ollama %s %s completed in %.3fs", path, self.model, duration)
         return result
 
     def check_connection(self) -> bool:

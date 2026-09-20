@@ -1,6 +1,7 @@
 """Spellcheck service with revision-aware validation."""
 
 from .models import Suggestion
+from .prompts import resolve_language
 from .provider import AIProvider
 from .validation import parse_suggestions, valid_suggestion
 
@@ -10,7 +11,8 @@ class SpellcheckService:
         self.provider = provider
 
     def check(self, text: str, language: str, revision: int) -> list[Suggestion]:
-        raw = self.provider.check_spelling(text, language)
+        resolved_language = resolve_language(language, text)
+        raw = self.provider.check_spelling(text, resolved_language)
         if isinstance(raw, str):
             suggestions = parse_suggestions(raw, text, revision)
         elif isinstance(raw, list):

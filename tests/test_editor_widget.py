@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication
 from app.document.document import Document
 from app.ai.models import Suggestion
 from app.ai.ollama_client import OllamaClient
+from app.settings.settings import AppSettings
 from app.ui.ai_debug_window import AIDebugWindow
 from app.ui.editor_widget import EditorWidget
 from app.ui.main_window import MainWindow
@@ -22,6 +23,33 @@ from app.ui.workers import FunctionWorker
 @pytest.fixture(scope="module")
 def application() -> QApplication:
     return QApplication.instance() or QApplication([])
+
+
+def test_editor_widget_applies_editor_preferences(application: QApplication) -> None:
+    editor = EditorWidget()
+    settings = AppSettings(font_family="Courier", font_size=16, tab_width=2, word_wrap=True, show_line_numbers=False, dark_mode=True)
+
+    editor.apply_settings(settings)
+
+    assert editor.font().family() == "Courier"
+    assert editor.font().pointSize() == 16
+    assert editor.lineWrapMode() == editor.LineWrapMode.WidgetWidth
+    assert editor.tabStopDistance() > 0
+    assert editor.viewportMargins().left() == 0
+
+
+def test_line_numbers_are_painted_in_the_editor_margin(application: QApplication, monkeypatch) -> None:
+    editor = EditorWidget()
+    editor.apply_settings(AppSettings(show_line_numbers=True, dark_mode=True))
+    editor.setPlainText("one\ntwo\nthree")
+
+    updates: list[bool] = []
+    monkeypatch.setattr(editor._line_number_area, "update", lambda: updates.append(True))
+
+    editor._paint_line_numbers()
+
+    assert updates == [True]
+    assert editor._line_number_area.width() > 0
 
 
 def test_completion_is_non_destructive_and_tab_accepts_it(application: QApplication) -> None:

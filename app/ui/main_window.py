@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         self.tabs.close_requested.connect(self.close_tab)
         self.tabs.currentChanged.connect(self._on_active_document_changed)
         self.tabs.new_document()
+        self._apply_editor_settings()
         self._check_connection()
 
     def _build_actions(self) -> None:
@@ -158,9 +159,16 @@ class MainWindow(QMainWindow):
         )
 
     def _wire_editor(self, editor) -> None:
+        editor.apply_settings(self.settings)
         editor.content_changed.connect(self.schedule_completion)
         # Automatic spellcheck scheduling when enabled
         editor.content_changed.connect(lambda: self.schedule_spellcheck(editor))
+
+    def _apply_editor_settings(self) -> None:
+        for index in range(self.tabs.count()):
+            editor = self.tabs.widget(index)
+            if editor is not None:
+                editor.apply_settings(self.settings)
 
     def _edit(self, method: str) -> None:
         editor = self.tabs.current_editor()
@@ -304,6 +312,7 @@ class MainWindow(QMainWindow):
 
     def show_settings(self) -> None:
         if SettingsDialog(self.settings, self).exec():
+            self._apply_editor_settings()
             # Persist settings and apply connection changes
             try:
                 self.settings.save()

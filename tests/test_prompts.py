@@ -1,5 +1,10 @@
-from app.ai.prompts import completion_prompt, spellcheck_prompt
+from app.ai.prompts import completion_prompt, resolve_language, spellcheck_prompt
 import pytest
+
+
+def test_auto_language_detection_resolves_to_ukrainian_for_cyrillic_text() -> None:
+    assert resolve_language("Auto", "Привіт світ") == "Ukrainian"
+    assert resolve_language("Auto", "Hello world") == "English"
 
 
 def test_completion_prompt_includes_language_and_context() -> None:

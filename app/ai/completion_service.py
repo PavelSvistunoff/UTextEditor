@@ -1,7 +1,7 @@
 """Pure completion context and request-generation logic."""
 
 from .provider import AIProvider
-from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
+from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE, resolve_language
 
 
 def build_context(text: str, cursor: int, *, maximum_characters: int = 4000) -> str:
@@ -33,9 +33,10 @@ class CompletionService:
         maximum_tokens: int = 100,
         temperature: float = 0.2,
     ) -> str:
+        resolved_language = resolve_language(language, context)
         return self.provider.complete(
             context,
-            language,
+            resolved_language,
             role=role,
             template=template,
             maximum_tokens=maximum_tokens,

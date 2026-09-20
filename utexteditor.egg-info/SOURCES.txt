@@ -2,6 +2,7 @@ LICENSE.txt
 README.md
 pyproject.toml
 app/__init__.py
+app/logging_config.py
 app/main.py
 app/ai/__init__.py
 app/ai/completion_service.py

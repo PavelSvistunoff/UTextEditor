@@ -1,11 +1,39 @@
 """QPlainTextEdit with non-destructive inline completions."""
 
 from PySide6.QtCore import QPoint, QRect, Qt, Signal
-from PySide6.QtGui import QColor, QFontMetrics, QPainter, QTextCharFormat, QTextCursor
-from PySide6.QtWidgets import QMenu, QPlainTextEdit, QTextEdit
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPalette, QTextCharFormat, QTextCursor
+from PySide6.QtWidgets import QApplication, QMenu, QPlainTextEdit, QTextEdit, QWidget
 
 from app.ai.models import Suggestion
 from app.ai.validation import valid_suggestion
+from app.settings.settings import AppSettings
+
+
+class _LineNumberArea(QWidget):
+    def __init__(self, editor: "EditorWidget") -> None:
+        super().__init__(editor)
+        self.editor = editor
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setAutoFillBackground(False)
+        self.setStyleSheet("background: transparent;")
+
+    def paintEvent(self, _event) -> None:
+        if not self.editor._line_numbers_visible:
+            return
+        painter = QPainter(self)
+        painter.setFont(self.editor.font())
+        painter.setPen(QColor("#8d8d8d") if self.editor._dark_mode else QColor("#707070"))
+        block = self.editor.firstVisibleBlock()
+        content_offset = self.editor.contentOffset()
+        while block.isValid():
+            block_rect = self.editor.blockBoundingGeometry(block).translated(content_offset)
+            if block_rect.top() > self.editor.viewport().height():
+                break
+            text = str(block.blockNumber() + 1)
+            rect = QRect(0, block_rect.top(), self.width() - 6, self.editor.fontMetrics().height())
+            painter.drawText(rect, Qt.AlignmentFlag.AlignRight, text)
+            block = block.next()
+        painter.end()
 
 
 class EditorWidget(QPlainTextEdit):
@@ -19,10 +47,17 @@ class EditorWidget(QPlainTextEdit):
         self._ghost_position = -1
         self._ghost_revision = -1
         self._revision = 0
+        self._line_numbers_visible = True
+        self._dark_mode = False
+        self._line_number_area = _LineNumberArea(self)
         self.spell_suggestions: list[Suggestion] = []
         self.textChanged.connect(self._on_text_changed)
         self.cursorPositionChanged.connect(self._invalidate_completion)
         self.selectionChanged.connect(self._invalidate_completion)
+        self.verticalScrollBar().valueChanged.connect(self._line_number_area.update)
+        self.textChanged.connect(self._line_number_area.update)
+        self._line_number_area.show()
+        self.apply_settings(AppSettings())
 
     @property
     def revision(self) -> int:
@@ -79,6 +114,55 @@ class EditorWidget(QPlainTextEdit):
             return f" {completion}"
         return completion
 
+    def apply_settings(self, settings: AppSettings) -> None:
+        font = QFont(settings.font_family or "Monospace", max(8, int(settings.font_size)))
+        self.setFont(font)
+        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth if settings.word_wrap else QPlainTextEdit.LineWrapMode.NoWrap)
+        self.setTabStopDistance(max(16, QFontMetrics(font).horizontalAdvance(" ") * max(1, int(settings.tab_width))))
+        self._line_numbers_visible = bool(settings.show_line_numbers)
+        self._dark_mode = bool(settings.dark_mode)
+        palette = self.palette()
+        app = QApplication.instance()
+        if app is not None and not self._dark_mode:
+            system_palette = app.palette()
+            background = system_palette.color(QPalette.ColorRole.Base)
+            foreground = system_palette.color(QPalette.ColorRole.Text)
+            selection = system_palette.color(QPalette.ColorRole.Highlight)
+        elif self._dark_mode:
+            background = QColor("#1f1f1f")
+            foreground = QColor("#f2f2f2")
+            selection = QColor("#3d5afe")
+        else:
+            background = QColor("#ffffff")
+            foreground = QColor("#222222")
+            selection = QColor("#dfe9ff")
+        palette.setColor(QPalette.ColorRole.Base, background)
+        palette.setColor(QPalette.ColorRole.Text, foreground)
+        palette.setColor(QPalette.ColorRole.Highlight, selection)
+        palette.setColor(QPalette.ColorRole.HighlightedText, foreground)
+        palette.setColor(QPalette.ColorRole.Window, background)
+        self.setPalette(palette)
+        self.setStyleSheet(
+            f"QPlainTextEdit {{ color: {foreground.name()}; background-color: {background.name()}; selection-background-color: {selection.name()}; }}"
+        )
+        self._update_line_number_margin()
+        self.update()
+
+    def _update_line_number_margin(self) -> None:
+        if not self._line_numbers_visible:
+            self.setViewportMargins(0, 0, 0, 0)
+            self._line_number_area.hide()
+            return
+        digits = max(2, len(str(max(1, self.document().blockCount()))) + 1)
+        width = self.fontMetrics().horizontalAdvance("9") * digits + 12
+        self.setViewportMargins(width, 0, 0, 0)
+        self._line_number_area.setGeometry(0, 0, width, self.height())
+        self._line_number_area.show()
+
+    def _paint_line_numbers(self) -> None:
+        if self._line_numbers_visible:
+            self._line_number_area.update()
+
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
         if not self.has_completion:
@@ -93,11 +177,13 @@ class EditorWidget(QPlainTextEdit):
         remaining = self._ghost_text
         line_height = metrics.height()
         while remaining:
-            width = min(available, max(metrics.horizontalAdvance(remaining[:1]), available))
-            # Keep the MVP renderer predictable; wrapped ghost text is clipped rather than inserted.
             painter.drawText(QRect(x, y, available, line_height), Qt.AlignmentFlag.AlignLeft, remaining)
             break
         painter.end()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._update_line_number_margin()
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Tab and self.accept_completion():

@@ -11,19 +11,8 @@ DEFAULT_COMPLETION_TEMPLATE = (
 )
 
 
-def completion_prompt(
-    context: str,
-    language: str,
-    template: str = DEFAULT_COMPLETION_TEMPLATE,
-) -> str:
-    """Render a user-configured template without evaluating arbitrary code."""
-    try:
-        return template.format(context=context, language=language)
-    except (IndexError, KeyError, ValueError) as exc:
-        raise ValueError("Completion template may only use {context} and {language} placeholders") from exc
-
-
-def _resolved_language(language: str, text: str) -> str:
+def resolve_language(language: str, text: str) -> str:
+    """Resolve Auto mode using a simple content-language heuristic."""
     if language and language != "Auto":
         return language
     if re.search(r"[а-яёїієґА-ЯЁЇІЄҐ]", text):
@@ -31,8 +20,29 @@ def _resolved_language(language: str, text: str) -> str:
     return "English"
 
 
+def detect_language(language: str, text: str) -> str:
+    return resolve_language(language, text)
+
+
+def _resolved_language(language: str, text: str) -> str:
+    return resolve_language(language, text)
+
+
+def completion_prompt(
+    context: str,
+    language: str,
+    template: str = DEFAULT_COMPLETION_TEMPLATE,
+) -> str:
+    """Render a user-configured template without evaluating arbitrary code."""
+    resolved_language = resolve_language(language, context)
+    try:
+        return template.format(context=context, language=resolved_language)
+    except (IndexError, KeyError, ValueError) as exc:
+        raise ValueError("Completion template may only use {context} and {language} placeholders") from exc
+
+
 def spellcheck_prompt(text: str, language: str) -> str:
-    resolved_language = _resolved_language(language, text)
+    resolved_language = resolve_language(language, text)
     return (
         "You are a strict spellchecker and grammar fixer.\n"
         f"Language: {resolved_language}.\n"
