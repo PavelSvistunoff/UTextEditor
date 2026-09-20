@@ -11,10 +11,12 @@ from PySide6.QtWidgets import QApplication
 
 from app.document.document import Document
 from app.ai.models import Suggestion
+from app.ai.ollama_client import OllamaClient
 from app.ui.ai_debug_window import AIDebugWindow
 from app.ui.editor_widget import EditorWidget
 from app.ui.main_window import MainWindow
 from app.ui.tab_widget import DocumentTabWidget
+from app.ui.workers import FunctionWorker
 
 
 @pytest.fixture(scope="module")
@@ -70,6 +72,71 @@ def test_spell_suggestions_apply_in_one_undoable_operation(application: QApplica
     assert editor.toPlainText() == "A sentence and error."
     editor.undo()
     assert editor.toPlainText() == "A sentense and eror."
+
+
+def test_spell_suggestions_render_underlines_without_crashing(application: QApplication) -> None:
+    editor = EditorWidget()
+    editor.setPlainText("A sentense and eror.")
+    suggestions = [
+        Suggestion(2, 10, "sentence", original_text="sentense", revision=editor.revision),
+        Suggestion(15, 19, "error", original_text="eror", revision=editor.revision),
+    ]
+
+    editor.set_spell_suggestions(suggestions)
+
+    assert len(editor.extraSelections()) == 2
+
+
+def test_spell_suggestions_preserve_adjacent_spaces(application: QApplication) -> None:
+    editor = EditorWidget()
+    editor.setPlainText("шоб шо")
+    revision = editor.revision
+    suggestions = [Suggestion(0, 4, "щоб", original_text="шоб ", revision=revision)]
+
+    assert editor.apply_spell_suggestions(suggestions) == 1
+    assert editor.toPlainText() == "щоб шо"
+
+
+def test_spell_suggestions_expand_to_full_word_when_model_replaces_only_a_suffix(application: QApplication) -> None:
+    editor = EditorWidget()
+    editor.setPlainText("вітя вступив у слюб з оленою")
+    revision = editor.revision
+    suggestions = [Suggestion(15, 19, "шлюб", original_text="слюб", revision=revision)]
+
+    assert editor.apply_spell_suggestions(suggestions) == 1
+    assert editor.toPlainText() == "вітя вступив у шлюб з оленою"
+
+
+def test_spell_suggestions_handle_space_padded_offsets_from_the_model(application: QApplication) -> None:
+    editor = EditorWidget()
+    editor.setPlainText("Вітя вступив у слюб з Оленою.")
+    revision = editor.revision
+    suggestions = [Suggestion(14, 18, "шлюб", original_text=" слю", revision=revision)]
+
+    assert editor.apply_spell_suggestions(suggestions) == 1
+    assert editor.toPlainText() == "Вітя вступив у шлюб з Оленою."
+
+
+def test_stale_ai_observer_does_not_crash_on_deleted_signal_source(application: QApplication) -> None:
+    def stale_observer(*_args, **_kwargs) -> None:
+        raise RuntimeError("Signal source has been deleted")
+
+    client = OllamaClient(interaction_observer=stale_observer)
+
+    client._observe("Request", "/api/chat", {"model": "test"})
+
+
+def test_main_window_keeps_worker_references_until_signals_finish(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+
+    worker = FunctionWorker(lambda: "done")
+    window._track_worker(worker)
+
+    assert worker in window._workers
+    window._drop_worker(worker)
+    assert worker not in window._workers
+    window.close()
 
 
 def test_tabs_keep_document_state_isolated_and_delegate_close(application: QApplication) -> None:

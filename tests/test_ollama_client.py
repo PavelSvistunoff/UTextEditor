@@ -63,6 +63,8 @@ def test_spellcheck_uses_chat_json_mode_without_thinking() -> None:
     assert urlopen.call_args.args[0].full_url.endswith("/api/chat")
     assert payload["format"] == "json"
     assert payload["think"] is False
+    assert payload["options"] == {"temperature": 0.0, "num_predict": 256}
+    assert any(item["role"] == "system" for item in payload["messages"])
 
 
 def test_interaction_observer_receives_request_and_response() -> None:

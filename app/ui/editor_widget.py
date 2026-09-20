@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import QPoint, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QPainter, QTextCharFormat, QTextCursor
-from PySide6.QtWidgets import QMenu, QPlainTextEdit
+from PySide6.QtWidgets import QMenu, QPlainTextEdit, QTextEdit
 
 from app.ai.models import Suggestion
 from app.ai.validation import valid_suggestion
@@ -120,28 +120,49 @@ class EditorWidget(QPlainTextEdit):
             fmt = QTextCharFormat()
             fmt.setUnderlineColor(QColor("#d55e5e"))
             fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.SpellCheckUnderline)
-            selections.append(QPlainTextEdit.ExtraSelection(cursor, fmt))
+            selection = QTextEdit.ExtraSelection()
+            selection.cursor = cursor
+            selection.format = fmt
+            selections.append(selection)
         self.setExtraSelections(selections)
 
     def apply_spell_suggestions(self, suggestions: list[Suggestion]) -> int:
         """Apply non-overlapping, current-revision corrections as one undo step."""
         source = self.toPlainText()
         valid = [item for item in suggestions if valid_suggestion(item, source, self.revision)]
-        non_overlapping: list[Suggestion] = []
+        non_overlapping: list[tuple[int, int, Suggestion]] = []
         earliest_applied_end = len(source) + 1
         for suggestion in sorted(valid, key=lambda item: item.start, reverse=True):
-            if suggestion.end <= earliest_applied_end:
-                non_overlapping.append(suggestion)
-                earliest_applied_end = suggestion.start
+            start, end = suggestion.start, suggestion.end
+            while start < end and not source[start].isalnum():
+                start += 1
+            while end > start and not source[end - 1].isalnum():
+                end -= 1
+            if start > 0 and start < end and source[start].isalnum() and source[start - 1].isalnum():
+                while start > 0 and source[start - 1].isalnum():
+                    start -= 1
+            if end < len(source) and start < end and source[end - 1].isalnum() and source[end].isalnum():
+                while end < len(source) and source[end].isalnum():
+                    end += 1
+            if end <= earliest_applied_end and start < end:
+                non_overlapping.append((start, end, suggestion))
+                earliest_applied_end = start
         if not non_overlapping:
             return 0
 
         cursor = self.textCursor()
         cursor.beginEditBlock()
-        for suggestion in non_overlapping:
-            cursor.setPosition(suggestion.start)
-            cursor.setPosition(suggestion.end, QTextCursor.MoveMode.KeepAnchor)
-            cursor.insertText(suggestion.replacement)
+        for start, end, suggestion in non_overlapping:
+            selected = source[start:end]
+            replacement = suggestion.replacement
+            if selected:
+                leading = selected[: len(selected) - len(selected.lstrip())]
+                trailing = selected[len(selected.rstrip()) :]
+                if leading or trailing:
+                    replacement = f"{leading}{suggestion.replacement}{trailing}"
+            cursor.setPosition(start)
+            cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            cursor.insertText(replacement)
         cursor.endEditBlock()
         self.set_spell_suggestions([])
         return len(non_overlapping)

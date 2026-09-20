@@ -24,6 +24,29 @@ def test_invalid_json_is_safe() -> None:
     assert parse_suggestions("not json", "text", 0) == []
 
 
+def test_parser_accepts_markdown_wrapped_json() -> None:
+    payload = "```json\n[{\"start\": 0, \"end\": 4, \"replacement\": \"word\", \"type\": \"spelling\"}]\n```"
+    suggestions = parse_suggestions(payload, "text", 2)
+
+    assert suggestions == [Suggestion(0, 4, "word", "spelling", "", "text", 2, "text")]
+
+
+def test_parser_accepts_single_suggestion_object() -> None:
+    suggestions = parse_suggestions(
+        {"start": 0, "end": 4, "replacement": "word", "type": "spelling", "explanation": "Possible spelling error."},
+        "text",
+        2,
+    )
+
+    assert suggestions == [Suggestion(0, 4, "word", "spelling", "Possible spelling error.", "text", 2, "text")]
+
+
+def test_valid_suggestion_accepts_space_padded_word_ranges() -> None:
+    suggestion = Suggestion(14, 18, "шлюб", "spelling", "", " слю", revision=1)
+
+    assert valid_suggestion(suggestion, "Вітя вступив у слюб з Оленою.", 1)
+
+
 def test_suggestion_range_must_be_inside_snapshot() -> None:
     suggestion = Suggestion(0, 5, "x", original_text="other", revision=1)
     assert not valid_suggestion(suggestion, "text", 1)

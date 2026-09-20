@@ -28,8 +28,15 @@ class OllamaClient:
         self.interaction_observer = interaction_observer
 
     def _observe(self, event: str, path: str, details: dict[str, Any]) -> None:
-        if self.interaction_observer is not None:
+        if self.interaction_observer is None:
+            return
+        try:
             self.interaction_observer(event, path, details)
+        except RuntimeError as exc:
+            message = str(exc)
+            if "Signal source has been deleted" in message:
+                return
+            raise
 
     def _post(self, path: str, payload: dict) -> dict:
         self._observe("Request", path, payload)
@@ -90,10 +97,20 @@ class OllamaClient:
             "/api/chat",
             {
                 "model": self.model,
-                "messages": [{"role": "user", "content": spellcheck_prompt(text, language)}],
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a strict spellcheck engine. Return only valid JSON that matches the user's requested schema. "
+                            "Never return markdown fences or an empty JSON object."
+                        ),
+                    },
+                    {"role": "user", "content": spellcheck_prompt(text, language)},
+                ],
                 "stream": False,
                 "think": False,
                 "format": "json",
+                "options": {"temperature": 0.0, "num_predict": 256},
             },
         )
         message = response.get("message")

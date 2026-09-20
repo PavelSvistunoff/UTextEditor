@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         self.tabs = DocumentTabWidget(self)
         self.setCentralWidget(self.tabs)
         self.thread_pool = QThreadPool.globalInstance()
+        self._workers: list[FunctionWorker] = []
         self._debug_events: list[tuple[str, str, dict]] = []
         self._debug_window: AIDebugWindow | None = None
         self.ai_interaction.connect(self._record_ai_interaction, Qt.ConnectionType.QueuedConnection)
@@ -215,8 +216,18 @@ class MainWindow(QMainWindow):
         if self._debug_window is not None:
             self._debug_window.append_interaction(event, path, details)
 
+    def _track_worker(self, worker: FunctionWorker) -> None:
+        self._workers.append(worker)
+        worker.signals.finished.connect(lambda _result, worker=worker: self._drop_worker(worker), Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(lambda _exc, worker=worker: self._drop_worker(worker), Qt.ConnectionType.QueuedConnection)
+
+    def _drop_worker(self, worker: FunctionWorker) -> None:
+        if worker in self._workers:
+            self._workers.remove(worker)
+
     def _check_connection(self) -> None:
         worker = FunctionWorker(self.provider.check_connection)
+        self._track_worker(worker)
         worker.signals.finished.connect(lambda ok: self._set_ai_status(ok), Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(lambda _: self._set_ai_status(False), Qt.ConnectionType.QueuedConnection)
         self.thread_pool.start(worker)
@@ -249,6 +260,7 @@ class MainWindow(QMainWindow):
             temperature=self.settings.temperature,
         )
         self._completion_worker = worker
+        self._track_worker(worker)
         worker.signals.finished.connect(lambda text: self._completion_finished(generation, editor, revision, position, text), Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(lambda exc: self._completion_failed(exc), Qt.ConnectionType.QueuedConnection)
         self.thread_pool.start(worker)
@@ -295,6 +307,7 @@ class MainWindow(QMainWindow):
             return
         text, revision = editor.toPlainText(), editor.revision
         worker = FunctionWorker(self.spellcheck_service.check, text, self.settings.language, revision)
+        self._track_worker(worker)
         worker.signals.finished.connect(
             lambda suggestions: self._apply_spellcheck_results(editor, revision, suggestions),
             Qt.ConnectionType.QueuedConnection,

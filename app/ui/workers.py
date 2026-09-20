@@ -26,7 +26,15 @@ class FunctionWorker(QRunnable):
         try:
             result = self.function(*self.args, **self.kwargs)
             if not self.cancelled:
-                self.signals.finished.emit(result)
+                try:
+                    self.signals.finished.emit(result)
+                except RuntimeError as exc:
+                    if "Signal source has been deleted" not in str(exc):
+                        raise
         except Exception as exc:  # delivered to the GUI for explicit handling
             if not self.cancelled:
-                self.signals.failed.emit(exc)
+                try:
+                    self.signals.failed.emit(exc)
+                except RuntimeError as exc:
+                    if "Signal source has been deleted" not in str(exc):
+                        raise
