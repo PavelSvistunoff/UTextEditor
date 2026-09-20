@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
+
 
 if __package__:
     from .ui.main_window import MainWindow
@@ -16,6 +18,16 @@ else:
 
 def main() -> int:
     app = QApplication(sys.argv)
+    # Set application icon from bundled resources so the window and dock show it
+    icon_path = Path(__file__).resolve().parents[1] / "app" / "resources" / "icon.svg"
+    if not icon_path.exists():
+        # Fallback to package-relative resources for installed package layout
+        icon_path = Path(__file__).resolve().parents[1] / "resources" / "icon.svg"
+    try:
+        app.setWindowIcon(QIcon(str(icon_path)))
+    except Exception:
+        # Never crash the app if icon loading fails
+        pass
     window = MainWindow()
     window.show()
     return app.exec()
