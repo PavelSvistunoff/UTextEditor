@@ -39,7 +39,7 @@ class AIProvider(Protocol):
         temperature: float = 0.2,
         timeout: float | None = None,
     ) -> str:
-        """Generate locally without retaining the prompt/response in diagnostics."""
+        """Generate locally while keeping the request/response visible to diagnostics."""
         ...
 
     def check_spelling(self, text: str, language: str) -> list[Suggestion]:

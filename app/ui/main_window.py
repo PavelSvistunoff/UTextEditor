@@ -49,7 +49,7 @@ from app.settings.settings import AppSettings
 from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow
 from .analysis_window import AnalysisWindow
-from .auto_writer_dialog import AutoWriterDialog
+from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
@@ -80,6 +80,7 @@ class _RecoveryPayload:
 class MainWindow(QMainWindow):
     ai_interaction = Signal(str, str, object)
     auto_writer_progress = Signal(str)
+    auto_writer_scene_completed = Signal(int, str, str, int, int)
 
     def __init__(
         self,
@@ -131,6 +132,7 @@ class MainWindow(QMainWindow):
         self._auto_writer_cancel_event: Event | None = None
         self._auto_writer_cancel_action: QAction | None = None
         self._auto_writer_committing = False
+        self._auto_writer_progress_dialog: AutoWriterProgressDialog | None = None
         self._analysis_windows: list[AnalysisWindow] = []
         self._project_busy = False
         self._project_refresh_timer = QTimer(self)
@@ -184,6 +186,9 @@ class MainWindow(QMainWindow):
         self._build_status_bar()
         self.auto_writer_progress.connect(
             self._show_auto_writer_progress, Qt.ConnectionType.QueuedConnection
+        )
+        self.auto_writer_scene_completed.connect(
+            self._show_auto_writer_scene, Qt.ConnectionType.QueuedConnection
         )
         if self._writing_goal_load_error:
             self.statusBar().showMessage(
@@ -779,6 +784,13 @@ class MainWindow(QMainWindow):
         self._set_project_busy(True)
         if self._auto_writer_cancel_action is not None:
             self._auto_writer_cancel_action.setEnabled(True)
+        if self._auto_writer_progress_dialog is not None:
+            self._auto_writer_progress_dialog.close()
+        self._auto_writer_progress_dialog = AutoWriterProgressDialog(self)
+        self._auto_writer_progress_dialog.cancel_requested.connect(
+            self.cancel_auto_writer
+        )
+        self._auto_writer_progress_dialog.show()
         self.statusBar().showMessage(
             "Auto-writer is creating a revision snapshot and drafting scene text…"
         )
@@ -798,6 +810,11 @@ class MainWindow(QMainWindow):
             snapshot_name=snapshot_name,
             is_cancelled=cancel_event.is_set,
             progress=lambda message: self.auto_writer_progress.emit(message),
+            scene_completed=lambda title, text, completed, total: (
+                self.auto_writer_scene_completed.emit(
+                    generation, title, text, completed, total
+                )
+            ),
         )
         self._auto_writer_worker = worker
         self._track_worker(worker)
@@ -854,9 +871,12 @@ class MainWindow(QMainWindow):
             return
 
         self._auto_writer_committing = True
-        self.statusBar().showMessage(
+        applying_message = (
             "Auto-writer drafts are complete; applying snapshot-protected scene updates…"
         )
+        self.statusBar().showMessage(applying_message)
+        if self._auto_writer_progress_dialog is not None:
+            self._auto_writer_progress_dialog.set_applying(applying_message)
         worker = FunctionWorker(
             project.replace_scenes_transactionally,
             dict(result.replacements),
@@ -945,10 +965,25 @@ class MainWindow(QMainWindow):
     def _show_auto_writer_progress(self, message: str) -> None:
         if self._auto_writer_worker is not None:
             self.statusBar().showMessage(message)
+            if self._auto_writer_progress_dialog is not None:
+                self._auto_writer_progress_dialog.set_status(message)
+
+    def _show_auto_writer_scene(
+        self, generation: int, title: str, text: str, completed: int, total: int
+    ) -> None:
+        if (
+            generation == self._auto_writer_generation
+            and self._auto_writer_progress_dialog is not None
+        ):
+            self._auto_writer_progress_dialog.append_scene(
+                title, text, completed, total
+            )
 
     def _finish_auto_writer(self, project, message: str, *, warning: bool = False) -> None:
         self._auto_writer_cancel_event = None
         self._auto_writer_committing = False
+        if self._auto_writer_progress_dialog is not None:
+            self._auto_writer_progress_dialog.finish(message)
         if self._auto_writer_cancel_action is not None:
             self._auto_writer_cancel_action.setEnabled(False)
         self._set_project_busy(False)

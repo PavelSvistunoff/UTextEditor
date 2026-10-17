@@ -15,7 +15,7 @@ from app.project.autopilot import AutopilotCancelled, run_autopilot
 from app.project.auto_writer import run_auto_writer
 from app.ui.main_window import MainWindow
 from app.ui.project_brief_dialog import PROJECT_BRIEF_TEMPLATE, ProjectBriefDialog
-from app.ui.auto_writer_dialog import AutoWriterDialog
+from app.ui.auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from app.ui.project_setup_dialog import ProjectSetupDialog
 
 
@@ -385,6 +385,7 @@ def test_auto_writer_writes_only_empty_scenes(tmp_path):
     chapter = project.add_chapter("Chapter")
     empty = project.add_scene("Empty", chapter_id=chapter.id)
     full = project.add_scene("Existing", chapter_id=chapter.id, content="Keep.")
+    completed_scenes = []
 
     class FakeProvider:
         prompts = []
@@ -406,12 +407,29 @@ def test_auto_writer_writes_only_empty_scenes(tmp_path):
         temperature=0.2,
         snapshot_name="Before writing",
         is_cancelled=lambda: False,
+        scene_completed=lambda title, text, completed, total: completed_scenes.append(
+            (title, text, completed, total)
+        ),
     )
 
     assert result.replacements == {empty.id: "Newly drafted scene."}
     assert full.id not in result.replacements
     assert len(provider.prompts) == 1
     assert provider.options[0]["timeout"] == 300
+    assert completed_scenes == [("Empty", "Newly drafted scene.", 1, 1)]
+
+
+def test_auto_writer_progress_dialog_shows_completed_drafts():
+    application = QApplication.instance() or QApplication([])
+    dialog = AutoWriterProgressDialog()
+
+    dialog.append_scene("Opening", "The rain began.", 1, 2)
+
+    assert "Completed scene 1 of 2: Opening" == dialog.status.text()
+    assert "The rain began." in dialog.output.toPlainText()
+    dialog.finish("Auto-writer cancelled. No scene changes were applied.")
+    assert dialog.cancel_button.text() == "Close"
+    dialog.close()
 
 
 def test_auto_writer_refuses_to_apply_if_project_text_changed(tmp_path):

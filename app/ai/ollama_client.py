@@ -153,13 +153,16 @@ class OllamaClient:
         temperature: float = 0.2,
         timeout: float | None = None,
     ) -> str:
-        """Generate without forwarding prompt or response content to diagnostics."""
+        """Generate a local AI response while keeping the interaction visible in diagnostics."""
+        # Private here means the request is internal to the app workflow, not that it
+        # should be hidden from the debug UI. The debug dialog is intentionally a full
+        # trace of Ollama traffic for troubleshooting.
         return self._generate(
             prompt,
             role=role,
             maximum_tokens=maximum_tokens,
             temperature=temperature,
-            observe=False,
+            observe=True,
             timeout=timeout,
         )
 

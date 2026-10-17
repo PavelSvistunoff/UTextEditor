@@ -89,7 +89,7 @@ def test_interaction_observer_receives_request_and_response() -> None:
     assert events[1] == ("Response", "/api/chat", {"message": {"content": "done"}})
 
 
-def test_private_generation_never_sends_prompt_or_result_to_diagnostics() -> None:
+def test_private_generation_still_records_its_interaction_in_diagnostics() -> None:
     events: list[tuple[str, str, dict[str, object]]] = []
     client = OllamaClient(
         interaction_observer=lambda event, path, details: events.append((event, path, details))
@@ -101,7 +101,9 @@ def test_private_generation_never_sends_prompt_or_result_to_diagnostics() -> Non
     ):
         assert client.generate_private("private manuscript text") == "private analysis"
 
-    assert events == []
+    assert events[0][0:2] == ("Request", "/api/chat")
+    assert "private manuscript text" in json.dumps(events[0][2])
+    assert events[1] == ("Response", "/api/chat", {"message": {"content": "private analysis"}})
 
 
 def test_private_generation_can_use_a_longer_operation_timeout() -> None:

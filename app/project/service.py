@@ -640,12 +640,42 @@ class Project:
     ) -> dict[str, str]:
         """Replace a set of scenes only if all disk versions still match.
 
-        Writes are staged beside their targets. If any replacement fails, already
-        replaced targets are rolled back from temporary backups.
+        This is a transactional update: we validate a fresh project snapshot,
+        stage all replacements next to their files, and roll back any partial
+        write if a later verification step fails.
         """
+        self._validate_transaction_inputs(replacements, expected_contents)
+        fresh = Project.open(self.root)
+        self._validate_transaction_context(fresh, expected_contexts)
+
+        targets, persisted, expected_bytes = self._prepare_scene_replacements(
+            fresh, replacements, expected_contents
+        )
+        temporary_files = self._stage_scene_replacements(targets, persisted)
+        backups: dict[str, Path] = {}
+        try:
+            self._apply_staged_scene_replacements(targets, backups, temporary_files, expected_bytes)
+        except Exception as exc:
+            try:
+                self._rollback_scene_replacements(targets, backups, temporary_files)
+            except ProjectError:
+                raise
+            if isinstance(exc, ProjectError):
+                raise
+            raise ProjectError(f"Auto-writer could not replace project scenes: {exc}") from exc
+
+        self._cleanup_scene_backups(backups)
+        return persisted
+
+    def _validate_transaction_inputs(
+        self, replacements: dict[str, str], expected_contents: dict[str, str]
+    ) -> None:
         if not replacements or set(replacements) != set(expected_contents):
             raise ProjectError("Auto-writer replacements require matching scene snapshots.")
-        fresh = Project.open(self.root)
+
+    def _validate_transaction_context(
+        self, fresh: "Project", expected_contexts: dict[str, str] | None
+    ) -> None:
         if fresh.manifest.to_mapping() != self.manifest.to_mapping():
             raise ProjectError(
                 "The project structure changed; Auto-writer results were not applied."
@@ -668,6 +698,12 @@ class Project:
                     "generated text was not applied."
                 )
 
+    def _prepare_scene_replacements(
+        self,
+        fresh: "Project",
+        replacements: dict[str, str],
+        expected_contents: dict[str, str],
+    ) -> tuple[dict[str, Path], dict[str, str], dict[str, bytes]]:
         targets: dict[str, Path] = {}
         persisted: dict[str, str] = {}
         expected_bytes: dict[str, bytes] = {}
@@ -697,62 +733,75 @@ class Project:
                     f"Scene changed on disk during Auto-writer: {current_scene.path}; "
                     "no generated text was applied."
                 )
-            persisted_text = normalize_line_endings(
-                generated, detect_line_ending(expected_text)
-            )
+            persisted_text = normalize_line_endings(generated, detect_line_ending(expected_text))
             targets[scene_id] = target
             persisted[scene_id] = persisted_text
             expected_bytes[scene_id] = original_bytes
+        return targets, persisted, expected_bytes
 
+    def _stage_scene_replacements(
+        self, targets: dict[str, Path], persisted: dict[str, str]
+    ) -> dict[str, Path]:
+        """Write replacement payloads to temporary files beside the target files."""
         temporary_files: dict[str, Path] = {}
-        backups: dict[str, Path] = {}
-        try:
-            for scene_id, target in targets.items():
-                temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
-                temporary_files[scene_id] = temporary
-                with temporary.open("xb") as stream:
-                    stream.write(persisted[scene_id].encode("utf-8"))
-                    stream.flush()
-                    os.fsync(stream.fileno())
+        for scene_id, target in targets.items():
+            temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+            temporary_files[scene_id] = temporary
+            with temporary.open("xb") as stream:
+                stream.write(persisted[scene_id].encode("utf-8"))
+                stream.flush()
+                os.fsync(stream.fileno())
+        return temporary_files
 
-            for scene_id, target in targets.items():
-                if target.is_symlink() or target.read_bytes() != expected_bytes[scene_id]:
-                    raise ProjectError(
-                        f"Scene changed on disk during Auto-writer: {target.name}; "
-                        "no generated text was applied."
-                    )
-                backup = target.with_name(f".{target.name}.{uuid4().hex}.bak")
-                target.rename(backup)
-                backups[scene_id] = backup
-                temporary_files[scene_id].rename(target)
-                _fsync_directory(target.parent)
-        except Exception as exc:
-            rollback_failures: list[str] = []
-            for scene_id in reversed(tuple(backups)):
-                target = targets[scene_id]
-                backup = backups[scene_id]
-                try:
-                    if target.exists() or target.is_symlink():
-                        target.unlink()
-                    if backup.exists():
-                        backup.rename(target)
-                    _fsync_directory(target.parent)
-                except OSError:
-                    rollback_failures.append(str(target.relative_to(self.root)))
-            for temporary in temporary_files.values():
-                try:
-                    temporary.unlink(missing_ok=True)
-                except OSError:
-                    pass
-            if rollback_failures:
+    def _apply_staged_scene_replacements(
+        self,
+        targets: dict[str, Path],
+        backups: dict[str, Path],
+        temporary_files: dict[str, Path],
+        expected_bytes: dict[str, bytes],
+    ) -> None:
+        for scene_id, target in targets.items():
+            if target.is_symlink() or target.read_bytes() != expected_bytes[scene_id]:
                 raise ProjectError(
-                    f"Auto-writer replacement failed ({exc}); rollback also failed for "
-                    f"{', '.join(rollback_failures)}. The pre-run revision snapshot is available."
-                ) from exc
-            if isinstance(exc, ProjectError):
-                raise
-            raise ProjectError(f"Auto-writer could not replace project scenes: {exc}") from exc
+                    f"Scene changed on disk during Auto-writer: {target.name}; "
+                    "no generated text was applied."
+                )
+            backup = target.with_name(f".{target.name}.{uuid4().hex}.bak")
+            target.rename(backup)
+            backups[scene_id] = backup
+            temporary_files[scene_id].rename(target)
+            _fsync_directory(target.parent)
 
+    def _rollback_scene_replacements(
+        self,
+        targets: dict[str, Path],
+        backups: dict[str, Path],
+        temporary_files: dict[str, Path],
+    ) -> None:
+        rollback_failures: list[str] = []
+        for scene_id in reversed(tuple(backups)):
+            target = targets[scene_id]
+            backup = backups[scene_id]
+            try:
+                if target.exists() or target.is_symlink():
+                    target.unlink()
+                if backup.exists():
+                    backup.rename(target)
+                _fsync_directory(target.parent)
+            except OSError:
+                rollback_failures.append(str(target.relative_to(self.root)))
+        for temporary in temporary_files.values():
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+        if rollback_failures:
+            raise ProjectError(
+                f"Auto-writer replacement failed and rollback also failed for "
+                f"{', '.join(rollback_failures)}. The pre-run revision snapshot is available."
+            )
+
+    def _cleanup_scene_backups(self, backups: dict[str, Path]) -> None:
         for backup in backups.values():
             try:
                 backup.unlink()
@@ -761,7 +810,6 @@ class Project:
                     f"Auto-writer applied all scenes, but a temporary original file could "
                     f"not be removed ({backup.name}): {exc}"
                 ) from exc
-        return persisted
 
     def scene_word_count(self, scene_id: str) -> WordCount:
         return self._word_count((self.get_scene(scene_id),))
@@ -893,9 +941,13 @@ class Project:
             return self.manifest.ungrouped_scenes
         raise ProjectError(f"Scene is not in the project: {scene.id}")
 
+    @staticmethod
+    def _slug_for_title(title: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-") or "untitled"
+
     def _new_path(self, title: str, folder: str, *, excluding: str | None = None) -> str:
         _validate_title(title)
-        slug = re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-") or "untitled"
+        slug = self._slug_for_title(title)
         existing = {
             entry.path
             for entry in (*tuple(self.iter_scenes()), *self.manifest.notes)
@@ -912,7 +964,7 @@ class Project:
         self, title: str, reserved_paths: set[str], *, folder: str = "manuscript"
     ) -> str:
         _validate_title(title)
-        slug = re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-") or "untitled"
+        slug = self._slug_for_title(title)
         base = f"{folder}/{slug}.txt"
         candidate = base
         suffix = 2

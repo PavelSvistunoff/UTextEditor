@@ -1,10 +1,13 @@
 """Application entry point."""
 
+import logging
 import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
+
+logger = logging.getLogger("utexteditor.app")
 
 
 if __package__:
@@ -27,7 +30,7 @@ def main() -> int:
 
         configure_logging()
     except Exception:
-        pass
+        logger.exception("Failed to configure application logging; continuing with defaults.")
 
     app = QApplication(sys.argv)
     # Set application icon from bundled resources so the window and dock show it
@@ -38,8 +41,7 @@ def main() -> int:
     try:
         app.setWindowIcon(QIcon(str(icon_path)))
     except Exception:
-        # Never crash the app if icon loading fails
-        pass
+        logger.exception("Failed to load application icon %s; continuing without a custom window icon.", icon_path)
     window = MainWindow(
         recovery_store=RecoveryStore(),
         writing_goal_store=WritingGoalStore(
