@@ -139,8 +139,16 @@ class RevisionStore:
         left, right = self.read(before), self.read(after)
         old_ids, new_ids = set(left.scene_order), set(right.scene_order)
         common = old_ids & new_ids
-        old_common = [scene_id for scene_id in left.scene_order if scene_id in common]
-        new_common = [scene_id for scene_id in right.scene_order if scene_id in common]
+        old_positions = {
+            scene_id: index
+            for index, scene_id in enumerate(left.scene_order)
+            if scene_id in common
+        }
+        new_positions = {
+            scene_id: index
+            for index, scene_id in enumerate(right.scene_order)
+            if scene_id in common
+        }
         changes: list[SceneChange] = []
         for scene_id in left.scene_order:
             if scene_id not in new_ids:
@@ -152,7 +160,7 @@ class RevisionStore:
             if scene_id not in common:
                 continue
             old_title, new_title = left.scene_titles.get(scene_id), right.scene_titles.get(scene_id)
-            if old_common.index(scene_id) != new_common.index(scene_id):
+            if old_positions[scene_id] != new_positions[scene_id]:
                 changes.append(SceneChange(scene_id, "moved", old_title, new_title))
             if old_title != new_title:
                 changes.append(SceneChange(scene_id, "title-changed", old_title, new_title))

@@ -61,6 +61,7 @@ from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
+from .revision_history_dialog import RevisionHistoryDialog
 from .settings_dialog import SettingsDialog
 from .tab_widget import DocumentTabWidget
 from .workers import FunctionWorker
@@ -127,6 +128,7 @@ class MainWindow(QMainWindow):
         self._project_dock: QDockWidget | None = None
         self._project_documents: dict[object, _ProjectDocumentBinding] = {}
         self._project_generation = 0
+        self._revision_history_dialog: RevisionHistoryDialog | None = None
         self._project_refresh_generation = 0
         self._project_ai_generation = 0
         self._project_ai_worker: FunctionWorker | None = None
@@ -265,6 +267,7 @@ class MainWindow(QMainWindow):
             ("Compile Book as PDF…", self.compile_project_book, True),
             ("Export Manuscript…", self.export_project, True),
             ("Create Revision Snapshot…", self.create_revision_snapshot, True),
+            ("Review Revision Snapshots…", self.review_revision_snapshots, True),
         )
         for title, handler, requires_project in project_actions:
             action = QAction(title, self)
@@ -2503,6 +2506,11 @@ class MainWindow(QMainWindow):
         include_scene_headings,
         separator,
     ):
+        included_scene_ids = (
+            selected_scene_ids
+            if selected_scene_ids is not None
+            else {scene.id for scene in project.iter_scenes()}
+        )
         texts = {
             scene.id: (
                 scene_text[scene.id]
@@ -2510,6 +2518,7 @@ class MainWindow(QMainWindow):
                 else project.read_scene(scene.id)
             )
             for scene in project.iter_scenes()
+            if scene.id in included_scene_ids
         }
         return export_manuscript(
             target,
@@ -2867,6 +2876,69 @@ class MainWindow(QMainWindow):
         )
         self.statusBar().showMessage("Creating revision snapshot…")
         self.thread_pool.start(worker)
+
+    def review_revision_snapshots(self) -> None:
+        project = self.project
+        if project is None:
+            return
+        dialog = RevisionHistoryDialog(self)
+        self._revision_history_dialog = dialog
+        store = RevisionStore(project.root / ".utexteditor" / "revisions")
+        dialog.compare_requested.connect(
+            lambda before, after: self._compare_revision_snapshots(
+                dialog, project, store, before, after
+            )
+        )
+        dialog.show()
+
+        worker = FunctionWorker(store.list_snapshots)
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda result: self._revision_snapshots_loaded(dialog, project, result),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._revision_snapshots_failed(dialog, project, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _revision_snapshots_failed(self, dialog, project, error) -> None:
+        if project is self.project and dialog.isVisible():
+            dialog.show_error(f"Could not load revision snapshots: {error}")
+
+    def _revision_snapshots_loaded(self, dialog, project, result) -> None:
+        if project is not self.project or not dialog.isVisible():
+            return
+        snapshots, issues = result
+        dialog.set_snapshots(snapshots, issues)
+
+    def _compare_revision_snapshots(
+        self, dialog, project, store: RevisionStore, before, after
+    ) -> None:
+        if project is not self.project or not dialog.isVisible():
+            return
+        worker = FunctionWorker(store.compare, before, after)
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda comparison: self._revision_comparison_finished(
+                dialog, project, comparison
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._revision_comparison_failed(dialog, project, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _revision_comparison_failed(self, dialog, project, error) -> None:
+        if project is self.project and dialog.isVisible():
+            dialog.show_error(f"Could not compare snapshots: {error}")
+
+    def _revision_comparison_finished(self, dialog, project, comparison) -> None:
+        if project is self.project and dialog.isVisible():
+            dialog.show_comparison(comparison)
 
     @staticmethod
     def _create_project_snapshot(project, name, manifest, scene_order, scene_titles, open_text):

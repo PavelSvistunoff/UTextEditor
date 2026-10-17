@@ -11,7 +11,9 @@ from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
+from app.document.revisions import RevisionStore
 from app.project import Project
+from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
 from app.ui.settings_dialog import SettingsDialog
@@ -141,6 +143,85 @@ def test_project_open_failure_keeps_previous_project_and_documents(application, 
 
     assert window.project is project
     assert window.tabs.current_editor() is original_editor
+    window.close()
+
+
+def test_selected_scene_export_does_not_read_unselected_scene(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter One")
+    included = project.add_scene("Included", chapter_id=chapter.id, content="Export this.")
+    excluded = project.add_scene("Excluded", chapter_id=chapter.id, content="Unavailable.")
+    (project.root / project.get_scene(excluded.id).path).unlink()
+
+    output = MainWindow._export_project_snapshot(
+        project,
+        [ExportChapter("Chapter One", (
+            ExportScene(included.id, "Included"),
+            ExportScene(excluded.id, "Excluded"),
+        ))],
+        [],
+        {},
+        tmp_path / "selected.md",
+        "markdown",
+        False,
+        {included.id},
+        True,
+        True,
+        "\n\n",
+    )
+
+    assert output.read_text(encoding="utf-8") == (
+        "# Chapter One\n\n## Included\n\nExport this."
+    )
+
+
+def test_revision_history_dialog_loads_and_compares_snapshots(
+    application, tmp_path
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene_id = project.add_scene("Opening", content="First draft.").id
+    store = RevisionStore(project.root / ".utexteditor" / "revisions")
+    before = store.create(
+        "Before",
+        structure={},
+        scene_order=[scene_id],
+        scene_titles={scene_id: "Opening"},
+        documents={scene_id: "First draft.\n"},
+    )
+    store.create(
+        "After",
+        structure={},
+        scene_order=[scene_id],
+        scene_titles={scene_id: "Opening"},
+        documents={scene_id: "Second draft.\n"},
+    )
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+
+    window.review_revision_snapshots()
+    wait_until(
+        lambda: window._revision_history_dialog is not None
+        and window._revision_history_dialog.snapshots.count() == 2,
+        application,
+    )
+    dialog = window._revision_history_dialog
+    assert dialog is not None
+    dialog.snapshots.item(0).setSelected(True)
+    dialog.snapshots.item(1).setSelected(True)
+    dialog.compare_button.click()
+    wait_until(
+        lambda: "Second draft." in dialog.details.toPlainText(),
+        application,
+    )
+
+    assert "Text Changed: Opening" in dialog.details.toPlainText()
+    assert "-First draft." in dialog.details.toPlainText()
+    assert "+Second draft." in dialog.details.toPlainText()
+    dialog.snapshots.clearSelection()
+    dialog.show_error("Comparison failed.")
+    assert not dialog.compare_button.isEnabled()
+    dialog.close()
     window.close()
 
 

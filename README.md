@@ -31,7 +31,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Local recovery snapshots every 30 seconds while documents are dirty and at orderly shutdown. Startup offers restore, inspect/compare, locate a moved project, discard recovery data, or defer.
 - Explicit Markdown/plain-text manuscript export uses current editor buffers, selectable scene subsets, configurable headings and separators, UTF-8 encoding, and LF line endings. Replacing a destination requires confirmation.
 - Project > Compile Book as PDF creates an A5 book with a title page, contents, ordered chapters and scenes, and page numbers. It uses open scene buffers (including unsaved edits after confirmation), excludes reference notes, and never changes project files.
-- Named local revision snapshots capture current project structure and in-memory scene/note text without clearing dirty state.
+- Named local revision snapshots capture current project structure and in-memory scene/note text without clearing dirty state. Project > Review Revision Snapshots lists valid local snapshots, reports unreadable ones, and compares two snapshots for scene additions, removals, ordering, title, and text changes.
 - Opt-in local scene summaries and continuity checks send only explicitly selected scenes/notes after displaying their names and the configured Ollama destination; bounded requests run in workers, stale results are dropped, and output appears in a separate review panel without editing files.
 - Distraction-free mode from View or `Ctrl+Shift+F`; `Esc` exits after first dismissing any inline completion, and an accessible status-bar action is always available while the mode is active.
 - Standard editing through Qt, including undo, redo, clipboard actions, and select all. Edit > Text Formatting provides case conversion, line indent/outdent, and trailing-whitespace cleanup; transformations apply to selected text/lines or the whole document and are undoable. “Format Whole Document…” lets the author choose one operation to apply explicitly across the entire document.
@@ -57,7 +57,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
 - The UI is minimal and has no toolbar or recent-file list.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
-- Scheduled revision snapshots and revision-history browsing/deletion/restore controls are not yet available. Revision snapshots can be created locally; the domain layer supports text and structure comparison, but comparison and restore are not exposed in the UI. Novel-aware AI currently covers project-outline setup, scene summaries, and continuity review; proposed-edit previews and acceptance are not implemented.
+- Scheduled revision snapshots and revision-history deletion/restore controls are not yet available. Revision comparisons cover scene changes; broader project-structure and reference-note comparisons remain future work. Novel-aware AI currently covers project-outline setup, scene summaries, and continuity review; proposed-edit previews and acceptance are not implemented.
 
 ### Project format and local data
 
