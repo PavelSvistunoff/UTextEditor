@@ -12,6 +12,8 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from app.project import Project
 from app.ui.main_window import MainWindow
+from app.ui.project_view import ProjectView
+from app.ui.settings_dialog import SettingsDialog
 
 
 @pytest.fixture(scope="module")
@@ -71,6 +73,55 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
     assert result == [True]
     assert project.read_scene(scene.id) == "edited manuscript"
     assert not editor.document_state.dirty
+    window.close()
+
+
+def test_project_tree_context_actions_route_to_selected_scene(
+    application, tmp_path, monkeypatch
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="A beginning.")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    wait_until(
+        lambda: window.project_view is not None
+        and window.project_view.topLevelItemCount() > 0,
+        application,
+    )
+
+    item = window.project_view.topLevelItem(0).child(0).child(0)
+    window.project_view.setCurrentItem(item)
+    actions = dict(ProjectView.context_actions("scene"))
+    assert "move_to_chapter" in actions.values()
+    assert "summarize" in actions.values()
+    called = []
+    monkeypatch.setattr(
+        window,
+        "rename_project_item",
+        lambda: called.append(window._selected_project_item()),
+    )
+    window.project_view.context_action_requested.emit("rename", "scene", scene.id)
+
+    assert called == [("scene", scene.id)]
+    window.close()
+
+
+def test_settings_connection_test_runs_and_reports_result(application):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    dialog = SettingsDialog(window.settings, window)
+
+    window._test_settings_connection(
+        dialog, "http://localhost:11434", "gemma4:12b"
+    )
+    wait_until(
+        lambda: "Connected" in dialog.connection_status.text(),
+        application,
+    )
+
+    assert "gemma4:12b" in dialog.connection_status.text()
+    dialog.close()
     window.close()
 
 

@@ -1,7 +1,25 @@
 """Minimal AI settings dialog for the MVP."""
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFontComboBox, QFormLayout, QLabel, QLineEdit, QMessageBox, QPlainTextEdit, QSpinBox
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFontComboBox,
+    QFormLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 from urllib.parse import urlsplit
 
 from app.ai.prompts import completion_prompt
@@ -9,9 +27,12 @@ from app.settings.settings import AppSettings
 
 
 class SettingsDialog(QDialog):
+    connection_test_requested = Signal(str, str)
+
     def __init__(self, settings: AppSettings, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("AI Settings")
+        self.resize(640, 600)
         self.settings = settings
         # Connection
         self.host = QLineEdit(settings.ollama_host)
@@ -24,8 +45,6 @@ class SettingsDialog(QDialog):
         self.template.setPlaceholderText("Use {context} and {language} placeholders")
         self.template.setFixedHeight(140)
         # Completion settings
-        from PySide6.QtWidgets import QDoubleSpinBox
-
         self.completion_enabled = QCheckBox("Enable completion")
         self.completion_enabled.setChecked(settings.completion_enabled)
         self.debounce = QSpinBox()
@@ -74,32 +93,103 @@ class SettingsDialog(QDialog):
         self.autosave_idle.setSingleStep(250)
         self.autosave_idle.setValue(settings.autosave_idle_ms)
 
-        form = QFormLayout(self)
-        form.addRow("Ollama host", self.host)
-        form.addRow(QLabel("Text used for AI requests is sent to this configured Ollama host."))
-        form.addRow("Model", self.model)
-        form.addRow(self.completion_enabled)
-        form.addRow("Debounce (ms)", self.debounce)
-        form.addRow("Maximum suggestion length", self.max_length)
-        form.addRow("Temperature", self.temperature)
-        form.addRow("Context size (chars)", self.context_size)
-        form.addRow(self.spellcheck_enabled)
-        form.addRow(self.automatic_spellcheck)
-        form.addRow("Language", self.language)
-        form.addRow("Font", self.font_family)
-        form.addRow("Font size", self.font_size)
-        form.addRow("Tab width", self.tab_width)
-        form.addRow(self.word_wrap)
-        form.addRow(self.line_numbers)
-        form.addRow(self.autosave_enabled)
-        form.addRow("Autosave after idle (ms)", self.autosave_idle)
-        form.addRow("AI role", self.role)
-        form.addRow("Context template", self.template)
+        tabs = QTabWidget(self)
+        connection_tab = QWidget(tabs)
+        connection_form = QFormLayout(connection_tab)
+        connection_form.addRow("Ollama host", self.host)
+        connection_form.addRow(
+            QLabel("Text used for AI requests is sent to this configured Ollama host.")
+        )
+        connection_form.addRow("Model", self.model)
+        self.test_connection_button = QPushButton("Test connection", connection_tab)
+        self.test_connection_button.clicked.connect(self._request_connection_test)
+        self.connection_status = QLabel(connection_tab)
+        connection_form.addRow(self.test_connection_button, self.connection_status)
+        connection_form.addRow(self.autosave_enabled)
+        connection_form.addRow("Autosave after idle (ms)", self.autosave_idle)
+        tabs.addTab(connection_tab, "Connection")
 
+        writing_tab = QWidget(tabs)
+        writing_form = QFormLayout(writing_tab)
+        writing_form.addRow("Language", self.language)
+        writing_form.addRow("Font", self.font_family)
+        writing_form.addRow("Font size", self.font_size)
+        writing_form.addRow("Tab width", self.tab_width)
+        writing_form.addRow(self.word_wrap)
+        writing_form.addRow(self.line_numbers)
+        tabs.addTab(writing_tab, "Writing")
+
+        assistance_tab = QWidget(tabs)
+        assistance_form = QFormLayout(assistance_tab)
+        assistance_form.addRow(self.completion_enabled)
+        assistance_form.addRow("Completion delay (ms)", self.debounce)
+        assistance_form.addRow("Maximum suggestion length", self.max_length)
+        assistance_form.addRow("Temperature", self.temperature)
+        assistance_form.addRow("Context size (chars)", self.context_size)
+        assistance_form.addRow(self.spellcheck_enabled)
+        assistance_form.addRow(self.automatic_spellcheck)
+        tabs.addTab(assistance_tab, "AI assistance")
+
+        prompts_tab = QWidget(tabs)
+        prompts_form = QFormLayout(prompts_tab)
+        prompts_form.addRow(
+            QLabel("Advanced prompt instructions. Most users can leave these unchanged.")
+        )
+        prompts_form.addRow("AI role", self.role)
+        prompts_form.addRow("Context template", self.template)
+        tabs.addTab(prompts_tab, "Advanced prompts")
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(tabs)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        form.addRow(buttons)
+        self.reset_button = buttons.addButton(
+            "Reset to defaults", QDialogButtonBox.ButtonRole.ResetRole
+        )
+        self.reset_button.clicked.connect(self._reset_to_defaults)
+        layout.addWidget(buttons)
+
+    def _request_connection_test(self) -> None:
+        host = self.host.text().strip()
+        model = self.model.text().strip()
+        if not host or not model:
+            self.connection_status.setText("Enter both a host and model.")
+            return
+        self.connection_status.setText("Testing local model connection…")
+        self.connection_test_requested.emit(host, model)
+
+    def set_connection_test_result(self, available: bool, model: str) -> None:
+        if available:
+            self.connection_status.setText(f"Connected; model “{model}” is available.")
+        else:
+            self.connection_status.setText(
+                f"Could not connect or find “{model}”. Check Ollama is running and "
+                f"run `ollama pull {model}` if needed."
+            )
+
+    def _reset_to_defaults(self) -> None:
+        defaults = AppSettings()
+        self.host.setText(defaults.ollama_host)
+        self.model.setText(defaults.ollama_model)
+        self.role.setPlainText(defaults.ai_role)
+        self.template.setPlainText(defaults.completion_template)
+        self.completion_enabled.setChecked(defaults.completion_enabled)
+        self.debounce.setValue(defaults.completion_debounce_ms)
+        self.max_length.setValue(defaults.maximum_suggestion_length)
+        self.temperature.setValue(defaults.temperature)
+        self.context_size.setValue(defaults.context_size)
+        self.spellcheck_enabled.setChecked(defaults.spellcheck_enabled)
+        self.automatic_spellcheck.setChecked(defaults.automatic_spellcheck)
+        self.language.setCurrentText(defaults.language)
+        self.font_family.setCurrentFont(QFont(defaults.font_family))
+        self.font_size.setValue(defaults.font_size)
+        self.tab_width.setValue(defaults.tab_width)
+        self.word_wrap.setChecked(defaults.word_wrap)
+        self.line_numbers.setChecked(defaults.line_numbers)
+        self.autosave_enabled.setChecked(defaults.autosave_enabled)
+        self.autosave_idle.setValue(defaults.autosave_idle_ms)
+        self.connection_status.clear()
 
     def accept(self) -> None:
         template = self.template.toPlainText().strip()

@@ -22,7 +22,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - New, open, save, and Save As for UTF-8 text files; unsaved-change prompts on close.
 - File reads and writes run in background workers; saves replace files atomically where supported.
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.
-- Project creation/opening in a navigation dock, with stable-ID chapters, scenes, and separate reference notes stored as ordinary UTF-8 files.
+- Project creation/opening in a navigation dock, with stable-ID chapters, scenes, and separate reference notes stored as ordinary UTF-8 files. The project tree provides context-menu shortcuts for common create, open, rename, move, duplicate, link, analyze, and remove actions.
 - Project scene import, title rename, duplication/removal, ordering and chapter moves, note types and links, and live scene/chapter/project word counts.
 - Optional local AI project setup starts from an editable story-planning template. Suggest proposes clearly marked ideas for gaps; the author reviews and edits them before requesting an outline. The optional autonomous Auto-pilot can append a bounded new plan, draft its scenes, and create character reference notes after explicit confirmation; it never overwrites existing files and applies no batch if generation fails or is cancelled.
 - Whole-project Auto-writer can draft empty scenes or refine every scene using the project outline, reference notes, optional writing instructions, and configured local model settings. It confirms local context use, snapshots the complete project before generation, shows each completed draft immediately in a live progress window, and allows up to five minutes per local model request; it applies all generated scene updates together only after success, so existing files are never partially overwritten.
@@ -34,14 +34,14 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Opt-in local scene summaries and continuity checks send only explicitly selected scenes/notes after displaying their names and the configured Ollama destination; bounded requests run in workers, stale results are dropped, and output appears in a separate review panel without editing files.
 - Distraction-free mode from View or `Ctrl+Shift+F`; `Esc` exits after first dismissing any inline completion, and an accessible status-bar action is always available while the mode is active.
 - Standard editing through Qt, including undo, redo, clipboard actions, and select all.
-- Find, replace, and replace all.
+- Find, previous/next navigation with live match counts, replace-current, and undoable replace-all.
 - Status display for UTF-8, detected line-ending style (LF, CRLF, or CR), cursor line and column, and AI connection state.
 - Local Ollama connection using `http://localhost:11434` and `gemma4:12b` by default; host and model can be changed in AI Settings.
 - Inline completions shown as non-destructive ghost text. `Tab` accepts a suggestion and `Esc` dismisses it. Suggestions are discarded when the relevant text, cursor, selection, or active document changes.
 - Debounced completion requests with bounded context, background workers, and stale-result checks.
 - AI-assisted spelling and grammar suggestions with underlines, context-menu replace/ignore actions, response validation, and undo support for edits.
-- Prompt-based text generation inserted at the cursor or over the current selection.
-- Settings for completion behavior, language choice, spellchecking, prompt customization, and editor appearance (font, size, tab width, wrapping, and line numbers).
+- Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance.
+- Settings are grouped into Connection, Writing, AI assistance, and Advanced prompts tabs, with a reset-to-defaults option; the Connection tab can test the configured Ollama host/model and suggests how to install a missing model.
 - Editor background, text, and selection colors follow the system palette.
 - Application preferences are saved as YAML in the user's configuration directory (`settings.yaml`); existing `settings.json` preferences are loaded for compatibility.
 - An in-memory Ollama diagnostics window for the current session.

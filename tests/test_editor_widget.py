@@ -10,7 +10,7 @@ pytest.importorskip("PySide6")
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QAction, QIcon, QPalette, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QFileDialog
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog
 
 from app.document.document import Document
 from app.ai.models import Suggestion
@@ -19,6 +19,7 @@ from app.settings.settings import AppSettings
 from app.ui.ai_debug_window import AIDebugWindow
 from app.ui.editor_widget import EditorWidget
 from app.ui.main_window import MainWindow
+from app.ui.settings_dialog import SettingsDialog
 from app.ui.tab_widget import DocumentTabWidget
 from app.ui.workers import FunctionWorker
 
@@ -358,11 +359,94 @@ def test_generated_text_is_inserted_into_the_current_document(application: QAppl
     cursor.setPosition(5)
     editor.setTextCursor(cursor)
     window._generate_generation = 7
-    window._apply_generated_text(7, editor, " text")
+    with patch(
+        "app.ui.main_window.GeneratedTextDialog.exec",
+        return_value=QDialog.DialogCode.Accepted,
+    ):
+        window._apply_generated_text(7, editor, " text")
 
     assert editor.toPlainText() == "Start text"
     editor.document_state.dirty = False
     window.close()
+
+
+def test_generated_text_is_not_inserted_without_explicit_acceptance(
+    application: QApplication,
+) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("Start")
+    revision = editor.revision
+    cursor = editor.textCursor()
+    cursor.movePosition(QTextCursor.MoveOperation.End)
+    editor.setTextCursor(cursor)
+    window._generate_generation = 7
+    with patch(
+        "app.ui.main_window.GeneratedTextDialog.exec",
+        return_value=QDialog.DialogCode.Rejected,
+    ):
+        window._apply_generated_text(
+            7,
+            editor,
+            " generated",
+            revision,
+            cursor.position(),
+            (cursor.position(), cursor.position()),
+            window._settings_generation,
+        )
+
+    assert editor.toPlainText() == "Start"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_prompt_generation_can_be_cancelled_from_the_ai_menu(
+    application: QApplication,
+) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+
+    class PendingWorker:
+        cancelled = False
+
+        def cancel(self):
+            self.cancelled = True
+
+    worker = PendingWorker()
+    window._generate_worker = worker
+    window._generate_generation = 3
+    window.ai_status = "AI: Generating..."
+    window._generate_cancel_action.setEnabled(True)
+
+    window.cancel_text_generation()
+
+    assert worker.cancelled
+    assert window._generate_generation == 4
+    assert not window._generate_cancel_action.isEnabled()
+    assert window.ai_status == "AI: Offline"
+    window._generate_worker = None
+    window.close()
+
+
+def test_settings_dialog_groups_preferences_and_checks_connection(application: QApplication) -> None:
+    dialog = SettingsDialog(AppSettings())
+    requests = []
+    dialog.connection_test_requested.connect(
+        lambda host, model: requests.append((host, model))
+    )
+
+    dialog.test_connection_button.click()
+    dialog.set_connection_test_result(False, "example-model")
+
+    assert requests == [("http://localhost:11434", "gemma4:12b")]
+    assert "ollama pull example-model" in dialog.connection_status.text()
+    dialog.font_size.setValue(18)
+    dialog.reset_button.click()
+    assert dialog.font_size.value() == AppSettings().font_size
+    assert dialog.host.text() == AppSettings().ollama_host
+    dialog.close()
 
 
 def test_ai_settings_action_stays_in_the_ai_menu(application: QApplication) -> None:

@@ -48,6 +48,7 @@ from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
 from app.settings.settings import AppSettings
 from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow
+from .generated_text_dialog import GeneratedTextDialog
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
@@ -162,7 +163,10 @@ class MainWindow(QMainWindow):
         self.spellcheck_service = SpellcheckService(self.provider)
         self._completion_generation = 0
         self._generate_generation = 0
+        self._generate_cancel_action: QAction | None = None
         self._settings_generation = 0
+        self._settings_connection_generation = 0
+        self._settings_connection_worker: FunctionWorker | None = None
         self._active_document_generation = 0
         self._find_bar = None
         self._connected = False
@@ -308,6 +312,7 @@ class MainWindow(QMainWindow):
             (ai_menu, "Cancel Project Analysis", self.cancel_project_analysis, QKeySequence()),
             (ai_menu, "Cancel Project Setup", self.cancel_project_setup, QKeySequence()),
             (ai_menu, "Cancel Auto-writer", self.cancel_auto_writer, QKeySequence()),
+            (ai_menu, "Cancel Text Generation", self.cancel_text_generation, QKeySequence()),
         ]
         for menu, title, handler, shortcut in actions:
             action = QAction(title, self)
@@ -316,9 +321,9 @@ class MainWindow(QMainWindow):
                 # application menu, hiding them from the AI menu.
                 action.setMenuRole(QAction.MenuRole.NoRole)
             action.setShortcut(shortcut)
-            if title in {"Summarize Selected Scene", "Check Continuity Against Selected Notes", "Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer"}:
+            if title in {"Summarize Selected Scene", "Check Continuity Against Selected Notes", "Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer", "Cancel Text Generation"}:
                 action.setMenuRole(QAction.MenuRole.NoRole)
-            if title in {"Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer"}:
+            if title in {"Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer", "Cancel Text Generation"}:
                 action.setEnabled(False)
             action.triggered.connect(handler)
             menu.addAction(action)
@@ -326,6 +331,8 @@ class MainWindow(QMainWindow):
                 self._project_setup_cancel_action = action
             elif title == "Cancel Auto-writer":
                 self._auto_writer_cancel_action = action
+            elif title == "Cancel Text Generation":
+                self._generate_cancel_action = action
 
         recovery_action = QAction("Inspect Recovery…", self)
         recovery_action.setEnabled(self.recovery_store is not None)
@@ -391,6 +398,8 @@ class MainWindow(QMainWindow):
         self._spellcheck_generation += 1
         if self._completion_worker:
             self._completion_worker.cancel()
+        if self._find_bar is not None:
+            self._find_bar.refresh()
         for worker in (self._spellcheck_worker, self._generate_worker):
             if worker is not None:
                 worker.cancel()
@@ -422,6 +431,9 @@ class MainWindow(QMainWindow):
         self._attach_writing_goal_document(editor)
         editor.escape_pressed.connect(self._handle_editor_escape)
         editor.content_changed.connect(self.schedule_completion)
+        editor.content_changed.connect(
+            lambda: self._find_bar.refresh() if self._find_bar is not None else None
+        )
         editor.content_changed.connect(lambda editor=editor: self._schedule_project_refresh(editor))
         editor.content_changed.connect(lambda editor=editor: self._record_writing_goal_text(editor))
         timer = QTimer(editor)
@@ -1519,6 +1531,9 @@ class MainWindow(QMainWindow):
         if self.project_view is None:
             self.project_view = ProjectView(self)
             self.project_view.open_requested.connect(self._open_project_document)
+            self.project_view.context_action_requested.connect(
+                self._handle_project_context_action
+            )
             self._project_dock = QDockWidget("Project", self)
             self._project_dock.setObjectName("ProjectNavigation")
             self._project_dock.setWidget(self.project_view)
@@ -1559,6 +1574,37 @@ class MainWindow(QMainWindow):
                     or self.settings.ai_enabled
                 )
             )
+
+    def _handle_project_context_action(
+        self, action: str, _kind: str, _item_id: str
+    ) -> None:
+        handlers = {
+            "new_chapter": self.add_project_chapter,
+            "new_scene": self.add_project_scene,
+            "new_note": self.add_project_note,
+            "import_scene": self.import_project_scene,
+            "open": lambda: self._open_project_document(
+                *self._selected_project_item()
+            ),
+            "rename": self.rename_project_item,
+            "duplicate": self.duplicate_project_item,
+            "move_up": lambda: self.move_project_scene(-1)
+            if self._selected_project_item()[0] == "scene"
+            else self.move_project_chapter(-1),
+            "move_down": lambda: self.move_project_scene(1)
+            if self._selected_project_item()[0] == "scene"
+            else self.move_project_chapter(1),
+            "move_to_chapter": self.move_project_scene_to_chapter,
+            "link_note": self.link_project_note,
+            "unlink_note": self.unlink_project_note,
+            "open_linked": self.open_linked_project_item,
+            "remove": self.remove_project_item,
+            "summarize": self.summarize_project_scene,
+            "continuity": self.check_project_continuity,
+        }
+        handler = handlers.get(action)
+        if handler is not None:
+            handler()
 
     def _refresh_project_view(self) -> None:
         project = self.project
@@ -2929,6 +2975,7 @@ class MainWindow(QMainWindow):
             self._find_bar = FindReplaceWidget(lambda: self.tabs.current_editor(), self)
             self.statusBar().addPermanentWidget(self._find_bar)
         self._find_bar.show()
+        self._find_bar.refresh()
         self._find_bar.find_edit.setFocus()
 
     def accept_completion(self) -> None:
@@ -2971,7 +3018,12 @@ class MainWindow(QMainWindow):
         )
         self._track_worker(worker)
         self._generate_worker = worker
-        worker.signals.done.connect(lambda worker=worker: self._clear_worker_reference("_generate_worker", worker), Qt.ConnectionType.QueuedConnection)
+        if self._generate_cancel_action is not None:
+            self._generate_cancel_action.setEnabled(True)
+        worker.signals.done.connect(
+            lambda worker=worker: self._generation_worker_done(worker),
+            Qt.ConnectionType.QueuedConnection,
+        )
         worker.signals.finished.connect(
             lambda result: self._apply_generated_text(generation, editor, result, revision, position, selection, settings_generation),
             Qt.ConnectionType.QueuedConnection,
@@ -2981,6 +3033,31 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
+
+    def _generation_worker_done(self, worker: FunctionWorker) -> None:
+        self._clear_worker_reference("_generate_worker", worker)
+        if self._generate_cancel_action is not None:
+            self._generate_cancel_action.setEnabled(False)
+
+    def cancel_text_generation(self) -> None:
+        worker = self._generate_worker
+        if worker is None:
+            return
+        self._generate_generation += 1
+        worker.cancel()
+        if self.ai_status == "AI: Generating...":
+            self.ai_status = (
+                "AI: Disabled"
+                if not self.settings.ai_enabled
+                else ("AI: Connected" if self._connected else "AI: Offline")
+            )
+            self._update_status()
+        if self._generate_cancel_action is not None:
+            self._generate_cancel_action.setEnabled(False)
+        self.statusBar().showMessage(
+            "Text generation cancelled; any in-flight local request will be ignored.",
+            6000,
+        )
 
     def summarize_project_scene(self) -> None:
         self._start_project_analysis("summary")
@@ -3253,7 +3330,35 @@ class MainWindow(QMainWindow):
             self.ai_status = "AI: Connected"
             self._update_status()
             return
-        result = text
+        self.ai_status = "AI: Connected"
+        self._update_status()
+        review = GeneratedTextDialog(text, self)
+        if review.exec() != QDialog.DialogCode.Accepted:
+            self.statusBar().showMessage("Generated text discarded; the document was not changed.", 6000)
+            return
+        cursor = editor.textCursor()
+        current_selection = (
+            (cursor.selectionStart(), cursor.selectionEnd())
+            if cursor.hasSelection()
+            else (cursor.position(), cursor.position())
+        )
+        if (
+            generation != self._generate_generation
+            or editor is not self.tabs.current_editor()
+            or (revision is not None and (
+                editor.revision != revision
+                or cursor.position() != position
+                or current_selection != selection
+            ))
+            or (
+                settings_generation is not None
+                and settings_generation != self._settings_generation
+            )
+        ):
+            self.statusBar().showMessage(
+                "Generated text was discarded because the document changed.", 8000
+            )
+            return
         if revision is not None:
             cursor.setPosition(selection[0])
             if selection[0] != selection[1]:
@@ -3261,7 +3366,7 @@ class MainWindow(QMainWindow):
         cursor.beginEditBlock()
         if cursor.hasSelection():
             cursor.removeSelectedText()
-        cursor.insertText(result)
+        cursor.insertText(text)
         cursor.endEditBlock()
         self._connected = True
         self.ai_status = "AI: Connected"
@@ -3276,7 +3381,11 @@ class MainWindow(QMainWindow):
         self.status.showMessage(f"AI generation failed: {error}")
 
     def show_settings(self) -> None:
-        if SettingsDialog(self.settings, self).exec():
+        dialog = SettingsDialog(self.settings, self)
+        dialog.connection_test_requested.connect(
+            lambda host, model: self._test_settings_connection(dialog, host, model)
+        )
+        if dialog.exec():
             self._settings_generation += 1
             self._completion_generation += 1
             self._completion_timer.stop()
@@ -3293,6 +3402,54 @@ class MainWindow(QMainWindow):
             self.ai_status = "AI: Connecting..." if self.settings.ai_enabled else "AI: Disabled"
             self._update_status()
             self._check_connection()
+
+    def _test_settings_connection(self, dialog, host: str, model: str) -> None:
+        if self._settings_connection_worker is not None:
+            self._settings_connection_worker.cancel()
+        self._settings_connection_generation += 1
+        generation = self._settings_connection_generation
+        dialog.finished.connect(
+            lambda _result, generation=generation: self._invalidate_settings_test(generation)
+        )
+        client = OllamaClient(
+            host, model, interaction_observer=self._emit_ai_interaction
+        )
+        worker = FunctionWorker(client.check_connection)
+        self._settings_connection_worker = worker
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda available: self._finish_settings_connection_test(
+                dialog, generation, model, bool(available)
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._finish_settings_connection_test(
+                dialog, generation, model, False, str(error)
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.done.connect(
+            lambda worker=worker: self._clear_worker_reference(
+                "_settings_connection_worker", worker
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _finish_settings_connection_test(
+        self, dialog, generation: int, model: str, available: bool, error: str = ""
+    ) -> None:
+        if generation != self._settings_connection_generation:
+            return
+        if error:
+            dialog.connection_status.setText(f"Connection test failed: {error}")
+        else:
+            dialog.set_connection_test_result(available, model)
+
+    def _invalidate_settings_test(self, generation: int) -> None:
+        if generation == self._settings_connection_generation:
+            self._settings_connection_generation += 1
 
     def _cancel_active_ai_workers(self) -> None:
         for worker in (

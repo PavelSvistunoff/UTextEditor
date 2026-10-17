@@ -1,13 +1,14 @@
 """Accessible project navigation tree with manuscript word-count summaries."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QAbstractItemView, QTreeWidget, QTreeWidgetItem
+from PySide6.QtWidgets import QAbstractItemView, QMenu, QTreeWidget, QTreeWidgetItem
 
 from app.project import Project, WordCount
 
 
 class ProjectView(QTreeWidget):
     open_requested = Signal(str, str)
+    context_action_requested = Signal(str, str, str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -16,6 +17,7 @@ class ProjectView(QTreeWidget):
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setExpandsOnDoubleClick(True)
         self.itemActivated.connect(self._activate_item)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
 
     def show_project(
         self,
@@ -91,3 +93,77 @@ class ProjectView(QTreeWidget):
         identifier = item.data(0, Qt.ItemDataRole.UserRole + 1)
         if kind in {"scene", "note"} and isinstance(identifier, str):
             self.open_requested.emit(kind, identifier)
+
+    def contextMenuEvent(self, event) -> None:
+        item = self.itemAt(event.pos())
+        if item is not None and not item.isSelected():
+            self.clearSelection()
+            self.setCurrentItem(item)
+
+        kind = item.data(0, Qt.ItemDataRole.UserRole) if item is not None else None
+        identifier = (
+            item.data(0, Qt.ItemDataRole.UserRole + 1)
+            if item is not None
+            else ""
+        )
+        menu = QMenu(self)
+        actions = self.context_actions(str(kind or ""))
+        for index, (label, action_id) in enumerate(actions):
+            if index == 3:
+                menu.addSeparator()
+            self._add_context_action(menu, label, action_id)
+        selected = menu.exec(event.globalPos())
+        if selected is not None:
+            self.context_action_requested.emit(
+                str(selected.data()), str(kind or ""), str(identifier or "")
+            )
+
+    @staticmethod
+    def context_actions(kind: str) -> tuple[tuple[str, str], ...]:
+        actions = [
+            ("New Chapter", "new_chapter"),
+            ("New Scene", "new_scene"),
+            ("New Reference Note", "new_note"),
+        ]
+        if kind in {"scene", "note"}:
+            actions.extend(
+                (("Open", "open"), ("Rename", "rename"), ("Duplicate", "duplicate"))
+            )
+            if kind == "scene":
+                actions.extend(
+                    (
+                        ("Move Up", "move_up"),
+                        ("Move Down", "move_down"),
+                        ("Move to Chapter…", "move_to_chapter"),
+                        ("Summarize Scene…", "summarize"),
+                    )
+                )
+            else:
+                actions.extend(
+                    (
+                        ("Link Note…", "link_note"),
+                        ("Unlink Note…", "unlink_note"),
+                        ("Open Linked Item…", "open_linked"),
+                        (
+                            "Check Continuity with Selected Scene…",
+                            "continuity",
+                        ),
+                    )
+                )
+            actions.append(("Remove", "remove"))
+        elif kind == "chapter":
+            actions.extend(
+                (
+                    ("Rename", "rename"),
+                    ("Move Up", "move_up"),
+                    ("Move Down", "move_down"),
+                    ("Remove", "remove"),
+                )
+            )
+        actions.append(("Import Scene…", "import_scene"))
+        return tuple(actions)
+
+    @staticmethod
+    def _add_context_action(menu: QMenu, label: str, action_id: str) -> None:
+        action = menu.addAction(label)
+        action.setData(action_id)
