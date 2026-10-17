@@ -105,7 +105,7 @@ File dialogs should not imply that binary formats are supported. Reject embedded
 
 ## 9. Settings and persistence
 
-Use safe defaults when settings are missing or malformed. Store user settings in the platform's standard per-user application configuration directory. Persist only preferences and provider configuration, never document contents or AI conversation history.
+Use safe defaults when settings are missing or malformed. Store user settings as YAML in `settings.yaml` in the platform's standard per-user application configuration directory. Load legacy `settings.json` preferences when no YAML file exists. Persist only preferences and provider configuration, never document contents or AI conversation history.
 
 AI settings include enabled state, provider (Ollama for MVP), host, model, completion enabled, debounce interval, context character limit, maximum suggestion length, temperature, spellcheck enabled, automatic-check enabled, language, and editable completion role/template where exposed. Validate values at the UI boundary and when loading older or malformed settings. Invalid optional settings fall back to defaults and should be recoverable without a crash.
 

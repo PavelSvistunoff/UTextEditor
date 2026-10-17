@@ -8,8 +8,8 @@ def test_default_ai_role_predicts_the_next_user_text() -> None:
 
 
 def test_settings_load_recovers_from_malformed_and_out_of_range_values(tmp_path) -> None:
-    path = tmp_path / "settings.json"
-    path.write_text('{"ollama_host": "not a url", "completion_debounce_ms": -1, "temperature": NaN, "language": [], "future": true}')
+    path = tmp_path / "settings.yaml"
+    path.write_text('ollama_host: "not a url"\ncompletion_debounce_ms: -1\ntemperature: .nan\nlanguage: []\nfuture: true\n')
 
     settings = AppSettings.load(path)
 
@@ -39,7 +39,7 @@ def test_settings_validation_clamps_and_rejects_invalid_editor_preferences() -> 
 
 
 def test_settings_save_and_load_round_trip(tmp_path) -> None:
-    path = tmp_path / "nested" / "settings.json"
+    path = tmp_path / "nested" / "settings.yaml"
     settings = AppSettings(language="Ukrainian", context_size=8192, font_family="Liberation Mono", font_size=14, tab_width=2, word_wrap=True, line_numbers=True)
 
     settings.save(path)
@@ -55,9 +55,41 @@ def test_settings_save_and_load_round_trip(tmp_path) -> None:
 
 
 def test_settings_ignore_legacy_theme_override(tmp_path) -> None:
-    path = tmp_path / "settings.json"
-    path.write_text('{"theme": "Dark"}', encoding="utf-8")
+    path = tmp_path / "settings.yaml"
+    path.write_text("theme: Dark\n", encoding="utf-8")
 
     settings = AppSettings.load(path)
 
     assert settings == AppSettings()
+
+
+def test_default_settings_path_uses_yaml_file() -> None:
+    assert AppSettings._default_settings_path().name == "settings.yaml"
+
+
+def test_default_settings_save_and_load_use_yaml(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "settings.yaml"
+    monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: path))
+    settings = AppSettings(language="Ukrainian")
+
+    settings.save()
+
+    assert path.read_text(encoding="utf-8").startswith("ollama_host:")
+    assert AppSettings.load() == settings
+
+
+def test_settings_load_migrates_from_legacy_json_path(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "settings.yaml"
+    path.with_name("settings.json").write_text('{"language": "Ukrainian"}', encoding="utf-8")
+    monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: path))
+
+    settings = AppSettings.load()
+
+    assert settings.language == "Ukrainian"
+
+
+def test_settings_load_recovers_from_malformed_yaml(tmp_path) -> None:
+    path = tmp_path / "settings.yaml"
+    path.write_text("ollama_host: [unclosed\n", encoding="utf-8")
+
+    assert AppSettings.load(path) == AppSettings()

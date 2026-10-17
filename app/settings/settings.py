@@ -1,12 +1,13 @@
 """Persistent application settings with safe MVP defaults."""
 
 from dataclasses import dataclass, asdict
-import json
 import platform
 import os
 import math
 from pathlib import Path
 from urllib.parse import urlsplit
+
+import yaml
 
 from app.ai.prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
 from app.ai.prompts import completion_prompt
@@ -43,13 +44,13 @@ class AppSettings:
             base = home / "Library" / "Application Support" / "UTextEditor"
         else:
             base = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")) / "utexteditor"
-        return base / "settings.json"
+        return base / "settings.yaml"
 
     def save(self, path: Path | str | None = None) -> None:
         self.validated()
         target = Path(path) if path is not None else self._default_settings_path()
         target.parent.mkdir(parents=True, exist_ok=True)
-        serialized = json.dumps(asdict(self), ensure_ascii=False, indent=2)
+        serialized = yaml.safe_dump(asdict(self), allow_unicode=True, sort_keys=False)
         temporary = target.with_name(f".{target.name}.tmp")
         try:
             temporary.write_text(serialized, encoding="utf-8")
@@ -65,16 +66,21 @@ class AppSettings:
     def load(cls, path: Path | str | None = None) -> "AppSettings":
         target = Path(path) if path is not None else cls._default_settings_path()
         if not target.exists():
-            return cls()
+            if path is not None:
+                return cls()
+            legacy_target = target.with_name("settings.json")
+            if not legacy_target.exists():
+                return cls()
+            target = legacy_target
         try:
             with target.open("r", encoding="utf-8") as fh:
-                data = json.load(fh)
+                data = yaml.safe_load(fh)
             if not isinstance(data, dict):
                 return cls()
             known = {field for field in cls.__dataclass_fields__}
             settings = cls(**{key: value for key, value in data.items() if key in known})
             return settings.validated()
-        except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        except (OSError, UnicodeError, yaml.YAMLError, TypeError, ValueError):
             return cls()
 
     def validated(self) -> "AppSettings":

@@ -31,6 +31,7 @@ The current implementation is an early, usable MVP. Implemented features include
 - Prompt-based text generation inserted at the cursor or over the current selection.
 - Settings for completion behavior, language choice, spellchecking, prompt customization, and editor appearance (font, size, tab width, wrapping, and line numbers).
 - Editor background, text, and selection colors follow the system palette.
+- Application preferences are saved as YAML in the user's configuration directory (`settings.yaml`); existing `settings.json` preferences are loaded for compatibility.
 - An in-memory Ollama diagnostics window for the current session.
 - Unit tests using fake providers and mocks; tests do not require a running Ollama server.
 
