@@ -24,6 +24,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.
 - Project creation/opening in a navigation dock, with stable-ID chapters, scenes, and separate reference notes stored as ordinary UTF-8 files.
 - Project scene import, title rename, duplication/removal, ordering and chapter moves, note types and links, and live scene/chapter/project word counts.
+- Optional local AI project setup starts from an editable story-planning template. After confirmation, Suggest can use the local model to propose clearly marked ideas for gaps; the author reviews and edits them before requesting an outline. The outline is also reviewed before empty chapter/scene files are added.
 - Project scene and note saves compare against the last-read disk contents. Autosave is configurable (two-second idle interval by default); failures leave documents dirty and report non-blocking feedback.
 - Optional daily writing goals support active-document words, project manuscript words, or newly inserted words. New-word progress is local-date based and undo/redo aware; pausing/resetting tracking never changes manuscript text.
 - Local recovery snapshots every 30 seconds while documents are dirty and at orderly shutdown. Startup offers restore, inspect/compare, locate a moved project, discard recovery data, or defer.
@@ -54,7 +55,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
 - The UI is minimal and has no toolbar or recent-file list.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
-- Scheduled revision snapshots and revision-history browsing/deletion/restore controls are not yet available. Revision snapshots can be created locally; the domain layer supports text and structure comparison, but comparison and restore are not exposed in the UI. Novel-aware AI currently covers scene summaries and continuity review; proposed-edit previews and acceptance are not implemented.
+- Scheduled revision snapshots and revision-history browsing/deletion/restore controls are not yet available. Revision snapshots can be created locally; the domain layer supports text and structure comparison, but comparison and restore are not exposed in the UI. Novel-aware AI currently covers project-outline setup, scene summaries, and continuity review; proposed-edit previews and acceptance are not implemented.
 
 ### Project format and local data
 

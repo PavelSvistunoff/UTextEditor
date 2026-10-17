@@ -165,6 +165,70 @@ class Project:
         self._update(change)
         return chapter
 
+    def add_outline(
+        self, outline: tuple[tuple[str, tuple[str, ...]], ...]
+    ) -> tuple[Chapter, ...]:
+        """Atomically add an author-approved chapter/scene outline."""
+        if not outline:
+            raise ProjectError("An outline must contain at least one chapter.")
+
+        new_chapters: list[Chapter] = []
+        reserved_paths = {
+            entry.path for entry in (*tuple(self.iter_scenes()), *self.manifest.notes)
+        }
+        created_paths: list[Path] = []
+        for chapter_title, scene_titles in outline:
+            _validate_title(chapter_title)
+            chapter = Chapter(id=str(uuid4()), title=chapter_title)
+            for scene_title in scene_titles:
+                _validate_title(scene_title)
+                relative_path = self._unique_new_path(scene_title, reserved_paths)
+                reserved_paths.add(relative_path)
+                chapter.scenes.append(
+                    Scene(id=str(uuid4()), title=scene_title, path=relative_path)
+                )
+            new_chapters.append(chapter)
+
+        original_manifest = self.manifest
+        candidate = deepcopy(original_manifest)
+        candidate.chapters.extend(new_chapters)
+        candidate.validate()
+
+        try:
+            for chapter in new_chapters:
+                for scene in chapter.scenes:
+                    target = validate_project_path(self.root, scene.path)
+                    try:
+                        with target.open("x", encoding="utf-8", newline="") as stream:
+                            created_paths.append(target)
+                            stream.flush()
+                            os.fsync(stream.fileno())
+                    except FileExistsError as exc:
+                        raise ProjectError(
+                            f"Refusing to overwrite existing file: {scene.path}"
+                        ) from exc
+                    except OSError as exc:
+                        raise ProjectError(
+                            f"Cannot create project text file {scene.path!r}: {exc}"
+                        ) from exc
+            self.manifest = candidate
+            self._write_manifest()
+        except Exception as exc:
+            self.manifest = original_manifest
+            cleanup_failures: list[str] = []
+            for path in reversed(created_paths):
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError:
+                    cleanup_failures.append(str(path.relative_to(self.root)))
+            if cleanup_failures:
+                raise ProjectError(
+                    f"Could not finish adding the outline ({exc}); these empty files "
+                    f"remain unreferenced: {', '.join(cleanup_failures)}"
+                ) from exc
+            raise
+        return tuple(new_chapters)
+
     def rename_chapter(self, chapter_id: str, title: str) -> None:
         chapter = self._chapter(chapter_id)
         self._update(lambda: setattr(chapter, "title", title))
@@ -663,6 +727,17 @@ class Project:
         suffix = 2
         while candidate in existing or validate_project_path(self.root, candidate).exists():
             candidate = f"{folder}/{slug}-{suffix}.txt"
+            suffix += 1
+        return candidate
+
+    def _unique_new_path(self, title: str, reserved_paths: set[str]) -> str:
+        _validate_title(title)
+        slug = re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-") or "untitled"
+        base = f"manuscript/{slug}.txt"
+        candidate = base
+        suffix = 2
+        while candidate in reserved_paths or validate_project_path(self.root, candidate).exists():
+            candidate = f"manuscript/{slug}-{suffix}.txt"
             suffix += 1
         return candidate
 

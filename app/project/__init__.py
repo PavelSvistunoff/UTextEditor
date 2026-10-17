@@ -12,6 +12,7 @@ from .model import (
     ProjectPathError,
 )
 from .paths import validate_project_path
+from .outline import parse_outline
 from .service import Project, WordCount, count_words
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "Scene",
     "WordCount",
     "count_words",
+    "parse_outline",
     "validate_project_path",
 ]
