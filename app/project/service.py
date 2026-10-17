@@ -744,13 +744,30 @@ class Project:
     ) -> dict[str, Path]:
         """Write replacement payloads to temporary files beside the target files."""
         temporary_files: dict[str, Path] = {}
-        for scene_id, target in targets.items():
-            temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
-            temporary_files[scene_id] = temporary
-            with temporary.open("xb") as stream:
-                stream.write(persisted[scene_id].encode("utf-8"))
-                stream.flush()
-                os.fsync(stream.fileno())
+        try:
+            for scene_id, target in targets.items():
+                temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+                temporary_files[scene_id] = temporary
+                with temporary.open("xb") as stream:
+                    stream.write(persisted[scene_id].encode("utf-8"))
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.chmod(temporary, target.stat().st_mode)
+        except Exception as exc:
+            cleanup_failures: list[str] = []
+            for temporary in temporary_files.values():
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    cleanup_failures.append(temporary.name)
+            if cleanup_failures:
+                raise ProjectError(
+                    f"Could not stage Auto-writer replacements ({exc}); temporary files "
+                    f"remain: {', '.join(cleanup_failures)}"
+                ) from exc
+            if isinstance(exc, OSError):
+                raise ProjectError(f"Cannot stage Auto-writer replacements: {exc}") from exc
+            raise
         return temporary_files
 
     def _apply_staged_scene_replacements(
@@ -856,6 +873,7 @@ class Project:
             raise ProjectPathError("Saving through a symbolic link is not supported")
         try:
             current = target.read_bytes().decode("utf-8")
+            original_mode = target.stat().st_mode
         except (OSError, UnicodeError) as exc:
             raise ProjectError(f"Cannot verify the current file before saving: {exc}") from exc
         if "\x00" in current:
@@ -870,6 +888,7 @@ class Project:
                 stream.write(content)
                 stream.flush()
                 os.fsync(stream.fileno())
+            os.chmod(temporary, original_mode)
             os.replace(temporary, target)
             try:
                 directory_fd = os.open(target.parent, os.O_RDONLY)

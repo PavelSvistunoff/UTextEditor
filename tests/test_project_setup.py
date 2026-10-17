@@ -454,6 +454,7 @@ def test_auto_writer_transaction_replaces_all_targets_preserving_line_endings(tm
     first_path = project.root / first.path
     second_path = project.root / second.path
     first_path.write_bytes(b"Before one.\r\n")
+    first_path.chmod(0o640)
 
     persisted = project.replace_scenes_transactionally(
         {first.id: "After one.\nLine two.", second.id: "After two."},
@@ -465,6 +466,7 @@ def test_auto_writer_transaction_replaces_all_targets_preserving_line_endings(tm
 
     assert persisted[first.id] == "After one.\r\nLine two."
     assert first_path.read_bytes() == b"After one.\r\nLine two."
+    assert first_path.stat().st_mode & 0o777 == 0o640
     assert second_path.read_text(encoding="utf-8") == "After two."
 
 
@@ -506,6 +508,35 @@ def test_auto_writer_transaction_rolls_back_all_targets_on_replace_failure(
     assert first_path.read_text(encoding="utf-8") == "Original one."
     assert second_path.read_text(encoding="utf-8") == "Original two."
     assert not list(project.root.rglob("*.bak"))
+    assert not list(project.root.rglob("*.tmp"))
+
+
+def test_auto_writer_stage_failure_cleans_temporary_files(tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    first = project.add_scene("First", content="Original one.")
+    second = project.add_scene("Second", content="Original two.")
+    original_fsync = os.fsync
+    calls = 0
+
+    def fail_second_fsync(descriptor):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("simulated staging failure")
+        return original_fsync(descriptor)
+
+    monkeypatch.setattr("app.project.service.os.fsync", fail_second_fsync)
+    with pytest.raises(ProjectError, match="Cannot stage Auto-writer"):
+        project.replace_scenes_transactionally(
+            {first.id: "Generated one.", second.id: "Generated two."},
+            expected_contents={
+                first.id: "Original one.",
+                second.id: "Original two.",
+            },
+        )
+
+    assert project.read_scene(first.id) == "Original one."
+    assert project.read_scene(second.id) == "Original two."
     assert not list(project.root.rglob("*.tmp"))
 
 

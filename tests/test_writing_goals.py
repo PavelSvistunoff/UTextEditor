@@ -15,6 +15,13 @@ def test_new_words_count_tokens_added_by_typing_and_paste_once() -> None:
     assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 3
 
 
+def test_new_words_count_handles_repeated_text_without_quadratic_diff() -> None:
+    before = "a" * 10_000
+
+    assert WritingGoalTracker._new_tokens_added(before, before + " new") == 1
+    assert WritingGoalTracker._new_tokens_added("word", "wordx") == 0
+
+
 def test_undo_and_redo_restore_daily_insertion_contribution() -> None:
     tracker = WritingGoalTracker(10, "new_words")
     tracker.attach("doc", "existing text")

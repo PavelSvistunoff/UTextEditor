@@ -10,9 +10,10 @@ pytest.importorskip("PySide6")
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QAction, QIcon, QPalette, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QDialog, QFileDialog
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog
 
 from app.document.document import Document
+from app.document.text_formatting import indent_lines, outdent_lines
 from app.ai.models import Suggestion
 from app.ai.ollama_client import OllamaClient
 from app.settings.settings import AppSettings
@@ -447,6 +448,98 @@ def test_settings_dialog_groups_preferences_and_checks_connection(application: Q
     assert dialog.font_size.value() == AppSettings().font_size
     assert dialog.host.text() == AppSettings().ollama_host
     dialog.close()
+
+
+def test_text_formatting_actions_transform_selected_text_undoably(
+    application: QApplication,
+) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("keep this\nmake this upper")
+    cursor = editor.textCursor()
+    cursor.setPosition(10)
+    cursor.setPosition(len(editor.toPlainText()), QTextCursor.MoveMode.KeepAnchor)
+    editor.setTextCursor(cursor)
+
+    window._format_text("upper")
+
+    assert editor.toPlainText() == "keep this\nMAKE THIS UPPER"
+    assert editor.textCursor().selectedText() == "MAKE THIS UPPER"
+    editor.undo()
+    assert editor.toPlainText() == "keep this\nmake this upper"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_edit_menu_contains_plain_text_formatting_tools(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    edit_menu = next(
+        action.menu()
+        for action in window.menuBar().actions()
+        if action.text() == "Edit"
+    )
+    formatting_menu = next(
+        action.menu() for action in edit_menu.actions() if action.text() == "Text Formatting"
+    )
+
+    assert {
+        action.text() for action in formatting_menu.actions()
+    } == {
+        "Format Whole Document…",
+        "Uppercase",
+        "lowercase",
+        "Title Case",
+        "Indent Lines",
+        "Outdent Lines",
+        "Trim Trailing Whitespace",
+    }
+    window.close()
+
+
+def test_format_whole_document_uses_chosen_operation_and_is_undoable(
+    application: QApplication, monkeypatch
+) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("first  \nsecond \n")
+    monkeypatch.setattr(
+        QInputDialog,
+        "getItem",
+        lambda *_args, **_kwargs: ("Trim Trailing Whitespace", True),
+    )
+
+    window._format_whole_document()
+
+    assert editor.toPlainText() == "first\nsecond\n"
+    editor.undo()
+    assert editor.toPlainText() == "first  \nsecond \n"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_line_formatting_operates_on_current_line_and_is_undoable(
+    application: QApplication,
+) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("first\nsecond")
+
+    window._format_lines(indent_lines)
+    assert editor.toPlainText() == "    first\nsecond"
+    editor.undo()
+    assert editor.toPlainText() == "first\nsecond"
+
+    window._format_lines(outdent_lines)
+    assert editor.toPlainText() == "first\nsecond"
+    editor.document_state.mark_saved()
+    window.close()
 
 
 def test_ai_settings_action_stays_in_the_ai_menu(application: QApplication) -> None:

@@ -8,7 +8,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QEventLoop, QTimer, Qt
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtPdf import QPdfDocument
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from app.project import Project
 from app.ui.main_window import MainWindow
@@ -197,6 +198,52 @@ def test_project_scene_save_preserves_crlf_line_endings(application, tmp_path):
 
     assert result == [True]
     assert target.read_bytes() == b"first\r\nchanged\r\n"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
+    application, tmp_path, monkeypatch
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter One")
+    scene = project.add_scene("Opening", chapter_id=chapter.id, content="saved text")
+    target = tmp_path / "compiled-book.pdf"
+    monkeypatch.setattr(
+        QFileDialog,
+        "getSaveFileName",
+        lambda *_args, **_kwargs: (str(target), "PDF book (*.pdf)"),
+    )
+    monkeypatch.setattr(
+        QMessageBox,
+        "question",
+        lambda *_args, **_kwargs: QMessageBox.StandardButton.Yes,
+    )
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    assert window._project_actions["Compile Book as PDF…"].isEnabled()
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    window.settings.autosave_enabled = False
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("current unsaved text")
+
+    window.compile_project_book()
+    wait_until(
+        lambda: "Book PDF compiled" in window.statusBar().currentMessage(),
+        application,
+    )
+
+    pdf = QPdfDocument(application)
+    pdf.load(str(target))
+    content = "\n".join(
+        pdf.getAllText(index).text() for index in range(pdf.pageCount())
+    )
+    assert "current unsaved text" in content
+    assert "\r\nsaved text\r\n" not in content
+    assert project.read_scene(scene.id) == "saved text"
     editor.document_state.mark_saved()
     window.close()
 

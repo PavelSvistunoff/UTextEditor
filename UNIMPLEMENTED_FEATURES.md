@@ -385,9 +385,10 @@ manuscript excerpts. AI can be disabled globally and per operation.
 
 Export is explicit and non-destructive. The author selects the project or a
 subset, output format, destination, and whether to include chapter/scene
-headings and separators. Initial formats should prioritize portable plain
-text and Markdown; additional publishing formats require a separate
-acceptance specification.
+headings and separators. Portable plain text and Markdown are supported.
+Project > Compile Book as PDF creates a paginated A5 book with a title page,
+contents, ordered chapters/scenes, and page numbers; reference notes are
+excluded.
 
 Export uses the current in-memory text and structure, including unsaved edits,
 and leaves those edits dirty; the UI must identify when the export includes

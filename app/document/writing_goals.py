@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 from datetime import date, datetime
-import difflib
 import json
 import os
 from pathlib import Path
@@ -187,15 +186,22 @@ class WritingGoalTracker:
 
     @staticmethod
     def _new_tokens_added(before: str, after: str) -> int:
-        retained_new_positions: list[tuple[int, int]] = []
-        for block in difflib.SequenceMatcher(None, before, after, autojunk=False).get_matching_blocks():
-            if block.size:
-                retained_new_positions.append((block.b, block.b + block.size))
-        added = 0
-        for token in _WORD.finditer(after):
-            if not any(start < token.end() and end > token.start() for start, end in retained_new_positions):
-                added += 1
-        return added
+        """Count words wholly inside the single changed span of an editor edit."""
+        shared_limit = min(len(before), len(after))
+        prefix = 0
+        while prefix < shared_limit and before[prefix] == after[prefix]:
+            prefix += 1
+
+        suffix = 0
+        while suffix < shared_limit - prefix and before[-suffix - 1] == after[-suffix - 1]:
+            suffix += 1
+
+        changed_end = len(after) - suffix
+        return sum(
+            1
+            for token in _WORD.finditer(after)
+            if token.start() >= prefix and token.end() <= changed_end
+        )
 
     def _replace_document_progress(self, document_id: str, counts: Mapping[str, int]) -> None:
         for values in self.progress.values():

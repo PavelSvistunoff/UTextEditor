@@ -210,9 +210,12 @@ def test_text_saves_are_atomic_and_reject_stale_disk_snapshots(tmp_path):
     project = Project.create(tmp_path / "project", "Novel")
     scene = project.add_scene("Scene", content="first")
     note = project.add_note("Note", content="reference")
+    scene_path = project.root / scene.path
+    scene_path.chmod(0o640)
 
     project.write_scene(scene.id, "edited UTF-8 — text", expected_content="first")
     assert project.read_scene(scene.id) == "edited UTF-8 — text"
+    assert scene_path.stat().st_mode & 0o777 == 0o640
     (project.root / note.path).write_text("external change", encoding="utf-8")
     with pytest.raises(ProjectError, match="changed on disk"):
         project.write_note(note.id, "replacement", expected_content="reference")

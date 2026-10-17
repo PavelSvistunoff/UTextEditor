@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 from app.ai.completion_service import CompletionService, build_context
 from app.ai.ollama_client import OllamaClient
 from app.ai.spellcheck_service import SpellcheckService
+from app.document.book_compiler import compile_book_pdf
 from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, qt_position_to_python_index
 from app.document.export import ExportChapter, ExportScene, export_manuscript
@@ -44,6 +45,12 @@ from app.project.autopilot import (
 from app.project.auto_writer import AutoWriterResult, run_auto_writer
 from app.project.outline import parse_outline
 from app.document.revisions import RevisionStore, RevisionSnapshot
+from app.document.text_formatting import (
+    convert_case,
+    indent_lines,
+    outdent_lines,
+    trim_trailing_whitespace,
+)
 from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
 from app.settings.settings import AppSettings
 from .find_replace import FindReplaceWidget
@@ -255,6 +262,7 @@ class MainWindow(QMainWindow):
             ("Move Scene Down", lambda: self.move_project_scene(1), True),
             ("Move Chapter Up", lambda: self.move_project_chapter(-1), True),
             ("Move Chapter Down", lambda: self.move_project_chapter(1), True),
+            ("Compile Book as PDF…", self.compile_project_book, True),
             ("Export Manuscript…", self.export_project, True),
             ("Create Revision Snapshot…", self.create_revision_snapshot, True),
         )
@@ -338,6 +346,21 @@ class MainWindow(QMainWindow):
         recovery_action.setEnabled(self.recovery_store is not None)
         recovery_action.triggered.connect(self._scan_recovery)
         file_menu.addAction(recovery_action)
+
+        formatting_menu = edit_menu.addMenu("Text Formatting")
+        formatting_actions = (
+            ("Format Whole Document…", self._format_whole_document),
+            ("Uppercase", lambda: self._format_text("upper")),
+            ("lowercase", lambda: self._format_text("lower")),
+            ("Title Case", lambda: self._format_text("title")),
+            ("Indent Lines", lambda: self._format_lines(indent_lines)),
+            ("Outdent Lines", lambda: self._format_lines(outdent_lines)),
+            ("Trim Trailing Whitespace", self._trim_trailing_whitespace),
+        )
+        for title, handler in formatting_actions:
+            action = QAction(title, self)
+            action.triggered.connect(handler)
+            formatting_menu.addAction(action)
 
     def _build_status_bar(self) -> None:
         self.status = QStatusBar(self)
@@ -676,6 +699,108 @@ class MainWindow(QMainWindow):
         editor = self.tabs.current_editor()
         if editor:
             getattr(editor, method)()
+
+    def _format_text(self, style: str) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None:
+            return
+        cursor = editor.textCursor()
+        had_selection = cursor.hasSelection()
+        if not had_selection:
+            cursor.select(QTextCursor.SelectionType.Document)
+        original = cursor.selectedText().replace("\u2029", "\n")
+        replacement = convert_case(original, style)
+        self._replace_formatted_text(editor, cursor, replacement, had_selection)
+
+    def _format_whole_document(self) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None:
+            return
+        operations = (
+            ("Uppercase", lambda text: convert_case(text, "upper")),
+            ("lowercase", lambda text: convert_case(text, "lower")),
+            ("Title Case", lambda text: convert_case(text, "title")),
+            ("Indent Lines", indent_lines),
+            ("Outdent Lines", outdent_lines),
+            ("Trim Trailing Whitespace", trim_trailing_whitespace),
+        )
+        label, accepted = QInputDialog.getItem(
+            self,
+            "Format Whole Document",
+            "Choose a formatting operation for the entire document:",
+            [title for title, _formatter in operations],
+            0,
+            False,
+        )
+        if not accepted:
+            return
+        formatter = next(
+            formatter for title, formatter in operations if title == label
+        )
+        cursor = QTextCursor(editor.document())
+        cursor.select(QTextCursor.SelectionType.Document)
+        original = cursor.selectedText().replace("\u2029", "\n")
+        self._replace_formatted_text(
+            editor, cursor, formatter(original), select_result=False
+        )
+
+    def _format_lines(self, formatter) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None:
+            return
+        source_cursor = editor.textCursor()
+        had_selection = source_cursor.hasSelection()
+        start_position = (
+            source_cursor.selectionStart()
+            if had_selection
+            else source_cursor.position()
+        )
+        end_position = (
+            source_cursor.selectionEnd()
+            if had_selection
+            else source_cursor.position()
+        )
+        start = QTextCursor(editor.document())
+        start.setPosition(start_position)
+        start.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        end = QTextCursor(editor.document())
+        end.setPosition(end_position)
+        if had_selection and end_position > start_position and end.atBlockStart():
+            end.movePosition(QTextCursor.MoveOperation.PreviousBlock)
+        end.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+        start.setPosition(end.position(), QTextCursor.MoveMode.KeepAnchor)
+        original = start.selectedText().replace("\u2029", "\n")
+        self._replace_formatted_text(editor, start, formatter(original), had_selection)
+
+    def _trim_trailing_whitespace(self) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None:
+            return
+        cursor = editor.textCursor()
+        had_selection = cursor.hasSelection()
+        if not had_selection:
+            cursor.select(QTextCursor.SelectionType.Document)
+        original = cursor.selectedText().replace("\u2029", "\n")
+        self._replace_formatted_text(
+            editor, cursor, trim_trailing_whitespace(original), had_selection
+        )
+
+    @staticmethod
+    def _replace_formatted_text(
+        editor, cursor: QTextCursor, replacement: str, select_result: bool
+    ) -> None:
+        if cursor.selectedText().replace("\u2029", "\n") == replacement:
+            return
+        start_position = cursor.selectionStart()
+        cursor.beginEditBlock()
+        cursor.insertText(replacement)
+        cursor.endEditBlock()
+        if select_result:
+            start = QTextCursor(editor.document())
+            start.setPosition(start_position)
+            start.setPosition(cursor.position(), QTextCursor.MoveMode.KeepAnchor)
+            cursor = start
+        editor.setTextCursor(cursor)
 
     def new_document(self) -> None:
         self.tabs.new_document()
@@ -2226,6 +2351,116 @@ class MainWindow(QMainWindow):
         )
         self.statusBar().showMessage("Exporting manuscript…")
         self.thread_pool.start(worker)
+
+    def compile_project_book(self) -> None:
+        project = self.project
+        if project is None:
+            return
+        destination, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Compile book as PDF",
+            str(project.root / f"{project.manifest.title}.pdf"),
+            "PDF book (*.pdf)",
+        )
+        if not destination:
+            return
+        target = Path(destination)
+        replace_existing = False
+        if target.exists():
+            if QMessageBox.question(
+                self,
+                "Replace compiled book",
+                f"Replace the existing file {target}?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            ) != QMessageBox.StandardButton.Yes:
+                return
+            replace_existing = True
+
+        open_text: dict[str, str] = {}
+        unsaved = False
+        for editor, binding in tuple(self._project_documents.items()):
+            if (
+                binding.project is project
+                and binding.kind == "scene"
+                and self.tabs.indexOf(editor) >= 0
+            ):
+                open_text[binding.item_id] = editor.toPlainText()
+                unsaved = unsaved or editor.document_state.dirty
+        if unsaved and QMessageBox.question(
+            self,
+            "Compile unsaved content",
+            "The compiled book will include unsaved scene edits currently shown in project tabs. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+
+        chapters = [
+            ExportChapter(
+                chapter.title,
+                tuple(ExportScene(scene.id, scene.title) for scene in chapter.scenes),
+            )
+            for chapter in project.manifest.chapters
+        ]
+        ungrouped = [
+            ExportScene(scene.id, scene.title) for scene in project.manifest.ungrouped_scenes
+        ]
+        self._set_project_busy(True)
+        worker = FunctionWorker(
+            self._compile_project_book_snapshot,
+            project,
+            project.manifest.title,
+            chapters,
+            ungrouped,
+            open_text,
+            target,
+            replace_existing,
+        )
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda path, project=project: self._project_book_compiled(project, path),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error, project=project: self._project_book_compile_failed(project, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.statusBar().showMessage("Compiling book PDF…")
+        self.thread_pool.start(worker)
+
+    @staticmethod
+    def _compile_project_book_snapshot(
+        project,
+        title,
+        chapters,
+        ungrouped,
+        open_text,
+        target,
+        replace_existing,
+    ):
+        texts = {
+            scene.id: (
+                open_text[scene.id]
+                if scene.id in open_text
+                else project.read_scene(scene.id)
+            )
+            for scene in project.iter_scenes()
+        }
+        return compile_book_pdf(
+            target,
+            title,
+            chapters,
+            ungrouped,
+            texts,
+            replace_existing=replace_existing,
+        )
+
+    def _project_book_compiled(self, project: Project, path: Path) -> None:
+        self._set_project_busy(False)
+        self.statusBar().showMessage(f"Book PDF compiled to {path}", 8000)
+
+    def _project_book_compile_failed(self, project: Project, error) -> None:
+        self._set_project_busy(False)
+        QMessageBox.warning(self, "Book compilation failed", str(error))
 
     def _ask_export_options(self):
         dialog = QDialog(self)
