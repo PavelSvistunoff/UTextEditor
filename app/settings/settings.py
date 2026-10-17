@@ -4,9 +4,12 @@ from dataclasses import dataclass, asdict
 import json
 import platform
 import os
+import math
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from app.ai.prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
+from app.ai.prompts import completion_prompt
 
 
 @dataclass
@@ -24,6 +27,11 @@ class AppSettings:
     spellcheck_enabled: bool = True
     automatic_spellcheck: bool = True
     language: str = "Auto"
+    font_family: str = "Monospace"
+    font_size: int = 12
+    tab_width: int = 4
+    word_wrap: bool = False
+    line_numbers: bool = False
 
     @staticmethod
     def _default_settings_path() -> Path:
@@ -35,17 +43,23 @@ class AppSettings:
             base = home / "Library" / "Application Support" / "UTextEditor"
         else:
             base = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")) / "utexteditor"
-        base.mkdir(parents=True, exist_ok=True)
         return base / "settings.json"
 
     def save(self, path: Path | str | None = None) -> None:
+        self.validated()
         target = Path(path) if path is not None else self._default_settings_path()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        serialized = json.dumps(asdict(self), ensure_ascii=False, indent=2)
+        temporary = target.with_name(f".{target.name}.tmp")
         try:
-            with target.open("w", encoding="utf-8") as fh:
-                json.dump(asdict(self), fh, ensure_ascii=False, indent=2)
+            temporary.write_text(serialized, encoding="utf-8")
+            temporary.replace(target)
         except OSError:
-            # Do not raise on disk errors; settings persistence is best-effort.
-            pass
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise
 
     @classmethod
     def load(cls, path: Path | str | None = None) -> "AppSettings":
@@ -55,6 +69,80 @@ class AppSettings:
         try:
             with target.open("r", encoding="utf-8") as fh:
                 data = json.load(fh)
-            return cls(**data)
-        except Exception:
+            if not isinstance(data, dict):
+                return cls()
+            known = {field for field in cls.__dataclass_fields__}
+            settings = cls(**{key: value for key, value in data.items() if key in known})
+            return settings.validated()
+        except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
             return cls()
+
+    def validated(self) -> "AppSettings":
+        defaults = type(self)()
+        self.ollama_host = self._string(self.ollama_host, defaults.ollama_host, 2048).rstrip("/")
+        if not self._valid_host(self.ollama_host):
+            self.ollama_host = defaults.ollama_host
+        self.ollama_model = self._string(self.ollama_model, defaults.ollama_model, 256)
+        self.ai_role = self._string(self.ai_role, defaults.ai_role, 4000)
+        self.completion_template = self._string(self.completion_template, defaults.completion_template, 8000)
+        if "{context}" not in self.completion_template:
+            self.completion_template = defaults.completion_template
+        else:
+            try:
+                completion_prompt("", "Auto", self.completion_template)
+            except ValueError:
+                self.completion_template = defaults.completion_template
+        candidate_language = self._string(self.language, defaults.language, 32)
+        normalized_language = candidate_language.strip()
+        self.language = {"auto": "Auto", "english": "English", "ukrainian": "Ukrainian"}.get(normalized_language.lower(), defaults.language)
+        if self.language not in {"Auto", "English", "Ukrainian"}:
+            self.language = defaults.language
+        self.font_family = self._string(self.font_family, defaults.font_family, 128) or defaults.font_family
+        self.font_size = self._bounded_int(self.font_size, 8, 32, defaults.font_size)
+        self.tab_width = self._bounded_int(self.tab_width, 2, 8, defaults.tab_width)
+        self.word_wrap = self._bool(self.word_wrap, defaults.word_wrap)
+        self.line_numbers = self._bool(self.line_numbers, defaults.line_numbers)
+        self.ai_enabled = self._bool(self.ai_enabled, defaults.ai_enabled)
+        self.completion_enabled = self._bool(self.completion_enabled, defaults.completion_enabled)
+        self.spellcheck_enabled = self._bool(self.spellcheck_enabled, defaults.spellcheck_enabled)
+        self.automatic_spellcheck = self._bool(self.automatic_spellcheck, defaults.automatic_spellcheck)
+        self.completion_debounce_ms = self._bounded_int(self.completion_debounce_ms, 100, 5000, defaults.completion_debounce_ms)
+        self.maximum_suggestion_length = self._bounded_int(self.maximum_suggestion_length, 1, 10000, defaults.maximum_suggestion_length)
+        self.context_size = self._bounded_int(self.context_size, 64, 65536, defaults.context_size)
+        try:
+            temperature = float(self.temperature) if not isinstance(self.temperature, bool) else math.nan
+        except (TypeError, ValueError, OverflowError):
+            temperature = math.nan
+        self.temperature = temperature if math.isfinite(temperature) and 0 <= temperature <= 2 else defaults.temperature
+        return self
+
+    @staticmethod
+    def _string(value, fallback: str, maximum: int) -> str:
+        return value.strip()[:maximum] if isinstance(value, str) and value.strip() else fallback
+
+    @staticmethod
+    def _bool(value, fallback: bool) -> bool:
+        return value if isinstance(value, bool) else fallback
+
+    @staticmethod
+    def _bounded_int(value, minimum: int, maximum: int, fallback: int) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
+            return fallback
+        return value
+
+    @staticmethod
+    def _valid_host(value: str) -> bool:
+        try:
+            parsed = urlsplit(value)
+            return (
+                parsed.scheme in {"http", "https"}
+                and bool(parsed.hostname)
+                and parsed.username is None
+                and parsed.password is None
+                and parsed.path in {"", "/"}
+                and not parsed.query
+                and not parsed.fragment
+                and (parsed.port is None or 1 <= parsed.port <= 65535)
+            )
+        except ValueError:
+            return False

@@ -5,6 +5,7 @@ import logging
 import time
 from collections.abc import Callable
 from typing import Any
+from urllib.error import HTTPError
 from urllib import request
 
 from .models import Suggestion
@@ -51,6 +52,16 @@ class OllamaClient:
             with request.urlopen(req, timeout=self.timeout) as response:
                 raw = response.read()
                 result = json.loads(raw.decode("utf-8"))
+        except HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            if "model" in body.lower() and "not found" in body.lower():
+                message = f"Ollama model '{self.model}' was not found. Pull it with `ollama pull {self.model}` or choose another model in AI Settings."
+            else:
+                message = f"Ollama returned HTTP {exc.code} while contacting {path}."
+            duration = time.time() - start
+            self._observe("Error", path, {"message": message, "duration": duration})
+            logger.error("Ollama request failed %s %s (%.3fs): HTTP %s", path, self.model, duration, exc.code)
+            raise OllamaError(message) from exc
         except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             duration = time.time() - start
             self._observe("Error", path, {"message": str(exc), "duration": duration})

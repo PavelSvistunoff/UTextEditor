@@ -19,7 +19,7 @@ class SpellcheckService:
             return []
 
         validated: list[Suggestion] = []
-        for suggestion in suggestions:
+        for suggestion in sorted(suggestions, key=lambda item: (item.start, item.end))[:200]:
             revisioned = Suggestion(
                 suggestion.start,
                 suggestion.end,
@@ -31,5 +31,7 @@ class SpellcheckService:
                 suggestion.source_text,
             )
             if valid_suggestion(revisioned, text, revision):
+                if validated and revisioned.start < validated[-1].end:
+                    continue
                 validated.append(revisioned)
         return validated

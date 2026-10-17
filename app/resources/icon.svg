@@ -1,7 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="20" fill="#2b90d9" />
-  <g fill="#fff" font-family="Arial, Helvetica, sans-serif" font-weight="700" text-anchor="middle">
-    <text x="64" y="80" font-size="64">U</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tile" x1="24" y1="16" x2="232" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5146D8"/>
+      <stop offset="1" stop-color="#176B91"/>
+    </linearGradient>
+    <linearGradient id="page" x1="76" y1="48" x2="190" y2="210" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E8F1FF"/>
+    </linearGradient>
+    <filter id="shadow" x="42" y="26" width="182" height="216" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feFlood flood-opacity="0" result="background"/>
+      <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.22 0" result="alpha"/>
+      <feGaussianBlur in="alpha" stdDeviation="7"/>
+      <feOffset dy="8"/>
+      <feComposite in2="background" operator="over"/>
+      <feColorMatrix values="0 0 0 0 0.04 0 0 0 0 0.08 0 0 0 0 0.18 0 0 0 0.35 0"/>
+      <feBlend in2="SourceGraphic" result="shape"/>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="58" fill="url(#tile)"/>
+  <path d="M29 178c26-32 51-37 75-15 19 17 34 14 53-11 19-25 39-29 70-8v76H29v-42Z" fill="#FFFFFF" fill-opacity=".08"/>
+  <g filter="url(#shadow)">
+    <path d="M77 43h72l43 43v121a10 10 0 0 1-10 10H77a10 10 0 0 1-10-10V53a10 10 0 0 1 10-10Z" fill="url(#page)"/>
+    <path d="M149 43v34a10 10 0 0 0 10 10h33l-43-44Z" fill="#C9D7F2"/>
+    <path d="M149 43v34a10 10 0 0 0 10 10h33" fill="none" stroke="#B8C8E8" stroke-linejoin="round" stroke-width="3"/>
+    <rect x="88" y="104" width="16" height="16" rx="5" fill="#6C63F5"/>
+    <rect x="88" y="136" width="16" height="16" rx="5" fill="#22B8A5"/>
+    <rect x="88" y="168" width="16" height="16" rx="5" fill="#FF9B62"/>
+    <path d="M119 112h34M119 144h45M119 176h27" stroke="#8899BE" stroke-linecap="round" stroke-width="7"/>
+    <path d="m181 136 13 13-34 34-17 4 4-17 34-34Z" fill="#FF748C"/>
+    <path d="m181 136 13 13 6-6a9 9 0 0 0-13-13l-6 6Z" fill="#FFD06B"/>
+    <path d="m143 187 17-4-13-13-4 17Z" fill="#34466F"/>
+    <path d="m143 187 17-4-13-13-4 17Z" fill="none" stroke="#34466F" stroke-linejoin="round"/>
   </g>
+  <circle cx="207" cy="51" r="5" fill="#FFD06B"/>
+  <path d="M45 78v-9m-4.5 4.5h9" stroke="#FFFFFF" stroke-linecap="round" stroke-opacity=".8" stroke-width="3"/>
 </svg>

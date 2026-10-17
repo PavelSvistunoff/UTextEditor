@@ -1,5 +1,7 @@
 import json
+from io import BytesIO
 from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError
 
 import pytest
 
@@ -49,6 +51,14 @@ def test_connection_failure_is_false() -> None:
     client = OllamaClient()
     with patch("app.ai.ollama_client.request.urlopen", side_effect=OSError("offline")):
         assert not client.check_connection()
+
+
+def test_missing_model_error_is_actionable() -> None:
+    client = OllamaClient(model="missing-model")
+    error = HTTPError("http://localhost", 404, "Not Found", {}, BytesIO(b"model missing-model not found"))
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=error):
+        with pytest.raises(OllamaError, match="ollama pull missing-model"):
+            client.complete("Hello", "English")
 
 
 def test_spellcheck_uses_chat_json_mode_without_thinking() -> None:

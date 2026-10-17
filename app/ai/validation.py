@@ -55,9 +55,15 @@ def parse_suggestions(payload: str | list[dict[str, Any]], source: str, revision
             continue
         start, end = item.get("start"), item.get("end")
         replacement, kind = item.get("replacement"), item.get("type", "spelling")
-        if not isinstance(start, int) or not isinstance(end, int) or not isinstance(replacement, str):
+        if isinstance(start, bool) or isinstance(end, bool) or not isinstance(start, int) or not isinstance(end, int) or not isinstance(replacement, str):
             continue
-        if start < 0 or end < start or end > len(source) or not isinstance(kind, str):
+        if start < 0 or end <= start or end > len(source) or not isinstance(kind, str):
+            continue
+        explanation = item.get("explanation", "")
+        original = item.get("original_text", source[start:end])
+        if not isinstance(explanation, str) or not isinstance(original, str) or original != source[start:end]:
+            continue
+        if len(result) >= 200 or len(replacement) > 2000 or len(str(item.get("explanation", ""))) > 1000:
             continue
         result.append(
             Suggestion(
@@ -65,8 +71,8 @@ def parse_suggestions(payload: str | list[dict[str, Any]], source: str, revision
                 end,
                 replacement,
                 kind,
-                str(item.get("explanation", "")),
-                source[start:end],
+                explanation,
+                original,
                 revision,
                 source,
             )
@@ -77,11 +83,14 @@ def parse_suggestions(payload: str | list[dict[str, Any]], source: str, revision
 def valid_suggestion(suggestion: Suggestion, text: str, revision: int) -> bool:
     raw = text[suggestion.start:suggestion.end]
     original = suggestion.original_text
-    normalized_raw = raw.strip()
-    normalized_original = original.strip()
+    if suggestion.type == "spelling":
+        if suggestion.start > 0 and suggestion.start < len(text) and text[suggestion.start - 1].isalnum() and text[suggestion.start].isalnum():
+            return False
+        if suggestion.end > 0 and suggestion.end < len(text) and text[suggestion.end - 1].isalnum() and text[suggestion.end].isalnum():
+            return False
     return (
         suggestion.revision == revision
         and 0 <= suggestion.start <= suggestion.end <= len(text)
-        and (raw == original or normalized_raw == normalized_original)
+        and (not original or raw == original)
         and (not suggestion.source_text or suggestion.source_text == text)
     )

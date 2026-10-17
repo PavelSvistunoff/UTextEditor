@@ -1,6 +1,8 @@
 """Minimal AI settings dialog for the MVP."""
 
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QMessageBox, QPlainTextEdit, QSpinBox
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFontComboBox, QFormLayout, QLabel, QLineEdit, QMessageBox, QPlainTextEdit, QSpinBox
+from urllib.parse import urlsplit
 
 from app.ai.prompts import completion_prompt
 from app.settings.settings import AppSettings
@@ -22,7 +24,7 @@ class SettingsDialog(QDialog):
         self.template.setPlaceholderText("Use {context} and {language} placeholders")
         self.template.setFixedHeight(140)
         # Completion settings
-        from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QComboBox
+        from PySide6.QtWidgets import QDoubleSpinBox
 
         self.completion_enabled = QCheckBox("Enable completion")
         self.completion_enabled.setChecked(settings.completion_enabled)
@@ -52,9 +54,23 @@ class SettingsDialog(QDialog):
         except ValueError:
             idx = 0
         self.language.setCurrentIndex(idx)
+        # Editor appearance settings
+        self.font_family = QFontComboBox()
+        self.font_family.setCurrentFont(QFont(settings.font_family))
+        self.font_size = QSpinBox()
+        self.font_size.setRange(8, 32)
+        self.font_size.setValue(settings.font_size)
+        self.tab_width = QSpinBox()
+        self.tab_width.setRange(2, 8)
+        self.tab_width.setValue(settings.tab_width)
+        self.word_wrap = QCheckBox("Wrap long lines")
+        self.word_wrap.setChecked(settings.word_wrap)
+        self.line_numbers = QCheckBox("Show line numbers")
+        self.line_numbers.setChecked(settings.line_numbers)
 
         form = QFormLayout(self)
         form.addRow("Ollama host", self.host)
+        form.addRow(QLabel("Text used for AI requests is sent to this configured Ollama host."))
         form.addRow("Model", self.model)
         form.addRow(self.completion_enabled)
         form.addRow("Debounce (ms)", self.debounce)
@@ -64,6 +80,11 @@ class SettingsDialog(QDialog):
         form.addRow(self.spellcheck_enabled)
         form.addRow(self.automatic_spellcheck)
         form.addRow("Language", self.language)
+        form.addRow("Font", self.font_family)
+        form.addRow("Font size", self.font_size)
+        form.addRow("Tab width", self.tab_width)
+        form.addRow(self.word_wrap)
+        form.addRow(self.line_numbers)
         form.addRow("AI role", self.role)
         form.addRow("Context template", self.template)
 
@@ -74,6 +95,23 @@ class SettingsDialog(QDialog):
 
     def accept(self) -> None:
         template = self.template.toPlainText().strip()
+        try:
+            parsed_host = urlsplit(self.host.text().strip())
+            valid_host = (
+                parsed_host.scheme in {"http", "https"}
+                and bool(parsed_host.hostname)
+                and parsed_host.username is None
+                and parsed_host.password is None
+                and parsed_host.path in {"", "/"}
+                and not parsed_host.query
+                and not parsed_host.fragment
+                and (parsed_host.port is None or 1 <= parsed_host.port <= 65535)
+            )
+        except ValueError:
+            valid_host = False
+        if not valid_host:
+            QMessageBox.warning(self, "Invalid Ollama host", "Enter an HTTP or HTTPS host URL without credentials or a path.")
+            return
         if "{context}" not in template:
             QMessageBox.warning(self, "Invalid context template", "The context template must include {context}.")
             return
@@ -95,4 +133,9 @@ class SettingsDialog(QDialog):
         self.settings.spellcheck_enabled = bool(self.spellcheck_enabled.isChecked())
         self.settings.automatic_spellcheck = bool(self.automatic_spellcheck.isChecked())
         self.settings.language = self.language.currentText()
+        self.settings.font_family = self.font_family.currentFont().family()
+        self.settings.font_size = int(self.font_size.value())
+        self.settings.tab_width = int(self.tab_width.value())
+        self.settings.word_wrap = bool(self.word_wrap.isChecked())
+        self.settings.line_numbers = bool(self.line_numbers.isChecked())
         super().accept()

@@ -15,6 +15,11 @@ class Document:
     revision: int = 0
     dirty: bool = False
     _saved_revision: int = field(default=0, repr=False)
+    _saved_text: str = field(default="", repr=False)
+
+    def __post_init__(self) -> None:
+        if self.text and not self._saved_text and self._saved_revision == 0 and not self.dirty:
+            self._saved_text = self.text
 
     @property
     def display_name(self) -> str:
@@ -24,11 +29,12 @@ class Document:
         if text != self.text:
             self.text = text
             self.revision += 1
-            self.dirty = self.revision != self._saved_revision
+            self.dirty = self.text != self._saved_text
 
-    def mark_saved(self) -> None:
+    def mark_saved(self, saved_text: str | None = None) -> None:
         self._saved_revision = self.revision
-        self.dirty = False
+        self._saved_text = self.text if saved_text is None else saved_text
+        self.dirty = self.text != self._saved_text
 
     @classmethod
     def from_text(cls, text: str, path: Path | None = None) -> "Document":

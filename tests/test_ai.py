@@ -41,15 +41,35 @@ def test_parser_accepts_single_suggestion_object() -> None:
     assert suggestions == [Suggestion(0, 4, "word", "spelling", "Possible spelling error.", "text", 2, "text")]
 
 
-def test_valid_suggestion_accepts_space_padded_word_ranges() -> None:
+def test_parser_rejects_model_claimed_original_text_that_does_not_match() -> None:
+    suggestions = parse_suggestions(
+        [{"start": 0, "end": 4, "replacement": "word", "original_text": "other"}],
+        "text",
+        1,
+    )
+
+    assert suggestions == []
+
+
+def test_valid_suggestion_rejects_partial_word_ranges_even_with_matching_source() -> None:
     suggestion = Suggestion(14, 18, "шлюб", "spelling", "", " слю", revision=1)
 
-    assert valid_suggestion(suggestion, "Вітя вступив у слюб з Оленою.", 1)
+    assert not valid_suggestion(suggestion, "Вітя вступив у слюб з Оленою.", 1)
 
 
 def test_suggestion_range_must_be_inside_snapshot() -> None:
     suggestion = Suggestion(0, 5, "x", original_text="other", revision=1)
     assert not valid_suggestion(suggestion, "text", 1)
+
+
+def test_parse_suggestions_rejects_non_numeric_and_boolean_offsets() -> None:
+    payload = [
+        {"start": True, "end": 1, "replacement": "x"},
+        {"start": 0, "end": False, "replacement": "x"},
+        {"start": 0, "end": 1, "replacement": "x", "original_text": "other"},
+    ]
+
+    assert parse_suggestions(payload, "text", 2) == []
 
 
 def test_parser_rejects_wrong_field_types_and_invalid_ranges() -> None:
@@ -70,4 +90,11 @@ def test_parser_accepts_wrapped_suggestions_payload() -> None:
         2,
     )
 
-    assert suggestions == [Suggestion(0, 4, "word", explanation="None", original_text="text", revision=2, source_text="text")]
+    assert suggestions == []
+
+
+def test_build_context_clamps_out_of_range_positions_and_zero_length_limits() -> None:
+    text = "alpha beta gamma"
+    assert build_context(text, 999999) == text
+    assert build_context(text, -3) == ""
+    assert build_context(text, len(text), maximum_characters=0) == ""

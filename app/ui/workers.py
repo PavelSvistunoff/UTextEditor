@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, QRunnable, Signal
 class WorkerSignals(QObject):
     finished = Signal(object)
     failed = Signal(object)
+    done = Signal()
 
 
 class FunctionWorker(QRunnable):
@@ -21,9 +22,9 @@ class FunctionWorker(QRunnable):
         self.cancelled = True
 
     def run(self) -> None:
-        if self.cancelled:
-            return
         try:
+            if self.cancelled:
+                return
             result = self.function(*self.args, **self.kwargs)
             if not self.cancelled:
                 try:
@@ -38,3 +39,9 @@ class FunctionWorker(QRunnable):
                 except RuntimeError as exc:
                     if "Signal source has been deleted" not in str(exc):
                         raise
+        finally:
+            try:
+                self.signals.done.emit()
+            except RuntimeError as exc:
+                if "Signal source has been deleted" not in str(exc):
+                    raise
