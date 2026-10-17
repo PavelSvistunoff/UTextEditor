@@ -15,6 +15,10 @@ else:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from app.ui.main_window import MainWindow
 
+from app.document.recovery import RecoveryStore
+from app.document.writing_goals import WritingGoalStore
+from app.settings.settings import AppSettings
+
 
 def main() -> int:
     # Configure logging early so modules can emit diagnostics
@@ -36,7 +40,12 @@ def main() -> int:
     except Exception:
         # Never crash the app if icon loading fails
         pass
-    window = MainWindow()
+    window = MainWindow(
+        recovery_store=RecoveryStore(),
+        writing_goal_store=WritingGoalStore(
+            AppSettings._default_settings_path().with_name("writing-goals.json")
+        ),
+    )
     window.show()
     return app.exec()
 

@@ -1,7 +1,7 @@
 """QPlainTextEdit with non-destructive inline completions."""
 
 from PySide6.QtCore import QPoint, QRect, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeySequence, QPainter, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import QMenu, QPlainTextEdit, QTextEdit, QWidget
 
 from app.ai.models import Suggestion
@@ -52,6 +52,7 @@ class EditorWidget(QPlainTextEdit):
     completion_accepted = Signal(str)
     completion_rejected = Signal()
     content_changed = Signal()
+    escape_pressed = Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -60,6 +61,7 @@ class EditorWidget(QPlainTextEdit):
         self._ghost_selection = (0, 0)
         self._ghost_revision = -1
         self._revision = 0
+        self._history_action: str | None = None
         self._show_line_numbers = False
         self._line_number_area = LineNumberArea(self)
         self.spell_suggestions: list[Suggestion] = []
@@ -194,6 +196,14 @@ class EditorWidget(QPlainTextEdit):
         painter.end()
 
     def keyPressEvent(self, event) -> None:
+        if event.matches(QKeySequence.StandardKey.Undo):
+            self.undo()
+            event.accept()
+            return
+        if event.matches(QKeySequence.StandardKey.Redo):
+            self.redo()
+            event.accept()
+            return
         if event.key() == Qt.Key.Key_Tab and self.accept_completion():
             event.accept()
             return
@@ -202,7 +212,25 @@ class EditorWidget(QPlainTextEdit):
             self.completion_rejected.emit()
             event.accept()
             return
+        if event.key() == Qt.Key.Key_Escape:
+            self.escape_pressed.emit()
+            event.accept()
+            return
         super().keyPressEvent(event)
+
+    def undo(self) -> None:
+        self._history_action = "undo"
+        try:
+            super().undo()
+        finally:
+            self._history_action = None
+
+    def redo(self) -> None:
+        self._history_action = "redo"
+        try:
+            super().redo()
+        finally:
+            self._history_action = None
 
     def set_spell_suggestions(self, suggestions: list[Suggestion]) -> None:
         self.spell_suggestions = [

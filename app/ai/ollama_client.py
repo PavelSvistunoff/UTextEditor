@@ -43,8 +43,9 @@ class OllamaClient:
                 return
             raise
 
-    def _post(self, path: str, payload: dict) -> dict:
-        self._observe("Request", path, payload)
+    def _post(self, path: str, payload: dict, *, observe: bool = True) -> dict:
+        if observe:
+            self._observe("Request", path, payload)
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(f"{self.host}{path}", data=body, headers={"Content-Type": "application/json"})
         start = time.time()
@@ -59,20 +60,24 @@ class OllamaClient:
             else:
                 message = f"Ollama returned HTTP {exc.code} while contacting {path}."
             duration = time.time() - start
-            self._observe("Error", path, {"message": message, "duration": duration})
+            if observe:
+                self._observe("Error", path, {"message": message, "duration": duration})
             logger.error("Ollama request failed %s %s (%.3fs): HTTP %s", path, self.model, duration, exc.code)
             raise OllamaError(message) from exc
         except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             duration = time.time() - start
-            self._observe("Error", path, {"message": str(exc), "duration": duration})
+            if observe:
+                self._observe("Error", path, {"message": str(exc), "duration": duration})
             logger.error("Ollama request failed %s %s (%.3fs): %s", path, self.model, duration, exc)
             raise OllamaError(str(exc)) from exc
         duration = time.time() - start
         if not isinstance(result, dict):
-            self._observe("Error", path, {"message": "Ollama returned an invalid response", "duration": duration})
+            if observe:
+                self._observe("Error", path, {"message": "Ollama returned an invalid response", "duration": duration})
             logger.error("Ollama returned invalid response for %s %s (%.3fs)", path, self.model, duration)
             raise OllamaError("Ollama returned an invalid response")
-        self._observe("Response", path, result)
+        if observe:
+            self._observe("Response", path, result)
         logger.info("Ollama %s %s completed in %.3fs", path, self.model, duration)
         return result
 
@@ -122,6 +127,40 @@ class OllamaClient:
         maximum_tokens: int = 300,
         temperature: float = 0.2,
     ) -> str:
+        return self._generate(
+            prompt,
+            role=role,
+            maximum_tokens=maximum_tokens,
+            temperature=temperature,
+            observe=True,
+        )
+
+    def generate_private(
+        self,
+        prompt: str,
+        *,
+        role: str = DEFAULT_AI_ROLE,
+        maximum_tokens: int = 300,
+        temperature: float = 0.2,
+    ) -> str:
+        """Generate without forwarding prompt or response content to diagnostics."""
+        return self._generate(
+            prompt,
+            role=role,
+            maximum_tokens=maximum_tokens,
+            temperature=temperature,
+            observe=False,
+        )
+
+    def _generate(
+        self,
+        prompt: str,
+        *,
+        role: str,
+        maximum_tokens: int,
+        temperature: float,
+        observe: bool,
+    ) -> str:
         response = self._post(
             "/api/chat",
             {
@@ -134,6 +173,7 @@ class OllamaClient:
                 "think": False,
                 "options": {"num_predict": maximum_tokens, "temperature": temperature},
             },
+            observe=observe,
         )
         message = response.get("message")
         result = message.get("content") if isinstance(message, dict) else None

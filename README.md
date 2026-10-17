@@ -16,12 +16,21 @@ The project aims to keep writing fast and predictable: documents stay under the 
 
 ## Current status
 
-The current implementation is an early, usable MVP. Implemented features include:
+The editor supports standalone text files and a local project workspace. Implemented features include:
 
 - Native PySide6 desktop window with File, Edit, Search, and AI menus.
 - New, open, save, and Save As for UTF-8 text files; unsaved-change prompts on close.
 - File reads and writes run in background workers; saves replace files atomically where supported.
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.
+- Project creation/opening in a navigation dock, with stable-ID chapters, scenes, and separate reference notes stored as ordinary UTF-8 files.
+- Project scene import, title rename, duplication/removal, ordering and chapter moves, note types and links, and live scene/chapter/project word counts.
+- Project scene and note saves compare against the last-read disk contents. Autosave is configurable (two-second idle interval by default); failures leave documents dirty and report non-blocking feedback.
+- Optional daily writing goals support active-document words, project manuscript words, or newly inserted words. New-word progress is local-date based and undo/redo aware; pausing/resetting tracking never changes manuscript text.
+- Local recovery snapshots every 30 seconds while documents are dirty and at orderly shutdown. Startup offers restore, inspect/compare, locate a moved project, discard recovery data, or defer.
+- Explicit Markdown/plain-text manuscript export uses current editor buffers, selectable scene subsets, configurable headings and separators, UTF-8 encoding, and LF line endings. Replacing a destination requires confirmation.
+- Named local revision snapshots capture current project structure and in-memory scene/note text without clearing dirty state.
+- Opt-in local scene summaries and continuity checks send only explicitly selected scenes/notes after displaying their names and the configured Ollama destination; bounded requests run in workers, stale results are dropped, and output appears in a separate review panel without editing files.
+- Distraction-free mode from View or `Ctrl+Shift+F`; `Esc` exits after first dismissing any inline completion, and an accessible status-bar action is always available while the mode is active.
 - Standard editing through Qt, including undo, redo, clipboard actions, and select all.
 - Find, replace, and replace all.
 - Status display for UTF-8, detected line-ending style (LF, CRLF, or CR), cursor line and column, and AI connection state.
@@ -43,7 +52,21 @@ The current implementation is an early, usable MVP. Implemented features include
 - Files are currently read into memory as a whole; very large files may still use substantial memory even though reads and writes run off the GUI thread.
 - The app currently supports UTF-8 files only. It rejects embedded NULs as likely binary input; broader binary detection is not implemented.
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
-- The UI is minimal and has no toolbar, recent-file list, or session restore.
+- The UI is minimal and has no toolbar or recent-file list.
+- Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
+- Scheduled revision snapshots and revision-history browsing/deletion/restore controls are not yet available. Revision snapshots can be created locally; the domain layer supports text and structure comparison, but comparison and restore are not exposed in the UI. Novel-aware AI currently covers scene summaries and continuity review; proposed-edit previews and acceptance are not implemented.
+
+### Project format and local data
+
+A project uses a version-1 UTF-8 YAML manifest named `utexteditor.yaml`. It stores `format_version`, a stable `project_id`, the title, ordered chapters and scenes, ungrouped scenes, reference-note IDs/types/titles, project-relative paths, and note links. Scene and note contents remain separate files under `manuscript/` and `notes/`. Manifest paths are validated against traversal and symlink escapes. Unknown manifest fields and unsupported versions are rejected rather than rewritten.
+
+Word counts treat a word as a run of Unicode letters or digits, with internal apostrophes or dash variants allowed when surrounded by word characters. Missing or unreadable scene files produce an explicitly incomplete count. Reference notes are excluded from manuscript totals and exports.
+
+Recovery data is stored locally in the operating system's UTextEditor application-data directory (on macOS, `~/Library/Application Support/UTextEditor/recovery`). It does not replace canonical files. Recovery is best-effort: edits since the latest snapshot and failures outside the captured snapshot interval may not be recoverable, and it is not a substitute for backups. Named revision snapshots are stored in `.utexteditor/revisions` inside the project and should be included in the author's own backup when they need to retain them; snapshot retention management is not yet exposed in the UI.
+
+Exports use UTF-8 without a byte-order mark and normalize line endings to LF. Export and snapshot creation do not save source documents or clear their dirty state.
+
+Writing-goal configuration and per-document daily progress are stored locally in `writing-goals.json` beside the application settings. The local system date defines the daily boundary; changing the timezone does not delete progress recorded under other dates.
 
 ## Install and run
 
@@ -84,15 +107,15 @@ AI completions are suggestions and do not enter the document until accepted. Mod
 
 ## Product direction
 
-The long-term goal is to make UTextEditor a focused novel-writing studio while keeping its plain-text editing roots. Novel-writing features below are future work, not current capabilities. Build them in useful, author-controlled increments:
+The long-term goal is to make UTextEditor a focused novel-writing studio while keeping its plain-text editing roots. The project-workspace milestone and selected saving, recovery, export, and snapshot protections are implemented. Remaining work should continue in useful, author-controlled increments:
 
 1. **Project workspace:** Organize a novel into chapters and scenes, let authors reorder them, and show manuscript word counts at scene, chapter, and project level. Start with ordinary text files in a project folder so manuscripts remain portable and easy to back up.
 2. **Trustworthy writing workflow:** Strengthen autosave, crash recovery, writing goals, and distraction-free writing before adding complex assistance.
 3. **Story reference material:** Add separate, linkable notes for characters, settings, timelines, and research; keep reference notes distinct from manuscript prose.
-4. **Opt-in novel-aware AI:** Offer explicit tasks such as summarizing a chapter or checking continuity against author-provided notes. Present analysis and proposed edits separately, never silently rewrite prose, and keep processing local through the configured Ollama provider.
+4. **Opt-in novel-aware AI:** Expand explicit tasks such as summarizing a chapter or checking continuity against author-provided notes. Present analysis and proposed edits separately, never silently rewrite prose, and keep processing local through the configured Ollama provider.
 5. **Revision and sharing:** Add manuscript export and revision snapshots or comparisons so authors can share work and explore changes safely.
 
-The project workspace with chapters/scenes, reliable saving, and word counts is the proposed first milestone. Broader editor improvements—batch spellcheck review, richer language detection, robust large-file handling, and session restore—remain valuable supporting work. These ideas are not promises or implemented features. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or cloud services without a separate product decision.
+Full recovery repair, complete revision comparison/restore workflows, and proposed-edit AI preview/acceptance remain follow-on work. Broader editor improvements—batch spellcheck review, richer language detection, and robust large-file handling—also remain valuable. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or cloud services without a separate product decision.
 
 ## Development expectations
 

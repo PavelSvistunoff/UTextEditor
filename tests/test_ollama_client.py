@@ -87,3 +87,18 @@ def test_interaction_observer_receives_request_and_response() -> None:
     assert events[0][0:2] == ("Request", "/api/chat")
     assert "messages" in events[0][2]
     assert events[1] == ("Response", "/api/chat", {"message": {"content": "done"}})
+
+
+def test_private_generation_never_sends_prompt_or_result_to_diagnostics() -> None:
+    events: list[tuple[str, str, dict[str, object]]] = []
+    client = OllamaClient(
+        interaction_observer=lambda event, path, details: events.append((event, path, details))
+    )
+
+    with patch(
+        "app.ai.ollama_client.request.urlopen",
+        return_value=response_with({"message": {"content": "private analysis"}}),
+    ):
+        assert client.generate_private("private manuscript text") == "private analysis"
+
+    assert events == []

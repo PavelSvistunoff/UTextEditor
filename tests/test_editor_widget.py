@@ -7,8 +7,9 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QAction, QIcon, QPalette, QTextCursor
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QFileDialog
 
 from app.document.document import Document
@@ -372,4 +373,73 @@ def test_ai_settings_action_stays_in_the_ai_menu(application: QApplication) -> N
     settings = next(action for action in ai_menu.actions() if action.text() == "AI Settings…")
 
     assert settings.menuRole() == QAction.MenuRole.NoRole
+    window.close()
+
+
+def test_distraction_free_mode_can_be_exited_without_changing_document(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("Draft text")
+    before = editor.toPlainText()
+
+    window._set_focus_mode(True)
+
+    assert window.menuBar().isHidden()
+    assert not window._exit_focus_button.isHidden()
+    assert window.status.currentMessage().startswith("Untitled *")
+
+    QTest.keyClick(editor, Qt.Key.Key_Escape)
+
+    assert not window._focus_mode
+    assert not window.menuBar().isHidden()
+    assert window._exit_focus_button.isHidden()
+    assert editor.toPlainText() == before
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_escape_dismisses_completion_before_exiting_distraction_free_mode(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("Draft")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    editor.show_completion(" text", editor.revision, editor.textCursor().position())
+    window._set_focus_mode(True)
+
+    QTest.keyClick(editor, Qt.Key.Key_Escape)
+
+    assert not editor.has_completion
+    assert window._focus_mode
+
+    QTest.keyClick(editor, Qt.Key.Key_Escape)
+
+    assert not window._focus_mode
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_daily_new_words_goal_tracks_typing_undo_and_redo(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    window.writing_goals.configure(3, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    editor.insertPlainText("Hello world")
+    document_id = editor._writing_goal_document_id
+
+    assert window.writing_goals.count_new_words({document_id}) == 2
+    assert window._writing_goal_label.text().endswith("2/3")
+
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 2
+
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
     window.close()

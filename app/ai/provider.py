@@ -29,6 +29,17 @@ class AIProvider(Protocol):
     ) -> str:
         ...
 
+    def generate_private(
+        self,
+        prompt: str,
+        *,
+        role: str = DEFAULT_AI_ROLE,
+        maximum_tokens: int = 300,
+        temperature: float = 0.2,
+    ) -> str:
+        """Generate locally without retaining the prompt/response in diagnostics."""
+        ...
+
     def check_spelling(self, text: str, language: str) -> list[Suggestion]:
         ...
 

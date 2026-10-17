@@ -67,6 +67,12 @@ class SettingsDialog(QDialog):
         self.word_wrap.setChecked(settings.word_wrap)
         self.line_numbers = QCheckBox("Show line numbers")
         self.line_numbers.setChecked(settings.line_numbers)
+        self.autosave_enabled = QCheckBox("Automatically save project scenes and notes")
+        self.autosave_enabled.setChecked(settings.autosave_enabled)
+        self.autosave_idle = QSpinBox()
+        self.autosave_idle.setRange(250, 60000)
+        self.autosave_idle.setSingleStep(250)
+        self.autosave_idle.setValue(settings.autosave_idle_ms)
 
         form = QFormLayout(self)
         form.addRow("Ollama host", self.host)
@@ -85,6 +91,8 @@ class SettingsDialog(QDialog):
         form.addRow("Tab width", self.tab_width)
         form.addRow(self.word_wrap)
         form.addRow(self.line_numbers)
+        form.addRow(self.autosave_enabled)
+        form.addRow("Autosave after idle (ms)", self.autosave_idle)
         form.addRow("AI role", self.role)
         form.addRow("Context template", self.template)
 
@@ -138,4 +146,6 @@ class SettingsDialog(QDialog):
         self.settings.tab_width = int(self.tab_width.value())
         self.settings.word_wrap = bool(self.word_wrap.isChecked())
         self.settings.line_numbers = bool(self.line_numbers.isChecked())
+        self.settings.autosave_enabled = bool(self.autosave_enabled.isChecked())
+        self.settings.autosave_idle_ms = int(self.autosave_idle.value())
         super().accept()

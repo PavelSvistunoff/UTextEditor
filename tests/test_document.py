@@ -4,7 +4,7 @@ import pytest
 
 from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
-from app.document.file_manager import FileManager
+from app.document.file_manager import ExternalChangeError, FileManager
 
 
 def test_document_revision_and_dirty_state() -> None:
@@ -131,6 +131,51 @@ def test_failed_atomic_save_keeps_original_file_and_document_dirty(tmp_path: Pat
 
     assert path.read_text(encoding="utf-8") == "saved"
     assert document.dirty
+
+
+def test_file_manager_refuses_to_overwrite_external_changes(tmp_path: Path) -> None:
+    path = tmp_path / "draft.txt"
+    path.write_text("original", encoding="utf-8")
+    manager = FileManager()
+    document = manager.open(path)
+    document.update_text("my edit")
+    path.write_text("external version", encoding="utf-8")
+
+    with pytest.raises(ExternalChangeError, match="changed on disk"):
+        manager.save(document)
+
+    assert path.read_text(encoding="utf-8") == "external version"
+    assert document.dirty
+
+
+def test_file_manager_updates_disk_digest_for_repeated_saves(tmp_path: Path) -> None:
+    path = tmp_path / "draft.txt"
+    path.write_text("original", encoding="utf-8")
+    manager = FileManager()
+    document = manager.open(path)
+    document.update_text("first save")
+    manager.save(document)
+    document.update_text("second save")
+
+    manager.save(document)
+
+    assert path.read_text(encoding="utf-8") == "second save"
+    assert not document.dirty
+
+
+def test_save_as_to_a_new_path_does_not_compare_against_source_digest(tmp_path: Path) -> None:
+    source = tmp_path / "source.txt"
+    destination = tmp_path / "copy.txt"
+    source.write_text("original", encoding="utf-8")
+    manager = FileManager()
+    document = manager.open(source)
+    document.update_text("copy")
+
+    manager.save(document, destination)
+
+    assert source.read_text(encoding="utf-8") == "original"
+    assert destination.read_text(encoding="utf-8") == "copy"
+    assert document.path == destination
 
 
 def test_document_via_text_update_on_same_value_does_not_increase_revision() -> None:

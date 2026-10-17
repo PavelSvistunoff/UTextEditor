@@ -12,6 +12,7 @@ class Document:
     path: Path | None = None
     encoding: str = "utf-8"
     line_ending: str = "LF"
+    disk_digest: str | None = None
     revision: int = 0
     dirty: bool = False
     _saved_revision: int = field(default=0, repr=False)

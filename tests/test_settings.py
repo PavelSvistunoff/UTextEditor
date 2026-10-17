@@ -54,6 +54,18 @@ def test_settings_save_and_load_round_trip(tmp_path) -> None:
     assert loaded.line_numbers is True
 
 
+def test_autosave_preferences_round_trip_and_validate_idle_interval(tmp_path) -> None:
+    path = tmp_path / "settings.yaml"
+    settings = AppSettings(autosave_enabled=False, autosave_idle_ms=3500)
+    settings.save(path)
+
+    loaded = AppSettings.load(path)
+
+    assert not loaded.autosave_enabled
+    assert loaded.autosave_idle_ms == 3500
+    assert AppSettings(autosave_idle_ms=1).validated().autosave_idle_ms == 2000
+
+
 def test_settings_ignore_legacy_theme_override(tmp_path) -> None:
     path = tmp_path / "settings.yaml"
     path.write_text("theme: Dark\n", encoding="utf-8")

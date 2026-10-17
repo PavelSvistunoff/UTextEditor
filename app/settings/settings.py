@@ -33,6 +33,8 @@ class AppSettings:
     tab_width: int = 4
     word_wrap: bool = False
     line_numbers: bool = False
+    autosave_enabled: bool = True
+    autosave_idle_ms: int = 2000
 
     @staticmethod
     def _default_settings_path() -> Path:
@@ -108,6 +110,10 @@ class AppSettings:
         self.tab_width = self._bounded_int(self.tab_width, 2, 8, defaults.tab_width)
         self.word_wrap = self._bool(self.word_wrap, defaults.word_wrap)
         self.line_numbers = self._bool(self.line_numbers, defaults.line_numbers)
+        self.autosave_enabled = self._bool(self.autosave_enabled, defaults.autosave_enabled)
+        self.autosave_idle_ms = self._bounded_int(
+            self.autosave_idle_ms, 250, 60000, defaults.autosave_idle_ms
+        )
         self.ai_enabled = self._bool(self.ai_enabled, defaults.ai_enabled)
         self.completion_enabled = self._bool(self.completion_enabled, defaults.completion_enabled)
         self.spellcheck_enabled = self._bool(self.spellcheck_enabled, defaults.spellcheck_enabled)
