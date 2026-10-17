@@ -158,9 +158,11 @@ def test_project_tree_context_actions_route_to_selected_scene(
     window.close()
 
 
-def test_settings_connection_test_runs_and_reports_result(application):
-    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
-        window = MainWindow()
+def test_settings_connection_test_runs_and_reports_result(application, monkeypatch):
+    monkeypatch.setattr(
+        "app.ui.main_window.OllamaClient.check_connection", lambda _self: True
+    )
+    window = MainWindow()
     dialog = SettingsDialog(window.settings, window)
 
     window._test_settings_connection(
@@ -402,6 +404,9 @@ def test_project_scene_save_preserves_crlf_line_endings(application, tmp_path):
 def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
     application, tmp_path, monkeypatch
 ):
+    monkeypatch.setattr(
+        "app.ui.main_window.OllamaClient.check_connection", lambda _self: True
+    )
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
     scene = project.add_scene("Opening", chapter_id=chapter.id, content="saved text")
@@ -416,8 +421,13 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
         "question",
         lambda *_args, **_kwargs: QMessageBox.StandardButton.Yes,
     )
-    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
-        window = MainWindow()
+    compile_errors = []
+    monkeypatch.setattr(
+        QMessageBox,
+        "warning",
+        lambda *_args: compile_errors.append(_args[-1]),
+    )
+    window = MainWindow()
     window._project_opened(project)
     assert window._project_actions["Compile Book as PDF…"].isEnabled()
     window._open_project_document("scene", scene.id)
@@ -429,9 +439,13 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
 
     window.compile_project_book()
     wait_until(
-        lambda: "Book PDF compiled" in window.statusBar().currentMessage(),
+        lambda: (
+            "Book PDF compiled" in window.statusBar().currentMessage()
+            or bool(compile_errors)
+        ),
         application,
     )
+    assert not compile_errors, compile_errors
 
     pdf = QPdfDocument(application)
     pdf.load(str(target))
