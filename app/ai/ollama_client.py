@@ -43,14 +43,21 @@ class OllamaClient:
                 return
             raise
 
-    def _post(self, path: str, payload: dict, *, observe: bool = True) -> dict:
+    def _post(
+        self,
+        path: str,
+        payload: dict,
+        *,
+        observe: bool = True,
+        timeout: float | None = None,
+    ) -> dict:
         if observe:
             self._observe("Request", path, payload)
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(f"{self.host}{path}", data=body, headers={"Content-Type": "application/json"})
         start = time.time()
         try:
-            with request.urlopen(req, timeout=self.timeout) as response:
+            with request.urlopen(req, timeout=self.timeout if timeout is None else timeout) as response:
                 raw = response.read()
                 result = json.loads(raw.decode("utf-8"))
         except HTTPError as exc:
@@ -126,6 +133,7 @@ class OllamaClient:
         role: str = DEFAULT_AI_ROLE,
         maximum_tokens: int = 300,
         temperature: float = 0.2,
+        timeout: float | None = None,
     ) -> str:
         return self._generate(
             prompt,
@@ -133,6 +141,7 @@ class OllamaClient:
             maximum_tokens=maximum_tokens,
             temperature=temperature,
             observe=True,
+            timeout=timeout,
         )
 
     def generate_private(
@@ -142,6 +151,7 @@ class OllamaClient:
         role: str = DEFAULT_AI_ROLE,
         maximum_tokens: int = 300,
         temperature: float = 0.2,
+        timeout: float | None = None,
     ) -> str:
         """Generate without forwarding prompt or response content to diagnostics."""
         return self._generate(
@@ -150,6 +160,7 @@ class OllamaClient:
             maximum_tokens=maximum_tokens,
             temperature=temperature,
             observe=False,
+            timeout=timeout,
         )
 
     def _generate(
@@ -160,6 +171,7 @@ class OllamaClient:
         maximum_tokens: int,
         temperature: float,
         observe: bool,
+        timeout: float | None,
     ) -> str:
         response = self._post(
             "/api/chat",
@@ -174,6 +186,7 @@ class OllamaClient:
                 "options": {"num_predict": maximum_tokens, "temperature": temperature},
             },
             observe=observe,
+            timeout=timeout,
         )
         message = response.get("message")
         result = message.get("content") if isinstance(message, dict) else None

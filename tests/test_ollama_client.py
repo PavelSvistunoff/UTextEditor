@@ -102,3 +102,18 @@ def test_private_generation_never_sends_prompt_or_result_to_diagnostics() -> Non
         assert client.generate_private("private manuscript text") == "private analysis"
 
     assert events == []
+
+
+def test_private_generation_can_use_a_longer_operation_timeout() -> None:
+    client = OllamaClient(timeout=30)
+    with patch(
+        "app.ai.ollama_client.request.urlopen",
+        return_value=response_with({"message": {"content": "long result"}}),
+    ) as urlopen:
+        assert client.generate_private(
+            "write this scene",
+            maximum_tokens=900,
+            timeout=300,
+        ) == "long result"
+
+    assert urlopen.call_args.kwargs["timeout"] == 300

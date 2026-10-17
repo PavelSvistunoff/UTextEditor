@@ -3,7 +3,9 @@
 from dataclasses import dataclass, replace
 from datetime import datetime
 import hashlib
+import json
 from pathlib import Path
+from threading import Event
 from uuid import uuid4
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt, Signal
@@ -32,6 +34,14 @@ from app.document.export import ExportChapter, ExportScene, export_manuscript
 from app.document.file_manager import FileManager
 from app.document.recovery import RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, WordCount, count_words
+from app.project.autopilot import (
+    MAX_AUTOPILOT_CHARACTERS,
+    MAX_AUTOPILOT_CHAPTERS,
+    MAX_AUTOPILOT_SCENES,
+    AutopilotDraft,
+    run_autopilot,
+)
+from app.project.auto_writer import AutoWriterResult, run_auto_writer
 from app.project.outline import parse_outline
 from app.document.revisions import RevisionStore, RevisionSnapshot
 from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
@@ -39,6 +49,7 @@ from app.settings.settings import AppSettings
 from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow
 from .analysis_window import AnalysisWindow
+from .auto_writer_dialog import AutoWriterDialog
 from .project_view import ProjectView
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
@@ -68,6 +79,7 @@ class _RecoveryPayload:
 
 class MainWindow(QMainWindow):
     ai_interaction = Signal(str, str, object)
+    auto_writer_progress = Signal(str)
 
     def __init__(
         self,
@@ -111,8 +123,14 @@ class MainWindow(QMainWindow):
         self._project_ai_worker: FunctionWorker | None = None
         self._project_setup_generation = 0
         self._project_setup_worker: FunctionWorker | None = None
+        self._project_setup_cancel_event: Event | None = None
         self._project_setup_brief_dialog: ProjectBriefDialog | None = None
         self._project_setup_cancel_action: QAction | None = None
+        self._auto_writer_generation = 0
+        self._auto_writer_worker: FunctionWorker | None = None
+        self._auto_writer_cancel_event: Event | None = None
+        self._auto_writer_cancel_action: QAction | None = None
+        self._auto_writer_committing = False
         self._analysis_windows: list[AnalysisWindow] = []
         self._project_busy = False
         self._project_refresh_timer = QTimer(self)
@@ -164,6 +182,9 @@ class MainWindow(QMainWindow):
         self._spellcheck_timer.timeout.connect(self.check_spelling)
         self._build_actions()
         self._build_status_bar()
+        self.auto_writer_progress.connect(
+            self._show_auto_writer_progress, Qt.ConnectionType.QueuedConnection
+        )
         if self._writing_goal_load_error:
             self.statusBar().showMessage(
                 f"Writing-goal progress could not be loaded: {self._writing_goal_load_error}", 10000
@@ -209,6 +230,7 @@ class MainWindow(QMainWindow):
             ("Open Project…", self.open_project, False),
             ("Close Project", self.close_project, True),
             ("AI Project Setup…", self.setup_project_with_ai, True),
+            ("Auto-writer…", self.start_auto_writer, True),
             ("New Chapter…", self.add_project_chapter, True),
             ("New Scene…", self.add_project_scene, True),
             ("New Reference Note…", self.add_project_note, True),
@@ -280,6 +302,7 @@ class MainWindow(QMainWindow):
             (ai_menu, "Check Continuity Against Selected Notes", self.check_project_continuity, QKeySequence()),
             (ai_menu, "Cancel Project Analysis", self.cancel_project_analysis, QKeySequence()),
             (ai_menu, "Cancel Project Setup", self.cancel_project_setup, QKeySequence()),
+            (ai_menu, "Cancel Auto-writer", self.cancel_auto_writer, QKeySequence()),
         ]
         for menu, title, handler, shortcut in actions:
             action = QAction(title, self)
@@ -288,14 +311,16 @@ class MainWindow(QMainWindow):
                 # application menu, hiding them from the AI menu.
                 action.setMenuRole(QAction.MenuRole.NoRole)
             action.setShortcut(shortcut)
-            if title in {"Summarize Selected Scene", "Check Continuity Against Selected Notes", "Cancel Project Analysis", "Cancel Project Setup"}:
+            if title in {"Summarize Selected Scene", "Check Continuity Against Selected Notes", "Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer"}:
                 action.setMenuRole(QAction.MenuRole.NoRole)
-            if title in {"Cancel Project Analysis", "Cancel Project Setup"}:
+            if title in {"Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer"}:
                 action.setEnabled(False)
             action.triggered.connect(handler)
             menu.addAction(action)
             if title == "Cancel Project Setup":
                 self._project_setup_cancel_action = action
+            elif title == "Cancel Auto-writer":
+                self._auto_writer_cancel_action = action
 
         recovery_action = QAction("Inspect Recovery…", self)
         recovery_action.setEnabled(self.recovery_store is not None)
@@ -340,6 +365,7 @@ class MainWindow(QMainWindow):
         if not self.settings.ai_enabled:
             self._cancel_pending_ai_requests()
             self.cancel_project_setup()
+            self.cancel_auto_writer()
             self._clear_editor_ai_state()
             self.ai_status = "AI: Disabled"
             self._update_status()
@@ -347,6 +373,7 @@ class MainWindow(QMainWindow):
             self.ai_status = "AI: Connecting..."
             self._update_status()
             self._check_connection()
+        self._update_project_actions()
         try:
             self.settings.save()
         except OSError as exc:
@@ -363,6 +390,7 @@ class MainWindow(QMainWindow):
             if worker is not None:
                 worker.cancel()
         self.cancel_project_analysis()
+        self.cancel_auto_writer()
 
     def _clear_editor_ai_state(self) -> None:
         for index in range(self.tabs.count()):
@@ -598,6 +626,7 @@ class MainWindow(QMainWindow):
         binding = self._project_documents.get(editor)
         if (
             binding is None
+            or (binding.project is self.project and self._project_busy)
             or not self.settings.autosave_enabled
             or not editor.document_state.dirty
             or editor in self._saving_editors
@@ -653,6 +682,10 @@ class MainWindow(QMainWindow):
             lambda text, dialog=dialog, project=project:
                 self._suggest_project_brief(project, dialog, text)
         )
+        dialog.autopilot_requested.connect(
+            lambda text, dialog=dialog, project=project:
+                self._start_project_autopilot(project, dialog, text)
+        )
         dialog.rejected.connect(
             lambda dialog=dialog: self._project_brief_dialog_closed(dialog)
         )
@@ -686,6 +719,264 @@ class MainWindow(QMainWindow):
         ) != QMessageBox.StandardButton.Yes:
             return
         self._start_project_outline_request(project, brief)
+
+    def start_auto_writer(self) -> None:
+        project = self.project
+        if project is None or self._project_busy or not self.settings.ai_enabled:
+            return
+        scene_count = sum(1 for _scene in project.iter_scenes())
+        dialog = AutoWriterDialog(scene_count, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        mode, instructions = dialog.values()
+        operation = (
+            "write into empty scenes only, leaving non-empty scenes unchanged"
+            if mode == "write_empty"
+            else f"refine all {scene_count} scenes, replacing their existing text"
+        )
+        confirmation = (
+            f"Auto-writer will {operation} using the project outline, scene text, reference "
+            "notes, your optional instructions, and current AI settings.\n\n"
+            f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
+            "Project text and reference notes are sent only to this configured local model. "
+            "A complete local revision snapshot is created before generation. All scene "
+            "changes are applied together only after every scene succeeds. Refine mode "
+            "automatically replaces existing text."
+        )
+        if QMessageBox.question(
+            self,
+            "Confirm Auto-writer",
+            confirmation,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        if any(
+            binding.project is project and editor in self._saving_editors
+            for editor, binding in tuple(self._project_documents.items())
+        ):
+            QMessageBox.information(
+                self, "Auto-writer", "Wait for project document saves to finish first."
+            )
+            return
+
+        open_text: dict[str, str] = {}
+        editor_states: dict[str, tuple[object, int]] = {}
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is project and self.tabs.indexOf(editor) >= 0:
+                open_text[binding.item_id] = editor.toPlainText()
+                editor_states[binding.item_id] = (editor, editor.revision)
+                timer = self._autosave_timers.get(editor)
+                if timer is not None:
+                    timer.stop()
+        self._project_refresh_timer.stop()
+        self._project_generation += 1
+        self._auto_writer_generation += 1
+        generation = self._auto_writer_generation
+        settings_generation = self._settings_generation
+        project_generation = self._project_generation
+        cancel_event = Event()
+        self._auto_writer_cancel_event = cancel_event
+        self._set_project_busy(True)
+        if self._auto_writer_cancel_action is not None:
+            self._auto_writer_cancel_action.setEnabled(True)
+        self.statusBar().showMessage(
+            "Auto-writer is creating a revision snapshot and drafting scene text…"
+        )
+        snapshot_name = (
+            "Auto-writer before "
+            + datetime.now().astimezone().isoformat(timespec="seconds")
+        )
+        worker = FunctionWorker(
+            run_auto_writer,
+            self.provider,
+            project,
+            mode,
+            instructions,
+            open_text,
+            maximum_tokens=1400,
+            temperature=self.settings.temperature,
+            snapshot_name=snapshot_name,
+            is_cancelled=cancel_event.is_set,
+            progress=lambda message: self.auto_writer_progress.emit(message),
+        )
+        self._auto_writer_worker = worker
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda result: self._auto_writer_generated(
+                generation,
+                settings_generation,
+                project_generation,
+                project,
+                editor_states,
+                result,
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._auto_writer_failed(
+                generation, settings_generation, project, error
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _auto_writer_generated(
+        self,
+        generation,
+        settings_generation,
+        project_generation,
+        project,
+        editor_states,
+        result: AutoWriterResult,
+    ) -> None:
+        if generation != self._auto_writer_generation:
+            return
+        self._auto_writer_worker = None
+        self._auto_writer_cancel_event = None
+        if self._auto_writer_cancel_action is not None:
+            self._auto_writer_cancel_action.setEnabled(False)
+        stale_editor = any(
+            self.tabs.indexOf(editor) < 0 or editor.revision != revision
+            for editor, revision in editor_states.values()
+        )
+        if (
+            project is not self.project
+            or project_generation != self._project_generation
+            or settings_generation != self._settings_generation
+            or not self.settings.ai_enabled
+            or stale_editor
+        ):
+            self._finish_auto_writer(
+                project,
+                "Auto-writer results were not applied because the project, settings, or an "
+                f"open document changed. Original snapshot: {result.snapshot_path}",
+            )
+            return
+
+        self._auto_writer_committing = True
+        self.statusBar().showMessage(
+            "Auto-writer drafts are complete; applying snapshot-protected scene updates…"
+        )
+        worker = FunctionWorker(
+            project.replace_scenes_transactionally,
+            dict(result.replacements),
+            expected_contents=dict(result.expected_disk_text),
+            expected_contexts=dict(result.expected_context_text),
+        )
+        self._auto_writer_worker = worker
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda persisted: self._auto_writer_replaced(
+                generation, project, editor_states, result, persisted
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._auto_writer_replace_failed(
+                generation, project, result, error
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _auto_writer_replaced(
+        self, generation, project, editor_states, result, persisted
+    ) -> None:
+        if generation != self._auto_writer_generation:
+            return
+        self._auto_writer_worker = None
+        self._auto_writer_committing = False
+        changed_buffers = False
+        for scene_id, text in persisted.items():
+            state = editor_states.get(scene_id)
+            if state is None:
+                continue
+            editor, revision = state
+            if self.tabs.indexOf(editor) < 0:
+                continue
+            binding = self._project_documents.get(editor)
+            if binding is not None:
+                binding.expected_text = text
+            if editor.revision == revision:
+                editor.setPlainText(normalize_line_endings(text, "LF"))
+                editor.document_state.mark_saved()
+                self.tabs._update_tab_title(editor)
+                self._discard_recovery_for_editor(editor)
+            else:
+                changed_buffers = True
+        self._finish_auto_writer(
+            project,
+            f"Auto-writer updated {len(persisted)} scenes. Originals are preserved in "
+            f"{result.snapshot_path}"
+            + (
+                " An open scene changed during the update; its newer buffer was kept unsaved."
+                if changed_buffers
+                else ""
+            ),
+        )
+
+    def _auto_writer_replace_failed(self, generation, project, result, error) -> None:
+        if generation != self._auto_writer_generation:
+            return
+        self._auto_writer_worker = None
+        self._auto_writer_committing = False
+        self._finish_auto_writer(
+            project,
+            f"Auto-writer update did not finish cleanly: {error}. Verify project scene "
+            f"files before continuing; the original snapshot is at {result.snapshot_path}",
+            warning=True,
+        )
+
+    def _auto_writer_failed(
+        self, generation, settings_generation, project, error
+    ) -> None:
+        if generation != self._auto_writer_generation:
+            return
+        self._auto_writer_worker = None
+        self._auto_writer_cancel_event = None
+        self._finish_auto_writer(
+            project,
+            f"Auto-writer failed before applying scene changes: {error}. "
+            "Nothing was replaced; any pre-run revision snapshot is retained. "
+            "For a timeout, wait for the local model to finish loading and try a smaller batch.",
+            warning=settings_generation == self._settings_generation,
+        )
+
+    def _show_auto_writer_progress(self, message: str) -> None:
+        if self._auto_writer_worker is not None:
+            self.statusBar().showMessage(message)
+
+    def _finish_auto_writer(self, project, message: str, *, warning: bool = False) -> None:
+        self._auto_writer_cancel_event = None
+        self._auto_writer_committing = False
+        if self._auto_writer_cancel_action is not None:
+            self._auto_writer_cancel_action.setEnabled(False)
+        self._set_project_busy(False)
+        if project is self.project:
+            self._refresh_project_view()
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is project:
+                timer = self._autosave_timers.get(editor)
+                if timer is not None and editor.document_state.dirty:
+                    timer.start(self.settings.autosave_idle_ms)
+        if warning:
+            QMessageBox.warning(self, "Auto-writer", message)
+        else:
+            self.statusBar().showMessage(message, 15000)
+
+    def cancel_auto_writer(self) -> None:
+        worker = self._auto_writer_worker
+        if worker is None or self._auto_writer_committing:
+            return
+        self._auto_writer_generation += 1
+        if self._auto_writer_cancel_event is not None:
+            self._auto_writer_cancel_event.set()
+        worker.cancel()
+        self._auto_writer_worker = None
+        self._finish_auto_writer(
+            self.project,
+            "Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available.",
+        )
 
     def _start_project_outline_request(self, project: Project, brief: str) -> None:
         if (
@@ -792,6 +1083,170 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
+
+    def _start_project_autopilot(
+        self, project: Project, dialog: ProjectBriefDialog, brief: str
+    ) -> None:
+        if (
+            project is not self.project
+            or dialog is not self._project_setup_brief_dialog
+            or self._project_busy
+            or not self.settings.ai_enabled
+        ):
+            return
+        if not brief.strip():
+            dialog.set_autopilot_running(False, "Add story details before starting Auto-pilot.")
+            return
+        if len(brief) > 6000:
+            dialog.set_autopilot_running(False, "The template must be no longer than 6,000 characters.")
+            return
+        existing_outline = self._project_outline_metadata(project)
+        confirmation = (
+            "Auto-pilot will send your edited setup template and existing project outline "
+            "metadata (chapter, scene, and character-note titles) to the configured local model.\n\n"
+            f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
+            f"It may add up to {MAX_AUTOPILOT_CHAPTERS} chapters, {MAX_AUTOPILOT_SCENES} "
+            f"scenes, and {MAX_AUTOPILOT_CHARACTERS} character notes. It will draft "
+            "all new scenes, leave every existing file untouched, and apply the additions "
+            "automatically without per-change approval. If any generation fails or is cancelled, "
+            "none of the generated changes are added."
+        )
+        if QMessageBox.question(
+            self,
+            "Confirm autonomous local Auto-pilot",
+            confirmation,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+
+        self._project_setup_generation += 1
+        generation = self._project_setup_generation
+        settings_generation = self._settings_generation
+        project_generation = self._project_generation
+        cancel_event = Event()
+        self._project_setup_cancel_event = cancel_event
+        dialog.set_autopilot_running(True)
+        self._set_project_busy(True)
+        if self._project_setup_cancel_action is not None:
+            self._project_setup_cancel_action.setEnabled(True)
+        self.statusBar().showMessage("Auto-pilot is refining the plan and drafting new project content…")
+        worker = FunctionWorker(
+            run_autopilot,
+            self.provider,
+            brief,
+            existing_outline,
+            maximum_tokens=900,
+            temperature=self.settings.temperature,
+            is_cancelled=cancel_event.is_set,
+        )
+        self._project_setup_worker = worker
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda draft: self._project_autopilot_generated(
+                generation,
+                settings_generation,
+                project_generation,
+                project,
+                dialog,
+                draft,
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._project_autopilot_failed(
+                generation, settings_generation, dialog, error
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    @staticmethod
+    def _project_outline_metadata(project: Project) -> str:
+        metadata = {
+            "project": project.manifest.title,
+            "chapters": [
+                {
+                    "title": chapter.title,
+                    "scenes": [scene.title for scene in chapter.scenes],
+                }
+                for chapter in project.manifest.chapters[:30]
+            ],
+            "ungrouped_scenes": [
+                scene.title for scene in project.manifest.ungrouped_scenes[:50]
+            ],
+            "characters": [
+                note.title
+                for note in project.manifest.notes
+                if note.type == "character"
+            ][:30],
+        }
+        return json.dumps(metadata, ensure_ascii=False)[:5000]
+
+    def _project_autopilot_generated(
+        self,
+        generation,
+        settings_generation,
+        project_generation,
+        project,
+        dialog,
+        draft: AutopilotDraft,
+    ) -> None:
+        if generation != self._project_setup_generation:
+            return
+        self._project_setup_worker = None
+        self._project_setup_cancel_event = None
+        if self._project_setup_cancel_action is not None:
+            self._project_setup_cancel_action.setEnabled(False)
+        self._set_project_busy(False)
+        if (
+            project is not self.project
+            or project_generation != self._project_generation
+            or settings_generation != self._settings_generation
+            or not self.settings.ai_enabled
+            or dialog is not self._project_setup_brief_dialog
+        ):
+            dialog.set_autopilot_running(False, "Project or AI settings changed; no files were added.")
+            return
+
+        scene_count = sum(len(scenes) for _title, scenes in draft.chapters)
+        dialog.set_applying(
+            f"Generated {len(draft.chapters)} chapters, {scene_count} scenes, and "
+            f"{len(draft.characters)} character notes. Applying the complete batch…",
+        )
+        self._run_project_mutation(
+            project.add_autopilot_content,
+            draft.chapters,
+            draft.characters,
+            on_success=lambda: self._project_autopilot_applied(dialog, scene_count),
+            on_failure=lambda error: dialog.set_autopilot_running(
+                False, f"Could not apply generated content: {error}"
+            ),
+        )
+
+    def _project_autopilot_applied(self, dialog: ProjectBriefDialog, scene_count: int) -> None:
+        dialog.set_autopilot_running(
+            False, f"Auto-pilot added {scene_count} scene drafts and character notes."
+        )
+        dialog.accept()
+        self.statusBar().showMessage(
+            "Auto-pilot added a new plan, scene drafts, and character notes. Existing content was untouched.",
+            10000,
+        )
+
+    def _project_autopilot_failed(
+        self, generation, settings_generation, dialog, error
+    ) -> None:
+        if generation != self._project_setup_generation:
+            return
+        self._project_setup_worker = None
+        self._project_setup_cancel_event = None
+        if self._project_setup_cancel_action is not None:
+            self._project_setup_cancel_action.setEnabled(False)
+        self._set_project_busy(False)
+        if dialog is self._project_setup_brief_dialog:
+            dialog.set_autopilot_running(False, f"Auto-pilot failed; no generated changes were added: {error}")
+        if settings_generation == self._settings_generation:
+            self.statusBar().showMessage("Auto-pilot did not change the project.", 8000)
 
     @staticmethod
     def _suggest_project_brief_text(
@@ -968,10 +1423,22 @@ class MainWindow(QMainWindow):
         if worker is None:
             return
         self._project_setup_generation += 1
+        was_autopilot = self._project_setup_cancel_event is not None
+        project_setup_cancel_event = getattr(self, "_project_setup_cancel_event", None)
+        if project_setup_cancel_event is not None:
+            project_setup_cancel_event.set()
         worker.cancel()
         self._project_setup_worker = None
+        self._project_setup_cancel_event = None
         if self._project_setup_brief_dialog is not None:
-            self._project_setup_brief_dialog.set_suggesting(False, "Suggestion request cancelled.")
+            if was_autopilot:
+                self._project_setup_brief_dialog.set_autopilot_running(
+                    False, "Auto-pilot cancelled; no generated changes were applied."
+                )
+            else:
+                self._project_setup_brief_dialog.set_suggesting(
+                    False, "Project setup AI request cancelled."
+                )
         if self._project_setup_cancel_action is not None:
             self._project_setup_cancel_action.setEnabled(False)
         self._set_project_busy(False)
@@ -1052,7 +1519,10 @@ class MainWindow(QMainWindow):
             action.setEnabled(
                 not self._project_busy
                 and (has_project or not requires_project)
-                and (title != "AI Project Setup…" or self.settings.ai_enabled)
+                and (
+                    title not in {"AI Project Setup…", "Auto-writer…"}
+                    or self.settings.ai_enabled
+                )
             )
 
     def _refresh_project_view(self) -> None:
@@ -1129,7 +1599,9 @@ class MainWindow(QMainWindow):
         if generation == self._project_generation and refresh_generation == self._project_refresh_generation:
             self.statusBar().showMessage(f"Project word counts could not be refreshed: {error}", 8000)
 
-    def _run_project_mutation(self, operation, *args, on_success=None, **kwargs) -> None:
+    def _run_project_mutation(
+        self, operation, *args, on_success=None, on_failure=None, **kwargs
+    ) -> None:
         project = self.project
         if project is None or self._project_busy:
             return
@@ -1142,7 +1614,8 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
-            lambda error, project=project: self._project_mutation_failed(project, error),
+            lambda error, project=project, on_failure=on_failure:
+                self._project_mutation_failed(project, error, on_failure),
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
@@ -1155,10 +1628,13 @@ class MainWindow(QMainWindow):
             self._project_generation += 1
             self._refresh_project_view()
 
-    def _project_mutation_failed(self, project: Project, error) -> None:
+    def _project_mutation_failed(self, project: Project, error, on_failure=None) -> None:
         self._set_project_busy(False)
+        if on_failure is not None:
+            on_failure(error)
         if project is self.project:
-            QMessageBox.warning(self, "Project change failed", str(error))
+            if on_failure is None:
+                QMessageBox.warning(self, "Project change failed", str(error))
 
     def add_project_chapter(self) -> None:
         if self.project is None:
@@ -2795,6 +3271,8 @@ class MainWindow(QMainWindow):
         self._project_ai_generation += 1
         self._project_ai_worker = None
         self._set_project_analysis_active(False)
+        self.cancel_project_setup()
+        self.cancel_auto_writer()
 
     def _apply_editor_settings(self) -> None:
         for index in range(self.tabs.count()):
@@ -3013,6 +3491,12 @@ class MainWindow(QMainWindow):
         self._completion_generation += 1
         self._generate_generation += 1
         self._settings_generation += 1
+        project_setup_cancel_event = getattr(self, "_project_setup_cancel_event", None)
+        if project_setup_cancel_event is not None:
+            project_setup_cancel_event.set()
+        auto_writer_cancel_event = getattr(self, "_auto_writer_cancel_event", None)
+        if auto_writer_cancel_event is not None:
+            auto_writer_cancel_event.set()
         for worker in list(self._workers):
             worker.cancel()
 

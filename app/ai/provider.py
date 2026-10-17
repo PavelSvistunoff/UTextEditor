@@ -26,6 +26,7 @@ class AIProvider(Protocol):
         role: str = DEFAULT_AI_ROLE,
         maximum_tokens: int = 300,
         temperature: float = 0.2,
+        timeout: float | None = None,
     ) -> str:
         ...
 
@@ -36,6 +37,7 @@ class AIProvider(Protocol):
         role: str = DEFAULT_AI_ROLE,
         maximum_tokens: int = 300,
         temperature: float = 0.2,
+        timeout: float | None = None,
     ) -> str:
         """Generate locally without retaining the prompt/response in diagnostics."""
         ...

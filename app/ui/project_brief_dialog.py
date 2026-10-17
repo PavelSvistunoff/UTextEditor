@@ -48,6 +48,7 @@ Structure preferences:
 
 class ProjectBriefDialog(QDialog):
     suggest_requested = Signal(str)
+    autopilot_requested = Signal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -70,11 +71,16 @@ class ProjectBriefDialog(QDialog):
         self.suggest_button.clicked.connect(
             lambda: self.suggest_requested.emit(self.editor.toPlainText())
         )
+        self.autopilot_button = QPushButton("Auto-pilot: refine plan and write", self)
+        self.autopilot_button.clicked.connect(
+            lambda: self.autopilot_requested.emit(self.editor.toPlainText())
+        )
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             self,
         )
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Continue to outline")
+        self.cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
 
@@ -83,6 +89,7 @@ class ProjectBriefDialog(QDialog):
         layout.addWidget(self.editor)
         layout.addWidget(self.status)
         layout.addWidget(self.suggest_button)
+        layout.addWidget(self.autopilot_button)
         layout.addWidget(self.buttons)
 
     def brief(self) -> str:
@@ -90,10 +97,31 @@ class ProjectBriefDialog(QDialog):
 
     def set_suggesting(self, suggesting: bool, message: str = "") -> None:
         self.suggest_button.setEnabled(not suggesting)
+        self.autopilot_button.setEnabled(not suggesting)
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(not suggesting)
         self.status.setText(
             message or ("Asking the local model for suggestions…" if suggesting else "")
         )
+
+    def set_autopilot_running(self, running: bool, message: str = "") -> None:
+        self.cancel_button.setEnabled(True)
+        self.editor.setEnabled(not running)
+        self.suggest_button.setEnabled(not running)
+        self.autopilot_button.setEnabled(not running)
+        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(not running)
+        self.status.setText(
+            message
+            or (
+                "Auto-pilot is refining the plan and drafting new scenes. "
+                "Cancel leaves project files unchanged…"
+                if running
+                else ""
+            )
+        )
+
+    def set_applying(self, message: str) -> None:
+        self.set_autopilot_running(True, message)
+        self.cancel_button.setEnabled(False)
 
     def apply_suggestion(self, text: str) -> None:
         self.editor.setPlainText(text)

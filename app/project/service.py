@@ -27,6 +27,7 @@ from .model import (
     Scene,
 )
 from .paths import validate_project_path
+from app.document.encoding import detect_line_ending, normalize_line_endings
 
 _WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
 
@@ -169,48 +170,93 @@ class Project:
         self, outline: tuple[tuple[str, tuple[str, ...]], ...]
     ) -> tuple[Chapter, ...]:
         """Atomically add an author-approved chapter/scene outline."""
-        if not outline:
-            raise ProjectError("An outline must contain at least one chapter.")
+        chapters = tuple(
+            (chapter_title, tuple((scene_title, "") for scene_title in scene_titles))
+            for chapter_title, scene_titles in outline
+        )
+        created_chapters, _created_notes = self.add_autopilot_content(chapters, ())
+        return created_chapters
+
+    def add_autopilot_content(
+        self,
+        chapters: tuple[tuple[str, tuple[tuple[str, str], ...]], ...],
+        characters: tuple[tuple[str, str], ...],
+    ) -> tuple[tuple[Chapter, ...], tuple[Note, ...]]:
+        """Atomically add generated chapters, scene drafts, and character notes."""
+        if not chapters and not characters:
+            raise ProjectError("Generated content must include at least one chapter or character.")
 
         new_chapters: list[Chapter] = []
+        new_characters: list[Note] = []
         reserved_paths = {
             entry.path for entry in (*tuple(self.iter_scenes()), *self.manifest.notes)
         }
         created_paths: list[Path] = []
-        for chapter_title, scene_titles in outline:
+        for chapter_title, scene_contents in chapters:
             _validate_title(chapter_title)
             chapter = Chapter(id=str(uuid4()), title=chapter_title)
-            for scene_title in scene_titles:
+            for scene_title, content in scene_contents:
                 _validate_title(scene_title)
-                relative_path = self._unique_new_path(scene_title, reserved_paths)
+                _validate_project_text(content)
+                relative_path = self._unique_new_path(
+                    scene_title, reserved_paths, folder="manuscript"
+                )
                 reserved_paths.add(relative_path)
                 chapter.scenes.append(
                     Scene(id=str(uuid4()), title=scene_title, path=relative_path)
                 )
             new_chapters.append(chapter)
 
+        for character_name, profile in characters:
+            _validate_title(character_name)
+            _validate_project_text(profile)
+            relative_path = self._unique_new_path(
+                character_name, reserved_paths, folder="notes"
+            )
+            reserved_paths.add(relative_path)
+            new_characters.append(
+                Note(
+                    id=str(uuid4()),
+                    type="character",
+                    title=character_name,
+                    path=relative_path,
+                )
+            )
+
         original_manifest = self.manifest
         candidate = deepcopy(original_manifest)
         candidate.chapters.extend(new_chapters)
+        candidate.notes.extend(new_characters)
         candidate.validate()
+        file_contents = {
+            scene.path: content
+            for (_chapter_title, scene_contents), chapter in zip(chapters, new_chapters)
+            for (_scene_title, content), scene in zip(scene_contents, chapter.scenes)
+        }
+        file_contents.update(
+            {
+                note.path: profile
+                for (_character_name, profile), note in zip(characters, new_characters)
+            }
+        )
 
         try:
-            for chapter in new_chapters:
-                for scene in chapter.scenes:
-                    target = validate_project_path(self.root, scene.path)
-                    try:
-                        with target.open("x", encoding="utf-8", newline="") as stream:
-                            created_paths.append(target)
-                            stream.flush()
-                            os.fsync(stream.fileno())
-                    except FileExistsError as exc:
-                        raise ProjectError(
-                            f"Refusing to overwrite existing file: {scene.path}"
-                        ) from exc
-                    except OSError as exc:
-                        raise ProjectError(
-                            f"Cannot create project text file {scene.path!r}: {exc}"
-                        ) from exc
+            for relative_path, content in file_contents.items():
+                target = validate_project_path(self.root, relative_path)
+                try:
+                    with target.open("x", encoding="utf-8", newline="") as stream:
+                        created_paths.append(target)
+                        stream.write(content)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                except FileExistsError as exc:
+                    raise ProjectError(
+                        f"Refusing to overwrite existing file: {relative_path}"
+                    ) from exc
+                except OSError as exc:
+                    raise ProjectError(
+                        f"Cannot create project text file {relative_path!r}: {exc}"
+                    ) from exc
             self.manifest = candidate
             self._write_manifest()
         except Exception as exc:
@@ -223,11 +269,11 @@ class Project:
                     cleanup_failures.append(str(path.relative_to(self.root)))
             if cleanup_failures:
                 raise ProjectError(
-                    f"Could not finish adding the outline ({exc}); these empty files "
-                    f"remain unreferenced: {', '.join(cleanup_failures)}"
+                    f"Could not finish adding generated content ({exc}); these unreferenced files "
+                    f"remain: {', '.join(cleanup_failures)}"
                 ) from exc
             raise
-        return tuple(new_chapters)
+        return tuple(new_chapters), tuple(new_characters)
 
     def rename_chapter(self, chapter_id: str, title: str) -> None:
         chapter = self._chapter(chapter_id)
@@ -585,6 +631,138 @@ class Project:
             self.get_note(note_id).path, content, expected_content=expected_content
         )
 
+    def replace_scenes_transactionally(
+        self,
+        replacements: dict[str, str],
+        *,
+        expected_contents: dict[str, str],
+        expected_contexts: dict[str, str] | None = None,
+    ) -> dict[str, str]:
+        """Replace a set of scenes only if all disk versions still match.
+
+        Writes are staged beside their targets. If any replacement fails, already
+        replaced targets are rolled back from temporary backups.
+        """
+        if not replacements or set(replacements) != set(expected_contents):
+            raise ProjectError("Auto-writer replacements require matching scene snapshots.")
+        fresh = Project.open(self.root)
+        if fresh.manifest.to_mapping() != self.manifest.to_mapping():
+            raise ProjectError(
+                "The project structure changed; Auto-writer results were not applied."
+            )
+        for item_id, expected_text in (expected_contexts or {}).items():
+            try:
+                item = fresh.get_scene(item_id)
+                current_text = fresh.read_scene(item_id)
+            except ProjectError:
+                try:
+                    item = fresh.get_note(item_id)
+                    current_text = fresh.read_note(item_id)
+                except ProjectError as exc:
+                    raise ProjectError(
+                        f"Project context item {item_id} disappeared during Auto-writer."
+                    ) from exc
+            if not isinstance(expected_text, str) or current_text != expected_text:
+                raise ProjectError(
+                    f"Project context changed during Auto-writer: {item.title}; "
+                    "generated text was not applied."
+                )
+
+        targets: dict[str, Path] = {}
+        persisted: dict[str, str] = {}
+        expected_bytes: dict[str, bytes] = {}
+        for scene_id, generated in replacements.items():
+            if not isinstance(generated, str) or "\x00" in generated:
+                raise ProjectError(f"Auto-writer returned invalid text for scene {scene_id}.")
+            try:
+                original_scene = self.get_scene(scene_id)
+                current_scene = fresh.get_scene(scene_id)
+            except ProjectError as exc:
+                raise ProjectError(f"Scene {scene_id} changed while Auto-writer was running.") from exc
+            if current_scene.path != original_scene.path:
+                raise ProjectError(f"Scene {scene_id} moved while Auto-writer was running.")
+            target = validate_project_path(self.root, current_scene.path)
+            if (self.root / current_scene.path).is_symlink() or not target.is_file():
+                raise ProjectError(f"Scene file is missing or unsafe: {current_scene.path}")
+            try:
+                original_bytes = target.read_bytes()
+                current_text = original_bytes.decode("utf-8")
+            except (OSError, UnicodeError) as exc:
+                raise ProjectError(f"Cannot verify scene file {current_scene.path}: {exc}") from exc
+            if "\x00" in current_text:
+                raise ProjectError(f"Scene file appears to be binary: {current_scene.path}")
+            expected_text = expected_contents[scene_id]
+            if current_text != expected_text:
+                raise ProjectError(
+                    f"Scene changed on disk during Auto-writer: {current_scene.path}; "
+                    "no generated text was applied."
+                )
+            persisted_text = normalize_line_endings(
+                generated, detect_line_ending(expected_text)
+            )
+            targets[scene_id] = target
+            persisted[scene_id] = persisted_text
+            expected_bytes[scene_id] = original_bytes
+
+        temporary_files: dict[str, Path] = {}
+        backups: dict[str, Path] = {}
+        try:
+            for scene_id, target in targets.items():
+                temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+                temporary_files[scene_id] = temporary
+                with temporary.open("xb") as stream:
+                    stream.write(persisted[scene_id].encode("utf-8"))
+                    stream.flush()
+                    os.fsync(stream.fileno())
+
+            for scene_id, target in targets.items():
+                if target.is_symlink() or target.read_bytes() != expected_bytes[scene_id]:
+                    raise ProjectError(
+                        f"Scene changed on disk during Auto-writer: {target.name}; "
+                        "no generated text was applied."
+                    )
+                backup = target.with_name(f".{target.name}.{uuid4().hex}.bak")
+                target.rename(backup)
+                backups[scene_id] = backup
+                temporary_files[scene_id].rename(target)
+                _fsync_directory(target.parent)
+        except Exception as exc:
+            rollback_failures: list[str] = []
+            for scene_id in reversed(tuple(backups)):
+                target = targets[scene_id]
+                backup = backups[scene_id]
+                try:
+                    if target.exists() or target.is_symlink():
+                        target.unlink()
+                    if backup.exists():
+                        backup.rename(target)
+                    _fsync_directory(target.parent)
+                except OSError:
+                    rollback_failures.append(str(target.relative_to(self.root)))
+            for temporary in temporary_files.values():
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            if rollback_failures:
+                raise ProjectError(
+                    f"Auto-writer replacement failed ({exc}); rollback also failed for "
+                    f"{', '.join(rollback_failures)}. The pre-run revision snapshot is available."
+                ) from exc
+            if isinstance(exc, ProjectError):
+                raise
+            raise ProjectError(f"Auto-writer could not replace project scenes: {exc}") from exc
+
+        for backup in backups.values():
+            try:
+                backup.unlink()
+            except OSError as exc:
+                raise ProjectError(
+                    f"Auto-writer applied all scenes, but a temporary original file could "
+                    f"not be removed ({backup.name}): {exc}"
+                ) from exc
+        return persisted
+
     def scene_word_count(self, scene_id: str) -> WordCount:
         return self._word_count((self.get_scene(scene_id),))
 
@@ -730,14 +908,16 @@ class Project:
             suffix += 1
         return candidate
 
-    def _unique_new_path(self, title: str, reserved_paths: set[str]) -> str:
+    def _unique_new_path(
+        self, title: str, reserved_paths: set[str], *, folder: str = "manuscript"
+    ) -> str:
         _validate_title(title)
         slug = re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-") or "untitled"
-        base = f"manuscript/{slug}.txt"
+        base = f"{folder}/{slug}.txt"
         candidate = base
         suffix = 2
         while candidate in reserved_paths or validate_project_path(self.root, candidate).exists():
-            candidate = f"manuscript/{slug}-{suffix}.txt"
+            candidate = f"{folder}/{slug}-{suffix}.txt"
             suffix += 1
         return candidate
 
@@ -916,3 +1096,25 @@ def _validate_title(title: object) -> None:
         or any(ord(char) < 32 for char in title)
     ):
         raise ProjectFormatError("Title must contain visible text without control characters")
+
+
+def _validate_project_text(content: object) -> None:
+    if (
+        not isinstance(content, str)
+        or "\x00" in content
+        or any(ord(character) < 32 and character not in "\n\r\t" for character in content)
+    ):
+        raise ProjectError("Generated content must be ordinary UTF-8 text.")
+
+
+def _fsync_directory(directory: Path) -> None:
+    try:
+        directory_fd = os.open(directory, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(directory_fd)
+    except OSError:
+        pass
+    finally:
+        os.close(directory_fd)
