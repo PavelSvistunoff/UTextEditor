@@ -4,9 +4,9 @@ This document expands on the product requirements in `README.md` with detailed b
 
 ## 1. Product intent
 
-UTextEditor is a small native desktop application for writing and editing plain text. Its long-term product direction is to help novelists manage and write manuscripts, but the current MVP remains a general-purpose text editor and does not yet provide novel projects, chapters, scenes, or story notes. Local AI is optional assistance, not the main event: users can write, search, open, and save documents without Ollama. The MVP should feel predictable, protect unsaved work, and avoid surprising edits.
+UTextEditor is a small native desktop application for writing and editing plain text. It supports both standalone documents and local manuscript projects with chapters, scenes, and separate story notes. Local AI is optional assistance, not the main event: users can write, search, open, and save documents without Ollama. The application should feel predictable, protect unsaved work, and avoid surprising edits.
 
-The first release targets people who need a straightforward multi-document text editor and want opt-in local suggestions. It is not a code IDE, cloud editor, or general-purpose AI chat client. A project workspace is a future direction, not part of MVP scope.
+The application targets people who need a straightforward multi-document text editor and want opt-in local suggestions and manuscript tools. It is not a code IDE, cloud editor, or general-purpose AI chat client.
 
 ### Product principles
 
@@ -18,9 +18,9 @@ The first release targets people who need a straightforward multi-document text 
 
 ## 2. Release scope and status
 
-The MVP includes document editing, tabs, file operations, search and replace, status information, Ollama connectivity, inline completion, and spelling suggestions. Features not listed as MVP requirements below are future work.
+The current application includes the original editor MVP and the project, recovery, writing-goal, export, snapshot, and local project-AI features listed in `README.md`. This document retains detailed requirements for the original editor workflows and ongoing edge cases; it is not an exhaustive status checklist. Where requirements here conflict with current behavior or documented scope, `README.md` and `UNIMPLEMENTED_FEATURES.md` take precedence.
 
-The specification describes intended behavior, not a claim that every requirement is implemented. Review-first spellcheck and worker-based file reads/writes are implemented; remaining gaps include richer `Auto` language detection for mixed and short text, editor appearance settings, and memory-efficient large-file handling. Keep `README.md`'s known-gaps section synchronized with observed behavior.
+The specification describes intended behavior, not a claim that every requirement is implemented. Remaining gaps include richer `Auto` language detection for mixed and short text, editor appearance settings, and memory-efficient large-file handling. Keep `README.md`'s known-gaps section synchronized with observed behavior.
 
 ## 3. Technology and platform
 
@@ -268,15 +268,7 @@ Do not treat future work as MVP acceptance criteria unless scope is explicitly c
 
 ## 22. Future directions
 
-The long-term product direction is a focused novel-writing studio that builds on the dependable plain-text editor. This is future work, not current behavior. Prioritize it in small, usable increments:
-
-1. Add a project workspace that organizes chapters and scenes, supports reordering, and shows word counts by scene, chapter, and manuscript. Prefer ordinary text files in a project folder over a proprietary document database so manuscripts remain portable and easy to back up.
-2. Strengthen autosave and crash recovery, then add writing goals and a distraction-free mode.
-3. Add separate, linkable character, setting, timeline, and research notes; do not mix reference material into manuscript text.
-4. Consider explicit, opt-in local AI tasks such as chapter summaries and continuity checks against author-provided notes. Keep analysis and proposed changes separate from prose; all text changes require author acceptance.
-5. Add common manuscript export and revision snapshots or comparisons.
-
-The proposed first milestone is the project workspace with chapters/scenes, reliable saving, and word counts. Other follow-on work includes Markdown highlighting/preview, recent files and session restore, richer encoding support, multiple completion choices, and language/file-handling improvements. Prioritize by author value and privacy; novel-aware AI must use configured local processing, and project features should preserve portability and author control. Avoid cloud services or proprietary formats without a separate product decision.
+The project workspace, chapter/scene organization, separate reference notes, word counts, recovery, writing goals, export, revision snapshots, and selected local AI analysis are implemented; see `README.md` for current behavior. Further work should improve these flows incrementally. Candidates include Markdown preview, recent files, richer encoding and language support, more complete recovery repair and revision comparison/management, proposed-edit previews, and more robust large-file handling. Prioritize author value and privacy; novel-aware AI must use configured local processing, and project features should preserve portability and author control. Avoid cloud services or proprietary formats without a separate product decision.
 
 ## 23. Definition of done
 

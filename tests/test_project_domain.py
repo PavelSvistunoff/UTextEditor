@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+from threading import Event, Thread, current_thread
 from uuid import uuid4
 
 import pytest
 import yaml
 
+import app.project.service as project_service
 from app.project import (
     Chapter,
     Manifest,
@@ -221,6 +224,67 @@ def test_text_saves_are_atomic_and_reject_stale_disk_snapshots(tmp_path):
         project.write_note(note.id, "replacement", expected_content="reference")
     assert project.read_note(note.id) == "external change"
     assert not list((project.root / "notes").glob("*.tmp"))
+
+
+def test_project_save_serializes_compare_and_replace(tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    target = project.root / scene.path
+    first_replace_started = Event()
+    release_first_replace = Event()
+    second_started = Event()
+    second_read_finished = Event()
+    outcomes = {}
+    original_read_bytes = Path.read_bytes
+    original_replace = project_service.os.replace
+
+    def observed_read_bytes(path):
+        content = original_read_bytes(path)
+        if path == target and current_thread().name == "second-save":
+            second_read_finished.set()
+        return content
+
+    def pause_first_replace(source, destination):
+        if (
+            Path(destination) == target
+            and current_thread().name == "first-save"
+        ):
+            first_replace_started.set()
+            if not release_first_replace.wait(3):
+                raise TimeoutError("Test did not release the first project save.")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(Path, "read_bytes", observed_read_bytes)
+    monkeypatch.setattr(project_service.os, "replace", pause_first_replace)
+
+    def save(label, content):
+        if label == "second":
+            second_started.set()
+        try:
+            project.write_scene(scene.id, content, expected_content="original")
+        except ProjectError:
+            outcomes[label] = "conflict"
+        else:
+            outcomes[label] = "saved"
+
+    first = Thread(target=save, args=("first", "first edit"), name="first-save")
+    second = Thread(target=save, args=("second", "second edit"), name="second-save")
+    first.start()
+    try:
+        assert first_replace_started.wait(2)
+        second.start()
+        assert second_started.wait(2)
+        assert not second_read_finished.wait(0.5)
+    finally:
+        release_first_replace.set()
+        first.join(3)
+        if second.ident is not None:
+            second.join(3)
+
+    assert not first.is_alive()
+    assert not second.is_alive()
+    assert outcomes == {"first": "saved", "second": "conflict"}
+    assert project.read_scene(scene.id) == "first edit"
 
 
 def test_notes_links_orphans_and_separate_word_counts(tmp_path):

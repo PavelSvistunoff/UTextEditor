@@ -1,7 +1,6 @@
 """Minimal AI settings dialog for the MVP."""
 
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -24,6 +23,7 @@ from urllib.parse import urlsplit
 
 from app.ai.prompts import completion_prompt
 from app.settings.settings import AppSettings
+from app.ui.font_utils import editor_font
 
 
 class SettingsDialog(QDialog):
@@ -75,7 +75,9 @@ class SettingsDialog(QDialog):
         self.language.setCurrentIndex(idx)
         # Editor appearance settings
         self.font_family = QFontComboBox()
-        self.font_family.setCurrentFont(QFont(settings.font_family))
+        self.font_family.setCurrentFont(
+            editor_font(settings.font_family, settings.font_size)
+        )
         self.font_size = QSpinBox()
         self.font_size.setRange(8, 32)
         self.font_size.setValue(settings.font_size)
@@ -182,7 +184,9 @@ class SettingsDialog(QDialog):
         self.spellcheck_enabled.setChecked(defaults.spellcheck_enabled)
         self.automatic_spellcheck.setChecked(defaults.automatic_spellcheck)
         self.language.setCurrentText(defaults.language)
-        self.font_family.setCurrentFont(QFont(defaults.font_family))
+        self.font_family.setCurrentFont(
+            editor_font(defaults.font_family, defaults.font_size)
+        )
         self.font_size.setValue(defaults.font_size)
         self.tab_width.setValue(defaults.tab_width)
         self.word_wrap.setChecked(defaults.word_wrap)

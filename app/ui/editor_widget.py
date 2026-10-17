@@ -1,12 +1,13 @@
 """QPlainTextEdit with non-destructive inline completions."""
 
 from PySide6.QtCore import QPoint, QRect, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeySequence, QPainter, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QColor, QFontMetrics, QKeySequence, QPainter, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import QMenu, QPlainTextEdit, QTextEdit, QWidget
 
 from app.ai.models import Suggestion
 from app.ai.validation import valid_suggestion
 from app.document.encoding import python_index_to_qt_position, qt_position_to_python_index
+from app.ui.font_utils import editor_font
 
 
 class LineNumberArea(QWidget):
@@ -72,9 +73,7 @@ class EditorWidget(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
     def apply_settings(self, settings) -> None:
-        font = QFont(settings.font_family or "Monospace")
-        font.setPointSize(settings.font_size)
-        self.setFont(font)
+        self.setFont(editor_font(settings.font_family, settings.font_size))
         self.setTabStopDistance(self.fontMetrics().horizontalAdvance(" ") * max(2, int(settings.tab_width)))
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth if bool(settings.word_wrap) else QPlainTextEdit.LineWrapMode.NoWrap)
         self._show_line_numbers = bool(settings.line_numbers)

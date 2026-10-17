@@ -8,7 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QEventLoop, QTimer, Qt
-from PySide6.QtGui import QAction, QIcon, QPalette, QTextCursor
+from PySide6.QtGui import QAction, QFontDatabase, QIcon, QPalette, QTextCursor
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog
 
@@ -19,6 +19,7 @@ from app.ai.ollama_client import OllamaClient
 from app.settings.settings import AppSettings
 from app.ui.ai_debug_window import AIDebugWindow
 from app.ui.editor_widget import EditorWidget
+from app.ui.font_utils import configure_application_font, editor_font
 from app.ui.main_window import MainWindow
 from app.ui.settings_dialog import SettingsDialog
 from app.ui.tab_widget import DocumentTabWidget
@@ -50,6 +51,27 @@ def test_editor_colors_follow_the_system_palette(application: QApplication) -> N
     assert not editor.styleSheet()
     for role in (QPalette.ColorRole.Base, QPalette.ColorRole.Text):
         assert editor.palette().color(role) == application.palette().color(role)
+
+
+def test_unavailable_editor_font_uses_installed_fixed_width_family(
+    application: QApplication,
+) -> None:
+    font = editor_font("Monospace", 12)
+
+    assert font.pointSize() == 12
+    assert font.family().casefold() in {
+        family.casefold() for family in QFontDatabase.families()
+    }
+
+
+def test_application_font_uses_an_installed_family_before_widgets_are_created(
+    application: QApplication,
+) -> None:
+    configure_application_font(application)
+
+    assert application.font().family().casefold() in {
+        family.casefold() for family in QFontDatabase.families()
+    }
 
 
 def test_application_icon_loads_and_renders(application: QApplication) -> None:
@@ -518,6 +540,39 @@ def test_format_whole_document_uses_chosen_operation_and_is_undoable(
     assert editor.toPlainText() == "first\nsecond\n"
     editor.undo()
     assert editor.toPlainText() == "first  \nsecond \n"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_format_whole_document_like_book_indents_paragraphs_undoably(
+    application: QApplication, monkeypatch
+) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("Opening line\ncontinued line\n\nNext paragraph\n")
+
+    choices = []
+
+    def choose_book_style(_parent, _title, _label, operations, *_args, **_kwargs):
+        choices.extend(operations)
+        return "Like in the book", True
+
+    monkeypatch.setattr(
+        QInputDialog,
+        "getItem",
+        choose_book_style,
+    )
+
+    window._format_whole_document()
+
+    assert "Like in the book" in choices
+    assert editor.toPlainText() == (
+        "    Opening line\ncontinued line\n\n    Next paragraph\n"
+    )
+    editor.undo()
+    assert editor.toPlainText() == "Opening line\ncontinued line\n\nNext paragraph\n"
     editor.document_state.mark_saved()
     window.close()
 

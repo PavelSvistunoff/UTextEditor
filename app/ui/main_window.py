@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QProgressDialog,
     QStatusBar,
     QVBoxLayout,
 )
@@ -44,9 +45,16 @@ from app.project.autopilot import (
 )
 from app.project.auto_writer import AutoWriterResult, run_auto_writer
 from app.project.outline import parse_outline
+from app.project.translation import (
+    ProjectTranslation,
+    ProjectTranslationCommit,
+    commit_project_translation,
+    run_project_translation,
+)
 from app.document.revisions import RevisionStore, RevisionSnapshot
 from app.document.text_formatting import (
     convert_case,
+    format_like_book,
     indent_lines,
     outdent_lines,
     trim_trailing_whitespace,
@@ -90,6 +98,7 @@ class MainWindow(QMainWindow):
     ai_interaction = Signal(str, str, object)
     auto_writer_progress = Signal(str)
     auto_writer_scene_completed = Signal(int, str, str, int, int)
+    project_translation_progress = Signal(int, str)
 
     def __init__(
         self,
@@ -127,6 +136,7 @@ class MainWindow(QMainWindow):
         self.project_view: ProjectView | None = None
         self._project_dock: QDockWidget | None = None
         self._project_documents: dict[object, _ProjectDocumentBinding] = {}
+        self._pending_project_opens: set[tuple[int, str, str]] = set()
         self._project_generation = 0
         self._revision_history_dialog: RevisionHistoryDialog | None = None
         self._project_refresh_generation = 0
@@ -143,6 +153,12 @@ class MainWindow(QMainWindow):
         self._auto_writer_cancel_action: QAction | None = None
         self._auto_writer_committing = False
         self._auto_writer_progress_dialog: AutoWriterProgressDialog | None = None
+        self._project_translation_generation = 0
+        self._project_translation_worker: FunctionWorker | None = None
+        self._project_translation_cancel_event: Event | None = None
+        self._project_translation_cancel_action: QAction | None = None
+        self._project_translation_progress_dialog: QProgressDialog | None = None
+        self._project_translation_committing = False
         self._analysis_windows: list[AnalysisWindow] = []
         self._project_busy = False
         self._project_refresh_timer = QTimer(self)
@@ -202,6 +218,10 @@ class MainWindow(QMainWindow):
         )
         self.auto_writer_scene_completed.connect(
             self._show_auto_writer_scene, Qt.ConnectionType.QueuedConnection
+        )
+        self.project_translation_progress.connect(
+            self._show_project_translation_progress,
+            Qt.ConnectionType.QueuedConnection,
         )
         if self._writing_goal_load_error:
             self.statusBar().showMessage(
@@ -268,6 +288,8 @@ class MainWindow(QMainWindow):
             ("Export Manuscript…", self.export_project, True),
             ("Create Revision Snapshot…", self.create_revision_snapshot, True),
             ("Review Revision Snapshots…", self.review_revision_snapshots, True),
+            ("Translate Project to Ukrainian…", self.translate_project_to_ukrainian, True),
+            ("Translate Project to English…", self.translate_project_to_english, True),
         )
         for title, handler, requires_project in project_actions:
             action = QAction(title, self)
@@ -275,6 +297,14 @@ class MainWindow(QMainWindow):
             project_menu.addAction(action)
             self._project_actions[title] = action
             action.setEnabled(not requires_project)
+        self._project_translation_cancel_action = QAction(
+            "Cancel Project Translation", self
+        )
+        self._project_translation_cancel_action.setEnabled(False)
+        self._project_translation_cancel_action.triggered.connect(
+            self.cancel_project_translation
+        )
+        project_menu.addAction(self._project_translation_cancel_action)
 
         self.focus_mode_action = QAction("Distraction-free mode", self)
         self.focus_mode_action.setCheckable(True)
@@ -404,6 +434,7 @@ class MainWindow(QMainWindow):
             self._cancel_pending_ai_requests()
             self.cancel_project_setup()
             self.cancel_auto_writer()
+            self.cancel_project_translation()
             self._clear_editor_ai_state()
             self.ai_status = "AI: Disabled"
             self._update_status()
@@ -720,6 +751,7 @@ class MainWindow(QMainWindow):
         if editor is None:
             return
         operations = (
+            ("Like in the book", format_like_book),
             ("Uppercase", lambda text: convert_case(text, "upper")),
             ("lowercase", lambda text: convert_case(text, "lower")),
             ("Title Case", lambda text: convert_case(text, "title")),
@@ -976,6 +1008,341 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
+
+    def translate_project_to_ukrainian(self) -> None:
+        self._start_project_translation("English", "Ukrainian")
+
+    def translate_project_to_english(self) -> None:
+        self._start_project_translation("Ukrainian", "English")
+
+    def _start_project_translation(
+        self, source_language: str, target_language: str
+    ) -> None:
+        project = self.project
+        if project is None or self._project_busy:
+            return
+        if not self.settings.ai_enabled:
+            QMessageBox.information(
+                self,
+                "Project translation",
+                "Enable AI before translating a project.",
+            )
+            return
+        if any(
+            binding.project is project and editor in self._saving_editors
+            for editor, binding in tuple(self._project_documents.items())
+        ):
+            QMessageBox.information(
+                self,
+                "Project translation",
+                "Wait for project document saves to finish before translating.",
+            )
+            return
+
+        confirmation = (
+            f"Translate the complete project from {source_language} to "
+            f"{target_language}?\n\n"
+            "This includes the project title, chapter/scene/reference-note titles, "
+            "and every scene and reference note. Stable IDs, file paths, ordering, "
+            "links, and note types will be preserved. A local revision snapshot is "
+            "created first, and no project files are changed unless every translation "
+            "succeeds.\n\n"
+            f"Text is sent to the configured Ollama destination:\n"
+            f"{self.provider.host} — {self.provider.model}"
+        )
+        if QMessageBox.question(
+            self,
+            "Translate Project",
+            confirmation,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+
+        open_text: dict[str, str] = {}
+        editor_states: dict[str, tuple[object, int]] = {}
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is project and self.tabs.indexOf(editor) >= 0:
+                open_text[binding.item_id] = editor.toPlainText()
+                editor_states[binding.item_id] = (editor, editor.revision)
+                timer = self._autosave_timers.get(editor)
+                if timer is not None:
+                    timer.stop()
+
+        self._project_refresh_timer.stop()
+        self._project_translation_generation += 1
+        generation = self._project_translation_generation
+        self._project_translation_committing = False
+        project_generation = self._project_generation
+        settings_generation = self._settings_generation
+        cancel_event = Event()
+        self._project_translation_cancel_event = cancel_event
+        self._set_project_busy(True)
+        if self._project_translation_cancel_action is not None:
+            self._project_translation_cancel_action.setEnabled(True)
+
+        progress = QProgressDialog(
+            "Preparing a complete project snapshot…",
+            "Cancel translation",
+            0,
+            0,
+            self,
+        )
+        progress.setWindowTitle("Translating Project")
+        progress.setWindowModality(Qt.WindowModality.NonModal)
+        progress.setMinimumDuration(0)
+        progress.canceled.connect(self.cancel_project_translation)
+        self._project_translation_progress_dialog = progress
+        progress.show()
+
+        worker = FunctionWorker(
+            run_project_translation,
+            self.provider,
+            project,
+            source_language,
+            target_language,
+            open_text,
+            is_cancelled=cancel_event.is_set,
+            progress=lambda message: self.project_translation_progress.emit(
+                generation, message
+            ),
+            temperature=self.settings.temperature,
+        )
+        self._project_translation_worker = worker
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda translation: self._project_translation_generated(
+                generation,
+                project_generation,
+                settings_generation,
+                project,
+                editor_states,
+                translation,
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._project_translation_failed(
+                generation, project, error
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _project_translation_generated(
+        self,
+        generation: int,
+        project_generation: int,
+        settings_generation: int,
+        project: Project,
+        editor_states: dict[str, tuple[object, int]],
+        translation: ProjectTranslation,
+    ) -> None:
+        if generation != self._project_translation_generation:
+            return
+        self._project_translation_worker = None
+        cancelled = (
+            self._project_translation_cancel_event is not None
+            and self._project_translation_cancel_event.is_set()
+        )
+        self._project_translation_cancel_event = None
+        if self._project_translation_cancel_action is not None:
+            self._project_translation_cancel_action.setEnabled(False)
+        if cancelled:
+            self._finish_project_translation(
+                project,
+                "Project translation cancelled. No project files were changed. "
+                f"Original snapshot: {translation.snapshot_path}",
+            )
+            return
+        if (
+            project is not self.project
+            or project_generation != self._project_generation
+            or settings_generation != self._settings_generation
+            or not self.settings.ai_enabled
+            or any(
+                self.tabs.indexOf(editor) < 0 or editor.revision != revision
+                for editor, revision in editor_states.values()
+            )
+        ):
+            self._finish_project_translation(
+                project,
+                "Translation was not applied because the project, settings, or an "
+                "open document changed. Original project files were preserved.",
+                warning=True,
+            )
+            return
+
+        if self._project_translation_progress_dialog is not None:
+            self._project_translation_progress_dialog.setLabelText(
+                "Applying all translated project files…"
+            )
+            self._project_translation_progress_dialog.setCancelButton(None)
+        self._project_translation_committing = True
+        worker = FunctionWorker(commit_project_translation, project, translation)
+        self._project_translation_worker = worker
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda result: self._project_translation_committed(
+                generation, project, editor_states, translation, result
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._project_translation_commit_failed(
+                generation, project, translation, error
+            ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _project_translation_committed(
+        self,
+        generation: int,
+        project: Project,
+        editor_states: dict[str, tuple[object, int]],
+        translation: ProjectTranslation,
+        result: ProjectTranslationCommit,
+    ) -> None:
+        if generation != self._project_translation_generation:
+            return
+        self._project_translation_worker = None
+        changed_buffers = False
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is not project:
+                continue
+            persisted = result.persisted_contents.get(binding.item_id)
+            if persisted is None:
+                continue
+            binding.expected_text = persisted
+            binding.project = result.project
+            state = editor_states.get(binding.item_id)
+            unchanged_since_capture = (
+                state is not None
+                and state[0] is editor
+                and editor.revision == state[1]
+            )
+            if state is None:
+                unchanged_since_capture = (
+                    not editor.document_state.dirty
+                    and editor.toPlainText()
+                    == normalize_line_endings(
+                        translation.expected_contents[binding.item_id], "LF"
+                    )
+                )
+            if unchanged_since_capture:
+                editor.setPlainText(normalize_line_endings(persisted, "LF"))
+                editor.document_state.mark_saved()
+                self.tabs._update_tab_title(editor)
+                self._discard_recovery_for_editor(editor)
+            else:
+                changed_buffers = True
+        self.project = result.project
+        self._project_generation += 1
+        if self._project_dock is not None:
+            self._project_dock.setWindowTitle(result.project.manifest.title)
+        self._finish_project_translation(
+            result.project,
+            f"Project translated from {translation.source_language} to "
+            f"{translation.target_language}. Originals are preserved in "
+            f"{translation.snapshot_path}."
+            + (
+                " An open document changed during saving; its newer buffer remains "
+                "unsaved."
+                if changed_buffers
+                else ""
+            ),
+        )
+
+    def _project_translation_failed(self, generation: int, project: Project, error) -> None:
+        if generation != self._project_translation_generation:
+            return
+        self._project_translation_worker = None
+        self._project_translation_committing = False
+        cancelled = (
+            self._project_translation_cancel_event is not None
+            and self._project_translation_cancel_event.is_set()
+        )
+        self._project_translation_cancel_event = None
+        self._finish_project_translation(
+            project,
+            (
+                f"Project translation cancelled. No project files were changed. {error}"
+                if cancelled
+                else f"Project translation failed. No project files were changed: {error}"
+            ),
+            warning=not cancelled,
+        )
+
+    def _project_translation_commit_failed(
+        self,
+        generation: int,
+        project: Project,
+        translation: ProjectTranslation,
+        error,
+    ) -> None:
+        if generation != self._project_translation_generation:
+            return
+        self._project_translation_worker = None
+        self._project_translation_committing = False
+        self._project_translation_cancel_event = None
+        self._finish_project_translation(
+            project,
+            f"Could not safely apply project translation: {error}. "
+            f"Original snapshot: {translation.snapshot_path}",
+            warning=True,
+        )
+
+    def _show_project_translation_progress(self, generation: int, message: str) -> None:
+        if (
+            generation == self._project_translation_generation
+            and self._project_translation_worker is not None
+        ):
+            self.statusBar().showMessage(message)
+            if self._project_translation_progress_dialog is not None:
+                self._project_translation_progress_dialog.setLabelText(message)
+
+    def _finish_project_translation(
+        self, project: Project, message: str, *, warning: bool = False
+    ) -> None:
+        self._project_translation_worker = None
+        self._project_translation_cancel_event = None
+        self._project_translation_committing = False
+        if self._project_translation_cancel_action is not None:
+            self._project_translation_cancel_action.setEnabled(False)
+        if self._project_translation_progress_dialog is not None:
+            self._project_translation_progress_dialog.close()
+            self._project_translation_progress_dialog = None
+        self._set_project_busy(False)
+        if project is self.project:
+            self._refresh_project_view()
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is project:
+                timer = self._autosave_timers.get(editor)
+                if timer is not None and editor.document_state.dirty:
+                    timer.start(self.settings.autosave_idle_ms)
+        if warning:
+            QMessageBox.warning(self, "Project translation", message)
+        else:
+            self.statusBar().showMessage(message, 15000)
+
+    def cancel_project_translation(self) -> None:
+        if (
+            self._project_translation_worker is None
+            or self._project_translation_committing
+        ):
+            return
+        if self._project_translation_cancel_event is not None:
+            self._project_translation_cancel_event.set()
+        if self._project_translation_cancel_action is not None:
+            self._project_translation_cancel_action.setEnabled(False)
+        if self._project_translation_progress_dialog is not None:
+            self._project_translation_progress_dialog.setLabelText(
+                "Cancelling after the current local model request…"
+            )
+            self._project_translation_progress_dialog.setCancelButton(None)
+        self.statusBar().showMessage(
+            "Cancelling project translation after the current local model request…"
+        )
 
     def _auto_writer_generated(
         self,
@@ -1699,6 +2066,14 @@ class MainWindow(QMainWindow):
                 and (has_project or not requires_project)
                 and (
                     title not in {"AI Project Setup…", "Auto-writer…"}
+                    or self.settings.ai_enabled
+                )
+                and (
+                    title
+                    not in {
+                        "Translate Project to Ukrainian…",
+                        "Translate Project to English…",
+                    }
                     or self.settings.ai_enabled
                 )
             )
@@ -2972,6 +3347,9 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
+        open_key = (id(project), kind, item_id)
+        if open_key in self._pending_project_opens:
+            return
         item = project.get_scene(item_id) if kind == "scene" else project.get_note(item_id)
         path = (project.root / item.path).resolve()
         for index in range(self.tabs.count()):
@@ -2979,39 +3357,78 @@ class MainWindow(QMainWindow):
             existing = editor.document_state.path if editor is not None else None
             if existing is not None and existing.resolve() == path:
                 self.tabs.setCurrentIndex(index)
+                binding = self._project_documents.get(editor)
+                if (
+                    binding is not None
+                    and binding.project is project
+                    and binding.kind == kind
+                    and binding.item_id == item_id
+                ):
+                    return
                 read = project.read_scene if kind == "scene" else project.read_note
                 worker = FunctionWorker(read, item_id)
+                self._pending_project_opens.add(open_key)
                 self._track_worker(worker)
                 worker.signals.finished.connect(
                     lambda raw, project=project, editor=editor, kind=kind, item_id=item_id:
-                        self._bind_existing_project_document(project, editor, kind, item_id, raw),
+                        self._bind_existing_project_document(
+                            project, editor, kind, item_id, raw, open_key
+                        ),
                     Qt.ConnectionType.QueuedConnection,
                 )
                 worker.signals.failed.connect(
-                    lambda error: self.statusBar().showMessage(
-                        f"Project document could not be verified for safe saving: {error}", 8000
-                    ),
+                    lambda error, open_key=open_key:
+                        self._project_document_open_failed(
+                            open_key, error, notify=False
+                        ),
                     Qt.ConnectionType.QueuedConnection,
                 )
                 self.thread_pool.start(worker)
                 return
         read = project.read_scene if kind == "scene" else project.read_note
         worker = FunctionWorker(read, item_id)
+        self._pending_project_opens.add(open_key)
         self._track_worker(worker)
         worker.signals.finished.connect(
             lambda raw, project=project, kind=kind, item_id=item_id, path=path:
-                self._project_document_opened(project, kind, item_id, path, raw),
+                self._project_document_opened(project, kind, item_id, path, raw, open_key),
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
-            lambda error: QMessageBox.warning(self, "Document could not be opened", str(error)),
+            lambda error, open_key=open_key:
+                self._project_document_open_failed(open_key, error),
             Qt.ConnectionType.QueuedConnection,
         )
         self.statusBar().showMessage(f"Opening {item.title}…")
         self.thread_pool.start(worker)
 
-    def _project_document_opened(self, project: Project, kind: str, item_id: str, path: Path, raw: str) -> None:
+    def _project_document_opened(
+        self,
+        project: Project,
+        kind: str,
+        item_id: str,
+        path: Path,
+        raw: str,
+        open_key: tuple[int, str, str] | None = None,
+    ) -> None:
+        if open_key is not None:
+            self._pending_project_opens.discard(open_key)
         if project is not self.project:
+            return
+        resolved = path.resolve()
+        for index in range(self.tabs.count()):
+            editor = self.tabs.widget(index)
+            existing = editor.document_state.path if editor is not None else None
+            if existing is None or existing.resolve() != resolved:
+                continue
+            self.tabs.setCurrentIndex(index)
+            if editor not in self._project_documents:
+                self._project_documents[editor] = _ProjectDocumentBinding(
+                    project, kind, item_id, raw
+                )
+                self._attach_writing_goal_document(editor)
+                self._project_refresh_timer.start(150)
+                self._schedule_project_autosave(editor)
             return
         normalized = raw.replace("\r\n", "\n").replace("\r", "\n")
         document = Document.from_text(normalized, path)
@@ -3023,13 +3440,33 @@ class MainWindow(QMainWindow):
         self._schedule_project_autosave(editor)
 
     def _bind_existing_project_document(
-        self, project: Project, editor, kind: str, item_id: str, raw: str
+        self,
+        project: Project,
+        editor,
+        kind: str,
+        item_id: str,
+        raw: str,
+        open_key: tuple[int, str, str] | None = None,
     ) -> None:
+        if open_key is not None:
+            self._pending_project_opens.discard(open_key)
         if project is self.project and self.tabs.indexOf(editor) >= 0:
             self._project_documents[editor] = _ProjectDocumentBinding(project, kind, item_id, raw)
             self._attach_writing_goal_document(editor)
             self._project_refresh_timer.start(150)
             self._schedule_project_autosave(editor)
+
+    def _project_document_open_failed(
+        self, open_key: tuple[int, str, str], error, *, notify: bool = True
+    ) -> None:
+        self._pending_project_opens.discard(open_key)
+        if notify:
+            QMessageBox.warning(self, "Document could not be opened", str(error))
+        else:
+            self.statusBar().showMessage(
+                f"Project document could not be verified for safe saving: {error}",
+                8000,
+            )
 
     @staticmethod
     def _save_project_document(

@@ -7,6 +7,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from uuid import uuid4
 
 import yaml
@@ -30,6 +31,7 @@ from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
 
 _WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
+_PROJECT_TEXT_WRITE_LOCK = Lock()
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -638,6 +640,188 @@ class Project:
         expected_contents: dict[str, str],
         expected_contexts: dict[str, str] | None = None,
     ) -> dict[str, str]:
+        with _PROJECT_TEXT_WRITE_LOCK:
+            return self._replace_scenes_transactionally(
+                replacements,
+                expected_contents=expected_contents,
+                expected_contexts=expected_contexts,
+            )
+
+    def apply_translation_transactionally(
+        self,
+        project_title: str,
+        item_titles: dict[str, str],
+        translated_contents: dict[str, str],
+        *,
+        expected_contents: dict[str, str],
+        expected_manifest: dict[str, object],
+    ) -> dict[str, str]:
+        """Commit all translated project text and titles, or roll the batch back."""
+        with _PROJECT_TEXT_WRITE_LOCK:
+            fresh = Project.open(self.root)
+            if fresh.manifest.to_mapping() != expected_manifest:
+                raise ProjectError(
+                    "Project structure changed during translation; no changes were applied."
+                )
+            if not isinstance(project_title, str) or not project_title.strip() or "\x00" in project_title:
+                raise ProjectError("Translated project title is invalid.")
+
+            documents = {
+                item.id: item
+                for item in (*tuple(fresh.iter_scenes()), *fresh.manifest.notes)
+            }
+            title_items = {
+                item.id: item
+                for item in (
+                    *fresh.manifest.chapters,
+                    *tuple(fresh.iter_scenes()),
+                    *fresh.manifest.notes,
+                )
+            }
+            if (
+                set(translated_contents) != set(documents)
+                or set(expected_contents) != set(documents)
+                or set(item_titles) != set(title_items)
+            ):
+                raise ProjectError(
+                    "Translation does not contain every project document and title."
+                )
+            if any(
+                not isinstance(text, str) or "\x00" in text
+                for text in translated_contents.values()
+            ):
+                raise ProjectError("Translated project text is invalid.")
+            if any(
+                not isinstance(title, str) or not title.strip() or "\x00" in title
+                for title in item_titles.values()
+            ):
+                raise ProjectError("A translated project item title is invalid.")
+            if any(not isinstance(text, str) for text in expected_contents.values()):
+                raise ProjectError("Translation is missing an original disk snapshot.")
+
+            targets: dict[str, Path] = {}
+            expected_bytes: dict[str, bytes] = {}
+            persisted: dict[str, str] = {}
+            for item_id, item in documents.items():
+                path = validate_project_path(self.root, item.path)
+                if (self.root / item.path).is_symlink() or not path.is_file():
+                    raise ProjectError(f"Project text is missing or unsafe: {item.path}")
+                try:
+                    original_bytes = path.read_bytes()
+                    disk_text = original_bytes.decode("utf-8")
+                except (OSError, UnicodeError) as exc:
+                    raise ProjectError(
+                        f"Cannot verify project text before translation: {item.path}: {exc}"
+                    ) from exc
+                if "\x00" in disk_text or disk_text != expected_contents[item_id]:
+                    raise ProjectError(
+                        f"Project text changed during translation: {item.path}; "
+                        "no translated text was applied."
+                    )
+                targets[item_id] = path
+                expected_bytes[item_id] = original_bytes
+                persisted[item_id] = normalize_line_endings(
+                    translated_contents[item_id], detect_line_ending(disk_text)
+                )
+
+            for item_id, title in item_titles.items():
+                item = title_items[item_id]
+                item.title = title
+            fresh.manifest.title = project_title
+            fresh.manifest.validate()
+            fresh._validate_manifest_paths()
+            manifest_path = validate_project_path(self.root, MANIFEST_NAME)
+            if manifest_path.is_symlink():
+                raise ProjectPathError("Project manifest must not be a symbolic link")
+            try:
+                expected_bytes["__manifest__"] = manifest_path.read_bytes()
+                current_manifest = yaml.safe_load(
+                    expected_bytes["__manifest__"].decode("utf-8")
+                )
+            except (OSError, UnicodeError, yaml.YAMLError) as exc:
+                raise ProjectError(f"Cannot verify project manifest before translation: {exc}") from exc
+            if current_manifest != expected_manifest:
+                raise ProjectError(
+                    "Project manifest changed during translation; no changes were applied."
+                )
+            targets["__manifest__"] = manifest_path
+            persisted["__manifest__"] = yaml.safe_dump(
+                fresh.manifest.to_mapping(),
+                allow_unicode=True,
+                sort_keys=False,
+                default_flow_style=False,
+            )
+
+            staged: dict[str, Path] = {}
+            backups: dict[str, Path] = {}
+            try:
+                for key, target in targets.items():
+                    temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+                    staged[key] = temporary
+                    with temporary.open("xb") as stream:
+                        stream.write(persisted[key].encode("utf-8"))
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    os.chmod(temporary, target.stat().st_mode)
+
+                for key, target in targets.items():
+                    if target.is_symlink() or target.read_bytes() != expected_bytes[key]:
+                        raise ProjectError(
+                            f"Project file changed during translation: {target.name}; "
+                            "no translated text was applied."
+                        )
+                    backup = target.with_name(f".{target.name}.{uuid4().hex}.bak")
+                    target.rename(backup)
+                    backups[key] = backup
+                    staged[key].rename(target)
+                    _fsync_directory(target.parent)
+            except Exception as exc:
+                rollback_failures: list[str] = []
+                for key in reversed(tuple(backups)):
+                    target = targets[key]
+                    backup = backups[key]
+                    try:
+                        if target.exists() or target.is_symlink():
+                            target.unlink()
+                        if backup.exists():
+                            backup.rename(target)
+                        _fsync_directory(target.parent)
+                    except OSError:
+                        rollback_failures.append(str(target.relative_to(self.root)))
+                for temporary in staged.values():
+                    try:
+                        temporary.unlink(missing_ok=True)
+                    except OSError:
+                        rollback_failures.append(temporary.name)
+                if rollback_failures:
+                    raise ProjectError(
+                        "Translation failed and rollback/temporary cleanup also failed for "
+                        f"{', '.join(rollback_failures)}."
+                    ) from exc
+                if isinstance(exc, ProjectError):
+                    raise
+                raise ProjectError(f"Could not apply project translation: {exc}") from exc
+
+            cleanup_failures: list[str] = []
+            for backup in backups.values():
+                try:
+                    backup.unlink()
+                except OSError:
+                    cleanup_failures.append(backup.name)
+            if cleanup_failures:
+                raise ProjectError(
+                    "Project translation was applied, but temporary backups remain: "
+                    + ", ".join(cleanup_failures)
+                )
+            return {key: value for key, value in persisted.items() if key != "__manifest__"}
+
+    def _replace_scenes_transactionally(
+        self,
+        replacements: dict[str, str],
+        *,
+        expected_contents: dict[str, str],
+        expected_contexts: dict[str, str] | None,
+    ) -> dict[str, str]:
         """Replace a set of scenes only if all disk versions still match.
 
         This is a transactional update: we validate a fresh project snapshot,
@@ -861,6 +1045,14 @@ class Project:
         return content
 
     def _write_text(
+        self, relative_path: str, content: str, *, expected_content: str
+    ) -> None:
+        with _PROJECT_TEXT_WRITE_LOCK:
+            self._write_text_locked(
+                relative_path, content, expected_content=expected_content
+            )
+
+    def _write_text_locked(
         self, relative_path: str, content: str, *, expected_content: str
     ) -> None:
         if not isinstance(content, str) or "\x00" in content:

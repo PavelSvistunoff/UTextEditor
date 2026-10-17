@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from threading import Event
 from unittest.mock import patch
 
 import pytest
@@ -77,6 +78,53 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
     assert project.read_scene(scene.id) == "edited manuscript"
     assert not editor.document_state.dirty
     window.close()
+
+
+def test_repeated_project_document_open_coalesces_pending_reads(
+    application, tmp_path, monkeypatch
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="original")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+
+    read_started = Event()
+    release_read = Event()
+    read_calls = []
+    original_read = project.read_scene
+
+    def delayed_read(scene_id):
+        read_calls.append(scene_id)
+        read_started.set()
+        if not release_read.wait(3):
+            raise TimeoutError("Test did not release the project scene read.")
+        return original_read(scene_id)
+
+    monkeypatch.setattr(project, "read_scene", delayed_read)
+    try:
+        window._open_project_document("scene", scene.id)
+        assert read_started.wait(2)
+        window._open_project_document("scene", scene.id)
+        assert read_calls == [scene.id]
+
+        release_read.set()
+        wait_until(lambda: window.tabs.count() == 2, application)
+
+        path = project.root / scene.path
+        window._project_document_opened(
+            project, "scene", scene.id, path, "original"
+        )
+        window._open_project_document("scene", scene.id)
+        assert window.tabs.count() == 2
+        assert read_calls == [scene.id]
+        assert sum(
+            binding.item_id == scene.id
+            for binding in window._project_documents.values()
+        ) == 1
+    finally:
+        release_read.set()
+        window.close()
 
 
 def test_project_tree_context_actions_route_to_selected_scene(
@@ -222,6 +270,74 @@ def test_revision_history_dialog_loads_and_compares_snapshots(
     dialog.show_error("Comparison failed.")
     assert not dialog.compare_button.isEnabled()
     dialog.close()
+    window.close()
+
+
+def test_project_translation_actions_translate_and_refresh_open_documents(
+    application, tmp_path, monkeypatch
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter One")
+    scene = project.add_scene(
+        "Opening", chapter_id=chapter.id, content="Original scene."
+    )
+    note = project.add_note("Character", "character", content="Original note.")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.settings.autosave_enabled = False
+    confirmation_text = []
+
+    def confirm_translation(_parent, _title, text, *_args, **_kwargs):
+        confirmation_text.append(text)
+        return QMessageBox.StandardButton.Yes
+
+    monkeypatch.setattr(
+        QMessageBox,
+        "question",
+        confirm_translation,
+    )
+    prompts = []
+
+    def translate(prompt, **_options):
+        prompts.append(prompt)
+        return f"Translated {len(prompts)}"
+
+    monkeypatch.setattr(window.provider, "generate_private", translate)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    assert editor is not None
+    editor.setPlainText("Unsaved scene text.")
+
+    project_menu = next(
+        action.menu()
+        for action in window.menuBar().actions()
+        if action.text() == "Project"
+    )
+    menu_actions = {action.text() for action in project_menu.actions()}
+    assert "Translate Project to Ukrainian…" in menu_actions
+    assert "Translate Project to English…" in menu_actions
+
+    window.translate_project_to_ukrainian()
+    assert confirmation_text and window.provider.host in confirmation_text[0]
+    wait_until(
+        lambda: not window._project_busy
+        and window.project is not None
+        and window.project.manifest.title == "Translated 1",
+        application,
+    )
+
+    assert window.project is not None
+    assert window.project.manifest.chapters[0].title == "Translated 2"
+    assert window.project.get_scene(scene.id).title == "Translated 3"
+    assert window.project.get_note(note.id).title == "Translated 4"
+    assert window.project.read_scene(scene.id) == "Translated 5"
+    assert window.project.read_note(note.id) == "Translated 6"
+    assert editor.toPlainText() == "Translated 5"
+    assert not editor.document_state.dirty
+    assert any("Unsaved scene text." in prompt for prompt in prompts)
+    editor.document_state.mark_saved()
     window.close()
 
 

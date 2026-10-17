@@ -21,6 +21,7 @@ else:
 from app.document.recovery import RecoveryStore
 from app.document.writing_goals import WritingGoalStore
 from app.settings.settings import AppSettings
+from app.ui.font_utils import configure_application_font
 
 
 def main() -> int:
@@ -33,6 +34,7 @@ def main() -> int:
         logger.exception("Failed to configure application logging; continuing with defaults.")
 
     app = QApplication(sys.argv)
+    configure_application_font(app)
     # Set application icon from bundled resources so the window and dock show it
     icon_path = Path(__file__).resolve().parents[1] / "app" / "resources" / "icon.svg"
     if not icon_path.exists():
