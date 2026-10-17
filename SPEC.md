@@ -4,9 +4,9 @@ This document expands on the product requirements in `README.md` with detailed b
 
 ## 1. Product intent
 
-UTextEditor is a small native desktop application for writing and editing plain text. Local AI is optional assistance, not the main event: users can write, search, open, and save documents without Ollama. The MVP should feel predictable, protect unsaved work, and avoid surprising edits.
+UTextEditor is a small native desktop application for writing and editing plain text. Its long-term product direction is to help novelists manage and write manuscripts, but the current MVP remains a general-purpose text editor and does not yet provide novel projects, chapters, scenes, or story notes. Local AI is optional assistance, not the main event: users can write, search, open, and save documents without Ollama. The MVP should feel predictable, protect unsaved work, and avoid surprising edits.
 
-The first release targets people who need a straightforward multi-document text editor and want opt-in local suggestions. It is not a code IDE, project manager, cloud editor, or general-purpose AI chat client.
+The first release targets people who need a straightforward multi-document text editor and want opt-in local suggestions. It is not a code IDE, cloud editor, or general-purpose AI chat client. A project workspace is a future direction, not part of MVP scope.
 
 ### Product principles
 
@@ -268,7 +268,15 @@ Do not treat future work as MVP acceptance criteria unless scope is explicitly c
 
 ## 22. Future directions
 
-Potential follow-on features include Markdown highlighting/preview, recent files and session restore, richer encoding support, line numbers, optional themes, multiple completion choices, rewrite/translation actions, project-aware context, Windows packaging, and additional provider integrations. Prioritize based on user value and privacy; avoid introducing a cloud or plugin architecture before there is a concrete requirement.
+The long-term product direction is a focused novel-writing studio that builds on the dependable plain-text editor. This is future work, not current behavior. Prioritize it in small, usable increments:
+
+1. Add a project workspace that organizes chapters and scenes, supports reordering, and shows word counts by scene, chapter, and manuscript. Prefer ordinary text files in a project folder over a proprietary document database so manuscripts remain portable and easy to back up.
+2. Strengthen autosave and crash recovery, then add writing goals and a distraction-free mode.
+3. Add separate, linkable character, setting, timeline, and research notes; do not mix reference material into manuscript text.
+4. Consider explicit, opt-in local AI tasks such as chapter summaries and continuity checks against author-provided notes. Keep analysis and proposed changes separate from prose; all text changes require author acceptance.
+5. Add common manuscript export and revision snapshots or comparisons.
+
+The proposed first milestone is the project workspace with chapters/scenes, reliable saving, and word counts. Other follow-on work includes Markdown highlighting/preview, recent files and session restore, richer encoding support, multiple completion choices, and language/file-handling improvements. Prioritize by author value and privacy; novel-aware AI must use configured local processing, and project features should preserve portability and author control. Avoid cloud services or proprietary formats without a separate product decision.
 
 ## 23. Definition of done
 

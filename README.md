@@ -6,12 +6,13 @@ The project aims to keep writing fast and predictable: documents stay under the 
 
 ## Project goals
 
-- Provide a dependable, lightweight editor for everyday text files.
+- Provide a dependable, lightweight writing tool, with a long-term focus on helping novelists manage and write manuscripts.
 - Keep multiple documents and their modified state separate in tabs.
 - Make common editing, search, and file operations easy to reach.
 - Offer optional local completion and spelling assistance without freezing the interface.
 - Keep AI integration replaceable and separate from the UI.
 - Prefer explicit user control over generated or corrected text.
+- Keep manuscript content portable and under the author's control.
 
 ## Current status
 
@@ -83,17 +84,15 @@ AI completions are suggestions and do not enter the document until accepted. Mod
 
 ## Product direction
 
-The next work should strengthen the core writing experience before adding more AI features:
+The long-term goal is to make UTextEditor a focused novel-writing studio while keeping its plain-text editing roots. Novel-writing features below are future work, not current capabilities. Build them in useful, author-controlled increments:
 
-1. Add a batch review interface for spelling suggestions; current corrections are reviewed individually from the context menu.
-2. Add editor preferences for typography, wrapping, indentation, and theme.
-3. Improve `Auto` language detection for mixed and short text and make language support easy to extend.
-4. Improve file handling with encoding selection/detection, clearer unsupported-file errors, and more memory-efficient large-file support.
-5. Add recent files and session restore, with clear control over whether document contents are persisted.
-6. Improve navigation and writing comfort with line numbers, configurable indentation, and optional word wrap.
-7. Consider Markdown syntax highlighting and preview as opt-in writing tools.
+1. **Project workspace:** Organize a novel into chapters and scenes, let authors reorder them, and show manuscript word counts at scene, chapter, and project level. Start with ordinary text files in a project folder so manuscripts remain portable and easy to back up.
+2. **Trustworthy writing workflow:** Strengthen autosave, crash recovery, writing goals, and distraction-free writing before adding complex assistance.
+3. **Story reference material:** Add separate, linkable notes for characters, settings, timelines, and research; keep reference notes distinct from manuscript prose.
+4. **Opt-in novel-aware AI:** Offer explicit tasks such as summarizing a chapter or checking continuity against author-provided notes. Present analysis and proposed edits separately, never silently rewrite prose, and keep processing local through the configured Ollama provider.
+5. **Revision and sharing:** Add manuscript export and revision snapshots or comparisons so authors can share work and explore changes safely.
 
-These are product ideas, not promises or currently implemented features. Additional AI providers, cloud AI, project-aware indexing, plugins, and AI chat can be considered later if they support the local-first, user-controlled editor rather than making it more complex by default.
+The project workspace with chapters/scenes, reliable saving, and word counts is the proposed first milestone. Broader editor improvements—batch spellcheck review, richer language detection, robust large-file handling, and session restore—remain valuable supporting work. These ideas are not promises or implemented features. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or cloud services without a separate product decision.
 
 ## Development expectations
 
