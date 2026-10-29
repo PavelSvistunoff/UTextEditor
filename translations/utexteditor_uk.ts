@@ -593,390 +593,407 @@
         <translation>ШІ</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="277"/>
+        <location filename="../app/ui/main_window.py" line="298"/>
         <source>Pause Daily Goal</source>
         <translation>Призупинити щоденну ціль</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="279"/>
+        <location filename="../app/ui/main_window.py" line="300"/>
         <source>Set Daily Goal…</source>
         <translation>Налаштувати щоденну ціль…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="283"/>
+        <location filename="../app/ui/main_window.py" line="304"/>
         <source>Reset Today&apos;s Progress…</source>
         <translation>Скинути сьогоднішній прогрес…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="359"/>
-        <location filename="../app/ui/main_window.py" line="360"/>
+        <location filename="../app/ui/main_window.py" line="380"/>
+        <location filename="../app/ui/main_window.py" line="381"/>
         <source>Open Recent Project</source>
         <translation>Відкрити недавній проєкт</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="367"/>
+        <location filename="../app/ui/main_window.py" line="388"/>
         <source>Cancel Project Translation</source>
         <translation>Скасувати переклад проєкту</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="375"/>
+        <location filename="../app/ui/main_window.py" line="396"/>
         <source>Distraction-free mode</source>
         <translation>Режим без відволікань</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="380"/>
+        <location filename="../app/ui/main_window.py" line="401"/>
         <source>Exit distraction-free mode</source>
         <translation>Вийти з режиму без відволікань</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="388"/>
+        <location filename="../app/ui/main_window.py" line="409"/>
         <source>Enable AI</source>
         <translation>Увімкнути ШІ</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="444"/>
+        <location filename="../app/ui/main_window.py" line="465"/>
         <source>Inspect Recovery…</source>
         <translation>Перевірити відновлення…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="449"/>
+        <location filename="../app/ui/main_window.py" line="470"/>
         <source>Text Formatting</source>
         <translation>Форматування тексту</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="2094"/>
+        <location filename="../app/ui/main_window.py" line="2115"/>
         <source>No Recent Projects</source>
         <translation>Немає недавніх проєктів</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="2109"/>
+        <location filename="../app/ui/main_window.py" line="2130"/>
         <source>Clear Recent Projects</source>
         <translation>Очистити список недавніх проєктів</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4468"/>
+        <location filename="../app/ui/main_window.py" line="4489"/>
         <source>Scene summary</source>
         <translation>Підсумок сцени</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4468"/>
+        <location filename="../app/ui/main_window.py" line="4489"/>
         <source>Continuity review</source>
         <translation>Перевірка узгодженості</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4616"/>
+        <location filename="../app/ui/main_window.py" line="4637"/>
+        <location filename="../app/ui/main_window.py" line="4667"/>
         <source>Language changed</source>
         <translation>Мову змінено</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4617"/>
+        <location filename="../app/ui/main_window.py" line="4638"/>
+        <location filename="../app/ui/main_window.py" line="4668"/>
         <source>The interface language will change after you restart UTextEditor.</source>
         <translation>Мова інтерфейсу зміниться після перезапуску UTextEditor.</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="320"/>
+        <location filename="../app/ui/main_window.py" line="341"/>
         <source>New Project…</source>
         <translation>Новий проєкт…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="320"/>
+        <location filename="../app/ui/main_window.py" line="276"/>
+        <source>Settings</source>
+        <translation>Налаштування</translation>
+    </message>
+    <message>
+        <location filename="../app/ui/main_window.py" line="277"/>
+        <source>Application Language</source>
+        <translation>Мова програми</translation>
+    </message>
+    <message>
+        <location filename="../app/ui/main_window.py" line="341"/>
         <source>Open Project…</source>
         <translation>Відкрити проєкт…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="321"/>
+        <location filename="../app/ui/main_window.py" line="342"/>
         <source>Close Project</source>
         <translation>Закрити проєкт</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="321"/>
+        <location filename="../app/ui/main_window.py" line="342"/>
         <source>AI Project Setup…</source>
         <translation>Налаштування проєкту за допомогою ШІ…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="322"/>
+        <location filename="../app/ui/main_window.py" line="343"/>
         <source>Auto-writer…</source>
         <translation>Автоматичне написання…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="322"/>
+        <location filename="../app/ui/main_window.py" line="343"/>
         <source>New Chapter…</source>
         <translation>Новий розділ…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="323"/>
+        <location filename="../app/ui/main_window.py" line="344"/>
         <source>New Scene…</source>
         <translation>Нова сцена…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="323"/>
+        <location filename="../app/ui/main_window.py" line="344"/>
         <source>New Reference Note…</source>
         <translation>Нова довідкова нотатка…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="324"/>
+        <location filename="../app/ui/main_window.py" line="345"/>
         <source>New Character…</source>
         <translation>Новий персонаж…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="324"/>
+        <location filename="../app/ui/main_window.py" line="345"/>
         <source>Import Scene…</source>
         <translation>Імпортувати сцену…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="325"/>
+        <location filename="../app/ui/main_window.py" line="346"/>
         <source>Rename Selected…</source>
         <translation>Перейменувати вибране…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="325"/>
+        <location filename="../app/ui/main_window.py" line="346"/>
         <source>Duplicate Selected…</source>
         <translation>Дублювати вибране…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="326"/>
+        <location filename="../app/ui/main_window.py" line="347"/>
         <source>Remove Selected…</source>
         <translation>Вилучити вибране…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="326"/>
+        <location filename="../app/ui/main_window.py" line="347"/>
         <source>Link Note…</source>
         <translation>Пов’язати нотатку…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="327"/>
+        <location filename="../app/ui/main_window.py" line="348"/>
         <source>Unlink Note…</source>
         <translation>Від’єднати нотатку…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="327"/>
+        <location filename="../app/ui/main_window.py" line="348"/>
         <source>Open Linked Item…</source>
         <translation>Відкрити пов’язаний елемент…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="328"/>
+        <location filename="../app/ui/main_window.py" line="349"/>
         <source>Move Scene to Chapter…</source>
         <translation>Перемістити сцену до розділу…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="328"/>
+        <location filename="../app/ui/main_window.py" line="349"/>
         <source>Move Scene Up</source>
         <translation>Перемістити сцену вище</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="329"/>
+        <location filename="../app/ui/main_window.py" line="350"/>
         <source>Move Scene Down</source>
         <translation>Перемістити сцену нижче</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="329"/>
+        <location filename="../app/ui/main_window.py" line="350"/>
         <source>Move Chapter Up</source>
         <translation>Перемістити розділ вище</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="330"/>
+        <location filename="../app/ui/main_window.py" line="351"/>
         <source>Move Chapter Down</source>
         <translation>Перемістити розділ нижче</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="330"/>
+        <location filename="../app/ui/main_window.py" line="351"/>
         <source>Compile Book as PDF…</source>
         <translation>Зібрати книжку у PDF…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="331"/>
+        <location filename="../app/ui/main_window.py" line="352"/>
         <source>Export Manuscript…</source>
         <translation>Експортувати рукопис…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="331"/>
+        <location filename="../app/ui/main_window.py" line="352"/>
         <source>Create Revision Snapshot…</source>
         <translation>Створити знімок редакції…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="332"/>
+        <location filename="../app/ui/main_window.py" line="353"/>
         <source>Review Revision Snapshots…</source>
         <translation>Переглянути знімки редакцій…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="333"/>
+        <location filename="../app/ui/main_window.py" line="354"/>
         <source>Translate Project to Ukrainian…</source>
         <translation>Перекласти проєкт українською…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="334"/>
+        <location filename="../app/ui/main_window.py" line="355"/>
         <source>Translate Project to English…</source>
         <translation>Перекласти проєкт англійською…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="335"/>
+        <location filename="../app/ui/main_window.py" line="356"/>
         <source>New</source>
         <translation>Створити</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="335"/>
+        <location filename="../app/ui/main_window.py" line="356"/>
         <source>Open</source>
         <translation>Відкрити</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="335"/>
+        <location filename="../app/ui/main_window.py" line="356"/>
         <source>Save</source>
         <translation>Зберегти</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="336"/>
+        <location filename="../app/ui/main_window.py" line="357"/>
         <source>Save As</source>
         <translation>Зберегти як</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="336"/>
+        <location filename="../app/ui/main_window.py" line="357"/>
         <source>Close Tab</source>
         <translation>Закрити вкладку</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="336"/>
+        <location filename="../app/ui/main_window.py" line="357"/>
         <source>Quit</source>
         <translation>Вийти</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="337"/>
+        <location filename="../app/ui/main_window.py" line="358"/>
         <source>Undo</source>
         <translation>Скасувати</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="337"/>
+        <location filename="../app/ui/main_window.py" line="358"/>
         <source>Redo</source>
         <translation>Повторити</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="337"/>
+        <location filename="../app/ui/main_window.py" line="358"/>
         <source>Copy</source>
         <translation>Копіювати</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="338"/>
+        <location filename="../app/ui/main_window.py" line="359"/>
         <source>Cut</source>
         <translation>Вирізати</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="338"/>
+        <location filename="../app/ui/main_window.py" line="359"/>
         <source>Paste</source>
         <translation>Вставити</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="338"/>
+        <location filename="../app/ui/main_window.py" line="359"/>
         <source>Select All</source>
         <translation>Виділити все</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="339"/>
+        <location filename="../app/ui/main_window.py" line="360"/>
         <source>Find</source>
         <translation>Знайти</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="339"/>
+        <location filename="../app/ui/main_window.py" line="360"/>
         <source>Replace</source>
         <translation>Замінити</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="339"/>
+        <location filename="../app/ui/main_window.py" line="360"/>
         <source>Generate..</source>
         <translation>Згенерувати…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="340"/>
+        <location filename="../app/ui/main_window.py" line="361"/>
         <source>Generate Completion</source>
         <translation>Створити продовження</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="340"/>
+        <location filename="../app/ui/main_window.py" line="361"/>
         <source>Check Spelling</source>
         <translation>Перевірити правопис</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="341"/>
+        <location filename="../app/ui/main_window.py" line="362"/>
         <source>Accept Suggestion</source>
         <translation>Прийняти пропозицію</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="341"/>
+        <location filename="../app/ui/main_window.py" line="362"/>
         <source>Reject Suggestion</source>
         <translation>Відхилити пропозицію</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="342"/>
+        <location filename="../app/ui/main_window.py" line="363"/>
         <source>Ollama Debug</source>
         <translation>Діагностика Ollama</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="342"/>
+        <location filename="../app/ui/main_window.py" line="363"/>
         <source>AI Settings…</source>
         <translation>Налаштування ШІ…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="343"/>
+        <location filename="../app/ui/main_window.py" line="364"/>
         <source>Summarize Selected Scene</source>
         <translation>Підсумувати вибрану сцену</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="344"/>
+        <location filename="../app/ui/main_window.py" line="365"/>
         <source>Check Continuity Against Selected Notes</source>
         <translation>Перевірити узгодженість із вибраними нотатками</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="345"/>
+        <location filename="../app/ui/main_window.py" line="366"/>
         <source>Cancel Project Analysis</source>
         <translation>Скасувати аналіз проєкту</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="346"/>
+        <location filename="../app/ui/main_window.py" line="367"/>
         <source>Cancel Project Setup</source>
         <translation>Скасувати налаштування проєкту</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="346"/>
+        <location filename="../app/ui/main_window.py" line="367"/>
         <source>Cancel Auto-writer</source>
         <translation>Скасувати автоматичне написання</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="347"/>
+        <location filename="../app/ui/main_window.py" line="368"/>
         <source>Cancel Text Generation</source>
         <translation>Скасувати створення тексту</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="348"/>
+        <location filename="../app/ui/main_window.py" line="369"/>
         <source>Format Whole Document…</source>
         <translation>Форматувати весь документ…</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="348"/>
+        <location filename="../app/ui/main_window.py" line="369"/>
         <source>Uppercase</source>
         <translation>Великі літери</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="349"/>
+        <location filename="../app/ui/main_window.py" line="370"/>
         <source>lowercase</source>
         <translation>Малі літери</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="349"/>
+        <location filename="../app/ui/main_window.py" line="370"/>
         <source>Title Case</source>
         <translation>З великої літери</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="350"/>
+        <location filename="../app/ui/main_window.py" line="371"/>
         <source>Indent Lines</source>
         <translation>Збільшити відступ</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="350"/>
+        <location filename="../app/ui/main_window.py" line="371"/>
         <source>Outdent Lines</source>
         <translation>Зменшити відступ</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="351"/>
+        <location filename="../app/ui/main_window.py" line="372"/>
         <source>Trim Trailing Whitespace</source>
         <translation>Вилучити пробіли в кінці рядків</translation>
+    </message>
+    <message>
+        <location filename="../app/ui/main_window.py" line="4661"/>
+        <source>Settings could not be saved</source>
+        <translation>Не вдалося зберегти налаштування</translation>
     </message>
     <message>
         <source>AI Settings</source>
@@ -1003,8 +1020,9 @@
         <translation type="vanished">Автоматична перевірка правопису</translation>
     </message>
     <message>
+        <location filename="../app/ui/main_window.py" line="282"/>
         <source>System default</source>
-        <translation type="vanished">Мова системи</translation>
+        <translation>Мова системи</translation>
     </message>
     <message>
         <source>Wrap long lines</source>

@@ -9,7 +9,7 @@ from threading import Event
 from uuid import uuid4
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt, Signal
-from PySide6.QtGui import QAction, QKeySequence, QTextCursor
+from PySide6.QtGui import QAction, QActionGroup, QKeySequence, QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -273,6 +273,27 @@ class MainWindow(QMainWindow):
         project_menu = self.menuBar().addMenu(self.tr("Project"))
         writing_menu = self.menuBar().addMenu(self.tr("Writing"))
         ai_menu = self.menuBar().addMenu(self.tr("AI"))
+        settings_menu = self.menuBar().addMenu(self.tr("Settings"))
+        language_menu = settings_menu.addMenu(self.tr("Application Language"))
+        self._ui_language_actions: dict[str, QAction] = {}
+        language_group = QActionGroup(self)
+        language_group.setExclusive(True)
+        for language, label in (
+            ("system", self.tr("System default")),
+            ("en", "English"),
+            ("uk", "Українська"),
+        ):
+            action = QAction(label, self)
+            action.setCheckable(True)
+            action.setData(language)
+            action.setChecked(self.settings.ui_language == language)
+            language_group.addAction(action)
+            language_menu.addAction(action)
+            action.triggered.connect(
+                lambda checked, code=language: self._set_ui_language(code)
+                if checked else None
+            )
+            self._ui_language_actions[language] = action
 
         self._writing_goal_pause_action = QAction(self.tr("Pause Daily Goal"), self)
         self._writing_goal_pause_action.triggered.connect(self.toggle_writing_goal_pause)
@@ -4623,6 +4644,29 @@ class MainWindow(QMainWindow):
             self.ai_status = "AI: Connecting..." if self.settings.ai_enabled else "AI: Disabled"
             self._update_status()
             self._check_connection()
+
+    def _set_ui_language(self, language: str) -> None:
+        """Persist a language choice; the installed translator changes on restart."""
+        if language not in {"system", "en", "uk"} or language == self.settings.ui_language:
+            return
+        previous_language = self.settings.ui_language
+        self.settings.ui_language = language
+        try:
+            self.settings.save()
+        except OSError as exc:
+            self.settings.ui_language = previous_language
+            self._ui_language_actions[previous_language].setChecked(True)
+            QMessageBox.warning(
+                self,
+                self.tr("Settings could not be saved"),
+                str(exc),
+            )
+            return
+        QMessageBox.information(
+            self,
+            self.tr("Language changed"),
+            self.tr("The interface language will change after you restart UTextEditor."),
+        )
 
     def _test_settings_connection(self, dialog, host: str, model: str) -> None:
         if self._settings_connection_worker is not None:

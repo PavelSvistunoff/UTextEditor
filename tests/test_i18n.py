@@ -146,8 +146,61 @@ def test_main_window_installs_saved_language_before_building_menus(
     try:
         assert window.menuBar().actions()[0].text() == "Файл"
         assert window.menuBar().actions()[4].text() == "Проєкт"
+        assert window.menuBar().actions()[-1].text() == "Налаштування"
+        language_menu = window.menuBar().actions()[-1].menu().actions()[0].menu()
+        assert [action.text() for action in language_menu.actions()] == [
+            "Мова системи", "English", "Українська"
+        ]
     finally:
         translator = window._ui_translator
         window.close()
         if translator is not None:
             application.removeTranslator(translator)
+
+
+def test_settings_menu_persists_language_choice_and_requires_restart(
+    application, monkeypatch, tmp_path
+):
+    settings_path = tmp_path / "settings.yaml"
+    monkeypatch.setattr(
+        AppSettings,
+        "_default_settings_path",
+        staticmethod(lambda: settings_path),
+    )
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    with patch("app.ui.main_window.QMessageBox.information") as show_information:
+        window._ui_language_actions["uk"].trigger()
+    try:
+        assert AppSettings.load(settings_path).ui_language == "uk"
+        assert window.settings.ui_language == "uk"
+        assert window._ui_language_actions["uk"].isChecked()
+        show_information.assert_called_once()
+        assert "restart" in show_information.call_args.args[2].lower()
+    finally:
+        window.close()
+
+
+def test_settings_menu_restores_selection_when_language_cannot_be_saved(
+    application, monkeypatch, tmp_path
+):
+    monkeypatch.setattr(
+        AppSettings,
+        "_default_settings_path",
+        staticmethod(lambda: tmp_path / "settings.yaml"),
+    )
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    def fail_save():
+        raise OSError("read only")
+
+    monkeypatch.setattr(window.settings, "save", fail_save)
+    with patch("app.ui.main_window.QMessageBox.warning") as show_warning:
+        window._ui_language_actions["uk"].trigger()
+    try:
+        assert window.settings.ui_language == "system"
+        assert window._ui_language_actions["system"].isChecked()
+        assert not window._ui_language_actions["uk"].isChecked()
+        show_warning.assert_called_once()
+    finally:
+        window.close()
