@@ -123,12 +123,21 @@ class CharacterRelationship:
 
 
 @dataclass
+class CharacterStateChange:
+    field: str
+    value: str
+    previous_value: str = ""
+    evidence: str = ""
+
+
+@dataclass
 class SceneCharacterAssociation:
     character_id: str
     presence: str = "present"
     purpose: str = ""
     relevant_goals: list[str] = field(default_factory=list)
     development_notes: list[str] = field(default_factory=list)
+    state_changes: list[CharacterStateChange] = field(default_factory=list)
 
 
 @dataclass
@@ -467,13 +476,26 @@ def _relative_path(value: str, label: str) -> None:
 
 def _scene_association(value: object, label: str) -> SceneCharacterAssociation:
     row = _mapping(value, label)
-    _keys(row, {"character_id"}, {"character_id", "presence", "purpose", "relevant_goals", "development_notes"}, label)
+    _keys(row, {"character_id"}, {"character_id", "presence", "purpose", "relevant_goals", "development_notes", "state_changes"}, label)
     return SceneCharacterAssociation(
         _string(row["character_id"], f"{label}.character_id"),
         _string(row.get("presence", "present"), f"{label}.presence"),
         _text(row.get("purpose", ""), f"{label}.purpose"),
         _text_list(row.get("relevant_goals", []), f"{label}.relevant_goals"),
         _text_list(row.get("development_notes", []), f"{label}.development_notes"),
+        [_character_state_change(item, f"{label}.state_changes[{index}]")
+         for index, item in enumerate(_list(row.get("state_changes", []), f"{label}.state_changes"))],
+    )
+
+
+def _character_state_change(value: object, label: str) -> CharacterStateChange:
+    row = _mapping(value, label)
+    _keys(row, {"field", "value"}, {"field", "value", "previous_value", "evidence"}, label)
+    return CharacterStateChange(
+        _title(row["field"], f"{label}.field"),
+        _text(row["value"], f"{label}.value"),
+        _text(row.get("previous_value", ""), f"{label}.previous_value"),
+        _text(row.get("evidence", ""), f"{label}.evidence"),
     )
 
 
@@ -501,6 +523,19 @@ def _character(value: object, label: str) -> Character:
         goals=goals, desires=_text_list(row.get("desires", []), f"{label}.desires"), needs=_text_list(row.get("needs", []), f"{label}.needs"), obstacles=_text_list(row.get("obstacles", []), f"{label}.obstacles"), accepted_risks=_text_list(row.get("accepted_risks", []), f"{label}.accepted_risks"), refusals=_text_list(row.get("refusals", []), f"{label}.refusals"), internal_conflicts=_text_list(row.get("internal_conflicts", []), f"{label}.internal_conflicts"), knowledge=knowledge,
         arc=_text_map(row.get("arc", {}), f"{label}.arc", CHARACTER_ARC_FIELDS),
     )
+
+
+def character_from_mapping(value: object) -> Character:
+    """Validate and deserialize one portable character profile."""
+    character = _character(value, "character")
+    _validate_character(character, "character")
+    return character
+
+
+def character_to_mapping(character: Character) -> dict[str, object]:
+    """Validate and serialize one portable character profile."""
+    _validate_character(character, "character")
+    return _character_mapping(character)
 
 
 def _character_relationship(value: object, label: str) -> CharacterRelationship:
@@ -536,6 +571,8 @@ def _text_list_map(value: object, label: str, allowed: frozenset[str]) -> dict[s
 
 
 def _validate_character(character: Character, label: str) -> None:
+    if not isinstance(character, Character):
+        raise ProjectFormatError(f"{label} must be a character")
     _uuid(character.id, f"{label}.id")
     _title(character.full_name, f"{label}.full_name")
     for attr in ("display_name", "role", "description", "primary_motivation"):
@@ -545,16 +582,25 @@ def _validate_character(character: Character, label: str) -> None:
     _text_map(character.background, f"{label}.background", CHARACTER_BACKGROUND_FIELDS)
     _text_list_map(character.personality, f"{label}.personality", CHARACTER_PERSONALITY_FIELDS)
     _text_map(character.arc, f"{label}.arc", CHARACTER_ARC_FIELDS)
+    if not isinstance(character.goals, list):
+        raise ProjectFormatError(f"{label}.goals must be a list")
     for goal in character.goals:
-        if (not isinstance(goal, CharacterGoal) or not isinstance(goal.description, str)
-                or not goal.description.strip() or not isinstance(goal.status, str)
-                or goal.status not in CHARACTER_GOAL_STATES or type(goal.priority) is not int
-                or not 1 <= goal.priority <= 5 or not isinstance(goal.notes, str)):
+        if not isinstance(goal, CharacterGoal):
             raise ProjectFormatError(f"{label} contains an invalid goal")
+        _text(goal.description, f"{label}.goal.description")
+        _text(goal.notes, f"{label}.goal.notes")
+        if (not goal.description.strip() or not isinstance(goal.status, str)
+                or goal.status not in CHARACTER_GOAL_STATES or type(goal.priority) is not int
+                or not 1 <= goal.priority <= 5):
+            raise ProjectFormatError(f"{label} contains an invalid goal")
+    if not isinstance(character.knowledge, list):
+        raise ProjectFormatError(f"{label}.knowledge must be a list")
     for item in character.knowledge:
-        if (not isinstance(item, CharacterKnowledge) or not isinstance(item.kind, str)
-                or item.kind not in CHARACTER_KNOWLEDGE_KINDS
-                or not isinstance(item.statement, str) or not item.statement.strip()):
+        if not isinstance(item, CharacterKnowledge):
+            raise ProjectFormatError(f"{label} contains invalid knowledge")
+        _text(item.kind, f"{label}.knowledge.kind")
+        _text(item.statement, f"{label}.knowledge.statement")
+        if (item.kind not in CHARACTER_KNOWLEDGE_KINDS or not item.statement.strip()):
             raise ProjectFormatError(f"{label} contains invalid knowledge")
 
 
@@ -581,6 +627,17 @@ def _validate_scene_associations(scene: Scene, character_ids: set[str], label: s
         _text(item.purpose, f"{label}.association.purpose")
         _text_list(item.relevant_goals, f"{label}.association.relevant_goals")
         _text_list(item.development_notes, f"{label}.association.development_notes")
+        if not isinstance(item.state_changes, list):
+            raise ProjectFormatError(f"{label}.association.state_changes must be a list")
+        for change in item.state_changes:
+            if not isinstance(change, CharacterStateChange):
+                raise ProjectFormatError(f"{label}.association has an invalid character state change")
+            _text(change.field, f"{label}.association.state_change.field")
+            _text(change.value, f"{label}.association.state_change.value")
+            _text(change.previous_value, f"{label}.association.state_change.previous_value")
+            _text(change.evidence, f"{label}.association.state_change.evidence")
+            if not change.field.strip() or not change.value.strip():
+                raise ProjectFormatError(f"{label}.association has an invalid character state change")
 
 
 def _character_mapping(item: Character) -> dict[str, object]:
@@ -595,5 +652,25 @@ def _character_relationship_mapping(item: CharacterRelationship) -> dict[str, ob
 def _scene_mapping(scene: Scene) -> dict[str, object]:
     result: dict[str, object] = {"id": scene.id, "title": scene.title, "path": scene.path}
     if scene.character_associations:
-        result["character_associations"] = [{"character_id": item.character_id, "presence": item.presence, "purpose": item.purpose, "relevant_goals": item.relevant_goals, "development_notes": item.development_notes} for item in scene.character_associations]
+        associations = []
+        for item in scene.character_associations:
+            association = {
+                "character_id": item.character_id,
+                "presence": item.presence,
+                "purpose": item.purpose,
+                "relevant_goals": item.relevant_goals,
+                "development_notes": item.development_notes,
+            }
+            if item.state_changes:
+                association["state_changes"] = [
+                    {
+                        "field": change.field,
+                        "value": change.value,
+                        "previous_value": change.previous_value,
+                        "evidence": change.evidence,
+                    }
+                    for change in item.state_changes
+                ]
+            associations.append(association)
+        result["character_associations"] = associations
     return result

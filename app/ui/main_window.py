@@ -47,7 +47,7 @@ from app.project.autopilot import (
     run_autopilot,
 )
 from app.project.auto_writer import AutoWriterResult, run_auto_writer
-from app.project.model import Character, CharacterRelationship
+from app.project.model import Character, CharacterRelationship, CharacterStateChange
 from app.project.model import SceneCharacterAssociation
 from app.project.character_context import project_planning_context, scene_character_context
 from app.project.outline import parse_outline
@@ -74,6 +74,7 @@ from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
 from .character_dialog import CharacterDialog
+from .character_relationship_dialog import CharacterRelationshipDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -89,6 +90,12 @@ class _ProjectDocumentBinding:
     kind: str
     item_id: str
     expected_text: str
+
+
+def _character_choice_label(character: Character) -> str:
+    """Keep same-named profiles distinguishable in text-based selectors."""
+    name = character.display_name or character.full_name
+    return f"{name} — {character.role} [{character.id}]"
 
 
 @dataclass(frozen=True)
@@ -2204,6 +2211,10 @@ class MainWindow(QMainWindow):
             "edit_character": self.edit_project_character,
             "associate_character": self.associate_project_character,
             "add_relationship": self.add_project_character_relationship,
+            "manage_relationships": self.manage_project_character_relationships,
+            "find_character_scenes": self.find_project_character_scenes,
+            "import_character": self.import_project_character,
+            "export_character": self.export_project_character,
             "summarize": self.summarize_project_scene,
             "continuity": self.check_project_continuity,
         }
@@ -2389,7 +2400,17 @@ class MainWindow(QMainWindow):
             elif relation.target_id == character.id:
                 other = self.project.get_character(relation.source_id)
                 labels.append(f"← {other.display_name or other.full_name}: {relation.relationship_type} — {relation.description}")
-        dialog = CharacterDialog(character, labels, self)
+        current_state = self.project.character_current_state(character.id)
+        history = self.project.character_state_history(character.id)
+        timeline = ["Current recorded state:"] if current_state else ["No character state changes recorded."]
+        timeline.extend(f"{field}: {value}" for field, value in current_state.items())
+        if history:
+            timeline.append("\nScene history:")
+        for scene, change in history:
+            before = f"{change.previous_value} → " if change.previous_value else ""
+            evidence = f" — {change.evidence}" if change.evidence else ""
+            timeline.append(f"{scene.title}: {change.field}: {before}{change.value}{evidence}")
+        dialog = CharacterDialog(character, labels, timeline, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 self.project.update_character(character.id, dialog.character)
@@ -2410,7 +2431,8 @@ class MainWindow(QMainWindow):
         characters = self.project.manifest.characters
         scene = self.project.get_scene(scene_id)
         remove_label = "Remove a character from this scene…"
-        labels = [c.display_name or c.full_name for c in characters]
+        character_by_label = {_character_choice_label(c): c for c in characters}
+        labels = list(character_by_label)
         if scene.character_associations:
             labels.insert(0, remove_label)
         label, accepted = QInputDialog.getItem(self, "Associate character", "Character:", labels, 0, False)
@@ -2418,23 +2440,73 @@ class MainWindow(QMainWindow):
             return
         if label == remove_label:
             current = [self.project.get_character(item.character_id) for item in scene.character_associations]
-            remove_name, accepted = QInputDialog.getItem(self, "Remove scene character", "Character:", [c.display_name or c.full_name for c in current], 0, False)
+            current_by_label = {_character_choice_label(c): c for c in current}
+            remove_name, accepted = QInputDialog.getItem(self, "Remove scene character", "Character:", list(current_by_label), 0, False)
             if accepted:
-                character = next(c for c in current if (c.display_name or c.full_name) == remove_name)
+                character = current_by_label[remove_name]
                 self._run_project_mutation(self.project.unassociate_character, scene_id, character.id)
             return
-        character = next(c for c in characters if (c.display_name or c.full_name) == label)
-        presence, accepted = QInputDialog.getItem(self, "Scene participation", "Presence:", ["present", "mentioned"], 0, False)
+        character = character_by_label[label]
+        existing = next(
+            (item for item in scene.character_associations if item.character_id == character.id),
+            None,
+        )
+        default_presence = existing.presence if existing else "present"
+        presence, accepted = QInputDialog.getItem(
+            self,
+            "Scene participation",
+            "Presence:",
+            ["present", "mentioned"],
+            ["present", "mentioned"].index(default_presence),
+            False,
+        )
         if not accepted:
             return
-        purpose, accepted = QInputDialog.getText(self, "Scene purpose", "Narrative purpose (optional):")
+        purpose, accepted = QInputDialog.getText(
+            self,
+            "Scene purpose",
+            "Narrative purpose (optional):",
+            text=existing.purpose if existing else "",
+        )
         if not accepted:
             return
-        development, accepted = QInputDialog.getMultiLineText(self, "Character development", "Planned or observed character change in this scene (optional):")
+        development, accepted = QInputDialog.getMultiLineText(
+            self,
+            "Character development",
+            "Planned or observed character change in this scene (optional):",
+            "\n".join(existing.development_notes) if existing else "",
+        )
         if not accepted:
             return
         notes = [line.strip() for line in development.splitlines() if line.strip()]
-        self._run_project_mutation(self.project.associate_character, scene_id, SceneCharacterAssociation(character.id, presence, purpose, development_notes=notes))
+        existing_changes = existing.state_changes if existing else []
+        default_changes = "\n".join(
+            " | ".join(
+                value for value in (
+                    change.field,
+                    change.value,
+                    change.previous_value,
+                    change.evidence,
+                )
+            ).rstrip(" | ")
+            for change in existing_changes
+        )
+        state_text, accepted = QInputDialog.getMultiLineText(
+            self,
+            "Character state changes",
+            "One per line: field | new value | previous value (optional) | evidence (optional)",
+            default_changes,
+        )
+        if not accepted:
+            return
+        changes = []
+        for line in (line.strip() for line in state_text.splitlines() if line.strip()):
+            parts = [part.strip() for part in line.split("|", 3)]
+            if len(parts) < 2 or not parts[0] or not parts[1]:
+                QMessageBox.warning(self, "Invalid character state change", "Each entry needs a field and new value separated by '|'.")
+                return
+            changes.append(CharacterStateChange(parts[0], parts[1], parts[2] if len(parts) > 2 else "", parts[3] if len(parts) > 3 else ""))
+        self._run_project_mutation(self.project.associate_character, scene_id, SceneCharacterAssociation(character.id, presence, purpose, development_notes=notes, state_changes=changes))
 
     def add_project_character_relationship(self) -> None:
         if self.project is None:
@@ -2446,20 +2518,151 @@ class MainWindow(QMainWindow):
         if not targets:
             QMessageBox.information(self, "Character relationship", "Create another character first.")
             return
-        target_name, accepted = QInputDialog.getItem(self, "Character relationship", "Related character:", [c.display_name or c.full_name for c in targets], 0, False)
+        target_by_label = {_character_choice_label(c): c for c in targets}
+        target_name, accepted = QInputDialog.getItem(self, "Character relationship", "Related character:", list(target_by_label), 0, False)
         if not accepted:
             return
-        target = next(c for c in targets if (c.display_name or c.full_name) == target_name)
-        relationship_type, accepted = QInputDialog.getText(self, "Character relationship", "Relationship type (for example, friend or rival):")
-        if not accepted or not relationship_type.strip():
-            return
-        description, accepted = QInputDialog.getMultiLineText(self, "Character relationship", "Description and history:")
-        if not accepted:
+        target = target_by_label[target_name]
+        relationship = CharacterRelationship(str(uuid4()), source_id, target.id)
+        dialog = CharacterRelationshipDialog(relationship, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         self._run_project_mutation(
             self.project.add_character_relationship,
-            CharacterRelationship(str(uuid4()), source_id, target.id, relationship_type.strip(), description=description),
+            dialog.relationship,
         )
+
+    def manage_project_character_relationships(self) -> None:
+        if self.project is None:
+            return
+        kind, character_id = self._selected_project_item()
+        if kind != "character" or not character_id:
+            return
+        characters = {item.id: item for item in self.project.manifest.characters}
+        relationships = [
+            item for item in self.project.manifest.character_relationships
+            if character_id in (item.source_id, item.target_id)
+        ]
+        if not relationships:
+            QMessageBox.information(self, "Character relationships", "This character has no relationships yet.")
+            return
+        labels = {}
+        for relation in relationships:
+            other_id = relation.target_id if relation.source_id == character_id else relation.source_id
+            arrow = "→" if relation.source_id == character_id else "←"
+            other = characters[other_id]
+            labels[f"{arrow} {other.display_name or other.full_name} — {relation.relationship_type} [{relation.id}]"] = relation
+        label, accepted = QInputDialog.getItem(self, "Manage relationship", "Relationship:", list(labels), 0, False)
+        if not accepted:
+            return
+        relationship = labels[label]
+        action, accepted = QInputDialog.getItem(self, "Manage relationship", "Action:", ["Edit", "Remove"], 0, False)
+        if not accepted:
+            return
+        if action == "Remove":
+            answer = QMessageBox.question(self, "Remove relationship", "Remove this directed relationship?")
+            if answer == QMessageBox.StandardButton.Yes:
+                self._run_project_mutation(self.project.remove_character_relationship, relationship.id)
+            return
+        dialog = CharacterRelationshipDialog(relationship, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        self._run_project_mutation(
+            self.project.update_character_relationship,
+            relationship.id,
+            dialog.relationship,
+        )
+
+    def import_project_character(self) -> None:
+        if self.project is None:
+            return
+        source, _ = QFileDialog.getOpenFileName(self, "Import Character Profile", "", "Character profile (*.yaml *.yml)")
+        if source:
+            self._run_project_mutation(self.project.import_character, source)
+
+    def export_project_character(self) -> None:
+        if self.project is None:
+            return
+        kind, character_id = self._selected_project_item()
+        if kind != "character" or not character_id:
+            return
+        character = self.project.get_character(character_id)
+        suggested = f"{character.full_name}.yaml"
+        target, _ = QFileDialog.getSaveFileName(self, "Export Character Profile", suggested, "Character profile (*.yaml)")
+        if not target:
+            return
+        replace_existing = Path(target).exists()
+        if replace_existing:
+            answer = QMessageBox.question(self, "Replace profile file", f"Replace the existing file?\n{target}")
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+        try:
+            self.project.export_character(character_id, target, replace_existing=replace_existing)
+        except (OSError, ProjectError, ValueError) as exc:
+            QMessageBox.warning(self, "Character export failed", str(exc))
+            return
+        self.statusBar().showMessage(f"Character profile exported to {target}", 5000)
+
+    def find_project_character_scenes(self) -> None:
+        if self.project is None:
+            return
+        kind, character_id = self._selected_project_item()
+        if kind != "character" or not character_id:
+            return
+        project = self.project
+        generation = self._project_generation
+        open_text = {}
+        editor_revisions = {}
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is project and binding.kind == "scene" and self.tabs.indexOf(editor) >= 0:
+                open_text[binding.item_id] = editor.toPlainText()
+                editor_revisions[editor] = editor.document().revision()
+        worker = FunctionWorker(
+            project.find_scenes_mentioning_character,
+            character_id,
+            scene_texts=open_text,
+        )
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda matches, project=project, generation=generation, character_id=character_id:
+                self._character_scenes_found(
+                    project, generation, character_id, matches, editor_revisions
+                ),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error, project=project, generation=generation:
+                self._character_scene_search_failed(project, generation, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _character_scenes_found(
+        self,
+        project,
+        generation: int,
+        character_id: str,
+        matches,
+        editor_revisions: dict,
+    ) -> None:
+        if project is not self.project or generation != self._project_generation:
+            return
+        if any(
+            self.tabs.indexOf(editor) < 0 or editor.document().revision() != revision
+            for editor, revision in editor_revisions.items()
+        ):
+            return
+        if not matches:
+            QMessageBox.information(self, "Character scene search", "No scene mentions this character's name or aliases.")
+            return
+        labels = {f"{scene.title} [{scene.id}] — {excerpt}": scene for scene, excerpt in matches}
+        label, accepted = QInputDialog.getItem(self, "Character scene search", "Matching scenes:", list(labels), 0, False)
+        if accepted:
+            self._open_project_document("scene", labels[label].id)
+
+    def _character_scene_search_failed(self, project, generation: int, error) -> None:
+        if project is self.project and generation == self._project_generation:
+            QMessageBox.warning(self, "Character scene search failed", str(error))
 
     def move_project_scene(self, offset: int) -> None:
         if self.project is None or self.project_view is None:

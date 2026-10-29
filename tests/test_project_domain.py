@@ -19,6 +19,7 @@ from app.project import (
     CharacterGoal,
     CharacterKnowledge,
     CharacterRelationship,
+    CharacterStateChange,
     SceneCharacterAssociation,
     validate_project_path,
 )
@@ -80,6 +81,130 @@ def test_scene_character_association_can_be_removed_without_deleting_profile(tmp
     assert project.get_character(character.id).full_name == "Mara"
 
 
+def test_character_relationship_can_be_edited_and_removed(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    first = project.add_character("Mara")
+    second = project.add_character("Ivo")
+    relationship = CharacterRelationship(str(uuid4()), first.id, second.id, relationship_type="rival")
+    project.add_character_relationship(relationship)
+
+    edited = project.manifest.character_relationships[0]
+    edited.relationship_type = "reluctant ally"
+    edited.trust = 35
+    project.update_character_relationship(relationship.id, edited)
+    assert project.manifest.character_relationships[0].relationship_type == "reluctant ally"
+    assert project.manifest.character_relationships[0].trust == 35
+
+    project.remove_character_relationship(relationship.id)
+    assert project.manifest.character_relationships == []
+
+
+def test_character_profile_import_export_round_trip_uses_new_stable_id(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    character.aliases = ["The Fox"]
+    character.primary_motivation = "Expose the council"
+    project.update_character(character.id, character)
+    exported = project.export_character(character.id, tmp_path / "mara.yaml")
+    imported = project.import_character(exported)
+
+    assert imported.id != character.id
+    assert imported.full_name == character.full_name
+    assert imported.aliases == ["The Fox"]
+    assert imported.primary_motivation == character.primary_motivation
+
+
+def test_character_profile_import_rejects_malformed_yaml_and_duplicate_keys(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    malformed = tmp_path / "malformed.yaml"
+    malformed.write_text("character_format_version: 1\ncharacter_format_version: 1\ncharacter: {}\n", encoding="utf-8")
+
+    with pytest.raises(ProjectFormatError, match="Malformed"):
+        project.import_character(malformed)
+    assert project.manifest.characters == []
+
+
+def test_character_profile_import_rejects_oversized_input(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    oversized = tmp_path / "oversized.yaml"
+    oversized.write_bytes(b" " * 1_000_001)
+
+    with pytest.raises(ProjectFormatError, match="1 MB import limit"):
+        project.import_character(oversized)
+
+    assert project.manifest.characters == []
+
+
+def test_character_profile_export_can_confirm_replacement_of_missing_target(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    destination = tmp_path / "profiles" / "mara.yaml"
+
+    exported = project.export_character(character.id, destination, replace_existing=True)
+
+    assert exported == destination
+    assert "Mara" in destination.read_text(encoding="utf-8")
+
+
+def test_find_scenes_mentioned_by_character_includes_alias_and_excerpt(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara Venn")
+    character.aliases = ["the Fox"]
+    project.update_character(character.id, character)
+    matching = project.add_scene("Market", content="At dusk, the Fox entered the market.")
+    project.add_scene("Other", content="Ivo crossed the bridge.")
+    project.add_scene("Prefix only", content="Foxglove grew beside the road.")
+
+    results = project.find_scenes_mentioning_character(character.id)
+
+    assert [(scene.id, excerpt) for scene, excerpt in results] == [
+        (matching.id, "At dusk, the Fox entered the market.")
+    ]
+
+    unsaved = project.find_scenes_mentioning_character(
+        character.id, scene_texts={matching.id: "Mara Venn returns home."}
+    )
+    assert [(scene.id, excerpt) for scene, excerpt in unsaved] == [
+        (matching.id, "Mara Venn returns home.")
+    ]
+
+
+def test_scene_linked_character_state_changes_round_trip_in_order(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    first = project.add_scene("First scene")
+    second = project.add_scene("Second scene")
+    project.associate_character(
+        first.id,
+        SceneCharacterAssociation(
+            character.id,
+            state_changes=[CharacterStateChange("knowledge", "learns the code", evidence="Finds the letter")],
+        ),
+    )
+    project.associate_character(
+        second.id,
+        SceneCharacterAssociation(
+            character.id,
+            state_changes=[CharacterStateChange("belief", "trusts Ivo", "distrusts Ivo")],
+        ),
+    )
+
+    reopened = Project.open(project.root)
+    changes = [
+        association.state_changes[0]
+        for scene in reopened.iter_scenes()
+        for association in scene.character_associations
+    ]
+    assert [(change.field, change.value) for change in changes] == [
+        ("knowledge", "learns the code"),
+        ("belief", "trusts Ivo"),
+    ]
+    assert reopened.character_current_state(character.id) == {
+        "knowledge": "learns the code",
+        "belief": "trusts Ivo",
+    }
+
+
 def test_rejects_broken_scene_character_reference(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Scene")
@@ -99,6 +224,54 @@ def test_character_save_detects_external_manifest_change(tmp_path):
     with pytest.raises(ProjectError, match="changed outside"):
         project.update_character(character.id, character)
     assert project.get_character(character.id).description == ""
+
+
+@pytest.mark.parametrize("field", ["goals", "knowledge"])
+def test_character_validation_rejects_malformed_in_memory_collections(tmp_path, field):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    setattr(character, field, None)
+
+    with pytest.raises(ProjectFormatError, match=f"{field} must be a list"):
+        project.update_character(character.id, character)
+
+    assert project.get_character(character.id).full_name == "Mara"
+
+
+@pytest.mark.parametrize(
+    "invalid_value, update",
+    [
+        ("bad\x00evidence", "state_change"),
+        ("bad\x00note", "goal"),
+        ("bad\x00statement", "knowledge"),
+    ],
+)
+def test_character_text_fields_reject_nul_before_persisting(
+    tmp_path, invalid_value, update
+):
+    from app.project import CharacterStateChange
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Scene")
+    if update == "state_change":
+        association = SceneCharacterAssociation(
+            character.id,
+            state_changes=[CharacterStateChange("knowledge", "learns", evidence=invalid_value)],
+        )
+        operation = lambda: project.associate_character(scene.id, association)
+    else:
+        if update == "goal":
+            character.goals = [CharacterGoal("Find the key", notes=invalid_value)]
+        else:
+            character.knowledge = [CharacterKnowledge("knows", invalid_value)]
+        operation = lambda: project.update_character(character.id, character)
+
+    with pytest.raises(ProjectFormatError, match="must be text"):
+        operation()
+
+    assert not project.manifest.characters[0].goals
+    assert not project.manifest.characters[0].knowledge
 
 
 def test_create_refuses_nonempty_and_rolls_back_invalid_title(tmp_path):

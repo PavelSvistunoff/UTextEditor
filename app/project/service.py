@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import hashlib
+import tempfile
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,7 +32,10 @@ from .model import (
     CharacterGoal,
     CharacterKnowledge,
     CharacterRelationship,
+    CharacterStateChange,
     SceneCharacterAssociation,
+    character_from_mapping,
+    character_to_mapping,
 )
 from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
@@ -593,11 +597,150 @@ class Project:
             [item for item in scene.character_associations if item.character_id != character_id],
         ))
 
+    def character_state_history(self, character_id: str) -> tuple[tuple[Scene, CharacterStateChange], ...]:
+        self.get_character(character_id)
+        return tuple(
+            (deepcopy(scene), deepcopy(change))
+            for scene in self.iter_scenes()
+            for association in scene.character_associations
+            if association.character_id == character_id
+            for change in association.state_changes
+        )
+
+    def character_current_state(self, character_id: str) -> dict[str, str]:
+        """Project the latest recorded value for each field in manuscript order."""
+        state = {}
+        for _scene, change in self.character_state_history(character_id):
+            state[change.field] = change.value
+        return state
+
     def search_characters(self, query: str) -> tuple[Character, ...]:
         needle = query.casefold().strip()
         if not needle:
             return tuple(deepcopy(self.manifest.characters))
         return tuple(deepcopy(c) for c in self.manifest.characters if needle in c.full_name.casefold() or needle in c.display_name.casefold() or any(needle in alias.casefold() for alias in c.aliases))
+
+    def update_character_relationship(
+        self, relationship_id: str, updated: CharacterRelationship
+    ) -> None:
+        current = next(
+            (item for item in self.manifest.character_relationships if item.id == relationship_id),
+            None,
+        )
+        if current is None:
+            raise ProjectError(f"Unknown character relationship ID: {relationship_id}")
+        if updated.id != relationship_id:
+            raise ProjectError("A character relationship ID cannot be changed")
+        index = self.manifest.character_relationships.index(current)
+        self._update(lambda: self.manifest.character_relationships.__setitem__(index, deepcopy(updated)))
+
+    def remove_character_relationship(self, relationship_id: str) -> None:
+        if not any(item.id == relationship_id for item in self.manifest.character_relationships):
+            raise ProjectError(f"Unknown character relationship ID: {relationship_id}")
+        self._update(lambda: setattr(
+            self.manifest,
+            "character_relationships",
+            [item for item in self.manifest.character_relationships if item.id != relationship_id],
+        ))
+
+    def find_scenes_mentioning_character(
+        self, character_id: str, *, scene_texts: dict[str, str] | None = None
+    ) -> tuple[tuple[Scene, str], ...]:
+        """Find manuscript scenes containing a profile name or alias, with an excerpt."""
+        character = self.get_character(character_id)
+        names = sorted(
+            {
+                name.strip()
+                for name in (character.full_name, character.display_name, *character.aliases)
+                if name.strip()
+            },
+            key=len,
+            reverse=True,
+        )
+        if not names:
+            return ()
+        pattern = re.compile(
+            r"(?<!\w)(?:" + "|".join(re.escape(name) for name in names) + r")(?!\w)",
+            re.IGNORECASE,
+        )
+        matches = []
+        for scene in self.iter_scenes():
+            content = scene_texts.get(scene.id) if scene_texts and scene.id in scene_texts else self.read_scene(scene.id)
+            found = pattern.search(content)
+            if found:
+                start = max(0, found.start() - 70)
+                end = min(len(content), found.end() + 90)
+                excerpt = " ".join(content[start:end].split())
+                matches.append((deepcopy(scene), excerpt))
+        return tuple(matches)
+
+    def export_character(
+        self,
+        character_id: str,
+        destination: Path | str,
+        *,
+        replace_existing: bool = False,
+    ) -> Path:
+        """Export one portable YAML profile without its project relationships."""
+        target = Path(destination)
+        target_exists = target.exists()
+        if target_exists and not replace_existing:
+            raise FileExistsError(f"Character profile destination already exists: {target}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        payload = yaml.safe_dump(
+            {
+                "character_format_version": 1,
+                "character": character_to_mapping(self.get_character(character_id)),
+            },
+            allow_unicode=True,
+            sort_keys=False,
+        ).encode("utf-8")
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
+        )
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if replace_existing:
+                if target_exists:
+                    os.chmod(temporary, target.stat().st_mode)
+                os.replace(temporary, target)
+            else:
+                os.link(temporary, target)
+                temporary.unlink()
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+        return target
+
+    def import_character(self, source: Path | str) -> Character:
+        """Import a validated portable profile as a new project identity."""
+        path = Path(source)
+        try:
+            with path.open("rb") as stream:
+                raw = stream.read(1_000_001)
+        except OSError as exc:
+            raise ProjectError(f"Cannot read character profile: {exc}") from exc
+        if len(raw) > 1_000_000:
+            raise ProjectFormatError("Character profile file exceeds the 1 MB import limit")
+        try:
+            data = yaml.load(raw.decode("utf-8"), Loader=_UniqueKeyLoader)
+        except (UnicodeError, yaml.YAMLError) as exc:
+            raise ProjectFormatError(f"Malformed character profile: {exc}") from exc
+        if (
+            not isinstance(data, dict)
+            or set(data) != {"character_format_version", "character"}
+            or type(data.get("character_format_version")) is not int
+            or data["character_format_version"] != 1
+        ):
+            raise ProjectFormatError("Unsupported or malformed character profile format")
+        character = character_from_mapping(data["character"])
+        character.id = str(uuid4())
+        self._update(lambda: self.manifest.characters.append(character))
+        return deepcopy(character)
 
     def rename_note(self, note_id: str, title: str, *, rename_file: bool = False) -> None:
         note = self.get_note(note_id)

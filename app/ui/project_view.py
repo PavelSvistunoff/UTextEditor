@@ -156,7 +156,16 @@ class ProjectView(QTreeWidget):
             ("New Reference Note", "new_note"),
         ]
         if kind == "character":
-            actions.extend((("Open", "open"), ("Add Relationship…", "add_relationship"), ("Duplicate", "duplicate"), ("Remove", "remove")))
+            actions.extend((
+                ("Open", "open"),
+                ("Find Scenes Mentioning Character…", "find_character_scenes"),
+                ("Import Character Profile…", "import_character"),
+                ("Export Character Profile…", "export_character"),
+                ("Add Relationship…", "add_relationship"),
+                ("Manage Relationships…", "manage_relationships"),
+                ("Duplicate", "duplicate"),
+                ("Remove", "remove"),
+            ))
         elif kind in {"scene", "note"}:
             actions.extend(
                 (("Open", "open"), ("Rename", "rename"), ("Duplicate", "duplicate"))

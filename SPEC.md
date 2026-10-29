@@ -55,17 +55,24 @@ until the author adds character data. Profiles include motivations, goals,
 personality lists, knowledge/secret categories, and natural-language arc notes.
 The profile editor exposes identity, background, personality, motivations,
 goals/status/priority, knowledge categories, and arc notes. Directed
-relationships can be added from a character's project-tree context menu and
-viewed from either endpoint; editing/removing a relationship has no UI yet.
-Scene associations can be added, updated, or removed from a scene's context
-menu. The project-tree filter searches character names, aliases, roles,
-descriptions, and primary motivations. Outline planning uses a compact bounded
+relationships can be added, edited, and removed from a character's
+project-tree context menu and viewed from either endpoint. Scene associations
+can be added, updated, or removed from a scene's context menu. The project-tree
+filter searches character names, aliases, roles, descriptions, and primary
+motivations; another action searches manuscript scenes by profile names and
+aliases. Profiles can be imported and exported as versioned UTF-8 YAML;
+imports receive a new stable identity and do not include relationships or
+scene associations. Scene associations can store structured character-state
+changes with previous/current values and evidence; profiles display them in
+manuscript order, and scene AI context includes only that scene's associated
+changes. Profiles show the ordered history and project the latest value for
+each recorded field. Outline planning uses a compact bounded
 selection of profiles with motivations, active goals, or internal conflicts;
-the confirmation displays that context. Auto-writer and continuity review
+directed relationships between selected profiles are included, and the
+confirmation displays that context. Auto-writer and continuity review
 include only profiles explicitly associated with the target scene. Continuity
-output remains review text and does not produce structured proposals.
-Chronological state tracking, AI proposed-state review and acceptance, and
-profile import/export are not implemented yet.
+output remains review text and does not produce structured proposals. AI
+proposed-state review and acceptance are not implemented yet.
 
 ## 5. Main window and navigation
 

@@ -391,7 +391,7 @@ def test_auto_writer_refines_whole_project_and_snapshots_originals(tmp_path):
 
 
 def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
-    from app.project import SceneCharacterAssociation
+    from app.project import CharacterStateChange, SceneCharacterAssociation
 
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening")
@@ -401,7 +401,13 @@ def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
     unrelated = project.add_character("Ivo")
     unrelated.primary_motivation = "Unrelated secret plan"
     project.update_character(unrelated.id, unrelated)
-    project.associate_character(scene.id, SceneCharacterAssociation(associated.id))
+    project.associate_character(
+        scene.id,
+        SceneCharacterAssociation(
+            associated.id,
+            state_changes=[CharacterStateChange("knowledge", "learned the code", evidence="Read the letter")],
+        ),
+    )
 
     class FakeProvider:
         prompt = ""
@@ -414,7 +420,37 @@ def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
     run_auto_writer(provider, project, "write_empty", "", {}, maximum_tokens=900,
                     temperature=0.2, snapshot_name="Before draft", is_cancelled=lambda: False)
     assert "Expose the council" in provider.prompt
+    assert "learned the code" in provider.prompt
+    assert "Read the letter" in provider.prompt
     assert "Unrelated secret plan" not in provider.prompt
+
+
+def test_story_planning_context_includes_directed_relationship_conflicts(tmp_path):
+    from uuid import uuid4
+
+    from app.project import CharacterRelationship
+    from app.project.character_context import project_planning_context
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    investigator = project.add_character("Mara")
+    investigator.primary_motivation = "Expose the council"
+    project.update_character(investigator.id, investigator)
+    protector = project.add_character("Ivo")
+    protector.primary_motivation = "Keep the council in power"
+    project.update_character(protector.id, protector)
+    outsider = project.add_character("Nia")
+    project.update_character(outsider.id, outsider)
+    project.add_character_relationship(CharacterRelationship(
+        str(uuid4()), investigator.id, protector.id,
+        relationship_type="opponents", description="Both need the ledger",
+    ))
+
+    context = project_planning_context(project)
+
+    assert "Expose the council" in context
+    assert "Keep the council in power" in context
+    assert "Directed relationship: Mara → Ivo: opponents" in context
+    assert "Nia" not in context
 
 
 def test_auto_writer_writes_only_empty_scenes(tmp_path):

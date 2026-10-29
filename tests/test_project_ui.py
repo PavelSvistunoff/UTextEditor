@@ -10,7 +10,7 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtPdf import QPdfDocument
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QInputDialog
 
 from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
 from app.project import Project
@@ -18,6 +18,7 @@ from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
 from app.ui.character_dialog import CharacterDialog
+from app.ui.character_relationship_dialog import CharacterRelationshipDialog
 from app.ui.revision_history_dialog import RevisionHistoryDialog
 from app.ui.settings_dialog import SettingsDialog
 from app.settings.settings import AppSettings
@@ -124,6 +125,158 @@ def test_character_profile_dialog_rejects_invalid_goal_status(application, monke
     dialog.close()
 
 
+def test_character_profile_dialog_can_clear_existing_personality_fields(application):
+    from app.project import Character
+
+    character = Character(
+        id="00000000-0000-4000-8000-000000000001",
+        full_name="Mara",
+        personality={"strengths": ["patient"], "fears": ["fire"]},
+    )
+    dialog = CharacterDialog(character)
+    dialog.personality_fields["strengths"].clear()
+    dialog.personality_fields["fears"].setPlainText("")
+
+    dialog._accept()
+
+    assert "strengths" not in dialog.character.personality
+    assert "fears" not in dialog.character.personality
+    assert character.personality == {"strengths": ["patient"], "fears": ["fire"]}
+    dialog.close()
+
+
+def test_character_relationship_dialog_edits_structured_fields_and_validates_trust(
+    application, monkeypatch
+):
+    from uuid import uuid4
+
+    from app.project import CharacterRelationship
+
+    relationship = CharacterRelationship(str(uuid4()), str(uuid4()), str(uuid4()))
+    dialog = CharacterRelationshipDialog(relationship)
+    dialog.relationship_type.setText("reluctant ally")
+    dialog.attitude.setText("wary")
+    dialog.trust.setText("72")
+    dialog.status.setText("strained")
+    dialog.shared_secrets.setPlainText("They both hid the letter.")
+    dialog._accept()
+
+    assert dialog.relationship.relationship_type == "reluctant ally"
+    assert dialog.relationship.attitude == "wary"
+    assert dialog.relationship.trust == 72
+    assert dialog.relationship.status == "strained"
+    assert dialog.relationship.shared_secrets == "They both hid the letter."
+    assert relationship.relationship_type == "unknown"
+    dialog.close()
+
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    invalid = CharacterRelationshipDialog(relationship)
+    invalid.trust.setText("101")
+    invalid._accept()
+    assert invalid.result() == 0
+    assert warnings
+    invalid.close()
+
+
+def test_scene_character_selector_disambiguates_duplicate_display_names(
+    application, tmp_path, monkeypatch
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    first = project.add_character("Alex")
+    second = project.add_character("Alex")
+    scene = project.add_scene("Meeting")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("scene", scene.id))
+    choices = []
+
+    def choose(_parent, _title, _label, items, *_args):
+        choices.append(list(items))
+        return items[1], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    monkeypatch.setattr(QInputDialog, "getText", lambda *_args, **_kwargs: ("purpose", True))
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", lambda *_args: ("", True))
+    mutations = []
+    monkeypatch.setattr(
+        window, "_run_project_mutation", lambda operation, *args, **kwargs: mutations.append((operation, args))
+    )
+
+    window.associate_project_character()
+
+    assert choices[0][0] != choices[0][1]
+    association = mutations[0][1][1]
+    assert association.character_id == second.id
+    assert association.character_id != first.id
+    window.close()
+
+
+def test_reassociating_character_prefills_existing_scene_development_and_state(
+    application, tmp_path, monkeypatch
+):
+    from app.project import CharacterStateChange, SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Meeting")
+    existing = SceneCharacterAssociation(
+        character.id,
+        presence="mentioned",
+        purpose="warns Ivo",
+        development_notes=["admits she is afraid"],
+        state_changes=[
+            CharacterStateChange("knowledge", "knows the code", "does not know", "reads the letter")
+        ],
+    )
+    project.associate_character(scene.id, existing)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("scene", scene.id))
+    monkeypatch.setattr(
+        QInputDialog,
+        "getItem",
+        lambda _p, title, _l, items, index, _editable: (
+            items[-1] if title == "Associate character" else items[index],
+            True,
+        ),
+    )
+    text_defaults = []
+
+    def get_text(_parent, _title, _label, **kwargs):
+        text_defaults.append(kwargs.get("text", ""))
+        return kwargs.get("text", ""), True
+
+    def get_multiline(_parent, _title, _label, default=""):
+        text_defaults.append(default)
+        return default, True
+
+    monkeypatch.setattr(QInputDialog, "getText", get_text)
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", get_multiline)
+    mutations = []
+    monkeypatch.setattr(
+        window,
+        "_run_project_mutation",
+        lambda operation, *args, **kwargs: mutations.append((operation, args)),
+    )
+
+    window.associate_project_character()
+
+    updated = mutations[0][1][1]
+    assert updated.presence == "mentioned"
+    assert updated.purpose == "warns Ivo"
+    assert updated.development_notes == ["admits she is afraid"]
+    assert updated.state_changes == existing.state_changes
+    assert text_defaults == [
+        "warns Ivo",
+        "admits she is afraid",
+        "knowledge | knows the code | does not know | reads the letter",
+    ]
+    window.close()
+
+
 def test_project_tree_character_filter_searches_profile_metadata(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     mara = project.add_character("Mara Venn")
@@ -139,6 +292,18 @@ def test_project_tree_character_filter_searches_profile_metadata(application, tm
     assert not group.child(0).isHidden()
     assert group.child(1).isHidden()
     view.close()
+
+
+def test_character_context_menu_exposes_relationship_io_and_scene_search():
+    action_ids = {
+        action_id for _label, action_id in ProjectView.context_actions("character")
+    }
+    assert {
+        "manage_relationships",
+        "find_character_scenes",
+        "import_character",
+        "export_character",
+    } <= action_ids
 
 
 def test_repeated_project_document_open_coalesces_pending_reads(
