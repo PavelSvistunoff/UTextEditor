@@ -58,9 +58,10 @@ class RevisionHistoryDialog(QDialog):
     ) -> None:
         self.snapshots.clear()
         for snapshot in snapshots:
+            note_count = len(set(snapshot.documents) - set(snapshot.scene_order))
             label = (
                 f"{snapshot.name} — {snapshot.captured_at} "
-                f"({len(snapshot.scene_order)} scenes)"
+                f"({len(snapshot.scene_order)} scenes, {note_count} notes)"
             )
             item = QListWidgetItem(label)
             item.setData(Qt.ItemDataRole.UserRole, snapshot)
@@ -84,18 +85,26 @@ class RevisionHistoryDialog(QDialog):
     def show_comparison(self, comparison: RevisionComparison) -> None:
         self._update_compare_enabled()
         if not comparison.changes:
-            self.details.setPlainText("No scene changes between these snapshots.")
-            self.status.setText("Snapshots compared; no scene changes found.")
+            self.details.setPlainText("No scene or reference-note changes between these snapshots.")
+            self.status.setText("Snapshots compared; no changes found.")
             return
 
         sections: list[str] = []
         for change in comparison.changes:
             title = change.new_title or change.old_title or change.scene_id
-            sections.append(f"{change.kind.replace('-', ' ').title()}: {title}")
+            change_label = change.kind.replace("-", " ").title()
+            if change.item_type == "note":
+                change_label = f"Reference Note {change_label}"
+            sections.append(f"{change_label}: {title}")
+            if change.kind == "type-changed":
+                sections.append(
+                    f"Type: {change.old_note_type or 'unknown'} → "
+                    f"{change.new_note_type or 'unknown'}"
+                )
             if change.diff:
                 sections.append(change.diff.rstrip())
         self.details.setPlainText("\n\n".join(sections))
-        self.status.setText(f"{len(comparison.changes)} scene change(s) found.")
+        self.status.setText(f"{len(comparison.changes)} project item change(s) found.")
 
     def show_error(self, message: str) -> None:
         self._update_compare_enabled()

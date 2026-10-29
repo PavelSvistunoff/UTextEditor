@@ -87,11 +87,87 @@ def test_reordered_scenes_are_reported_as_moved(tmp_path) -> None:
     }
 
 
+def test_removing_scene_does_not_mark_later_scenes_as_moved(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    before = create_snapshot(
+        store,
+        order=["first", "removed", "last"],
+        titles={"first": "First", "removed": "Removed", "last": "Last"},
+        documents={"first": "1", "removed": "2", "last": "3"},
+    )
+    after = create_snapshot(
+        store,
+        order=["first", "last"],
+        titles={"first": "First", "last": "Last"},
+        documents={"first": "1", "last": "3"},
+    )
+
+    changes = store.compare(before, after).changes
+
+    assert [(change.scene_id, change.kind) for change in changes] == [
+        ("removed", "removed")
+    ]
+
+
+def test_comparison_reports_reference_note_content_titles_types_and_removal(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    before = store.create(
+        "Before",
+        structure={"notes": [
+            {"id": "character", "title": "Mira", "type": "character"},
+            {"id": "setting", "title": "Old House", "type": "setting"},
+        ]},
+        scene_order=[],
+        scene_titles={},
+        documents={"character": "She has dark hair.\n", "setting": "A cottage."},
+    )
+    after = store.create(
+        "After",
+        structure={"notes": [
+            {"id": "character", "title": "Mira Venn", "type": "research"},
+            {"id": "new-note", "title": "Timeline", "type": "timeline"},
+        ]},
+        scene_order=[],
+        scene_titles={},
+        documents={"character": "She has silver hair.\n", "new-note": "Winter, then spring."},
+    )
+
+    changes = store.compare(before, after).changes
+
+    assert [(change.item_id, change.kind, change.item_type) for change in changes] == [
+        ("setting", "removed", "note"),
+        ("new-note", "added", "note"),
+        ("character", "title-changed", "note"),
+        ("character", "type-changed", "note"),
+        ("character", "text-changed", "note"),
+    ]
+    type_change = next(change for change in changes if change.kind == "type-changed")
+    assert (type_change.old_note_type, type_change.new_note_type) == ("character", "research")
+    text_change = next(change for change in changes if change.kind == "text-changed")
+    assert "-She has dark hair." in text_change.diff
+    assert "+She has silver hair." in text_change.diff
+
+
 def test_incomplete_snapshot_is_rejected_and_no_file_is_written(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
 
     with pytest.raises(ValueError, match="incomplete"):
         create_snapshot(store, order=["missing"], titles={}, documents={})
+
+    assert not store.root.exists()
+
+
+def test_snapshot_rejects_reference_note_without_captured_text(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+
+    with pytest.raises(ValueError, match="reference-note text is unavailable"):
+        store.create(
+            "Incomplete note snapshot",
+            structure={"notes": [{"id": "note", "title": "Character", "type": "character"}]},
+            scene_order=[],
+            scene_titles={},
+            documents={},
+        )
 
     assert not store.root.exists()
 

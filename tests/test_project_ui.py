@@ -12,17 +12,28 @@ from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
-from app.document.revisions import RevisionStore
+from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
 from app.project import Project
 from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
+from app.ui.revision_history_dialog import RevisionHistoryDialog
 from app.ui.settings_dialog import SettingsDialog
+from app.settings.settings import AppSettings
 
 
 @pytest.fixture(scope="module")
 def application():
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def isolate_settings(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        AppSettings,
+        "_default_settings_path",
+        staticmethod(lambda: tmp_path / "settings.yaml"),
+    )
 
 
 def wait_until(predicate, application):
@@ -196,6 +207,46 @@ def test_project_open_failure_keeps_previous_project_and_documents(application, 
     window.close()
 
 
+def test_recent_projects_menu_tracks_successful_opens_and_routes_selection(
+    application, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.ui.main_window.OllamaClient.check_connection", lambda _self: True
+    )
+    older = Project.create(tmp_path / "older-project", "Older")
+    recent = Project.create(tmp_path / "recent-project", "Recent")
+    window = MainWindow()
+    window._project_opened(older)
+    window._project_opened(recent)
+
+    assert window.settings.recent_projects == [str(recent.root), str(older.root)]
+    recent_menu = window._recent_projects_menu
+    window._populate_recent_projects_menu()
+    selected = next(
+        action for action in recent_menu.actions()
+        if action.data() == str(older.root)
+    )
+    assert "older-project" in selected.text()
+
+    opened = []
+    monkeypatch.setattr(
+        window,
+        "_open_project_worker",
+        lambda operation, *args: opened.append((operation, args)),
+    )
+    selected.trigger()
+    assert opened == [(Project.open, (str(older.root),))]
+
+    clear_action = next(
+        action for action in recent_menu.actions()
+        if action.text() == "Clear Recent Projects"
+    )
+    clear_action.trigger()
+    assert window.settings.recent_projects == []
+    assert recent_menu.actions()[0].text() == "No Recent Projects"
+    window.close()
+
+
 def test_selected_scene_export_does_not_read_unselected_scene(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
@@ -273,6 +324,27 @@ def test_revision_history_dialog_loads_and_compares_snapshots(
     assert not dialog.compare_button.isEnabled()
     dialog.close()
     window.close()
+
+
+def test_revision_history_dialog_labels_reference_note_changes(application):
+    dialog = RevisionHistoryDialog()
+
+    dialog.show_comparison(RevisionComparison((
+        SceneChange(
+            "character-id",
+            "type-changed",
+            old_title="Mira",
+            new_title="Mira",
+            item_type="note",
+            old_note_type="character",
+            new_note_type="research",
+        ),
+    )))
+
+    assert "Reference Note Type Changed: Mira" in dialog.details.toPlainText()
+    assert "Type: character → research" in dialog.details.toPlainText()
+    assert "1 project item change" in dialog.status.text()
+    dialog.close()
 
 
 def test_project_translation_actions_translate_and_refresh_open_documents(
@@ -428,6 +500,9 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
         lambda *_args: compile_errors.append(_args[-1]),
     )
     window = MainWindow()
+    # PDF compilation is independent of AI; keep the test offline and avoid
+    # scheduling completion/spellcheck workers while editing the fixture.
+    window.settings.ai_enabled = False
     window._project_opened(project)
     assert window._project_actions["Compile Book as PDF…"].isEnabled()
     window._open_project_document("scene", scene.id)

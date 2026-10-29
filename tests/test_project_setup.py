@@ -13,10 +13,20 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from app.project import Project, ProjectError, parse_outline
 from app.project.autopilot import AutopilotCancelled, run_autopilot
 from app.project.auto_writer import run_auto_writer
+from app.settings.settings import AppSettings
 from app.ui.main_window import MainWindow
 from app.ui.project_brief_dialog import PROJECT_BRIEF_TEMPLATE, ProjectBriefDialog
 from app.ui.auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from app.ui.project_setup_dialog import ProjectSetupDialog
+
+
+@pytest.fixture(autouse=True)
+def isolate_settings(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        AppSettings,
+        "_default_settings_path",
+        staticmethod(lambda: tmp_path / "settings.yaml"),
+    )
 
 
 def test_parse_outline_returns_chapters_and_scenes():

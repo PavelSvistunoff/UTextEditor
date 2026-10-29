@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
+    QMenu,
     QPushButton,
     QProgressDialog,
     QStatusBar,
@@ -297,6 +298,13 @@ class MainWindow(QMainWindow):
             project_menu.addAction(action)
             self._project_actions[title] = action
             action.setEnabled(not requires_project)
+        self._recent_projects_menu = QMenu("Open Recent Project", self)
+        self._recent_projects_menu.setAccessibleName("Open Recent Project")
+        self._recent_projects_menu.aboutToShow.connect(self._populate_recent_projects_menu)
+        project_menu.insertMenu(
+            self._project_actions["Close Project"], self._recent_projects_menu
+        )
+        project_menu.insertSeparator(self._recent_projects_menu.menuAction())
         self._project_translation_cancel_action = QAction(
             "Cancel Project Translation", self
         )
@@ -1997,6 +2005,68 @@ class MainWindow(QMainWindow):
             return
         self._open_project_worker(Project.open, directory)
 
+    def _open_recent_project(self, directory: str) -> None:
+        if self._project_busy:
+            return
+        try:
+            recent_root = Path(directory).expanduser().resolve(strict=False)
+        except (OSError, RuntimeError):
+            self._open_project_worker(Project.open, directory)
+            return
+        if self.project is not None and self.project.root == recent_root:
+            self._show_project_dock()
+            return
+        self._open_project_worker(Project.open, str(recent_root))
+
+    def _populate_recent_projects_menu(self) -> None:
+        menu = self._recent_projects_menu
+        menu.clear()
+        recent_projects = self.settings.recent_projects
+        if not recent_projects:
+            empty_action = menu.addAction("No Recent Projects")
+            empty_action.setEnabled(False)
+            return
+
+        for directory in recent_projects:
+            project_path = Path(directory)
+            label = f"{project_path.name or str(project_path)} — {directory}"
+            action = menu.addAction(label)
+            action.setToolTip(directory)
+            action.setData(directory)
+            action.setEnabled(not self._project_busy)
+            action.triggered.connect(
+                lambda _checked=False, path=directory: self._open_recent_project(path)
+            )
+        menu.addSeparator()
+        clear_action = menu.addAction("Clear Recent Projects")
+        clear_action.setEnabled(not self._project_busy)
+        clear_action.triggered.connect(self._clear_recent_projects)
+
+    def _clear_recent_projects(self) -> None:
+        self.settings.recent_projects = []
+        try:
+            self.settings.save()
+        except OSError as exc:
+            self.statusBar().showMessage(f"Could not save recent projects: {exc}", 8000)
+        self._populate_recent_projects_menu()
+
+    def _remember_recent_project(self, directory: Path) -> None:
+        current_path = str(directory.resolve())
+        previous_paths = []
+        for recent_path in self.settings.recent_projects:
+            try:
+                resolved_path = Path(recent_path).expanduser().resolve(strict=False)
+            except (OSError, RuntimeError):
+                resolved_path = Path(recent_path).expanduser()
+            if resolved_path == Path(current_path):
+                continue
+            previous_paths.append(recent_path)
+        self.settings.recent_projects = [current_path, *previous_paths][:10]
+        try:
+            self.settings.save()
+        except OSError as exc:
+            self.statusBar().showMessage(f"Could not save recent projects: {exc}", 8000)
+
     def _open_project_worker(self, operation, *args) -> None:
         if self._project_busy:
             return
@@ -2015,6 +2085,7 @@ class MainWindow(QMainWindow):
         self._project_count_complete = True
         self._show_project_dock()
         self._refresh_project_view()
+        self._remember_recent_project(project.root)
 
     def _project_open_failed(self, error) -> None:
         self._set_project_busy(False)
@@ -2059,6 +2130,7 @@ class MainWindow(QMainWindow):
 
     def _update_project_actions(self) -> None:
         has_project = self.project is not None
+        self._recent_projects_menu.setEnabled(not self._project_busy)
         for title, action in self._project_actions.items():
             requires_project = title not in {"New Project…", "Open Project…"}
             action.setEnabled(

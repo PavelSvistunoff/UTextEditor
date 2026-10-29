@@ -9,6 +9,7 @@ from typing import Mapping, Sequence
 
 from PySide6.QtCore import QMarginsF, QRectF, QSizeF, Qt
 from PySide6.QtGui import (
+    QColor,
     QFont,
     QPageLayout,
     QPageSize,
@@ -156,11 +157,15 @@ def _insert_scene(cursor: QTextCursor, scene: ExportScene, text: str) -> None:
     heading_format.setBottomMargin(12)
     _insert_block(cursor, scene.title, heading_format, _char_format(13, bold=True))
 
-    body_format = _block_format(Qt.AlignmentFlag.AlignJustify)
+    body_format = _block_format(Qt.AlignmentFlag.AlignLeft)
     body_format.setLineHeight(
         140, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value
     )
-    body_format.setBottomMargin(8)
+    # Novel prose uses indented paragraphs without blank-line spacing. Keeping
+    # the text left aligned also prevents justified soft wraps from stretching
+    # spaces into the printable edge on some Qt PDF backends.
+    body_format.setTextIndent(18)
+    body_format.setBottomMargin(0)
     body_character_format = _char_format(11)
     normalized = text.replace("\r\n", "\n").replace("\r", "\n").strip("\n")
     if not normalized:
@@ -204,6 +209,7 @@ def _char_format(size: int, *, bold: bool = False) -> QTextCharFormat:
     result = QTextCharFormat()
     weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
     result.setFont(QFont("Georgia", size, weight))
+    result.setForeground(QColor(Qt.GlobalColor.black))
     return result
 
 
@@ -213,10 +219,17 @@ def _write_pdf(path: Path, title: str, document: QTextDocument) -> None:
     writer.setCreator("UTextEditor")
     writer.setResolution(72)
     writer.setPageSize(QPageSize(QPageSize.PageSizeId.A5))
-    writer.setPageMargins(QMarginsF(18, 18, 18, 18), QPageLayout.Unit.Millimeter)
+    # Use full-page painter coordinates, then apply the book margins to the
+    # document exactly once. QPdfWriter offsets painter coordinates by its
+    # configured margins, so adding paintRect.x/y to that would double them.
+    writer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout.Unit.Millimeter)
 
-    content_rect = writer.pageLayout().paintRectPixels(writer.resolution())
-    page_size = QSizeF(content_rect.size())
+    margin = 18 * writer.resolution() / 25.4
+    page_size = QSizeF(
+        writer.width() - 2 * margin,
+        writer.height() - 2 * margin,
+    )
+    content_rect = QRectF(margin, margin, page_size.width(), page_size.height())
     document.setPageSize(page_size)
     document.documentLayout().documentSize()
     page_count = max(1, document.pageCount())
@@ -228,6 +241,10 @@ def _write_pdf(path: Path, title: str, document: QTextDocument) -> None:
         for page_index in range(page_count):
             if page_index:
                 writer.newPage()
+            painter.fillRect(
+                QRectF(0, 0, writer.width(), writer.height()),
+                QColor(Qt.GlobalColor.white),
+            )
             painter.save()
             painter.translate(
                 content_rect.x(),
@@ -252,6 +269,7 @@ def _write_pdf(path: Path, title: str, document: QTextDocument) -> None:
             )
             painter.restore()
             if page_index:
+                painter.setPen(QColor(Qt.GlobalColor.black))
                 painter.setFont(QFont("Georgia", 8))
                 painter.drawText(
                     QRectF(0, writer.height() - 30, writer.width(), 12),

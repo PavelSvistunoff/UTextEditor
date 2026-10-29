@@ -66,6 +66,25 @@ def test_autosave_preferences_round_trip_and_validate_idle_interval(tmp_path) ->
     assert AppSettings(autosave_idle_ms=1).validated().autosave_idle_ms == 2000
 
 
+def test_recent_projects_round_trip_and_validation(tmp_path) -> None:
+    first = str((tmp_path / "first").resolve())
+    second = str((tmp_path / "second").resolve())
+    settings_path = tmp_path / "settings.yaml"
+    AppSettings(recent_projects=[first, second]).save(settings_path)
+
+    loaded = AppSettings.load(settings_path)
+    validated = AppSettings(
+        recent_projects=[first, "relative/project", first, "", 42]
+    ).validated()
+    capped = AppSettings(
+        recent_projects=[str((tmp_path / f"project-{index}").resolve()) for index in range(12)]
+    ).validated()
+
+    assert loaded.recent_projects == [first, second]
+    assert validated.recent_projects == [first]
+    assert len(capped.recent_projects) == 10
+
+
 def test_settings_ignore_legacy_theme_override(tmp_path) -> None:
     path = tmp_path / "settings.yaml"
     path.write_text("theme: Dark\n", encoding="utf-8")

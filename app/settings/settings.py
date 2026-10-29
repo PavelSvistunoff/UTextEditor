@@ -1,6 +1,6 @@
 """Persistent application settings with safe MVP defaults."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import platform
 import os
 import math
@@ -35,6 +35,7 @@ class AppSettings:
     line_numbers: bool = False
     autosave_enabled: bool = True
     autosave_idle_ms: int = 2000
+    recent_projects: list[str] = field(default_factory=list)
 
     @staticmethod
     def _default_settings_path() -> Path:
@@ -114,6 +115,20 @@ class AppSettings:
         self.autosave_idle_ms = self._bounded_int(
             self.autosave_idle_ms, 250, 60000, defaults.autosave_idle_ms
         )
+        recent_projects: list[str] = []
+        seen_projects: set[str] = set()
+        if isinstance(self.recent_projects, list):
+            for project_path in self.recent_projects:
+                if not isinstance(project_path, str) or not project_path.strip():
+                    continue
+                clean_path = project_path.strip()[:4096]
+                if not Path(clean_path).is_absolute() or clean_path in seen_projects:
+                    continue
+                seen_projects.add(clean_path)
+                recent_projects.append(clean_path)
+                if len(recent_projects) == 10:
+                    break
+        self.recent_projects = recent_projects
         self.ai_enabled = self._bool(self.ai_enabled, defaults.ai_enabled)
         self.completion_enabled = self._bool(self.completion_enabled, defaults.completion_enabled)
         self.spellcheck_enabled = self._bool(self.spellcheck_enabled, defaults.spellcheck_enabled)

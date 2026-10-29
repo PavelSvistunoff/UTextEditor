@@ -38,6 +38,14 @@ class SceneChange:
     old_title: str | None = None
     new_title: str | None = None
     diff: str = ""
+    item_type: str = "scene"
+    old_note_type: str | None = None
+    new_note_type: str | None = None
+
+    @property
+    def item_id(self) -> str:
+        """Stable ID of the changed scene or reference note."""
+        return self.scene_id
 
 
 @dataclass(frozen=True)
@@ -73,6 +81,9 @@ class RevisionStore:
             raise TypeError("Snapshot document contents must be text.")
         if any(not isinstance(title, str) for title in scene_titles.values()):
             raise TypeError("Snapshot scene titles must be text.")
+        missing_notes = set(_note_records(structure)) - documents.keys()
+        if missing_notes:
+            raise ValueError("Cannot create an incomplete snapshot: reference-note text is unavailable.")
 
         captured_at = datetime.now(timezone.utc).isoformat()
         snapshot_id = uuid4().hex
@@ -131,6 +142,7 @@ class RevisionStore:
             or not isinstance(documents, dict)
             or any(not isinstance(key, str) or not isinstance(value, str) for key, value in documents.items())
             or any(scene_id not in documents for scene_id in order)
+            or any(note_id not in documents for note_id in _note_records(payload.get("structure")))
         ):
             raise ValueError("Revision snapshot is incomplete or has invalid document data.")
         return self._to_snapshot(payload, path)
@@ -139,16 +151,10 @@ class RevisionStore:
         left, right = self.read(before), self.read(after)
         old_ids, new_ids = set(left.scene_order), set(right.scene_order)
         common = old_ids & new_ids
-        old_positions = {
-            scene_id: index
-            for index, scene_id in enumerate(left.scene_order)
-            if scene_id in common
-        }
-        new_positions = {
-            scene_id: index
-            for index, scene_id in enumerate(right.scene_order)
-            if scene_id in common
-        }
+        old_common_order = [scene_id for scene_id in left.scene_order if scene_id in common]
+        new_common_order = [scene_id for scene_id in right.scene_order if scene_id in common]
+        old_positions = {scene_id: index for index, scene_id in enumerate(old_common_order)}
+        new_positions = {scene_id: index for index, scene_id in enumerate(new_common_order)}
         changes: list[SceneChange] = []
         for scene_id in left.scene_order:
             if scene_id not in new_ids:
@@ -172,6 +178,46 @@ class RevisionStore:
                     tofile=f"{new_title or scene_id} (after)",
                 ))
                 changes.append(SceneChange(scene_id, "text-changed", old_title, new_title, diff))
+
+        old_notes, new_notes = _note_records(left.structure), _note_records(right.structure)
+        old_note_ids, new_note_ids = set(old_notes), set(new_notes)
+        for note_id in old_notes:
+            if note_id not in new_note_ids:
+                changes.append(SceneChange(
+                    note_id, "removed", old_notes[note_id][0], item_type="note",
+                    old_note_type=old_notes[note_id][1],
+                ))
+        for note_id in new_notes:
+            if note_id not in old_note_ids:
+                changes.append(SceneChange(
+                    note_id, "added", new_title=new_notes[note_id][0], item_type="note",
+                    new_note_type=new_notes[note_id][1],
+                ))
+        for note_id in old_notes:
+            if note_id not in new_note_ids:
+                continue
+            old_title, old_type = old_notes[note_id]
+            new_title, new_type = new_notes[note_id]
+            if old_title != new_title:
+                changes.append(SceneChange(
+                    note_id, "title-changed", old_title, new_title, item_type="note"
+                ))
+            if old_type != new_type:
+                changes.append(SceneChange(
+                    note_id, "type-changed", old_title, new_title, item_type="note",
+                    old_note_type=old_type, new_note_type=new_type,
+                ))
+            if left.documents.get(note_id) != right.documents.get(note_id):
+                old_text, new_text = left.documents.get(note_id), right.documents.get(note_id)
+                diff = "".join(difflib.unified_diff(
+                    (old_text or "").splitlines(keepends=True),
+                    (new_text or "").splitlines(keepends=True),
+                    fromfile=f"{old_title or note_id} (before)",
+                    tofile=f"{new_title or note_id} (after)",
+                ))
+                changes.append(SceneChange(
+                    note_id, "text-changed", old_title, new_title, diff, item_type="note"
+                ))
         return RevisionComparison(tuple(changes))
 
     def delete(self, snapshot: str | Path | RevisionSnapshot, *, confirmed: bool = False) -> None:
@@ -220,3 +266,22 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _note_records(structure: object) -> dict[str, tuple[str | None, str | None]]:
+    """Read note IDs, titles, and types from the captured project manifest."""
+    if not isinstance(structure, dict) or not isinstance(structure.get("notes"), list):
+        return {}
+    records: dict[str, tuple[str | None, str | None]] = {}
+    for note in structure["notes"]:
+        if not isinstance(note, dict):
+            continue
+        note_id = note.get("id")
+        if isinstance(note_id, str) and note_id:
+            title = note.get("title")
+            note_type = note.get("type")
+            records[note_id] = (
+                title if isinstance(title, str) else None,
+                note_type if isinstance(note_type, str) else None,
+            )
+    return records

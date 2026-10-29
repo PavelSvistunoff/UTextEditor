@@ -6,9 +6,11 @@ import pytest
 
 pytest.importorskip("PySide6")
 
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
-from app.document.book_compiler import compile_book_pdf
+from app.document.book_compiler import _build_document, compile_book_pdf
 from app.document.export import ExportChapter, ExportScene
 
 
@@ -54,6 +56,60 @@ def test_compile_book_pdf_creates_pages_in_project_layout(application, tmp_path:
     assert "First paragraph." in page_text[2]
     assert "The next part." in page_text[3]
     assert "The end." in page_text[4]
+
+
+def test_compile_book_colors_are_independent_of_dark_application_palette(
+    application, tmp_path: Path
+) -> None:
+    previous_palette = application.palette()
+    dark_palette = QPalette(previous_palette)
+    dark_palette.setColor(QPalette.ColorRole.Text, QColor("white"))
+    dark_palette.setColor(QPalette.ColorRole.WindowText, QColor("white"))
+    dark_palette.setColor(QPalette.ColorRole.Window, QColor("black"))
+    dark_palette.setColor(QPalette.ColorRole.Base, QColor("black"))
+    application.setPalette(dark_palette)
+    target = tmp_path / "dark-palette-book.pdf"
+    try:
+        compile_book_pdf(
+            target,
+            "A Story",
+            [ExportChapter("Chapter One", (ExportScene("s1", "Opening"),))],
+            [],
+            {"s1": "Black text remains readable."},
+        )
+
+        from PySide6.QtPdf import QPdfDocument
+
+        rendered = QPdfDocument(application)
+        rendered.load(str(target))
+        image = rendered.render(0, QSize(600, 850))
+
+        assert image.pixelColor(image.width() // 2, image.height() // 2) == QColor("white")
+        assert any(
+            image.pixelColor(x, y).lightness() < 128
+            for y in range(0, image.height(), 2)
+            for x in range(0, image.width(), 2)
+        )
+    finally:
+        application.setPalette(previous_palette)
+
+
+def test_book_prose_uses_indented_left_aligned_paragraphs(application) -> None:
+    document = _build_document(
+        "A Story",
+        [ExportChapter("Chapter One", (ExportScene("s1", "Opening"),))],
+        [],
+        {"s1": "First paragraph.\n\nSecond paragraph."},
+    )
+    body_block = document.begin()
+    while body_block.isValid() and not body_block.text().startswith("First paragraph."):
+        body_block = body_block.next()
+
+    assert body_block.isValid()
+    body_format = body_block.blockFormat()
+    assert body_format.alignment() == Qt.AlignmentFlag.AlignLeft
+    assert body_format.textIndent() > 0
+    assert body_format.bottomMargin() == 0
 
 
 def test_compile_book_does_not_replace_existing_destination_without_approval(
