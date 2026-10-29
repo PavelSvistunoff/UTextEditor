@@ -1,10 +1,18 @@
 # Detailed specification: future novel-writing features
 
-This document turns the novel-writing direction in `README.md` and Section 22 of
-`SPEC.md` into behavior and acceptance requirements. These features are not
-implemented and are not part of the current MVP. This specification does not
-change the MVP scope. If requirements conflict, `README.md` takes precedence;
-update this document when a product decision changes the direction.
+This document records detailed requirements and remaining gaps for novel-writing
+features. Some sections predate implemented functionality; current behavior is
+listed in `README.md` and the status note below. If requirements conflict,
+`README.md` takes precedence.
+
+Current status: version-1 manifests now optionally carry structured character
+profiles, directed relationships, and scene associations. The project tree can
+create/edit/duplicate/delete profiles, filter them by aliases and other profile
+metadata, and associate/unassociate them with scenes. Outline
+planning, Auto-writer, and continuity review use bounded character context as
+documented in `README.md`. Proposed character-state updates and explicit
+accept/reject review, chronological state tracking, manuscript-wide scene
+search by character aliases, and profile import/export remain unimplemented.
 
 The requirements below define expected behavior for normal workflows and
 important failure and edge cases. They are intended to make future
@@ -44,7 +52,7 @@ environment failure can be predicted.
 - **Manuscript:** The project's ordered sequence of scenes. Chapter titles and
   scene titles are organization metadata, not automatically part of scene
   prose.
-- **Reference note:** A separate text document for a character, setting,
+- **Reference note:** A separate text document for a setting,
   timeline, research item, or general note. It may be linked to scenes and
   other notes.
 - **Project view:** A navigation view of project structure and reference
@@ -63,7 +71,8 @@ not cause content to be silently merged or lost.
 
 Version 1 uses a UTF-8 YAML manifest named `utexteditor.yaml` in the project
 root, with manuscript text under `manuscript/` and reference notes under
-`notes/`. Scene and note filenames are generated from titles for readability,
+`notes/`. Optional structured character profiles, relationships, and scene
+associations are stored inline in the YAML manifest. Scene and note filenames are generated from titles for readability,
 but titles and paths are separate fields. Authors may import files from other
 project-relative folders. The project root contains ordinary text files and
 this documented, versioned manifest for structure. The manifest records at
@@ -76,9 +85,12 @@ least:
 - ungrouped scenes, if any;
 - reference-note IDs, types, titles, and project-relative paths;
 - explicit links between notes and scenes or other notes.
+- optional structured character profiles and directed relationships;
+- optional per-scene character associations, including presence and development
+  notes.
 
-The manifest is organization metadata only. Scene and note content stays in
-their referenced files. Use a human-readable format, write it atomically, and
+The manifest stores project structure and character metadata. Scene and note
+content stays in their referenced files. Use a human-readable format, write it atomically, and
 validate paths before access. No path in the manifest may escape the project
 root, including through `..` segments or symlinks that resolve outside it.
 Avoid absolute paths so a copied project remains usable at a different
@@ -323,6 +335,13 @@ the ability to save.
 
 ## 7. Reference notes and links
 
+The character note type remains available for free-form supplemental notes.
+Structured character profiles are a separate manifest entity and are managed
+from the Characters section in the project tree. Current profile fields,
+relationship controls, scene association controls, and filtering behavior are
+described in `README.md`; richer relationship management and cross-document
+navigation remain future scope.
+
 Reference notes use separate ordinary text files and metadata entries. Initial
 types are character, setting, timeline, research, and general. Authors can
 create, rename, retype, edit, link, unlink, and remove notes. Deleting a note
@@ -345,8 +364,16 @@ manuscript search unless the author selects a project-wide search scope.
 
 ## 8. Local, opt-in novel-aware AI
 
-AI features are later work, not an implicit project-wide assistant. Initial
-candidate actions are:
+Current implementation includes project-outline planning, additive Auto-pilot,
+whole-project Auto-writer, selected-scene summaries, and continuity review.
+Character context is included as described in `README.md`: planning receives a
+bounded compact profile selection, and scene-focused workflows receive only
+explicitly associated profiles. The following requirements describe future
+behavior beyond those current integrations, especially structured continuity
+findings and proposed character-state review.
+
+AI features are explicit tasks, not an implicit project-wide assistant. Candidate
+future actions include:
 
 - summarize a selected scene, chapter, or manuscript range;
 - check continuity against selected reference notes;
@@ -376,8 +403,11 @@ by stale offsets.
 
 If Ollama is offline, the configured model is missing, the request times out,
 or the response is malformed, preserve all documents and show a concise,
-actionable error. Empty results are not errors. Do not log prompts or full
-manuscript excerpts. AI can be disabled globally and per operation.
+actionable error. Empty results are not errors. The application logger does not
+persist prompts or manuscript excerpts. The optional in-memory AI diagnostics
+window does show request/response payloads for the current session; authors
+should treat that view as containing potentially sensitive manuscript text.
+AI can be disabled globally and per operation.
 
 ## 9. Export and revision history
 

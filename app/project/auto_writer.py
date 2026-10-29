@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from app.document.revisions import RevisionStore
 from .model import ProjectError
 from .service import Project
+from .character_context import scene_character_context
 
 MAX_AUTOWRITER_SCENES = 80
 MAX_SCENE_INPUT_LENGTH = 16000
@@ -160,6 +161,7 @@ def run_auto_writer(
             if mode == "write_empty"
             else "Refine this existing scene while preserving its core events, point of view, and established facts."
         )
+        character_context = scene_character_context(project, scene_id)
         prompt = (
             f"{action} Return only the complete scene text, with no title or explanation. "
             "Use the project outline, writing instructions, reference notes, and preceding "
@@ -168,6 +170,8 @@ def run_auto_writer(
             f"<writing_instructions>\n{instructions or '[No additional instructions supplied.]'}\n</writing_instructions>\n"
             f"<project_outline>\n{outline[:5000]}\n</project_outline>\n"
             f"<reference_notes>\n{reference_context}\n</reference_notes>\n"
+            f"<associated_character_context>\n{character_context or '[No characters associated with this scene.]'}\n</associated_character_context>\n"
+            "Respect each character's stated knowledge and limitations. They must not act on concealed or unknown facts unless this scene establishes how they learned them. Treat profiles as guidance that allows motivated surprises.\n"
             f"<preceding_scenes>\n{chr(10).join(preceding[-2:])}\n</preceding_scenes>\n"
             f"<current_chapter>\n{chapter_title}\n</current_chapter>\n"
             f"<current_scene>\n{current_text if mode == 'refine_all' else '[Empty scene]'}\n</current_scene>"

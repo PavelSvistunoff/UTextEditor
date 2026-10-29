@@ -16,6 +16,10 @@ from app.project import (
     ProjectFormatError,
     ProjectPathError,
     count_words,
+    CharacterGoal,
+    CharacterKnowledge,
+    CharacterRelationship,
+    SceneCharacterAssociation,
     validate_project_path,
 )
 
@@ -30,6 +34,71 @@ def test_create_open_and_versioned_manifest(tmp_path):
     data = yaml.safe_load((root / "utexteditor.yaml").read_text(encoding="utf-8"))
     assert data["format_version"] == 1
     assert data["title"] == "My Novel"
+
+
+def test_character_data_round_trips_and_legacy_manifest_is_not_rewritten(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    original = project.manifest_path.read_bytes()
+    reopened = Project.open(project.root)
+    assert reopened.manifest_path.read_bytes() == original
+    left = reopened.add_character("Mara")
+    right = reopened.add_character("Ivo")
+    left.primary_motivation = "Expose the council"
+    left.goals = [CharacterGoal("Find the ledger")]
+    left.knowledge = [CharacterKnowledge("does_not_know", "The witness survived")]
+    reopened.update_character(left.id, left)
+    reopened.add_character_relationship(CharacterRelationship(
+        str(uuid4()), left.id, right.id, relationship_type="rival", trust=20
+    ))
+    scene = reopened.add_scene("Confrontation")
+    reopened.associate_character(scene.id, SceneCharacterAssociation(left.id, purpose="force a choice"))
+    loaded = Project.open(reopened.root)
+    assert loaded.get_character(left.id).goals[0].description == "Find the ledger"
+    assert loaded.get_scene(scene.id).character_associations[0].character_id == left.id
+    assert loaded.manifest.character_relationships[0].target_id == right.id
+
+
+def test_removing_character_cleans_relationships_and_scene_references(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    other = project.add_character("Ivo")
+    project.add_character_relationship(CharacterRelationship(str(uuid4()), character.id, other.id))
+    scene = project.add_scene("Scene")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    project.remove_character(character.id)
+    assert not project.manifest.character_relationships
+    assert not project.get_scene(scene.id).character_associations
+
+
+def test_scene_character_association_can_be_removed_without_deleting_profile(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Scene")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    project.unassociate_character(scene.id, character.id)
+    assert not project.get_scene(scene.id).character_associations
+    assert project.get_character(character.id).full_name == "Mara"
+
+
+def test_rejects_broken_scene_character_reference(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene")
+    data = yaml.safe_load(project.manifest_path.read_text(encoding="utf-8"))
+    data["ungrouped_scenes"][0]["character_associations"] = [{"character_id": str(uuid4())}]
+    project.manifest_path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    with pytest.raises(ProjectFormatError, match="invalid character association"):
+        Project.open(project.root)
+
+
+def test_character_save_detects_external_manifest_change(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    with project.manifest_path.open("a", encoding="utf-8") as stream:
+        stream.write("# external edit\n")
+    character.description = "Changed locally"
+    with pytest.raises(ProjectError, match="changed outside"):
+        project.update_character(character.id, character)
+    assert project.get_character(character.id).description == ""
 
 
 def test_create_refuses_nonempty_and_rolls_back_invalid_title(tmp_path):

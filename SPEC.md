@@ -46,6 +46,27 @@ The UI may call application services and schedule background work. It must not b
 
 The implementation currently uses synchronous provider methods inside `QThreadPool` workers. That is acceptable: the provider API does not need to be `async` just to keep the GUI responsive. Use one consistent background-work pattern and deliver results back to Qt objects through queued signals.
 
+### Current project character support
+
+The version-1 project manifest accepts optional structured character profiles,
+directed relationships, and stable-ID scene associations. Empty character
+collections are omitted from serialization, preserving legacy manifest output
+until the author adds character data. Profiles include motivations, goals,
+personality lists, knowledge/secret categories, and natural-language arc notes.
+The profile editor exposes identity, background, personality, motivations,
+goals/status/priority, knowledge categories, and arc notes. Directed
+relationships can be added from a character's project-tree context menu and
+viewed from either endpoint; editing/removing a relationship has no UI yet.
+Scene associations can be added, updated, or removed from a scene's context
+menu. The project-tree filter searches character names, aliases, roles,
+descriptions, and primary motivations. Outline planning uses a compact bounded
+selection of profiles with motivations, active goals, or internal conflicts;
+the confirmation displays that context. Auto-writer and continuity review
+include only profiles explicitly associated with the target scene. Continuity
+output remains review text and does not produce structured proposals.
+Chronological state tracking, AI proposed-state review and acceptance, and
+profile import/export are not implemented yet.
+
 ## 5. Main window and navigation
 
 The main window contains a menu bar, tabbed document area, central editor, and status bar. A toolbar is optional. Keep AI status visible but unobtrusive; a connection failure must not disable ordinary editing.
@@ -268,7 +289,7 @@ Do not treat future work as MVP acceptance criteria unless scope is explicitly c
 
 ## 22. Future directions
 
-The project workspace, chapter/scene organization, separate reference notes, word counts, recovery, writing goals, export, revision snapshots, and selected local AI analysis are implemented; see `README.md` for current behavior. Further work should improve these flows incrementally. Candidates include Markdown preview, recent files, richer encoding and language support, more complete recovery repair and revision comparison/management, proposed-edit previews, and more robust large-file handling. Prioritize author value and privacy; novel-aware AI must use configured local processing, and project features should preserve portability and author control. Avoid cloud services or proprietary formats without a separate product decision.
+The project workspace, chapter/scene organization, structured character profiles, separate reference notes, word counts, recovery, writing goals, export, revision snapshots, and selected local AI analysis are implemented; see `README.md` for current behavior and gaps. Project recency is available; a recent standalone-document list is not. Further work should improve these flows incrementally. Candidates include Markdown preview, richer encoding and language support, more complete recovery repair and revision comparison/management, proposed-edit previews, and more robust large-file handling. Prioritize author value and privacy; novel-aware AI must use configured local processing, and project features should preserve portability and author control. Avoid cloud services or proprietary formats without a separate product decision.
 
 ## 23. Definition of done
 

@@ -29,6 +29,7 @@ def run_autopilot(
     brief: str,
     existing_outline: str,
     *,
+    character_context: str = "",
     maximum_tokens: int,
     temperature: float,
     is_cancelled: Callable[[], bool],
@@ -52,6 +53,9 @@ def run_autopilot(
         "behavior.\n\n<author_setup>\n"
         f"{brief}\n</author_setup>\n\n<existing_outline_metadata>\n"
         f"{existing_outline[:5000]}\n</existing_outline_metadata>"
+        "\n\n<existing_character_profiles>\n"
+        f"{character_context[:5000] or '[No structured profiles provided.]'}\n"
+        "</existing_character_profiles>"
     )
     raw_plan = provider.generate_private(
         plan_prompt,
@@ -87,6 +91,8 @@ def run_autopilot(
                 f"<character_references>\n"
                 f"{json.dumps(plan['characters'], ensure_ascii=False)}\n"
                 f"</character_references>\n"
+                f"<existing_character_profiles>\n{character_context[:5000]}\n</existing_character_profiles>\n"
+                "Respect established knowledge boundaries and motivations while allowing a scene to establish plausible change.\n"
                 f"<prior_generated_scenes>\n{prior_context}\n</prior_generated_scenes>"
             )
             content = provider.generate_private(

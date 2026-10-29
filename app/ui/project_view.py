@@ -18,6 +18,8 @@ class ProjectView(QTreeWidget):
         self.setExpandsOnDoubleClick(True)
         self.itemActivated.connect(self._activate_item)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
+        self.character_filter = ""
+        self._characters = ()
 
     def show_project(
         self,
@@ -28,6 +30,7 @@ class ProjectView(QTreeWidget):
         unavailable_ids: set[str] | None = None,
     ) -> None:
         self.clear()
+        self._characters = tuple(project.manifest.characters)
         unavailable_ids = unavailable_ids or set()
         root = QTreeWidgetItem([self._count_label(project.manifest.title, project_count)])
         root.setData(0, Qt.ItemDataRole.UserRole, "project")
@@ -72,8 +75,35 @@ class ProjectView(QTreeWidget):
             if linked:
                 item.setToolTip(0, "Links:\n" + "\n".join(linked))
             notes.addChild(item)
+        characters = QTreeWidgetItem([f"Characters ({len(project.manifest.characters)})"])
+        characters.setData(0, Qt.ItemDataRole.UserRole, "group")
+        root.addChild(characters)
+        for character in project.manifest.characters:
+            item = QTreeWidgetItem([character.display_name or character.full_name])
+            item.setData(0, Qt.ItemDataRole.UserRole, "character")
+            item.setData(0, Qt.ItemDataRole.UserRole + 1, character.id)
+            item.setToolTip(0, f"{character.role} — {character.primary_motivation}".strip(" —"))
+            characters.addChild(item)
         root.setExpanded(True)
         self.expandAll()
+        self.filter_characters(self.character_filter)
+
+    def filter_characters(self, query: str) -> None:
+        """Filter the character section by identity and descriptive metadata."""
+        self.character_filter = query.casefold().strip()
+        root = self.topLevelItem(0)
+        if root is None:
+            return
+        for index in range(root.childCount()):
+            group = root.child(index)
+            if group.text(0).startswith("Characters ("):
+                for child_index in range(group.childCount()):
+                    item = group.child(child_index)
+                    character = next((c for c in self._characters if c.id == item.data(0, Qt.ItemDataRole.UserRole + 1)), None)
+                    searchable = " ".join((character.full_name, character.display_name, character.role, character.description, character.primary_motivation, *character.aliases)) if character else item.text(0)
+                    item.setHidden(bool(self.character_filter) and self.character_filter not in searchable.casefold())
+                group.setHidden(bool(self.character_filter) and not any(not group.child(i).isHidden() for i in range(group.childCount())))
+                break
 
     @staticmethod
     def _count_label(title: str, count: WordCount) -> str:
@@ -91,7 +121,7 @@ class ProjectView(QTreeWidget):
     def _activate_item(self, item: QTreeWidgetItem, _column: int) -> None:
         kind = item.data(0, Qt.ItemDataRole.UserRole)
         identifier = item.data(0, Qt.ItemDataRole.UserRole + 1)
-        if kind in {"scene", "note"} and isinstance(identifier, str):
+        if kind in {"scene", "note", "character"} and isinstance(identifier, str):
             self.open_requested.emit(kind, identifier)
 
     def contextMenuEvent(self, event) -> None:
@@ -125,7 +155,9 @@ class ProjectView(QTreeWidget):
             ("New Scene", "new_scene"),
             ("New Reference Note", "new_note"),
         ]
-        if kind in {"scene", "note"}:
+        if kind == "character":
+            actions.extend((("Open", "open"), ("Add Relationship…", "add_relationship"), ("Duplicate", "duplicate"), ("Remove", "remove")))
+        elif kind in {"scene", "note"}:
             actions.extend(
                 (("Open", "open"), ("Rename", "rename"), ("Duplicate", "duplicate"))
             )
@@ -136,6 +168,7 @@ class ProjectView(QTreeWidget):
                         ("Move Down", "move_down"),
                         ("Move to Chapter…", "move_to_chapter"),
                         ("Summarize Scene…", "summarize"),
+                        ("Associate Characters…", "associate_character"),
                     )
                 )
             else:

@@ -17,6 +17,7 @@ from app.project import Project
 from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
+from app.ui.character_dialog import CharacterDialog
 from app.ui.revision_history_dialog import RevisionHistoryDialog
 from app.ui.settings_dialog import SettingsDialog
 from app.settings.settings import AppSettings
@@ -69,7 +70,7 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
 
     root = window.project_view.topLevelItem(0)
     assert "2 words" in root.text(0)
-    assert root.childCount() == 2
+    assert root.childCount() == 3
     chapter_item = root.child(0)
     assert "2 words" in chapter_item.text(0)
     scene_item = chapter_item.child(0)
@@ -88,7 +89,56 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
     assert result == [True]
     assert project.read_scene(scene.id) == "edited manuscript"
     assert not editor.document_state.dirty
+    assert root.child(2).text(0) == "Characters (0)"
     window.close()
+
+
+def test_character_profile_dialog_keeps_edits_pending_until_save(application, monkeypatch):
+    from app.project import Character
+
+    character = Character(id="00000000-0000-4000-8000-000000000001", full_name="Mara")
+    dialog = CharacterDialog(character)
+    dialog.full_name.setText("Mara Venn")
+    dialog.motivation.setPlainText("Expose the council")
+    dialog.goals.setPlainText("Find the ledger | active | 1 | before the trial")
+    assert character.full_name == "Mara"
+    dialog._accept()
+    assert dialog.character.full_name == "Mara Venn"
+    assert dialog.character.primary_motivation == "Expose the council"
+    assert dialog.character.goals[0].status == "active"
+    assert dialog.character.goals[0].priority == 1
+    assert dialog.character.goals[0].notes == "before the trial"
+    dialog.close()
+
+
+def test_character_profile_dialog_rejects_invalid_goal_status(application, monkeypatch):
+    from app.project import Character
+
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    dialog = CharacterDialog(Character(id="00000000-0000-4000-8000-000000000001", full_name="Mara"))
+    dialog.goals.setPlainText("Find the ledger | unknown | 3")
+    dialog._accept()
+    assert dialog.result() == 0
+    assert warnings
+    dialog.close()
+
+
+def test_project_tree_character_filter_searches_profile_metadata(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    mara = project.add_character("Mara Venn")
+    mara.role = "investigator"
+    mara.primary_motivation = "Expose the council"
+    project.update_character(mara.id, mara)
+    project.add_character("Ivo")
+    view = ProjectView()
+    view.show_project(project, {}, {}, type("Count", (), {"count": 0, "complete": True})())
+    view.filter_characters("council")
+    group = view.topLevelItem(0).child(view.topLevelItem(0).childCount() - 1)
+    assert group.childCount() == 2
+    assert not group.child(0).isHidden()
+    assert group.child(1).isHidden()
+    view.close()
 
 
 def test_repeated_project_document_open_coalesces_pending_reads(
@@ -566,6 +616,34 @@ def test_project_analysis_uses_only_explicit_scene_and_reference_context(tmp_pat
     assert "selected reference" in provider.prompt
     assert "private unrelated note" not in provider.prompt
     assert other.id not in provider.prompt
+
+
+def test_project_analysis_includes_only_associated_character_context(tmp_path):
+    from app.project import CharacterKnowledge, SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="scene text")
+    selected = project.add_character("Mara")
+    selected.primary_motivation = "Expose the council"
+    selected.knowledge = [CharacterKnowledge("does_not_know", "The witness survived")]
+    project.update_character(selected.id, selected)
+    unrelated = project.add_character("Ivo")
+    unrelated.primary_motivation = "Irrelevant plan"
+    project.update_character(unrelated.id, unrelated)
+    project.associate_character(scene.id, SceneCharacterAssociation(selected.id))
+
+    class FakeProvider:
+        prompt = None
+
+        def generate_private(self, prompt, **_options):
+            self.prompt = prompt
+            return "review"
+
+    provider = FakeProvider()
+    MainWindow._run_project_analysis(provider, project, "continuity", scene.id, (), {}, 4000, "review", 100, 0.2)
+    assert "Expose the council" in provider.prompt
+    assert "The witness survived" in provider.prompt
+    assert "Irrelevant plan" not in provider.prompt
 
 
 def test_scene_summary_requires_confirmation_and_never_modifies_source(application, tmp_path, monkeypatch):

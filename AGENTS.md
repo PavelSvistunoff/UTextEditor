@@ -22,6 +22,7 @@ implemented feature. Preserve explicit user control over manuscript changes.
 | `app/ui/` | Qt widgets, dialogs, window orchestration, and background workers |
 | `app/document/` | Text/document state, encodings, file operations, recovery, revisions, and export |
 | `app/project/` | Project model, validation, filesystem operations, and project workflows |
+| `app/project/character_context.py` | Bounded, scene-scoped character context for local AI workflows |
 | `app/ai/` | `AIProvider`, prompt construction, response validation, and Ollama HTTP client |
 | `app/settings/` | User settings persistence and defaults |
 | `tests/` | Offline unit and UI tests using fake providers and mocked I/O |
@@ -30,6 +31,11 @@ Start tracing a behavior from its owning service/model, then follow the UI
 caller and its tests. `app/ui/main_window.py` coordinates many workflows; keep
 domain rules and persistence logic in their owning packages rather than adding
 more business logic there.
+
+Structured character profiles, directed relationships, and optional scene
+associations are part of the version-1 YAML manifest. Scene-focused AI requests
+must use `character_context.py` and include only explicitly associated
+profiles; planning may use its compact project-level motivation summary.
 
 ## Change workflow
 

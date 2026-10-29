@@ -390,6 +390,33 @@ def test_auto_writer_refines_whole_project_and_snapshots_originals(tmp_path):
     assert chapter.title in str(snapshot.structure)
 
 
+def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
+    from app.project import SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening")
+    associated = project.add_character("Mara")
+    associated.primary_motivation = "Expose the council"
+    project.update_character(associated.id, associated)
+    unrelated = project.add_character("Ivo")
+    unrelated.primary_motivation = "Unrelated secret plan"
+    project.update_character(unrelated.id, unrelated)
+    project.associate_character(scene.id, SceneCharacterAssociation(associated.id))
+
+    class FakeProvider:
+        prompt = ""
+
+        def generate_private(self, prompt, **_options):
+            self.prompt = prompt
+            return "Draft text."
+
+    provider = FakeProvider()
+    run_auto_writer(provider, project, "write_empty", "", {}, maximum_tokens=900,
+                    temperature=0.2, snapshot_name="Before draft", is_cancelled=lambda: False)
+    assert "Expose the council" in provider.prompt
+    assert "Unrelated secret plan" not in provider.prompt
+
+
 def test_auto_writer_writes_only_empty_scenes(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter")

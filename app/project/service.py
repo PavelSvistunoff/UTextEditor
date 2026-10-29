@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import hashlib
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +27,11 @@ from .model import (
     ProjectFormatError,
     ProjectPathError,
     Scene,
+    Character,
+    CharacterGoal,
+    CharacterKnowledge,
+    CharacterRelationship,
+    SceneCharacterAssociation,
 )
 from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
@@ -82,6 +88,11 @@ class Project:
     def __init__(self, root: Path, manifest: Manifest):
         self.root = root.resolve()
         self.manifest = manifest
+        manifest_path = self.root / MANIFEST_NAME
+        try:
+            self._manifest_digest = hashlib.sha256(manifest_path.read_bytes()).digest()
+        except FileNotFoundError:
+            self._manifest_digest = None
 
     @classmethod
     def create(cls, root: Path | str, title: str) -> Project:
@@ -509,6 +520,84 @@ class Project:
         )
         self._create_text_entry(note, content, lambda: self.manifest.notes.append(note))
         return note
+
+    def add_character(self, full_name: str) -> Character:
+        _validate_title(full_name)
+        character = Character(id=str(uuid4()), full_name=full_name)
+        self._update(lambda: self.manifest.characters.append(character))
+        return deepcopy(character)
+
+    def get_character(self, character_id: str) -> Character:
+        for character in self.manifest.characters:
+            if character.id == character_id:
+                return deepcopy(character)
+        raise ProjectError(f"Unknown character ID: {character_id}")
+
+    def update_character(self, character_id: str, updated: Character) -> None:
+        current = next((item for item in self.manifest.characters if item.id == character_id), None)
+        if current is None:
+            raise ProjectError(f"Unknown character ID: {character_id}")
+        if updated.id != character_id:
+            raise ProjectError("A character ID cannot be changed")
+        index = self.manifest.characters.index(current)
+        self._update(lambda: self.manifest.characters.__setitem__(index, deepcopy(updated)))
+
+    def duplicate_character(self, character_id: str) -> Character:
+        original = self.get_character(character_id)
+        duplicate = deepcopy(original)
+        duplicate.id = str(uuid4())
+        duplicate.full_name = f"{original.full_name} copy"
+        duplicate.display_name = ""
+        self._update(lambda: self.manifest.characters.append(duplicate))
+        return deepcopy(duplicate)
+
+    def remove_character(self, character_id: str) -> None:
+        self.get_character(character_id)  # validate that the ID exists before mutation
+
+        def change() -> None:
+            self.manifest.characters = [item for item in self.manifest.characters if item.id != character_id]
+            self.manifest.character_relationships = [
+                relation for relation in self.manifest.character_relationships
+                if character_id not in (relation.source_id, relation.target_id)
+            ]
+            for scene in self.iter_scenes():
+                scene.character_associations = [
+                    association for association in scene.character_associations
+                    if association.character_id != character_id
+                ]
+
+        self._update(change)
+
+    def add_character_relationship(self, relationship: CharacterRelationship) -> None:
+        self._update(lambda: self.manifest.character_relationships.append(relationship))
+
+    def associate_character(self, scene_id: str, association: SceneCharacterAssociation) -> None:
+        scene = self.get_scene(scene_id)
+
+        def change() -> None:
+            scene.character_associations = [
+                item for item in scene.character_associations
+                if item.character_id != association.character_id
+            ]
+            scene.character_associations.append(deepcopy(association))
+
+        self._update(change)
+
+    def unassociate_character(self, scene_id: str, character_id: str) -> None:
+        scene = self.get_scene(scene_id)
+        if not any(item.character_id == character_id for item in scene.character_associations):
+            raise ProjectError("That character is not associated with the scene")
+        self._update(lambda: setattr(
+            scene,
+            "character_associations",
+            [item for item in scene.character_associations if item.character_id != character_id],
+        ))
+
+    def search_characters(self, query: str) -> tuple[Character, ...]:
+        needle = query.casefold().strip()
+        if not needle:
+            return tuple(deepcopy(self.manifest.characters))
+        return tuple(deepcopy(c) for c in self.manifest.characters if needle in c.full_name.casefold() or needle in c.display_name.casefold() or any(needle in alias.casefold() for alias in c.aliases))
 
     def rename_note(self, note_id: str, title: str, *, rename_file: bool = False) -> None:
         note = self.get_note(note_id)
@@ -1317,6 +1406,17 @@ class Project:
         destination = validate_project_path(self.root, MANIFEST_NAME)
         if destination.is_symlink():
             raise ProjectPathError("Project manifest must not be a symbolic link")
+        try:
+            current_digest = hashlib.sha256(destination.read_bytes()).digest()
+        except FileNotFoundError:
+            current_digest = None
+        except OSError as exc:
+            raise ProjectError(f"Cannot check project manifest for external changes: {exc}") from exc
+        if current_digest != self._manifest_digest:
+            raise ProjectError(
+                "The project manifest changed outside UTextEditor. Reopen the project "
+                "before saving further project changes."
+            )
         encoded = yaml.safe_dump(
             self.manifest.to_mapping(),
             allow_unicode=True,
@@ -1330,6 +1430,7 @@ class Project:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temporary, destination)
+            self._manifest_digest = hashlib.sha256(encoded).digest()
             try:
                 directory_fd = os.open(self.root, os.O_RDONLY)
                 try:
