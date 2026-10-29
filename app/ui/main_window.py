@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PySide6.QtWidgets import QApplication
 
 from app.ai.completion_service import CompletionService, build_context
 from app.ai.ollama_client import OllamaClient
@@ -67,6 +68,7 @@ from app.document.text_formatting import (
 )
 from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
 from app.settings.settings import AppSettings
+from app.i18n import install_translation
 from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow
 from .generated_text_dialog import GeneratedTextDialog
@@ -121,10 +123,16 @@ class MainWindow(QMainWindow):
         writing_goal_store: WritingGoalStore | None = None,
     ) -> None:
         super().__init__()
-        self.setWindowTitle("UTextEditor")
-        self.resize(1000, 700)
         # Load persisted settings if available; fall back to defaults.
         self.settings = AppSettings.load()
+        application = QApplication.instance()
+        self.ui_language, self._ui_translator = (
+            install_translation(application, self.settings.ui_language)
+            if application is not None
+            else ("en", None)
+        )
+        self.setWindowTitle("UTextEditor")
+        self.resize(1000, 700)
         self.writing_goal_store = writing_goal_store
         self._writing_goal_load_error = None
         try:
@@ -258,21 +266,21 @@ class MainWindow(QMainWindow):
                 self._schedule_project_autosave(editor)
 
     def _build_actions(self) -> None:
-        file_menu = self.menuBar().addMenu("File")
-        edit_menu = self.menuBar().addMenu("Edit")
-        search_menu = self.menuBar().addMenu("Search")
-        view_menu = self.menuBar().addMenu("View")
-        project_menu = self.menuBar().addMenu("Project")
-        writing_menu = self.menuBar().addMenu("Writing")
-        ai_menu = self.menuBar().addMenu("AI")
+        file_menu = self.menuBar().addMenu(self.tr("File"))
+        edit_menu = self.menuBar().addMenu(self.tr("Edit"))
+        search_menu = self.menuBar().addMenu(self.tr("Search"))
+        view_menu = self.menuBar().addMenu(self.tr("View"))
+        project_menu = self.menuBar().addMenu(self.tr("Project"))
+        writing_menu = self.menuBar().addMenu(self.tr("Writing"))
+        ai_menu = self.menuBar().addMenu(self.tr("AI"))
 
-        self._writing_goal_pause_action = QAction("Pause Daily Goal", self)
+        self._writing_goal_pause_action = QAction(self.tr("Pause Daily Goal"), self)
         self._writing_goal_pause_action.triggered.connect(self.toggle_writing_goal_pause)
-        configure_goal = QAction("Set Daily Goal…", self)
+        configure_goal = QAction(self.tr("Set Daily Goal…"), self)
         configure_goal.triggered.connect(self.configure_writing_goal)
         writing_menu.addAction(configure_goal)
         writing_menu.addAction(self._writing_goal_pause_action)
-        reset_goal = QAction("Reset Today's Progress…", self)
+        reset_goal = QAction(self.tr("Reset Today's Progress…"), self)
         reset_goal.triggered.connect(self.reset_writing_goal)
         writing_menu.addAction(reset_goal)
 
@@ -306,21 +314,57 @@ class MainWindow(QMainWindow):
             ("Translate Project to Ukrainian…", self.translate_project_to_ukrainian, True),
             ("Translate Project to English…", self.translate_project_to_english, True),
         )
+        # Keep these literals visible to Qt Linguist; action keys stay stable
+        # in English for internal lookups and are never persisted.
+        action_text = {
+            "New Project…": self.tr("New Project…"), "Open Project…": self.tr("Open Project…"),
+            "Close Project": self.tr("Close Project"), "AI Project Setup…": self.tr("AI Project Setup…"),
+            "Auto-writer…": self.tr("Auto-writer…"), "New Chapter…": self.tr("New Chapter…"),
+            "New Scene…": self.tr("New Scene…"), "New Reference Note…": self.tr("New Reference Note…"),
+            "New Character…": self.tr("New Character…"), "Import Scene…": self.tr("Import Scene…"),
+            "Rename Selected…": self.tr("Rename Selected…"), "Duplicate Selected…": self.tr("Duplicate Selected…"),
+            "Remove Selected…": self.tr("Remove Selected…"), "Link Note…": self.tr("Link Note…"),
+            "Unlink Note…": self.tr("Unlink Note…"), "Open Linked Item…": self.tr("Open Linked Item…"),
+            "Move Scene to Chapter…": self.tr("Move Scene to Chapter…"), "Move Scene Up": self.tr("Move Scene Up"),
+            "Move Scene Down": self.tr("Move Scene Down"), "Move Chapter Up": self.tr("Move Chapter Up"),
+            "Move Chapter Down": self.tr("Move Chapter Down"), "Compile Book as PDF…": self.tr("Compile Book as PDF…"),
+            "Export Manuscript…": self.tr("Export Manuscript…"), "Create Revision Snapshot…": self.tr("Create Revision Snapshot…"),
+            "Review Revision Snapshots…": self.tr("Review Revision Snapshots…"),
+            "Translate Project to Ukrainian…": self.tr("Translate Project to Ukrainian…"),
+            "Translate Project to English…": self.tr("Translate Project to English…"),
+            "New": self.tr("New"), "Open": self.tr("Open"), "Save": self.tr("Save"),
+            "Save As": self.tr("Save As"), "Close Tab": self.tr("Close Tab"), "Quit": self.tr("Quit"),
+            "Undo": self.tr("Undo"), "Redo": self.tr("Redo"), "Copy": self.tr("Copy"),
+            "Cut": self.tr("Cut"), "Paste": self.tr("Paste"), "Select All": self.tr("Select All"),
+            "Find": self.tr("Find"), "Replace": self.tr("Replace"), "Generate..": self.tr("Generate.."),
+            "Generate Completion": self.tr("Generate Completion"), "Check Spelling": self.tr("Check Spelling"),
+            "Accept Suggestion": self.tr("Accept Suggestion"), "Reject Suggestion": self.tr("Reject Suggestion"),
+            "Ollama Debug": self.tr("Ollama Debug"), "AI Settings…": self.tr("AI Settings…"),
+            "Summarize Selected Scene": self.tr("Summarize Selected Scene"),
+            "Check Continuity Against Selected Notes": self.tr("Check Continuity Against Selected Notes"),
+            "Cancel Project Analysis": self.tr("Cancel Project Analysis"),
+            "Cancel Project Setup": self.tr("Cancel Project Setup"), "Cancel Auto-writer": self.tr("Cancel Auto-writer"),
+            "Cancel Text Generation": self.tr("Cancel Text Generation"),
+            "Format Whole Document…": self.tr("Format Whole Document…"), "Uppercase": self.tr("Uppercase"),
+            "lowercase": self.tr("lowercase"), "Title Case": self.tr("Title Case"),
+            "Indent Lines": self.tr("Indent Lines"), "Outdent Lines": self.tr("Outdent Lines"),
+            "Trim Trailing Whitespace": self.tr("Trim Trailing Whitespace"),
+        }
         for title, handler, requires_project in project_actions:
-            action = QAction(title, self)
+            action = QAction(action_text[title], self)
             action.triggered.connect(handler)
             project_menu.addAction(action)
             self._project_actions[title] = action
             action.setEnabled(not requires_project)
-        self._recent_projects_menu = QMenu("Open Recent Project", self)
-        self._recent_projects_menu.setAccessibleName("Open Recent Project")
+        self._recent_projects_menu = QMenu(self.tr("Open Recent Project"), self)
+        self._recent_projects_menu.setAccessibleName(self.tr("Open Recent Project"))
         self._recent_projects_menu.aboutToShow.connect(self._populate_recent_projects_menu)
         project_menu.insertMenu(
             self._project_actions["Close Project"], self._recent_projects_menu
         )
         project_menu.insertSeparator(self._recent_projects_menu.menuAction())
         self._project_translation_cancel_action = QAction(
-            "Cancel Project Translation", self
+            self.tr("Cancel Project Translation"), self
         )
         self._project_translation_cancel_action.setEnabled(False)
         self._project_translation_cancel_action.triggered.connect(
@@ -328,12 +372,12 @@ class MainWindow(QMainWindow):
         )
         project_menu.addAction(self._project_translation_cancel_action)
 
-        self.focus_mode_action = QAction("Distraction-free mode", self)
+        self.focus_mode_action = QAction(self.tr("Distraction-free mode"), self)
         self.focus_mode_action.setCheckable(True)
         self.focus_mode_action.setShortcut(QKeySequence("Ctrl+Shift+F"))
         self.focus_mode_action.toggled.connect(self._set_focus_mode)
         view_menu.addAction(self.focus_mode_action)
-        self._exit_focus_action = QAction("Exit distraction-free mode", self)
+        self._exit_focus_action = QAction(self.tr("Exit distraction-free mode"), self)
         self._exit_focus_action.setShortcut(QKeySequence(Qt.Key.Key_Escape))
         self._exit_focus_action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
         self._exit_focus_action.setEnabled(False)
@@ -341,7 +385,7 @@ class MainWindow(QMainWindow):
         self.addAction(self._exit_focus_action)
 
         # Enable AI (checkable) — allows quick disabling of all AI features.
-        enable_ai_action = QAction("Enable AI", self)
+        enable_ai_action = QAction(self.tr("Enable AI"), self)
         enable_ai_action.setCheckable(True)
         enable_ai_action.setChecked(self.settings.ai_enabled)
         enable_ai_action.setMenuRole(QAction.MenuRole.NoRole)
@@ -378,7 +422,7 @@ class MainWindow(QMainWindow):
             (ai_menu, "Cancel Text Generation", self.cancel_text_generation, QKeySequence()),
         ]
         for menu, title, handler, shortcut in actions:
-            action = QAction(title, self)
+            action = QAction(action_text[title], self)
             if menu is ai_menu:
                 # macOS otherwise promotes actions named "Settings" to the
                 # application menu, hiding them from the AI menu.
@@ -397,12 +441,12 @@ class MainWindow(QMainWindow):
             elif title == "Cancel Text Generation":
                 self._generate_cancel_action = action
 
-        recovery_action = QAction("Inspect Recovery…", self)
+        recovery_action = QAction(self.tr("Inspect Recovery…"), self)
         recovery_action.setEnabled(self.recovery_store is not None)
         recovery_action.triggered.connect(self._scan_recovery)
         file_menu.addAction(recovery_action)
 
-        formatting_menu = edit_menu.addMenu("Text Formatting")
+        formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
             ("Format Whole Document…", self._format_whole_document),
             ("Uppercase", lambda: self._format_text("upper")),
@@ -413,7 +457,7 @@ class MainWindow(QMainWindow):
             ("Trim Trailing Whitespace", self._trim_trailing_whitespace),
         )
         for title, handler in formatting_actions:
-            action = QAction(title, self)
+            action = QAction(action_text[title], self)
             action.triggered.connect(handler)
             formatting_menu.addAction(action)
 
@@ -2047,7 +2091,7 @@ class MainWindow(QMainWindow):
         menu.clear()
         recent_projects = self.settings.recent_projects
         if not recent_projects:
-            empty_action = menu.addAction("No Recent Projects")
+            empty_action = menu.addAction(self.tr("No Recent Projects"))
             empty_action.setEnabled(False)
             return
 
@@ -2062,7 +2106,7 @@ class MainWindow(QMainWindow):
                 lambda _checked=False, path=directory: self._open_recent_project(path)
             )
         menu.addSeparator()
-        clear_action = menu.addAction("Clear Recent Projects")
+        clear_action = menu.addAction(self.tr("Clear Recent Projects"))
         clear_action.setEnabled(not self._project_busy)
         clear_action.triggered.connect(self._clear_recent_projects)
 
@@ -4421,7 +4465,7 @@ class MainWindow(QMainWindow):
         if stale:
             self.statusBar().showMessage("Discarded stale project-analysis result.", 6000)
             return
-        title = "Scene summary" if task == "summary" else "Continuity review"
+        title = self.tr("Scene summary") if task == "summary" else self.tr("Continuity review")
         window = AnalysisWindow(
             title,
             "Captured local context at "
@@ -4549,6 +4593,7 @@ class MainWindow(QMainWindow):
         self.status.showMessage(f"AI generation failed: {error}")
 
     def show_settings(self) -> None:
+        previous_ui_language = self.settings.ui_language
         dialog = SettingsDialog(self.settings, self)
         dialog.connection_test_requested.connect(
             lambda host, model: self._test_settings_connection(dialog, host, model)
@@ -4559,10 +4604,18 @@ class MainWindow(QMainWindow):
             self._completion_timer.stop()
             self._cancel_active_ai_workers()
             self._clear_editor_ai_state()
+            settings_saved = True
             try:
                 self.settings.save()
             except OSError as exc:
+                settings_saved = False
                 QMessageBox.warning(self, "Settings could not be saved", str(exc))
+            if settings_saved and self.settings.ui_language != previous_ui_language:
+                QMessageBox.information(
+                    self,
+                    self.tr("Language changed"),
+                    self.tr("The interface language will change after you restart UTextEditor."),
+                )
             self.provider.host = self.settings.ollama_host.rstrip("/")
             self.provider.model = self.settings.ollama_model
             self._configure_autosave()

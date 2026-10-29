@@ -17,20 +17,20 @@ class FindReplaceWidget(QWidget):
         super().__init__(parent)
         self.editor_provider = editor_provider
         self.find_edit = QLineEdit(self)
-        self.find_edit.setPlaceholderText("Find")
-        self.find_edit.setAccessibleName("Find text")
+        self.find_edit.setPlaceholderText(self.tr("Find"))
+        self.find_edit.setAccessibleName(self.tr("Find text"))
         self.replace_edit = QLineEdit(self)
-        self.replace_edit.setPlaceholderText("Replace with")
-        self.replace_edit.setAccessibleName("Replace with")
-        self.previous_button = QPushButton("Previous", self)
-        self.next_button = QPushButton("Next", self)
-        self.replace_button = QPushButton("Replace", self)
-        self.replace_all_button = QPushButton("Replace All", self)
-        self.close_button = QPushButton("Close", self)
-        self.match_count = QLabel("0 matches", self)
-        self.match_count.setAccessibleName("Find match count")
+        self.replace_edit.setPlaceholderText(self.tr("Replace with"))
+        self.replace_edit.setAccessibleName(self.tr("Replace with"))
+        self.previous_button = QPushButton(self.tr("Previous"), self)
+        self.next_button = QPushButton(self.tr("Next"), self)
+        self.replace_button = QPushButton(self.tr("Replace"), self)
+        self.replace_all_button = QPushButton(self.tr("Replace All"), self)
+        self.close_button = QPushButton(self.tr("Close"), self)
+        self.match_count = QLabel(self.tr("%n matches", None, 0), self)
+        self.match_count.setAccessibleName(self.tr("Find match count"))
         self.message = QLabel(self)
-        self.message.setAccessibleName("Find and replace status")
+        self.message.setAccessibleName(self.tr("Find and replace status"))
 
         self.previous_button.clicked.connect(self.find_previous)
         self.next_button.clicked.connect(self.find_next)
@@ -86,7 +86,7 @@ class FindReplaceWidget(QWidget):
         editor = self.editor_provider()
         term = self.find_edit.text()
         if editor is None or not term:
-            self.message.setText("Enter text to find.")
+            self.message.setText(self.tr("Enter text to find."))
             return False
 
         cursor = editor.textCursor()
@@ -109,10 +109,10 @@ class FindReplaceWidget(QWidget):
         )
         editor.setTextCursor(cursor)
         if editor.find(term, flags):
-            self.message.setText("Wrapped to the end." if backwards else "Wrapped to the beginning.")
+            self.message.setText(self.tr("Wrapped to the end.") if backwards else self.tr("Wrapped to the beginning."))
             self._update_match_count()
             return True
-        self.message.setText("No match found.")
+        self.message.setText(self.tr("No match found."))
         self._update_match_count()
         return False
 
@@ -120,7 +120,7 @@ class FindReplaceWidget(QWidget):
         editor = self.editor_provider()
         term = self.find_edit.text()
         if editor is None or not term:
-            self.message.setText("Enter text to find.")
+            self.message.setText(self.tr("Enter text to find."))
             return
 
         cursor = editor.textCursor()
@@ -131,20 +131,20 @@ class FindReplaceWidget(QWidget):
         cursor.insertText(self.replace_edit.text())
         self._update_match_count()
         if self.find_next():
-            self.message.setText("Replaced 1 match. Selected the next match.")
+            self.message.setText(self.tr("Replaced 1 match. Selected the next match."))
         else:
-            self.message.setText("Replaced 1 match. No further matches.")
+            self.message.setText(self.tr("Replaced 1 match. No further matches."))
 
     def replace_all(self) -> None:
         editor = self.editor_provider()
         term = self.find_edit.text()
         if editor is None or not term:
-            self.message.setText("Enter text to find.")
+            self.message.setText(self.tr("Enter text to find."))
             return
         original = editor.toPlainText()
         count = original.count(term)
         if count == 0:
-            self.message.setText("No match found.")
+            self.message.setText(self.tr("No match found."))
             self._update_match_count()
             return
         updated = original.replace(term, self.replace_edit.text())
@@ -153,7 +153,7 @@ class FindReplaceWidget(QWidget):
         cursor.select(QTextCursor.SelectionType.Document)
         cursor.insertText(updated)
         cursor.endEditBlock()
-        self.message.setText(f"Replaced {count} match{'es' if count != 1 else ''}.")
+        self.message.setText(self.tr("Replaced %n matches.", None, count))
         self._update_match_count()
 
     def _update_match_count(self, _text: str | None = None) -> None:
@@ -163,4 +163,4 @@ class FindReplaceWidget(QWidget):
         editor = self.editor_provider()
         term = self.find_edit.text()
         count = editor.toPlainText().count(term) if editor is not None and term else 0
-        self.match_count.setText(f"{count} match{'es' if count != 1 else ''}")
+        self.match_count.setText(self.tr("%n matches", None, count))

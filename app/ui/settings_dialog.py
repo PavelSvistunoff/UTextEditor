@@ -24,6 +24,7 @@ from urllib.parse import urlsplit
 from app.ai.prompts import completion_prompt
 from app.settings.settings import AppSettings
 from app.ui.font_utils import editor_font
+from app.i18n import format_qt
 
 
 class SettingsDialog(QDialog):
@@ -31,7 +32,7 @@ class SettingsDialog(QDialog):
 
     def __init__(self, settings: AppSettings, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("AI Settings")
+        self.setWindowTitle(self.tr("AI Settings"))
         self.resize(640, 600)
         self.settings = settings
         # Connection
@@ -39,13 +40,13 @@ class SettingsDialog(QDialog):
         self.model = QLineEdit(settings.ollama_model)
         # Role and template
         self.role = QPlainTextEdit(settings.ai_role)
-        self.role.setPlaceholderText("Instructions that define the AI's completion role")
+        self.role.setPlaceholderText(self.tr("Instructions that define the AI's completion role"))
         self.role.setFixedHeight(70)
         self.template = QPlainTextEdit(settings.completion_template)
-        self.template.setPlaceholderText("Use {context} and {language} placeholders")
+        self.template.setPlaceholderText(self.tr("Use {context} and {language} placeholders"))
         self.template.setFixedHeight(140)
         # Completion settings
-        self.completion_enabled = QCheckBox("Enable completion")
+        self.completion_enabled = QCheckBox(self.tr("Enable completion"))
         self.completion_enabled.setChecked(settings.completion_enabled)
         self.debounce = QSpinBox()
         self.debounce.setRange(100, 5000)
@@ -61,18 +62,21 @@ class SettingsDialog(QDialog):
         self.context_size.setRange(64, 65536)
         self.context_size.setValue(settings.context_size)
         # Spellcheck settings
-        self.spellcheck_enabled = QCheckBox("Enable spellchecking")
+        self.spellcheck_enabled = QCheckBox(self.tr("Enable spellchecking"))
         self.spellcheck_enabled.setChecked(settings.spellcheck_enabled)
-        self.automatic_spellcheck = QCheckBox("Automatic spellcheck")
+        self.automatic_spellcheck = QCheckBox(self.tr("Automatic spellcheck"))
         self.automatic_spellcheck.setChecked(settings.automatic_spellcheck)
         # Language selection
         self.language = QComboBox()
-        self.language.addItems(["Auto", "English", "Ukrainian"])
-        try:
-            idx = ["Auto", "English", "Ukrainian"].index(settings.language)
-        except ValueError:
-            idx = 0
-        self.language.setCurrentIndex(idx)
+        self.language.addItem(self.tr("Automatic"), "Auto")
+        self.language.addItem("English", "English")
+        self.language.addItem("Українська", "Ukrainian")
+        self.language.setCurrentIndex(max(0, self.language.findData(settings.language)))
+        self.ui_language = QComboBox()
+        self.ui_language.addItem(self.tr("System default"), "system")
+        self.ui_language.addItem("English", "en")
+        self.ui_language.addItem("Українська", "uk")
+        self.ui_language.setCurrentIndex(max(0, self.ui_language.findData(settings.ui_language)))
         # Editor appearance settings
         self.font_family = QFontComboBox()
         self.font_family.setCurrentFont(
@@ -84,11 +88,11 @@ class SettingsDialog(QDialog):
         self.tab_width = QSpinBox()
         self.tab_width.setRange(2, 8)
         self.tab_width.setValue(settings.tab_width)
-        self.word_wrap = QCheckBox("Wrap long lines")
+        self.word_wrap = QCheckBox(self.tr("Wrap long lines"))
         self.word_wrap.setChecked(settings.word_wrap)
-        self.line_numbers = QCheckBox("Show line numbers")
+        self.line_numbers = QCheckBox(self.tr("Show line numbers"))
         self.line_numbers.setChecked(settings.line_numbers)
-        self.autosave_enabled = QCheckBox("Automatically save project scenes and notes")
+        self.autosave_enabled = QCheckBox(self.tr("Automatically save project scenes and notes"))
         self.autosave_enabled.setChecked(settings.autosave_enabled)
         self.autosave_idle = QSpinBox()
         self.autosave_idle.setRange(250, 60000)
@@ -98,56 +102,60 @@ class SettingsDialog(QDialog):
         tabs = QTabWidget(self)
         connection_tab = QWidget(tabs)
         connection_form = QFormLayout(connection_tab)
-        connection_form.addRow("Ollama host", self.host)
+        connection_form.addRow(self.tr("Ollama host"), self.host)
         connection_form.addRow(
-            QLabel("Text used for AI requests is sent to this configured Ollama host.")
+            QLabel(self.tr("Text used for AI requests is sent to this configured Ollama host."))
         )
-        connection_form.addRow("Model", self.model)
-        self.test_connection_button = QPushButton("Test connection", connection_tab)
+        connection_form.addRow(self.tr("Model"), self.model)
+        self.test_connection_button = QPushButton(self.tr("Test connection"), connection_tab)
         self.test_connection_button.clicked.connect(self._request_connection_test)
         self.connection_status = QLabel(connection_tab)
         connection_form.addRow(self.test_connection_button, self.connection_status)
         connection_form.addRow(self.autosave_enabled)
-        connection_form.addRow("Autosave after idle (ms)", self.autosave_idle)
-        tabs.addTab(connection_tab, "Connection")
+        connection_form.addRow(self.tr("Autosave after idle (ms)"), self.autosave_idle)
+        tabs.addTab(connection_tab, self.tr("Connection"))
 
         writing_tab = QWidget(tabs)
         writing_form = QFormLayout(writing_tab)
-        writing_form.addRow("Language", self.language)
-        writing_form.addRow("Font", self.font_family)
-        writing_form.addRow("Font size", self.font_size)
-        writing_form.addRow("Tab width", self.tab_width)
+        writing_form.addRow(self.tr("Writing language"), self.language)
+        writing_form.addRow(self.tr("Interface language"), self.ui_language)
+        writing_form.addRow(QLabel(self.tr("Interface language changes take effect after restart.")))
+        writing_form.addRow(self.tr("Font"), self.font_family)
+        writing_form.addRow(self.tr("Font size"), self.font_size)
+        writing_form.addRow(self.tr("Tab width"), self.tab_width)
         writing_form.addRow(self.word_wrap)
         writing_form.addRow(self.line_numbers)
-        tabs.addTab(writing_tab, "Writing")
+        tabs.addTab(writing_tab, self.tr("Writing"))
 
         assistance_tab = QWidget(tabs)
         assistance_form = QFormLayout(assistance_tab)
         assistance_form.addRow(self.completion_enabled)
-        assistance_form.addRow("Completion delay (ms)", self.debounce)
-        assistance_form.addRow("Maximum suggestion length", self.max_length)
-        assistance_form.addRow("Temperature", self.temperature)
-        assistance_form.addRow("Context size (chars)", self.context_size)
+        assistance_form.addRow(self.tr("Completion delay (ms)"), self.debounce)
+        assistance_form.addRow(self.tr("Maximum suggestion length"), self.max_length)
+        assistance_form.addRow(self.tr("Temperature"), self.temperature)
+        assistance_form.addRow(self.tr("Context size (chars)"), self.context_size)
         assistance_form.addRow(self.spellcheck_enabled)
         assistance_form.addRow(self.automatic_spellcheck)
-        tabs.addTab(assistance_tab, "AI assistance")
+        tabs.addTab(assistance_tab, self.tr("AI assistance"))
 
         prompts_tab = QWidget(tabs)
         prompts_form = QFormLayout(prompts_tab)
         prompts_form.addRow(
-            QLabel("Advanced prompt instructions. Most users can leave these unchanged.")
+            QLabel(self.tr("Advanced prompt instructions. Most users can leave these unchanged."))
         )
-        prompts_form.addRow("AI role", self.role)
-        prompts_form.addRow("Context template", self.template)
-        tabs.addTab(prompts_tab, "Advanced prompts")
+        prompts_form.addRow(self.tr("AI role"), self.role)
+        prompts_form.addRow(self.tr("Context template"), self.template)
+        tabs.addTab(prompts_tab, self.tr("Advanced prompts"))
 
         layout = QVBoxLayout(self)
         layout.addWidget(tabs)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.tr("OK"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         self.reset_button = buttons.addButton(
-            "Reset to defaults", QDialogButtonBox.ButtonRole.ResetRole
+            self.tr("Reset to defaults"), QDialogButtonBox.ButtonRole.ResetRole
         )
         self.reset_button.clicked.connect(self._reset_to_defaults)
         layout.addWidget(buttons)
@@ -156,18 +164,24 @@ class SettingsDialog(QDialog):
         host = self.host.text().strip()
         model = self.model.text().strip()
         if not host or not model:
-            self.connection_status.setText("Enter both a host and model.")
+            self.connection_status.setText(self.tr("Enter both a host and model."))
             return
-        self.connection_status.setText("Testing local model connection…")
+        self.connection_status.setText(self.tr("Testing local model connection…"))
         self.connection_test_requested.emit(host, model)
 
     def set_connection_test_result(self, available: bool, model: str) -> None:
         if available:
-            self.connection_status.setText(f"Connected; model “{model}” is available.")
+            self.connection_status.setText(
+                format_qt(self.tr("Connected; model “%1” is available."), model)
+            )
         else:
             self.connection_status.setText(
-                f"Could not connect or find “{model}”. Check Ollama is running and "
-                f"run `ollama pull {model}` if needed."
+                format_qt(
+                    self.tr(
+                        "Could not connect or find “%1”. Check Ollama is running and run `ollama pull %1` if needed."
+                    ),
+                    model,
+                )
             )
 
     def _reset_to_defaults(self) -> None:
@@ -183,7 +197,8 @@ class SettingsDialog(QDialog):
         self.context_size.setValue(defaults.context_size)
         self.spellcheck_enabled.setChecked(defaults.spellcheck_enabled)
         self.automatic_spellcheck.setChecked(defaults.automatic_spellcheck)
-        self.language.setCurrentText(defaults.language)
+        self.language.setCurrentIndex(self.language.findData(defaults.language))
+        self.ui_language.setCurrentIndex(self.ui_language.findData(defaults.ui_language))
         self.font_family.setCurrentFont(
             editor_font(defaults.font_family, defaults.font_size)
         )
@@ -234,7 +249,8 @@ class SettingsDialog(QDialog):
         self.settings.completion_enabled = bool(self.completion_enabled.isChecked())
         self.settings.spellcheck_enabled = bool(self.spellcheck_enabled.isChecked())
         self.settings.automatic_spellcheck = bool(self.automatic_spellcheck.isChecked())
-        self.settings.language = self.language.currentText()
+        self.settings.language = self.language.currentData()
+        self.settings.ui_language = self.ui_language.currentData()
         self.settings.font_family = self.font_family.currentFont().family()
         self.settings.font_size = int(self.font_size.value())
         self.settings.tab_width = int(self.tab_width.value())

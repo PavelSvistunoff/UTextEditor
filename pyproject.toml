@@ -22,4 +22,4 @@ testpaths = ["tests"]
 include = ["app*"]
 
 [tool.setuptools.package-data]
-app = ["resources/*.svg"]
+app = ["resources/*.svg", "resources/translations/*.qm"]

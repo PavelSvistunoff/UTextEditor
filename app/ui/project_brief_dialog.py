@@ -52,13 +52,11 @@ class ProjectBriefDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Set up writing project")
+        self.setWindowTitle(self.tr("Set up writing project"))
         self.resize(680, 650)
 
         instructions = QLabel(
-            "Edit this template with the details you know. Leave anything undecided "
-            "as a prompt, or use Suggest to ask the configured local AI to propose "
-            "ideas for gaps. Review suggestions before continuing.",
+            self.tr("Edit this template with the details you know. Leave anything undecided as a prompt, or use Suggest to ask the configured local AI to propose ideas for gaps. Review suggestions before continuing."),
             self,
         )
         instructions.setWordWrap(True)
@@ -67,11 +65,11 @@ class ProjectBriefDialog(QDialog):
         self.status = QLabel(self)
         self.status.setWordWrap(True)
 
-        self.suggest_button = QPushButton("Suggest", self)
+        self.suggest_button = QPushButton(self.tr("Suggest"), self)
         self.suggest_button.clicked.connect(
             lambda: self.suggest_requested.emit(self.editor.toPlainText())
         )
-        self.autopilot_button = QPushButton("Auto-pilot: refine plan and write", self)
+        self.autopilot_button = QPushButton(self.tr("Auto-pilot: refine plan and write"), self)
         self.autopilot_button.clicked.connect(
             lambda: self.autopilot_requested.emit(self.editor.toPlainText())
         )
@@ -79,7 +77,8 @@ class ProjectBriefDialog(QDialog):
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             self,
         )
-        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Continue to outline")
+        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.tr("Continue to outline"))
+        self.buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         self.cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)

@@ -15,13 +15,11 @@ from app.project.outline import parse_outline
 class ProjectSetupDialog(QDialog):
     def __init__(self, outline: str, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Review AI project outline")
+        self.setWindowTitle(self.tr("Review AI project outline"))
         self.resize(640, 560)
 
         self.instructions = QLabel(
-            "Edit the outline before applying it. Use '# Chapter title' and "
-            "'- Scene title' lines. Applying creates empty scene files only; "
-            "the AI has not written manuscript prose.",
+            self.tr("Edit the outline before applying it. Use '# Chapter title' and '- Scene title' lines. Applying creates empty scene files only; the AI has not written manuscript prose."),
             self,
         )
         self.instructions.setWordWrap(True)
@@ -35,6 +33,8 @@ class ProjectSetupDialog(QDialog):
             self,
         )
         self.apply_button = self.buttons.button(QDialogButtonBox.StandardButton.Apply)
+        self.apply_button.setText(self.tr("Apply outline"))
+        self.buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         self.buttons.accepted.connect(self.accept)
         self.apply_button.clicked.connect(self.accept)
         self.buttons.rejected.connect(self.reject)

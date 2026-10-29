@@ -12,10 +12,10 @@ class WritingGoalDialog(QDialog):
 
     def __init__(self, target: int, scope: str, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Daily writing goal")
+        self.setWindowTitle(self.tr("Daily writing goal"))
         self.target = QSpinBox(self)
         self.target.setRange(0, 1_000_000)
-        self.target.setSpecialValueText("Off")
+        self.target.setSpecialValueText(self.tr("Off"))
         self.target.setValue(target)
         self.scope = QComboBox(self)
         for label, value in self._scopes:
@@ -23,14 +23,16 @@ class WritingGoalDialog(QDialog):
         index = self.scope.findData(scope)
         self.scope.setCurrentIndex(max(0, index))
         form = QFormLayout(self)
-        form.addRow("Daily word goal", self.target)
-        form.addRow("Measure", self.scope)
+        form.addRow(self.tr("Daily word goal"), self.target)
+        form.addRow(self.tr("Measure"), self.scope)
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             self,
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.tr("OK"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         form.addRow(buttons)
 
     def values(self) -> tuple[int, str]:

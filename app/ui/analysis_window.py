@@ -14,6 +14,6 @@ class AnalysisWindow(QDialog):
         self.output.setReadOnly(True)
         self.output.setPlainText(result)
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Model output is untrusted analysis; it has not changed any document.", self))
+        layout.addWidget(QLabel(self.tr("Model output is untrusted analysis; it has not changed any document."), self))
         layout.addWidget(self.sources)
         layout.addWidget(self.output)

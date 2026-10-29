@@ -46,13 +46,13 @@ class ProjectView(QTreeWidget):
                 self._add_scene(chapter_item, scene.id, scene.title, scene_counts[scene.id], scene.id in unavailable_ids)
 
         if project.manifest.ungrouped_scenes:
-            ungrouped = QTreeWidgetItem(["Ungrouped scenes"])
+            ungrouped = QTreeWidgetItem([self.tr("Ungrouped scenes")])
             ungrouped.setData(0, Qt.ItemDataRole.UserRole, "group")
             root.addChild(ungrouped)
             for scene in project.manifest.ungrouped_scenes:
                 self._add_scene(ungrouped, scene.id, scene.title, scene_counts[scene.id], scene.id in unavailable_ids)
 
-        notes = QTreeWidgetItem(["Reference notes"])
+        notes = QTreeWidgetItem([self.tr("Reference notes")])
         notes.setData(0, Qt.ItemDataRole.UserRole, "group")
         root.addChild(notes)
         titles = {
@@ -75,14 +75,14 @@ class ProjectView(QTreeWidget):
             if linked:
                 item.setToolTip(0, "Links:\n" + "\n".join(linked))
             notes.addChild(item)
-        characters = QTreeWidgetItem([f"Characters ({len(project.manifest.characters)})"])
+        characters = QTreeWidgetItem([self.tr("Characters (%1)").replace("%1", str(len(project.manifest.characters)))])
         characters.setData(0, Qt.ItemDataRole.UserRole, "group")
         root.addChild(characters)
         for character in project.manifest.characters:
             item = QTreeWidgetItem([character.display_name or character.full_name])
             item.setData(0, Qt.ItemDataRole.UserRole, "character")
             item.setData(0, Qt.ItemDataRole.UserRole + 1, character.id)
-            item.setToolTip(0, f"{character.role} — {character.primary_motivation}".strip(" —"))
+            item.setToolTip(0, self.tr("%1 — %2").replace("%1", character.role).replace("%2", character.primary_motivation).strip(" —"))
             characters.addChild(item)
         root.setExpanded(True)
         self.expandAll()
@@ -105,9 +105,12 @@ class ProjectView(QTreeWidget):
                 group.setHidden(bool(self.character_filter) and not any(not group.child(i).isHidden() for i in range(group.childCount())))
                 break
 
-    @staticmethod
-    def _count_label(title: str, count: WordCount) -> str:
-        return f"{title} — {'at least ' if not count.complete else ''}{count.count} words"
+    def _count_label(self, title: str, count: WordCount) -> str:
+        if count.complete:
+            word_count = self.tr("%n words", None, count.count)
+        else:
+            word_count = self.tr("At least %n words", None, count.count)
+        return f"{title} — {word_count}"
 
     def _add_scene(
         self, parent: QTreeWidgetItem, scene_id: str, title: str, count: WordCount, unavailable: bool
@@ -141,7 +144,7 @@ class ProjectView(QTreeWidget):
         for index, (label, action_id) in enumerate(actions):
             if index == 3:
                 menu.addSeparator()
-            self._add_context_action(menu, label, action_id)
+            self._add_context_action(menu, self._translate_context_action(label), action_id)
         selected = menu.exec(event.globalPos())
         if selected is not None:
             self.context_action_requested.emit(
@@ -204,6 +207,33 @@ class ProjectView(QTreeWidget):
             )
         actions.append(("Import Scene…", "import_scene"))
         return tuple(actions)
+
+    def _translate_context_action(self, label: str) -> str:
+        labels = {
+            "New Chapter": self.tr("New Chapter"),
+            "New Scene": self.tr("New Scene"),
+            "New Reference Note": self.tr("New Reference Note"),
+            "Open": self.tr("Open"),
+            "Find Scenes Mentioning Character…": self.tr("Find Scenes Mentioning Character…"),
+            "Import Character Profile…": self.tr("Import Character Profile…"),
+            "Export Character Profile…": self.tr("Export Character Profile…"),
+            "Add Relationship…": self.tr("Add Relationship…"),
+            "Manage Relationships…": self.tr("Manage Relationships…"),
+            "Duplicate": self.tr("Duplicate"),
+            "Remove": self.tr("Remove"),
+            "Rename": self.tr("Rename"),
+            "Move Up": self.tr("Move Up"),
+            "Move Down": self.tr("Move Down"),
+            "Move to Chapter…": self.tr("Move to Chapter…"),
+            "Summarize Scene…": self.tr("Summarize Scene…"),
+            "Associate Characters…": self.tr("Associate Characters…"),
+            "Link Note…": self.tr("Link Note…"),
+            "Unlink Note…": self.tr("Unlink Note…"),
+            "Open Linked Item…": self.tr("Open Linked Item…"),
+            "Check Continuity with Selected Scene…": self.tr("Check Continuity with Selected Scene…"),
+            "Import Scene…": self.tr("Import Scene…"),
+        }
+        return labels.get(label, label)
 
     @staticmethod
     def _add_context_action(menu: QMenu, label: str, action_id: str) -> None:

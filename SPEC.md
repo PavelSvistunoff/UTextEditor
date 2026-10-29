@@ -22,6 +22,12 @@ The current application includes the original editor MVP and the project, recove
 
 The specification describes intended behavior, not a claim that every requirement is implemented. Remaining gaps include richer `Auto` language detection for mixed and short text, editor appearance settings, and memory-efficient large-file handling. Keep `README.md`'s known-gaps section synchronized with observed behavior.
 
+## 2.1 Interface localization
+
+The application stores the interface-language preference separately from manuscript-language and AI writing-language settings. `system`, `en`, and `uk` are stable setting values; Qt's preferred UI locales are used for system mode, with regional language matching and English fallback. Qt Linguist `.ts` files are source resources and compiled `.qm` files are packaged for runtime. Missing catalog entries display their English source text. UI-language changes apply after restart and must not change manuscript text, project data, file paths, or prompts.
+
+The initial translation rollout covers the main menus, project tree, settings, find/replace, and selected writing and character dialogs. Remaining hardcoded interface text is a known limitation until each widget and message path is migrated.
+
 ## 3. Technology and platform
 
 - Python 3.12 or newer, PySide6 / Qt 6, `pyproject.toml`, and pytest.

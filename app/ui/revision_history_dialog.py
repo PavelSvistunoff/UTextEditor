@@ -21,19 +21,19 @@ class RevisionHistoryDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Revision snapshots")
+        self.setWindowTitle(self.tr("Revision snapshots"))
         self.resize(760, 460)
 
-        self.status = QLabel("Loading revision snapshots…", self)
+        self.status = QLabel(self.tr("Loading revision snapshots…"), self)
         self.snapshots = QListWidget(self)
-        self.snapshots.setAccessibleName("Revision snapshots")
+        self.snapshots.setAccessibleName(self.tr("Revision snapshots"))
         self.snapshots.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         self.snapshots.itemSelectionChanged.connect(self._update_compare_enabled)
-        self.compare_button = QPushButton("Compare Selected", self)
+        self.compare_button = QPushButton(self.tr("Compare Selected"), self)
         self.compare_button.setEnabled(False)
         self.compare_button.clicked.connect(self._request_comparison)
         self.details = QTextEdit(self)
-        self.details.setAccessibleName("Revision comparison")
+        self.details.setAccessibleName(self.tr("Revision comparison"))
         self.details.setReadOnly(True)
 
         content = QHBoxLayout()

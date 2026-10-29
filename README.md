@@ -18,7 +18,7 @@ The project aims to keep writing fast and predictable: documents stay under the 
 
 The editor supports standalone text files and a local project workspace. Implemented features include:
 
-- Native PySide6 desktop window with File, Edit, Search, and AI menus.
+- Native PySide6 desktop window with File, Edit, Search, View, Project, Writing, and AI menus.
 - New, open, save, and Save As for UTF-8 text files; unsaved-change prompts on close.
 - File reads and writes run in background workers; saves replace files atomically where supported.
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.
@@ -45,6 +45,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - AI-assisted spelling and grammar suggestions with underlines, context-menu replace/ignore actions, response validation, and undo support for edits.
 - Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance.
 - Settings are grouped into Connection, Writing, AI assistance, and Advanced prompts tabs, with a reset-to-defaults option; the Connection tab can test the configured Ollama host/model and suggests how to install a missing model.
+- The interface language can be set to System default, English, or Українська. System locale matching recognizes regional language tags and falls back to English. The selection is stored separately from the writing/spellcheck language and takes effect after restarting the application. Qt Linguist catalogs currently cover the main menus, project navigation actions, settings, find/replace, and common character, analysis, generation, writing-goal, and Auto-writer dialogs; untranslated interface text falls back to English.
 - Editor background, text, and selection colors follow the system palette.
 - Application preferences are saved as YAML in the user's configuration directory (`settings.yaml`); existing `settings.json` preferences are loaded for compatibility.
 - An in-memory Ollama diagnostics window for the current session.
@@ -60,6 +61,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - The UI is minimal and has no toolbar or recent-document list. Open Recent Project is available in the Project menu.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
 - Scheduled revision snapshots and revision-history deletion/restore controls are not yet available. Revision comparisons cover scene and reference-note additions, removals, titles, note types, text, and scene ordering; broader chapter, link, and project-structure comparisons remain future work. Novel-aware AI currently covers project-outline setup, scene summaries, and continuity review; proposed character-state updates and their accept/reject workflow are not implemented. Character portrait management remains future work.
+- Localization is an initial rollout, not yet a complete translation of every dialog and error/status path. Untranslated strings remain usable in English; the current catalogs cover common workflows listed above.
 
 ### Project format and local data
 
@@ -110,17 +112,25 @@ The application separates document state and file handling (`app/document/`), AI
 
 AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No cloud AI provider is configured.
 
+## Interface localization
+
+The interface uses Qt Linguist source catalogs in `translations/` and compiled Qt `.qm` catalogs packaged under `app/resources/translations/`. `system`, `en`, and `uk` are the persisted interface-language values. System mode uses Qt's preferred UI locales, matches regional variants by language, and falls back to English. Language selection does not change manuscript language, writing instructions, project content, filenames, or AI prompts. Interface changes take effect after restart.
+
+When adding or changing translatable UI text, use `self.tr("English source text")` in the owning widget. Extract and compile catalogs with the PySide6 Qt Linguist tools:
+
+```bash
+pyside6-lupdate app/ui/*.py -ts translations/utexteditor_uk.ts
+pyside6-lrelease translations/utexteditor_en.ts -qm app/resources/translations/utexteditor_en.qm
+pyside6-lrelease translations/utexteditor_uk.ts -qm app/resources/translations/utexteditor_uk.qm
+```
+
+The small English catalog supplies Qt numerus forms; ordinary English text remains the source fallback. Ukrainian uses Qt numerus forms, including the three common plural categories. Keep placeholders such as `%1`, `%2`, and `%n` aligned between source and all translation forms. Contexts use stable widget class names. Proper names, shortcuts, filenames, project data, and AI prompt instructions are not translated.
+
+Recurring glossary: project — проєкт; chapter — розділ; scene — сцена; character — персонаж; reference note — довідкова нотатка; revision snapshot — знімок редакції; recovery — відновлення; inline completion — продовження тексту; continuity check — перевірка узгодженості; Auto-writer — автоматичне написання; writing goal — ціль письма.
+
 ## Product direction
 
-The long-term goal is to make UTextEditor a focused novel-writing studio while keeping its plain-text editing roots. The project-workspace milestone and selected saving, recovery, export, and snapshot protections are implemented. Remaining work should continue in useful, author-controlled increments:
-
-1. **Project workspace:** Organize a novel into chapters and scenes, let authors reorder them, and show manuscript word counts at scene, chapter, and project level. Start with ordinary text files in a project folder so manuscripts remain portable and easy to back up.
-2. **Trustworthy writing workflow:** Strengthen autosave, crash recovery, writing goals, and distraction-free writing before adding complex assistance.
-3. **Story reference material:** Keep separate, linkable notes for settings, timelines, and research, and structured, stable-ID character profiles with relationships and scene participation.
-4. **Opt-in novel-aware AI:** Expand explicit tasks such as summarizing a chapter or checking continuity against author-provided notes. Present analysis and proposed edits separately, never silently rewrite prose, and keep processing local through the configured Ollama provider.
-5. **Revision and sharing:** Add manuscript export and revision snapshots or comparisons so authors can share work and explore changes safely.
-
-Full recovery repair, complete revision comparison/restore workflows, and proposed-edit AI preview/acceptance remain follow-on work. Broader editor improvements—batch spellcheck review, richer language detection, and robust large-file handling—also remain valuable. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or cloud services without a separate product decision.
+The project-workspace, character reference, local AI planning and review, manuscript export, and named revision-snapshot foundations are implemented. The next useful increments are the remaining gaps listed in `UNIMPLEMENTED_FEATURES.md`: structured character-state proposals with author review, structured continuity findings, broader revision management, recovery diagnosis, project-wide text search, and complete interface translation. These are candidates, not promises or descriptions of current behavior. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or cloud services without a separate product decision.
 
 ## Development expectations
 

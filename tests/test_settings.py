@@ -54,6 +54,17 @@ def test_settings_save_and_load_round_trip(tmp_path) -> None:
     assert loaded.line_numbers is True
 
 
+def test_ui_language_is_a_separate_persisted_setting_and_invalid_values_fall_back(tmp_path):
+    path = tmp_path / "settings.yaml"
+    AppSettings(ui_language="uk", language="English").save(path)
+
+    loaded = AppSettings.load(path)
+
+    assert loaded.ui_language == "uk"
+    assert loaded.language == "English"
+    assert AppSettings(ui_language=["uk"]).validated().ui_language == "system"
+
+
 def test_autosave_preferences_round_trip_and_validate_idle_interval(tmp_path) -> None:
     path = tmp_path / "settings.yaml"
     settings = AppSettings(autosave_enabled=False, autosave_idle_ms=3500)

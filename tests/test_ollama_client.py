@@ -47,6 +47,21 @@ def test_invalid_ollama_response_is_reported_as_a_safe_error(payload: object) ->
             client.complete("Hello", "English")
 
 
+def test_oversized_response_is_rejected_before_json_parsing(monkeypatch) -> None:
+    import app.ai.ollama_client as ollama_client
+
+    monkeypatch.setattr(ollama_client, "MAX_RESPONSE_BYTES", 32)
+    response = response_with({})
+    response.read.side_effect = lambda size: b"x" * size
+    client = OllamaClient()
+
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response):
+        with pytest.raises(OllamaError, match="size limit"):
+            client.generate("prompt")
+
+    response.read.assert_called_once_with(33)
+
+
 def test_connection_failure_is_false() -> None:
     client = OllamaClient()
     with patch("app.ai.ollama_client.request.urlopen", side_effect=OSError("offline")):
@@ -56,9 +71,11 @@ def test_connection_failure_is_false() -> None:
 def test_missing_model_error_is_actionable() -> None:
     client = OllamaClient(model="missing-model")
     error = HTTPError("http://localhost", 404, "Not Found", {}, BytesIO(b"model missing-model not found"))
+    error.read = MagicMock(wraps=error.read)
     with patch("app.ai.ollama_client.request.urlopen", side_effect=error):
         with pytest.raises(OllamaError, match="ollama pull missing-model"):
             client.complete("Hello", "English")
+    error.read.assert_called_once_with(64 * 1024)
 
 
 def test_spellcheck_uses_chat_json_mode_without_thinking() -> None:

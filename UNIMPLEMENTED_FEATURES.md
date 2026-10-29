@@ -41,5 +41,16 @@ acceptance guidance remain in `SPEC.md`.
   character's name or aliases are available. General full-text search across
   all manuscript and reference-note content is not.
 
+## Interface localization
+
+- **Complete UI translation:** English source text and Ukrainian Qt Linguist
+  catalogs are available for the main menus, project navigation, settings,
+  find/replace, and selected character, analysis, generation, writing-goal,
+  and Auto-writer dialogs. Many MainWindow prompts, error paths, and less-used
+  dialogs still fall back to English and need migration and translation.
+- **Catalog audit tooling:** extraction and compilation are documented, but a
+  dedicated automated check for missing translations and placeholder parity
+  across all UI catalogs is not yet part of the developer workflow.
+
 These gaps are independent of basic standalone editing, which remains usable
 without a project or a running Ollama server.

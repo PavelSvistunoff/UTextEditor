@@ -13,6 +13,8 @@ from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE, completion_pr
 from .validation import parse_suggestions
 
 logger = logging.getLogger("utexteditor.ai")
+MAX_RESPONSE_BYTES = 16 * 1024 * 1024
+MAX_ERROR_BODY_BYTES = 64 * 1024
 
 
 class OllamaError(RuntimeError):
@@ -58,10 +60,12 @@ class OllamaClient:
         start = time.time()
         try:
             with request.urlopen(req, timeout=self.timeout if timeout is None else timeout) as response:
-                raw = response.read()
+                raw = response.read(MAX_RESPONSE_BYTES + 1)
+                if len(raw) > MAX_RESPONSE_BYTES:
+                    raise ValueError("Ollama response exceeded the 16 MiB size limit")
                 result = json.loads(raw.decode("utf-8"))
         except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
+            body = exc.read(MAX_ERROR_BODY_BYTES).decode("utf-8", errors="replace")
             if "model" in body.lower() and "not found" in body.lower():
                 message = f"Ollama model '{self.model}' was not found. Pull it with `ollama pull {self.model}` or choose another model in AI Settings."
             else:

@@ -11,41 +11,40 @@ from PySide6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+from app.i18n import format_qt
 
 
 class AutoWriterDialog(QDialog):
     def __init__(self, scene_count: int, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Auto-writer")
+        self.setWindowTitle(self.tr("Auto-writer"))
         self.resize(600, 480)
 
         self.description = QLabel(
-            f"This project currently has {scene_count} scenes. Auto-writer uses the "
-            "configured local model, project outline, and reference notes. It first "
-            "creates a complete local revision snapshot. All generated scene changes "
-            "are applied together only after every result is ready.",
+            format_qt(self.tr("This project currently has %1 scenes. Auto-writer uses the configured local model, project outline, and reference notes. It first creates a complete local revision snapshot. All generated scene changes are applied together only after every result is ready."), scene_count),
             self,
         )
         self.description.setWordWrap(True)
         self.mode = QComboBox(self)
-        self.mode.addItem("Write empty scenes only", "write_empty")
-        self.mode.addItem("Refine every scene", "refine_all")
+        self.mode.addItem(self.tr("Write empty scenes only"), "write_empty")
+        self.mode.addItem(self.tr("Refine every scene"), "refine_all")
         self.instructions = QPlainTextEdit(self)
         self.instructions.setPlaceholderText(
-            "Optional guidance: style, voice, point of view, pacing, or goals."
+            self.tr("Optional guidance: style, voice, point of view, pacing, or goals.")
         )
         self.instructions.setMaximumBlockCount(80)
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             self,
         )
-        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Start Auto-writer")
+        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.tr("Start Auto-writer"))
+        self.buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
 
         form = QFormLayout()
-        form.addRow("Task", self.mode)
-        form.addRow("Writing instructions", self.instructions)
+        form.addRow(self.tr("Task"), self.mode)
+        form.addRow(self.tr("Writing instructions"), self.instructions)
         layout = QVBoxLayout(self)
         layout.addWidget(self.description)
         layout.addLayout(form)
@@ -60,25 +59,24 @@ class AutoWriterProgressDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Auto-writer progress")
+        self.setWindowTitle(self.tr("Auto-writer progress"))
         self.resize(680, 520)
         self._running = True
 
-        self.status = QLabel("Preparing the project snapshot…", self)
+        self.status = QLabel(self.tr("Preparing the project snapshot…"), self)
         self.status.setWordWrap(True)
         self.output = QPlainTextEdit(self)
         self.output.setReadOnly(True)
-        self.output.setPlaceholderText("Completed scene drafts will appear here.")
+        self.output.setPlaceholderText(self.tr("Completed scene drafts will appear here."))
         self.output.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         self.output.setMaximumBlockCount(100000)
-        self.cancel_button = QPushButton("Cancel Auto-writer", self)
+        self.cancel_button = QPushButton(self.tr("Cancel Auto-writer"), self)
         self.cancel_button.clicked.connect(self._handle_button)
 
         layout = QVBoxLayout(self)
         layout.addWidget(
             QLabel(
-                "Each draft appears as soon as it is complete. Drafts are applied to "
-                "the project together only after every scene succeeds.",
+                self.tr("Each draft appears as soon as it is complete. Drafts are applied to the project together only after every scene succeeds."),
                 self,
             )
         )
@@ -87,7 +85,7 @@ class AutoWriterProgressDialog(QDialog):
         layout.addWidget(self.cancel_button)
 
     def append_scene(self, title: str, text: str, completed: int, total: int) -> None:
-        self.status.setText(f"Completed scene {completed} of {total}: {title}")
+        self.status.setText(format_qt(self.tr("Completed scene %1 of %2: %3"), completed, total, title))
         self.output.appendPlainText(f"## {title}\n{text}\n")
 
     def set_status(self, message: str) -> None:
@@ -101,7 +99,7 @@ class AutoWriterProgressDialog(QDialog):
         self._running = False
         self.status.setText(message)
         self.cancel_button.setEnabled(True)
-        self.cancel_button.setText("Close")
+        self.cancel_button.setText(self.tr("Close"))
 
     def _handle_button(self) -> None:
         if self._running:

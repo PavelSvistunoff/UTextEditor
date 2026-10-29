@@ -28,6 +28,7 @@ class AppSettings:
     spellcheck_enabled: bool = True
     automatic_spellcheck: bool = True
     language: str = "Auto"
+    ui_language: str = "system"
     font_family: str = "Monospace"
     font_size: int = 12
     tab_width: int = 4
@@ -106,6 +107,8 @@ class AppSettings:
         self.language = {"auto": "Auto", "english": "English", "ukrainian": "Ukrainian"}.get(normalized_language.lower(), defaults.language)
         if self.language not in {"Auto", "English", "Ukrainian"}:
             self.language = defaults.language
+        if not isinstance(self.ui_language, str) or self.ui_language not in {"system", "en", "uk"}:
+            self.ui_language = defaults.ui_language
         self.font_family = self._string(self.font_family, defaults.font_family, 128) or defaults.font_family
         self.font_size = self._bounded_int(self.font_size, 8, 32, defaults.font_size)
         self.tab_width = self._bounded_int(self.tab_width, 2, 8, defaults.tab_width)
