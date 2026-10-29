@@ -31,6 +31,17 @@ def application() -> QApplication:
     return QApplication.instance() or QApplication([])
 
 
+@pytest.fixture(autouse=True)
+def isolate_settings(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.yaml"
+    monkeypatch.setattr(
+        AppSettings,
+        "_default_settings_path",
+        staticmethod(lambda: settings_path),
+    )
+    AppSettings(ui_language="en").save(settings_path)
+
+
 def test_completion_is_non_destructive_and_tab_accepts_it(application: QApplication) -> None:
     editor = EditorWidget()
     editor.setPlainText("Hello")

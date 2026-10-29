@@ -13,7 +13,7 @@ from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QInputDialog
 
 from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
-from app.project import Project
+from app.project import Project, WordCount
 from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
@@ -31,11 +31,13 @@ def application():
 
 @pytest.fixture(autouse=True)
 def isolate_settings(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.yaml"
     monkeypatch.setattr(
         AppSettings,
         "_default_settings_path",
-        staticmethod(lambda: tmp_path / "settings.yaml"),
+        staticmethod(lambda: settings_path),
     )
+    AppSettings(ui_language="en").save(settings_path)
 
 
 def wait_until(predicate, application):
@@ -92,6 +94,59 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
     assert not editor.document_state.dirty
     assert root.child(2).text(0) == "Characters (0)"
     window.close()
+
+
+def test_activating_character_profile_opens_editor_instead_of_note_document(
+    application, tmp_path, monkeypatch
+):
+    AppSettings(ui_language="en").save()
+    project = Project.create(tmp_path / "character-project", "Novel")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    opened = []
+    monkeypatch.setattr(window, "_edit_character", opened.append)
+    window.project = project
+    view = ProjectView()
+    view.open_requested.connect(window._open_project_document)
+    view.show_project(project, {}, {}, WordCount(0, True))
+    character_group = next(
+        view.topLevelItem(0).child(index)
+        for index in range(view.topLevelItem(0).childCount())
+        if view.topLevelItem(0).child(index).text(0).startswith("Characters (")
+    )
+
+    view.itemActivated.emit(character_group.child(0), 0)
+
+    assert len(opened) == 1
+    assert opened[0].id == character.id
+    assert window.tabs.count() == 1
+    translator = window._ui_translator
+    window.close()
+    if translator is not None:
+        application.removeTranslator(translator)
+
+
+def test_stale_note_tree_item_is_ignored_and_project_tree_refreshed(
+    application, tmp_path, monkeypatch
+):
+    AppSettings(ui_language="en").save()
+    project = Project.create(tmp_path / "stale-project", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    refreshed = []
+    monkeypatch.setattr(window, "_refresh_project_view", lambda: refreshed.append(True))
+    window.project = project
+
+    window._open_project_document("note", "removed-note-id")
+
+    assert refreshed == [True]
+    assert "no longer exists" in window.statusBar().currentMessage()
+    assert not window._pending_project_opens
+    translator = window._ui_translator
+    window.close()
+    if translator is not None:
+        application.removeTranslator(translator)
 
 
 def test_character_profile_dialog_keeps_edits_pending_until_save(application, monkeypatch):

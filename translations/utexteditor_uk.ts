@@ -654,24 +654,24 @@
         <translation>Очистити список недавніх проєктів</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4489"/>
+        <location filename="../app/ui/main_window.py" line="4513"/>
         <source>Scene summary</source>
         <translation>Підсумок сцени</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4489"/>
+        <location filename="../app/ui/main_window.py" line="4513"/>
         <source>Continuity review</source>
         <translation>Перевірка узгодженості</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4637"/>
-        <location filename="../app/ui/main_window.py" line="4667"/>
+        <location filename="../app/ui/main_window.py" line="4661"/>
+        <location filename="../app/ui/main_window.py" line="4691"/>
         <source>Language changed</source>
         <translation>Мову змінено</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4638"/>
-        <location filename="../app/ui/main_window.py" line="4668"/>
+        <location filename="../app/ui/main_window.py" line="4662"/>
+        <location filename="../app/ui/main_window.py" line="4692"/>
         <source>The interface language will change after you restart UTextEditor.</source>
         <translation>Мова інтерфейсу зміниться після перезапуску UTextEditor.</translation>
     </message>
@@ -991,7 +991,12 @@
         <translation>Вилучити пробіли в кінці рядків</translation>
     </message>
     <message>
-        <location filename="../app/ui/main_window.py" line="4661"/>
+        <location filename="../app/ui/main_window.py" line="3903"/>
+        <source>That project item no longer exists. Refreshing the project tree.</source>
+        <translation>Цей елемент проєкту більше не існує. Оновлюємо дерево проєкту.</translation>
+    </message>
+    <message>
+        <location filename="../app/ui/main_window.py" line="4685"/>
         <source>Settings could not be saved</source>
         <translation>Не вдалося зберегти налаштування</translation>
     </message>

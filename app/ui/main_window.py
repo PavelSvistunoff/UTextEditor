@@ -3826,10 +3826,27 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
+        if kind == "character":
+            try:
+                character = project.get_character(item_id)
+            except ProjectError:
+                self._project_item_no_longer_exists()
+                return
+            self._edit_character(character)
+            return
+        if kind not in {"scene", "note"}:
+            return
         open_key = (id(project), kind, item_id)
         if open_key in self._pending_project_opens:
             return
-        item = project.get_scene(item_id) if kind == "scene" else project.get_note(item_id)
+        try:
+            item = project.get_scene(item_id) if kind == "scene" else project.get_note(item_id)
+        except ProjectError:
+            # The tree can briefly outlive an item removed by another project
+            # operation. Treat its activation as stale UI state, not an
+            # uncaught exception on the GUI thread.
+            self._project_item_no_longer_exists()
+            return
         path = (project.root / item.path).resolve()
         for index in range(self.tabs.count()):
             editor = self.tabs.widget(index)
@@ -3880,6 +3897,13 @@ class MainWindow(QMainWindow):
         )
         self.statusBar().showMessage(f"Opening {item.title}…")
         self.thread_pool.start(worker)
+
+    def _project_item_no_longer_exists(self) -> None:
+        self.statusBar().showMessage(
+            self.tr("That project item no longer exists. Refreshing the project tree."),
+            5000,
+        )
+        self._refresh_project_view()
 
     def _project_document_opened(
         self,

@@ -22,11 +22,13 @@ from app.ui.project_setup_dialog import ProjectSetupDialog
 
 @pytest.fixture(autouse=True)
 def isolate_settings(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.yaml"
     monkeypatch.setattr(
         AppSettings,
         "_default_settings_path",
-        staticmethod(lambda: tmp_path / "settings.yaml"),
+        staticmethod(lambda: settings_path),
     )
+    AppSettings(ui_language="en").save(settings_path)
 
 
 def test_parse_outline_returns_chapters_and_scenes():

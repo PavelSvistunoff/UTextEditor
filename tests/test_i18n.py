@@ -156,12 +156,14 @@ def test_main_window_installs_saved_language_before_building_menus(
         window.close()
         if translator is not None:
             application.removeTranslator(translator)
+        assert QCoreApplication.translate("MainWindow", "Project") == "Project"
 
 
 def test_settings_menu_persists_language_choice_and_requires_restart(
     application, monkeypatch, tmp_path
 ):
     settings_path = tmp_path / "settings.yaml"
+    AppSettings(ui_language="en").save(settings_path)
     monkeypatch.setattr(
         AppSettings,
         "_default_settings_path",
@@ -178,7 +180,10 @@ def test_settings_menu_persists_language_choice_and_requires_restart(
         show_information.assert_called_once()
         assert "restart" in show_information.call_args.args[2].lower()
     finally:
+        translator = window._ui_translator
         window.close()
+        if translator is not None:
+            application.removeTranslator(translator)
 
 
 def test_settings_menu_restores_selection_when_language_cannot_be_saved(
@@ -189,8 +194,10 @@ def test_settings_menu_restores_selection_when_language_cannot_be_saved(
         "_default_settings_path",
         staticmethod(lambda: tmp_path / "settings.yaml"),
     )
+    AppSettings(ui_language="en").save(tmp_path / "settings.yaml")
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()
+
     def fail_save():
         raise OSError("read only")
 
@@ -198,9 +205,12 @@ def test_settings_menu_restores_selection_when_language_cannot_be_saved(
     with patch("app.ui.main_window.QMessageBox.warning") as show_warning:
         window._ui_language_actions["uk"].trigger()
     try:
-        assert window.settings.ui_language == "system"
-        assert window._ui_language_actions["system"].isChecked()
+        assert window.settings.ui_language == "en"
+        assert window._ui_language_actions["en"].isChecked()
         assert not window._ui_language_actions["uk"].isChecked()
         show_warning.assert_called_once()
     finally:
+        translator = window._ui_translator
         window.close()
+        if translator is not None:
+            application.removeTranslator(translator)
