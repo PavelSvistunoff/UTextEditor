@@ -215,13 +215,11 @@ accepted; cancellation and stale-result checks would still apply.
 5. **Extend project-wide search** (medium/high effort). Add matching options
    and investigate larger-file support. Project-wide replacement would need a
    separate preview and transactional design.
-6. **Review translations before applying a batch** (high effort). Translation
-   already snapshots and applies only after all fields succeed. Add a review of
-   original and translated titles and text, with per-item navigation and an
-   explicit final apply or cancel. Acceptance: preserve IDs, paths, links, and
-   line endings, recheck the captured project state, and retain all-or-nothing
-   behavior. Selective application and translation of character metadata would
-   require separate decisions about consistency and scope.
+6. **Project translation review verification**. The complete translation now
+   has a navigable side-by-side review and explicit all-or-nothing application.
+   Compile Ukrainian strings and verify the dialog on a native platform.
+   Selective application and translation of character metadata would require
+   separate decisions about consistency and scope.
 7. **Batch spelling review verification**. The review dialog offers a
    navigable list, explanations and explicit selection, rejects stale or
    overlapping ranges, and groups accepted edits into one undo step. Compile

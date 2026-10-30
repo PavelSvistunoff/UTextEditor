@@ -10,7 +10,7 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtPdf import QPdfDocument
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QInputDialog
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QInputDialog
 
 from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
 from app.document.recovery import RecoveryStore
@@ -1558,6 +1558,7 @@ def test_project_translation_actions_translate_and_refresh_open_documents(
         return f"Translated {len(prompts)}"
 
     monkeypatch.setattr(window.provider, "generate_private", translate)
+    monkeypatch.setattr("app.ui.main_window.ProjectTranslationReviewDialog.exec", lambda _dialog: QDialog.DialogCode.Accepted)
     window._open_project_document("scene", scene.id)
     wait_until(lambda: window.tabs.count() == 2, application)
     editor = window.tabs.current_editor()
@@ -1593,6 +1594,40 @@ def test_project_translation_actions_translate_and_refresh_open_documents(
     assert not editor.document_state.dirty
     assert any("Unsaved scene text." in prompt for prompt in prompts)
     assert any(item.name == "Project translation" and item.state == "completed" for item in window.ai_activity.activities)
+    editor.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("decision", ["cancel", "edit"])
+def test_project_translation_review_cancels_or_discards_changed_buffer(application, tmp_path, monkeypatch, decision):
+    project = Project.create(tmp_path / "review-project", "Novel")
+    scene = project.add_scene("Opening", content="Original scene")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.settings.autosave_enabled = False
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args, **_kwargs: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_args, **_kwargs: QMessageBox.StandardButton.Ok)
+    monkeypatch.setattr(window.provider, "generate_private", lambda *_args, **_kwargs: "Translated")
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Unsaved source")
+    seen = []
+
+    def review(dialog):
+        seen.extend(dialog.items)
+        if decision == "edit":
+            editor.setPlainText("Changed during review")
+            return QDialog.DialogCode.Accepted
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr("app.ui.main_window.ProjectTranslationReviewDialog.exec", review)
+    window.translate_project_to_ukrainian()
+    wait_until(lambda: bool(seen) and not window._project_busy, application)
+    assert any(original == "Unsaved source" and translated == "Translated" for _, original, translated in seen)
+    assert project.read_scene(scene.id) == "Original scene"
+    assert project.manifest.title == "Novel"
     editor.document_state.mark_saved()
     window.close()
 

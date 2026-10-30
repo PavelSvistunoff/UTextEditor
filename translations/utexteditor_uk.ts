@@ -656,6 +656,14 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Project translation cancelled. No project files were changed.</source><translation>Переклад проєкту скасовано. Файли проєкту не змінено.</translation></message>
+    <message><source>Translation was not applied because the project, settings, or an open document changed.</source><translation>Переклад не застосовано, оскільки проєкт, налаштування або відкритий документ змінилися.</translation></message>
+    <message><source>Project title</source><translation>Назва проєкту</translation></message>
+    <message><source>Chapter title</source><translation>Назва розділу</translation></message>
+    <message><source>Scene title</source><translation>Назва сцени</translation></message>
+    <message><source>Scene text</source><translation>Текст сцени</translation></message>
+    <message><source>Reference note title</source><translation>Назва довідкової нотатки</translation></message>
+    <message><source>Reference note text</source><translation>Текст довідкової нотатки</translation></message>
     <message><source>Review Spelling and Grammar…</source><translation>Переглянути правопис і граматику…</translation></message>
     <message><source>No spelling or grammar findings to review.</source><translation>Немає зауважень до правопису чи граматики для перегляду.</translation></message>
     <message><source>Findings changed; check spelling again.</source><translation>Зауваження змінилися; перевірте правопис знову.</translation></message>
@@ -1968,5 +1976,15 @@
     <message><source>Review spelling and grammar</source><translation>Перегляд правопису та граматики</translation></message>
     <message><source>Select the corrections to apply. Cancel leaves the document unchanged.</source><translation>Виберіть виправлення для застосування. Скасування не змінює документ.</translation></message>
     <message><source>Spelling and grammar findings</source><translation>Зауваження до правопису та граматики</translation></message>
+</context>
+<context>
+    <name>ProjectTranslationReviewDialog</name>
+    <message><source>Review project translation</source><translation>Перегляд перекладу проєкту</translation></message>
+    <message><source>Review the complete translation. Apply commits all items together.</source><translation>Перегляньте повний переклад. Застосування зберігає всі елементи разом.</translation></message>
+    <message><source>Translation items</source><translation>Елементи перекладу</translation></message>
+    <message><source>Original text</source><translation>Початковий текст</translation></message>
+    <message><source>Translated text</source><translation>Перекладений текст</translation></message>
+    <message><source>Original</source><translation>Оригінал</translation></message>
+    <message><source>Translation</source><translation>Переклад</translation></message>
 </context>
 </TS>

@@ -172,6 +172,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   Ukrainian translations remain outstanding. The preview flags omitted
   document prefixes and character text cut by the length limit. Full offline
   suite: 481 passed, 2 skipped.
+- **TASK-023 — in progress:** project translation now retains captured source
+  contents and presents titles and texts side by side before explicit Apply or
+  Cancel. It rechecks project, settings and all open project editors after
+  review, then uses the existing transactional commit. Tests cover navigation,
+  unsaved source, cancellation, changed buffers and the full apply path.
+  Ukrainian catalog compilation and native accessibility review remain
+  outstanding. Full offline suite: 489 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

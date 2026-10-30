@@ -96,6 +96,7 @@ from .conflict_dialog import ConflictDialog
 from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
 from .spellcheck_review_dialog import SpellcheckReviewDialog
+from .project_translation_review_dialog import ProjectTranslationReviewDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -1410,16 +1411,16 @@ class MainWindow(QMainWindow):
                 outcome="cancelled",
             )
             return
-        if (
-            project is not self.project
-            or project_generation != self._project_generation
-            or settings_generation != self._settings_generation
-            or not self.settings.ai_enabled
-            or any(
-                self.tabs.indexOf(editor) < 0 or editor.revision != revision
-                for editor, revision in editor_states.values()
-            )
-        ):
+        def current():
+            current_editors = {binding.item_id: (editor, editor.revision)
+                               for editor, binding in self._project_documents.items()
+                               if binding.project is project and self.tabs.indexOf(editor) >= 0}
+            return (generation == self._project_translation_generation
+                    and project is self.project and project_generation == self._project_generation
+                    and settings_generation == self._settings_generation and self.settings.ai_enabled
+                    and current_editors == editor_states)
+
+        if not current():
             self._finish_project_translation(
                 project,
                 "Translation was not applied because the project, settings, or an "
@@ -1429,7 +1430,26 @@ class MainWindow(QMainWindow):
             )
             return
 
+        rows = [(self.tr("Project title"), project.manifest.title, translation.project_title)]
+        for chapter in project.manifest.chapters:
+            rows.append((self.tr("Chapter title") + ": " + chapter.title, chapter.title, translation.item_titles[chapter.id]))
+        for scene in project.iter_scenes():
+            rows.append((self.tr("Scene title") + ": " + scene.title, scene.title, translation.item_titles[scene.id]))
+            rows.append((self.tr("Scene text") + ": " + scene.title, translation.source_contents[scene.id], translation.contents[scene.id]))
+        for note in project.manifest.notes:
+            rows.append((self.tr("Reference note title") + ": " + note.title, note.title, translation.item_titles[note.id]))
+            rows.append((self.tr("Reference note text") + ": " + note.title, translation.source_contents[note.id], translation.contents[note.id]))
         if self._project_translation_progress_dialog is not None:
+            self._project_translation_progress_dialog.hide()
+        review = ProjectTranslationReviewDialog(rows, self)
+        if review.exec() != QDialog.DialogCode.Accepted:
+            self._finish_project_translation(project, self.tr("Project translation cancelled. No project files were changed."), outcome="cancelled")
+            return
+        if not current():
+            self._finish_project_translation(project, self.tr("Translation was not applied because the project, settings, or an open document changed."), warning=True, outcome="discarded")
+            return
+        if self._project_translation_progress_dialog is not None:
+            self._project_translation_progress_dialog.show()
             self._project_translation_progress_dialog.setLabelText(
                 "Applying all translated project files…"
             )

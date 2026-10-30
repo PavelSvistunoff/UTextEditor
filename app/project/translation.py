@@ -40,6 +40,7 @@ class ProjectTranslation:
     expected_contents: Mapping[str, str]
     expected_manifest: Mapping[str, object]
     snapshot_path: str
+    source_contents: Mapping[str, str]
 
 
 @dataclass(frozen=True)
@@ -213,6 +214,7 @@ def run_project_translation(
         disk_contents,
         original_manifest,
         str(snapshot.snapshot_path),
+        source_contents,
     )
 
 
