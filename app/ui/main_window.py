@@ -311,8 +311,6 @@ class MainWindow(QMainWindow):
             ("New Project…", self.create_project, False),
             ("Open Project…", self.open_project, False),
             ("Close Project", self.close_project, True),
-            ("AI Project Setup…", self.setup_project_with_ai, True),
-            ("Auto-writer…", self.start_auto_writer, True),
             ("New Chapter…", self.add_project_chapter, True),
             ("New Scene…", self.add_project_scene, True),
             ("New Reference Note…", self.add_project_note, True),
@@ -321,18 +319,20 @@ class MainWindow(QMainWindow):
             ("Rename Selected…", self.rename_project_item, True),
             ("Duplicate Selected…", self.duplicate_project_item, True),
             ("Remove Selected…", self.remove_project_item, True),
-            ("Link Note…", self.link_project_note, True),
-            ("Unlink Note…", self.unlink_project_note, True),
-            ("Open Linked Item…", self.open_linked_project_item, True),
             ("Move Scene to Chapter…", self.move_project_scene_to_chapter, True),
             ("Move Scene Up", lambda: self.move_project_scene(-1), True),
             ("Move Scene Down", lambda: self.move_project_scene(1), True),
             ("Move Chapter Up", lambda: self.move_project_chapter(-1), True),
             ("Move Chapter Down", lambda: self.move_project_chapter(1), True),
-            ("Compile Book as PDF…", self.compile_project_book, True),
-            ("Export Manuscript…", self.export_project, True),
+            ("Link Note…", self.link_project_note, True),
+            ("Unlink Note…", self.unlink_project_note, True),
+            ("Open Linked Item…", self.open_linked_project_item, True),
             ("Create Revision Snapshot…", self.create_revision_snapshot, True),
             ("Review Revision Snapshots…", self.review_revision_snapshots, True),
+            ("Export Manuscript…", self.export_project, True),
+            ("Compile Book as PDF…", self.compile_project_book, True),
+            ("AI Project Setup…", self.setup_project_with_ai, True),
+            ("Auto-writer…", self.start_auto_writer, True),
             ("Translate Project to Ukrainian…", self.translate_project_to_ukrainian, True),
             ("Translate Project to English…", self.translate_project_to_english, True),
         )
@@ -373,6 +373,8 @@ class MainWindow(QMainWindow):
             "Trim Trailing Whitespace": self.tr("Trim Trailing Whitespace"),
         }
         for title, handler, requires_project in project_actions:
+            if title in {"New Chapter…", "Rename Selected…", "Link Note…", "Create Revision Snapshot…", "Export Manuscript…", "AI Project Setup…"}:
+                project_menu.addSeparator()
             action = QAction(action_text[title], self)
             action.triggered.connect(handler)
             project_menu.addAction(action)
@@ -384,7 +386,6 @@ class MainWindow(QMainWindow):
         project_menu.insertMenu(
             self._project_actions["Close Project"], self._recent_projects_menu
         )
-        project_menu.insertSeparator(self._recent_projects_menu.menuAction())
         self._project_translation_cancel_action = QAction(
             self.tr("Cancel Project Translation"), self
         )
@@ -423,8 +424,8 @@ class MainWindow(QMainWindow):
             (file_menu, "Quit", self.close, QKeySequence.StandardKey.Quit),
             (edit_menu, "Undo", lambda: self._edit("undo"), QKeySequence.StandardKey.Undo),
             (edit_menu, "Redo", lambda: self._edit("redo"), QKeySequence.StandardKey.Redo),
-            (edit_menu, "Copy", lambda: self._edit("copy"), QKeySequence.StandardKey.Copy),
             (edit_menu, "Cut", lambda: self._edit("cut"), QKeySequence.StandardKey.Cut),
+            (edit_menu, "Copy", lambda: self._edit("copy"), QKeySequence.StandardKey.Copy),
             (edit_menu, "Paste", lambda: self._edit("paste"), QKeySequence.StandardKey.Paste),
             (edit_menu, "Select All", lambda: self._edit("selectAll"), QKeySequence.StandardKey.SelectAll),
             (search_menu, "Find", self.show_find_replace, QKeySequence.StandardKey.Find),
@@ -434,16 +435,18 @@ class MainWindow(QMainWindow):
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
             (ai_menu, "Accept Suggestion", self.accept_completion, QKeySequence()),
             (ai_menu, "Reject Suggestion", self.reject_completion, QKeySequence()),
-            (ai_menu, "Ollama Debug", self.show_ai_debug, QKeySequence()),
-            (ai_menu, "AI Settings…", self.show_settings, QKeySequence()),
             (ai_menu, "Summarize Selected Scene", self.summarize_project_scene, QKeySequence()),
             (ai_menu, "Check Continuity Against Selected Notes", self.check_project_continuity, QKeySequence()),
             (ai_menu, "Cancel Project Analysis", self.cancel_project_analysis, QKeySequence()),
             (ai_menu, "Cancel Project Setup", self.cancel_project_setup, QKeySequence()),
             (ai_menu, "Cancel Auto-writer", self.cancel_auto_writer, QKeySequence()),
             (ai_menu, "Cancel Text Generation", self.cancel_text_generation, QKeySequence()),
+            (ai_menu, "Ollama Debug", self.show_ai_debug, QKeySequence()),
+            (ai_menu, "AI Settings…", self.show_settings, QKeySequence()),
         ]
         for menu, title, handler, shortcut in actions:
+            if (menu is file_menu and title in {"Save", "Close Tab", "Quit"}) or (menu is edit_menu and title in {"Cut", "Select All"}) or (menu is ai_menu and title in {"Generate..", "Summarize Selected Scene", "Cancel Project Analysis", "Ollama Debug"}):
+                menu.addSeparator()
             action = QAction(action_text[title], self)
             if menu is ai_menu:
                 # macOS otherwise promotes actions named "Settings" to the
@@ -466,7 +469,9 @@ class MainWindow(QMainWindow):
         recovery_action = QAction(self.tr("Inspect Recovery…"), self)
         recovery_action.setEnabled(self.recovery_store is not None)
         recovery_action.triggered.connect(self._scan_recovery)
-        file_menu.addAction(recovery_action)
+        quit_action = next(action for action in file_menu.actions() if action.text() == action_text["Quit"])
+        before_quit = file_menu.actions()[file_menu.actions().index(quit_action) - 1]
+        file_menu.insertAction(before_quit, recovery_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (

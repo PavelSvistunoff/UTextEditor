@@ -18,7 +18,7 @@ The project aims to keep writing fast and predictable: documents stay under the 
 
 The editor supports standalone text files and a local project workspace. Implemented features include:
 
-- Native PySide6 desktop window with File, Edit, Search, View, Project, Writing, and AI menus.
+- Native PySide6 desktop window with File, Edit, Search, View, Project, Writing, AI, and Settings menus. Project and AI actions are grouped by workflow; recovery is available in File.
 - New, open, save, and Save As for UTF-8 text files; unsaved-change prompts on close.
 - File reads and writes run in background workers; saves replace files atomically where supported.
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.

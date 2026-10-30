@@ -490,6 +490,27 @@ def test_project_context_menu_creates_character(application, tmp_path, monkeypat
     window.close()
 
 
+def test_main_menus_group_project_and_ai_workflows(application, tmp_path):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    menus = {action.text(): action.menu() for action in window.menuBar().actions()}
+    project_actions = menus["Project"].actions()
+    texts = [action.text() if not action.isSeparator() else "|" for action in project_actions]
+    assert texts.index("Close Project") < texts.index("New Chapter…") < texts.index("Rename Selected…")
+    assert texts.index("Review Revision Snapshots…") < texts.index("Export Manuscript…") < texts.index("AI Project Setup…")
+    for label in ("New Chapter…", "Rename Selected…", "Link Note…", "Create Revision Snapshot…", "Export Manuscript…", "AI Project Setup…"):
+        assert texts[texts.index(label) - 1] == "|"
+    file_actions = [action.text() for action in menus["File"].actions()]
+    assert file_actions.index("Inspect Recovery…") < file_actions.index("Quit")
+    ai_actions = [action.text() if not action.isSeparator() else "|" for action in menus["AI"].actions()]
+    assert ai_actions.index("Check Continuity Against Selected Notes") < ai_actions.index("Cancel Project Analysis") < ai_actions.index("Ollama Debug")
+    assert not window._project_actions["New Character…"].isEnabled()
+    project = Project.create(tmp_path / "novel", "Novel")
+    window._project_opened(project)
+    assert window._project_actions["New Character…"].isEnabled()
+    window.close()
+
+
 def test_repeated_project_document_open_coalesces_pending_reads(
     application, tmp_path, monkeypatch
 ):
