@@ -27,27 +27,6 @@ A task requiring manual or platform-specific verification must remain partially 
 
 ---
 
-
-# Phase 2 — Document integrity, recovery, and revisions
-
-## TASK-007 — Implement external file conflict resolution
-**Priority:** High  
-**Effort:** High  
-**Status:** [ ]
-
-- Detect when disk content differs from the saved base.
-- Present saved base, current disk version, and open buffer.
-- Support reload, save elsewhere, and reviewed merge.
-- Preserve unsaved content when the user cancels.
-- Recheck disk state before writing.
-
-**Acceptance criteria:**
-- Conflicting content is never overwritten silently.
-- Three-way merge conflicts are clearly identified.
-- Cancellation preserves all versions.
-- Concurrent-change tests pass.
-
-
 # Phase 3 — Search, navigation, and usability
 
 ## TASK-012 — Implement project-wide full-text search
