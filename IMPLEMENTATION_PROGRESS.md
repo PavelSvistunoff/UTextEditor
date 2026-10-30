@@ -1,3 +1,4 @@
+
 # Implementation progress
 
 This file was created because no earlier progress checkpoint was present in
@@ -63,7 +64,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   save-elsewhere, and reviewed merge workflow is not yet implemented. The
   existing final-check-to-replace race remains documented; do not mark this
   task complete until the supported conflict guarantee and review flow are
-  verified.
+  verified. A pure, conservative line-based three-way merge proposal service
+  now combines separated changes and marks overlapping alternatives, with a
+  size limit that falls back to a full conflict. It is not yet connected to
+  the UI and never writes files. Next: build the review flow, including
+  project-bound files, stale-context checks, and explicit application.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report
@@ -77,4 +82,5 @@ The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
 committed in `c5c2330`; the subsequent character AI fix is in `82b693f`.
 The performance checkpoint is `b85cc21`; `780e44c` subsequently removed
-several task definitions from `TASKS.md`.
+several task definitions from `TASKS.md`. The save fingerprint checkpoint is
+`437302c`.
