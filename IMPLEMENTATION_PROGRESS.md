@@ -56,6 +56,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   and are not platform-independent thresholds. The one-million-character
   case remains slow; representative repeated measurements, GUI event-loop
   latency and further investigation are still needed. Do not mark complete.
+- **TASK-007 — in progress:** fixed the standalone save callback to retain the
+  newly written disk fingerprint, including after Save As. A Qt regression
+  test exercises two saves followed by an external edit and verifies that the
+  conflict preserves the buffer and disk. The requested comparison, reload,
+  save-elsewhere, and reviewed merge workflow is not yet implemented. The
+  existing final-check-to-replace race remains documented; do not mark this
+  task complete until the supported conflict guarantee and review flow are
+  verified.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report
@@ -68,3 +76,5 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
 committed in `c5c2330`; the subsequent character AI fix is in `82b693f`.
+The performance checkpoint is `b85cc21`; `780e44c` subsequently removed
+several task definitions from `TASKS.md`.

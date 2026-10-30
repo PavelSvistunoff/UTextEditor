@@ -4527,7 +4527,7 @@ class MainWindow(QMainWindow):
         document.path = target
         document.mark_saved(saved_text)
         document.update_text(editor.toPlainText())
-        if not detach_project and disk_digest is not None:
+        if disk_digest is not None:
             document.disk_digest = disk_digest
         binding = self._project_documents.get(editor)
         if binding is not None:

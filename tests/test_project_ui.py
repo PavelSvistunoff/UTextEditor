@@ -62,6 +62,62 @@ def wait_until(predicate, application):
     assert predicate()
 
 
+def test_standalone_repeated_saves_update_disk_fingerprint_and_detect_external_edits(application, tmp_path, monkeypatch):
+    path = tmp_path / "draft.txt"
+    path.write_text("base", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._opened_document(FileManager().open(path))
+    editor = window.tabs.current_editor()
+    results = []
+    editor.setPlainText("first save")
+    window._save_editor(editor, callback=results.append)
+    wait_until(lambda: len(results) == 1, application)
+    editor.setPlainText("second save")
+    window._save_editor(editor, callback=results.append)
+    wait_until(lambda: len(results) == 2, application)
+    assert results == [True, True]
+    assert path.read_text(encoding="utf-8") == "second save"
+
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    path.write_text("external edit", encoding="utf-8")
+    editor.setPlainText("unsaved edit")
+    window._save_editor(editor, callback=results.append)
+    wait_until(lambda: len(results) == 3, application)
+    assert results[-1] is False and warnings
+    assert path.read_text(encoding="utf-8") == "external edit"
+    assert editor.toPlainText() == "unsaved edit" and editor.document_state.dirty
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_save_as_tracks_new_destination_for_later_conflicts(application, tmp_path, monkeypatch):
+    source = tmp_path / "source.txt"
+    destination = tmp_path / "copy.txt"
+    source.write_text("source", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._opened_document(FileManager().open(source))
+    editor = window.tabs.current_editor()
+    editor.setPlainText("my copy")
+    results = []
+    window._save_editor(editor, callback=results.append, target=destination)
+    wait_until(lambda: results, application)
+    assert results == [True]
+    destination.write_text("external copy", encoding="utf-8")
+    editor.setPlainText("my next edit")
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    window._save_editor(editor, callback=results.append)
+    wait_until(lambda: len(results) == 2, application)
+    assert results == [True, False]
+    assert destination.read_text(encoding="utf-8") == "external copy"
+    assert source.read_text(encoding="utf-8") == "source"
+    assert editor.toPlainText() == "my next edit" and editor.document_state.dirty
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
