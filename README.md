@@ -44,7 +44,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Inline completions shown as non-destructive ghost text. `Tab` accepts a suggestion and `Esc` dismisses it. Suggestions are discarded when the relevant text, cursor, selection, or active document changes.
 - Debounced completion requests with bounded context, background workers, and stale-result checks. When completing a project scene, requests also include its explicitly associated characters and up to 10,000 characters of project reference notes (using open unsaved note buffers when available). This material is sent to the configured Ollama destination and appears in AI diagnostics.
 - AI-assisted spelling and grammar suggestions with underlines, context-menu replace/ignore actions, response validation, and undo support for edits.
-- Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance.
+- Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance. Results for a changed document or another active tab are discarded, and the cancel action follows the current request when requests overlap.
 - Settings are grouped into Connection, Writing, AI assistance, and Advanced prompts tabs, with a reset-to-defaults option; the Connection tab can test the configured Ollama host/model and suggests how to install a missing model.
 - The interface language can be set from Settings > Application Language or from AI Settings, choosing System default, English, or Українська. The menu shows the saved choice; selecting a language stores its stable code, reports save errors, and explains that the change takes effect after restarting. System locale matching recognizes regional language tags and falls back to English. The selection is stored separately from the writing/spellcheck language. Qt Linguist catalogs currently cover the main menus, project navigation actions, settings, find/replace, and common character, analysis, generation, writing-goal, and Auto-writer dialogs; untranslated interface text falls back to English.
 - Editor background, text, and selection colors follow the system palette.
@@ -101,6 +101,19 @@ Run the test suite with:
 ```bash
 pytest
 ```
+
+The normal suite is offline. To run the separate live AI smoke test against the
+Ollama host and model saved in your application settings, start Ollama and run:
+
+```bash
+QT_QPA_PLATFORM=offscreen UTEXTEDITOR_LIVE_AI=1 python -m pytest -v tests/test_live_ollama_e2e.py
+```
+
+The test sends a short synthetic prompt to that configured destination, exercises
+generation and the review dialog through the desktop worker, and checks that the
+accepted insertion can be undone. It uses a temporary copy of settings and does
+not open or modify your documents. It can take several minutes while the model
+loads; an unavailable server or model causes the explicitly enabled test to fail.
 
 ## Technology and design
 

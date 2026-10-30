@@ -17,6 +17,7 @@ utexteditor = "app.main:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["live_ollama: opt-in end-to-end test using the configured Ollama server and model"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

@@ -461,6 +461,8 @@ class MainWindow(QMainWindow):
             menu.addAction(action)
             if title == "Cancel Project Setup":
                 self._project_setup_cancel_action = action
+            elif title == "Cancel Project Analysis":
+                self._project_analysis_cancel_action = action
             elif title == "Cancel Auto-writer":
                 self._auto_writer_cancel_action = action
             elif title == "Cancel Text Generation":
@@ -4336,6 +4338,8 @@ class MainWindow(QMainWindow):
         self.thread_pool.start(worker)
 
     def _generation_worker_done(self, worker: FunctionWorker) -> None:
+        if self._generate_worker is not worker:
+            return
         self._clear_worker_reference("_generate_worker", worker)
         if self._generate_cancel_action is not None:
             self._generate_cancel_action.setEnabled(False)
@@ -4594,17 +4598,7 @@ class MainWindow(QMainWindow):
         )
 
     def _set_project_analysis_active(self, active: bool) -> None:
-        ai_menu = next(
-            (action.menu() for action in self.menuBar().actions() if action.text() == "AI"),
-            None,
-        )
-        if ai_menu is not None:
-            cancel = next(
-                (action for action in ai_menu.actions() if action.text() == "Cancel Project Analysis"),
-                None,
-            )
-            if cancel is not None:
-                cancel.setEnabled(active)
+        self._project_analysis_cancel_action.setEnabled(active)
 
     def cancel_project_analysis(self) -> None:
         worker = self._project_ai_worker
@@ -4622,6 +4616,8 @@ class MainWindow(QMainWindow):
         if generation != self._generate_generation:
             return
         if editor is not self.tabs.current_editor():
+            self.ai_status = "AI: Disabled" if not self.settings.ai_enabled else ("AI: Connected" if self._connected else "AI: Offline")
+            self._update_status()
             return
         cursor = editor.textCursor()
         current_selection = (cursor.selectionStart(), cursor.selectionEnd()) if cursor.hasSelection() else (cursor.position(), cursor.position())
