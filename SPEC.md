@@ -38,7 +38,7 @@ The specification describes intended behavior, not a claim that every requiremen
 
 The application stores the interface-language preference separately from manuscript-language and AI writing-language settings. `system`, `en`, and `uk` are stable setting values; Qt's preferred UI locales are used for system mode, with regional language matching and English fallback. Qt Linguist `.ts` files are source resources and compiled `.qm` files are packaged for runtime. Missing catalog entries display their English source text. UI-language changes apply after restart and must not change manuscript text, project data, file paths, or prompts.
 
-The initial translation rollout covers the main menus, project tree, settings, find/replace, and selected writing and character dialogs. Remaining hardcoded interface text is a known limitation until each widget and message path is migrated.
+The initial translation rollout covers the main menus, project tree, settings, find/replace, and selected writing and character dialogs. Remaining hardcoded interface text is a known limitation until each widget and message path is migrated. Project-tree refresh preserves expansion, selection, current item, and scroll position for surviving items of the same project.
 
 ## 3. Technology and platform
 
@@ -90,8 +90,19 @@ selection of profiles with motivations, active goals, or internal conflicts;
 directed relationships between selected profiles are included, and the
 confirmation displays that context. Auto-writer and continuity review
 include only profiles explicitly associated with the target scene. Continuity
-output remains review text and does not produce structured proposals. AI
-proposed-state review and acceptance are not implemented yet.
+review validates structured findings with confidence, selected scene and
+associated-character IDs, an exact quotation from a captured scene or note
+excerpt, and an author-review suggestion. Findings are read-only, and an empty
+list does not prove consistency. The character profile can request arc-field
+proposals from an open, explicitly associated scene. Each proposal must cite an
+exact excerpt from the captured scene. The author selects proposals individually
+and saves the profile to persist them; cancellation or a changed context never
+applies a proposal.
+
+Character profiles may contain an embedded PNG or JPEG portrait of at most
+256 KB and 2048 pixels per side. Portrait selection and removal are staged
+until profile save; image loading runs in a worker. Project manifests and
+character YAML exports carry the image, so imports and copies remain portable.
 
 ## 5. Main window and navigation
 
@@ -235,7 +246,13 @@ An empty completion is a normal no-suggestion result. A failed request should tr
 
 AI output is untrusted text. Never execute it, interpret it as a command, or write it to files without user action. Validate offsets and revisions before editing. Requests may contain nearby document text; clearly disclose that text is sent to the configured local Ollama host. Do not send document text to cloud services.
 
-Application logs may include operation name, provider, model, request duration, and error category. Do not log full document content or prompt text by default. An optional diagnostics window may display request/response payloads in memory for the current session because those may contain document excerpts. It must be clearly labeled, clearable, and never silently persisted.
+Application logs may include operation name, provider, model, request duration, and error category. Do not log full document content or prompt text by default. An optional diagnostics window may display request/response payloads in memory for the current session because those may contain document excerpts. It must be clearly labeled, clearable, and never silently persisted. Retain at most 100 recent events, bound each event, and visibly mark truncated events.
+
+The status bar exposes a non-modal AI activity panel with per-task state,
+elapsed time, cancellation when supported, and actual batch progress when
+available. The session-only activity history holds metadata rather than prompts
+or responses. Network cancellation is cooperative, and retry captures fresh
+context. Auto-writer and translation retain their existing progress views.
 
 ## 18. Performance and accessibility
 

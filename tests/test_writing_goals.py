@@ -83,7 +83,44 @@ def test_goal_scopes_pause_disable_and_reset_do_not_modify_text() -> None:
     assert tracker.goal_progress(active_scene_words=0, project_words=0, document_ids={"doc"}) is None
     tracker.reset_today(local_date="2026-10-17")
     assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
-    assert tracker._histories["doc"][0][-1][0] == "draft more"
+    assert tracker._current_text["doc"] == "draft more"
+
+
+def test_history_keeps_one_text_copy_and_tracks_undo_branch_across_days() -> None:
+    tracker = WritingGoalTracker(100, "new_words")
+    initial = "a" * 10_000
+    tracker.attach("doc", initial)
+    for number in range(100):
+        tracker.record_text("doc", initial + " word" * (number + 1), local_date="2026-10-17")
+
+    states, _ = tracker._histories["doc"]
+    assert len(states) == 101
+    assert sum(len(fingerprint) for fingerprint, _ in states) == 101 * 32
+    tracker.record_text("doc", initial + " word" * 99, local_date="2026-10-18", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 99
+    tracker.record_text("doc", initial + " word" * 100, local_date="2026-10-18", redo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 100
+    tracker.record_text("doc", initial + " word" * 99, local_date="2026-10-18", undo=True)
+    tracker.record_text("doc", initial + " word" * 99 + " different", local_date="2026-10-18")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 99
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 1
+
+
+def test_unchanged_progress_snapshots_are_shared_and_remain_correct_after_reset() -> None:
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "w", local_date="2026-10-17")
+    tracker.record_text("doc", "wo", local_date="2026-10-17")
+    tracker.record_text("doc", "word", local_date="2026-10-17")
+    states, _ = tracker._histories["doc"]
+    assert states[1][1] is states[2][1] is states[3][1]
+
+    tracker.reset_today(local_date="2026-10-17")
+    assert states[1][1] is states[2][1] is states[3][1]
+    tracker.record_text("doc", "wo", local_date="2026-10-17", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
+    tracker.record_text("doc", "wo next", local_date="2026-10-18")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 1
 
 
 def test_goal_settings_and_progress_round_trip_atomically(tmp_path: Path) -> None:
@@ -114,6 +151,17 @@ def test_rekeying_a_saved_document_preserves_its_daily_contribution() -> None:
 
     assert tracker.count_new_words({"untitled"}, local_date="2026-10-17") == 0
     assert tracker.count_new_words({"file:/draft.txt"}, local_date="2026-10-17") == 2
+
+
+def test_detach_releases_history_but_preserves_daily_progress() -> None:
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "new words", local_date="2026-10-17")
+    tracker.detach("doc")
+    assert "doc" not in tracker._histories
+    assert "doc" not in tracker._current_text
+    tracker.attach("doc", "new words")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 2
 
 
 @pytest.mark.parametrize(

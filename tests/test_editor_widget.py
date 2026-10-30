@@ -17,7 +17,7 @@ from app.document.text_formatting import indent_lines, outdent_lines
 from app.ai.models import Suggestion
 from app.ai.ollama_client import OllamaClient
 from app.settings.settings import AppSettings
-from app.ui.ai_debug_window import AIDebugWindow
+from app.ui.ai_debug_window import AIDebugWindow, MAX_DEBUG_EVENT_CHARS, MAX_DEBUG_EVENTS
 from app.ui.editor_widget import EditorWidget
 from app.ui.font_utils import configure_application_font, editor_font
 from app.ui.main_window import MainWindow
@@ -53,6 +53,18 @@ def test_completion_is_non_destructive_and_tab_accepts_it(application: QApplicat
     assert editor.accept_completion()
     assert editor.toPlainText() == "Hello world"
     assert not editor.has_completion
+
+
+def test_closing_tab_releases_writing_goal_history(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    document_id = editor._writing_goal_document_id
+    assert document_id in window.writing_goals._histories
+    window.close_tab(window.tabs.currentIndex())
+    assert document_id not in window.writing_goals._histories
+    assert document_id not in window.writing_goals._current_text
+    window.close()
 
 
 def test_editor_colors_follow_the_system_palette(application: QApplication) -> None:
@@ -115,6 +127,22 @@ def test_completion_is_rejected_for_multiline_or_empty_suggestions(application: 
 
     editor.show_completion("   ", editor.revision, editor.textCursor().position())
     assert not editor.has_completion
+
+
+def test_completion_does_not_cover_existing_text(application: QApplication) -> None:
+    editor = EditorWidget()
+    editor.setPlainText("Hello world\nNext line")
+    cursor = editor.textCursor()
+    cursor.setPosition(5)
+    editor.setTextCursor(cursor)
+    editor.show_completion(" there", editor.revision, cursor.position())
+    assert not editor.has_completion
+    assert editor.toPlainText() == "Hello world\nNext line"
+
+    cursor.setPosition(11)
+    editor.setTextCursor(cursor)
+    editor.show_completion(" there", editor.revision, cursor.position())
+    assert editor.has_completion
 
 
 def test_completion_is_invalidated_when_selection_changes_without_moving_cursor(application: QApplication) -> None:
@@ -369,6 +397,29 @@ def test_ollama_debug_window_copies_its_content(application: QApplication) -> No
     debug_window.copy_to_clipboard()
 
     assert QApplication.clipboard().text() == debug_window.output.toPlainText()
+
+
+def test_debug_history_is_bounded_in_memory_and_in_open_window(application: QApplication) -> None:
+    window = MainWindow()
+    window.show_ai_debug()
+    for index in range(MAX_DEBUG_EVENTS + 1):
+        window._record_ai_interaction("Response", "/test", {"index": index, "text": "x" * (MAX_DEBUG_EVENT_CHARS + 10)})
+
+    assert len(window._debug_events) == MAX_DEBUG_EVENTS
+    assert all(len(entry) <= MAX_DEBUG_EVENT_CHARS for entry in window._debug_events)
+    displayed = window._debug_window.output.toPlainText()
+    assert displayed == "\n".join(window._debug_events)
+    assert '"index": 0' not in displayed
+    assert '"index": 100' in displayed
+    assert "diagnostic event truncated" in displayed
+
+    window._debug_window.clear()
+    assert window._debug_events == []
+    assert window._debug_window.output.toPlainText() == ""
+    window._debug_window.close()
+    window.show_ai_debug()
+    assert window._debug_window.output.toPlainText() == ""
+    window.close()
 
 
 def test_generate_action_is_present_in_the_ai_menu(application: QApplication) -> None:

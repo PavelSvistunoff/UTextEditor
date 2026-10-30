@@ -73,6 +73,8 @@ def test_translation_catalog_loads_and_translates_interface(application):
         assert language == "uk"
         assert translator is not None
         assert QCoreApplication.translate("MainWindow", "Project") == "Проєкт"
+        assert QCoreApplication.translate("AIActivityPanel", "AI activity") == "Активність ШІ"
+        assert QCoreApplication.translate("AIActivityPanel", "Discarded: context changed") == "Відхилено: контекст змінився"
         assert QCoreApplication.translate("MainWindow", "Uncatalogued text") == "Uncatalogued text"
         view = ProjectView()
         assert view._count_label("Сцена", WordCount(1, True)) == "Сцена — 1 слово"

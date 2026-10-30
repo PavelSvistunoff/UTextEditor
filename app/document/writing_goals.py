@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from datetime import date, datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -45,7 +46,12 @@ class WritingGoalTracker:
                     raise ValueError("Writing-goal counts must be non-negative integers.")
                 checked[document_id] = count
             self.progress[day] = checked
-        self._histories: dict[str, tuple[list[tuple[str, dict[str, int]]], int]] = {}
+        self._histories: dict[str, tuple[list[tuple[bytes, dict[str, int]]], int]] = {}
+        self._current_text: dict[str, str] = {}
+
+    @staticmethod
+    def _fingerprint(text: str) -> bytes:
+        return hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).digest()
 
     @staticmethod
     def _validate_target(target: int) -> int:
@@ -71,7 +77,8 @@ class WritingGoalTracker:
             for day, values in self.progress.items()
             if document_id in values
         }
-        self._histories[document_id] = ([(text, counts)], 0)
+        self._histories[document_id] = ([(self._fingerprint(text), counts)], 0)
+        self._current_text[document_id] = text
 
     def rekey_document(self, old_id: str, new_id: str, text: str) -> None:
         if old_id == new_id:
@@ -82,7 +89,13 @@ class WritingGoalTracker:
             if old_count is not None:
                 values[new_id] = max(values.get(new_id, 0), old_count)
         self._histories.pop(old_id, None)
+        self._current_text.pop(old_id, None)
         self.attach(new_id, text)
+
+    def detach(self, document_id: str) -> None:
+        """Release transient undo history while retaining saved progress."""
+        self._histories.pop(document_id, None)
+        self._current_text.pop(document_id, None)
 
     def record_text(
         self,
@@ -101,28 +114,35 @@ class WritingGoalTracker:
             self.attach(document_id, text)
             return 0
         states, index = self._histories[document_id]
-        before = states[index][0]
+        before = self._current_text[document_id]
         if before == text:
             return 0
+        fingerprint = self._fingerprint(text)
         if undo:
             for candidate in range(index - 1, -1, -1):
-                if states[candidate][0] == text:
+                if states[candidate][0] == fingerprint:
                     self._histories[document_id] = (states, candidate)
+                    self._current_text[document_id] = text
                     self._replace_document_progress(document_id, states[candidate][1])
                     return 0
         if redo:
             for candidate in range(index + 1, len(states)):
-                if states[candidate][0] == text:
+                if states[candidate][0] == fingerprint:
                     self._histories[document_id] = (states, candidate)
+                    self._current_text[document_id] = text
                     self._replace_document_progress(document_id, states[candidate][1])
                     return 0
 
         del states[index + 1:]
-        counts = dict(states[index][1])
         added = self._new_tokens_added(before, text)
+        counts = states[index][1]
         if added:
+            # Progress snapshots are immutable after being stored. Reuse the
+            # previous one for edits that do not add a word.
+            counts = dict(counts)
             counts[today] = counts.get(today, 0) + added
-        states.append((text, counts))
+        states.append((fingerprint, counts))
+        self._current_text[document_id] = text
         self._histories[document_id] = (states, len(states) - 1)
         self._replace_document_progress(document_id, counts)
         return added
@@ -161,10 +181,16 @@ class WritingGoalTracker:
         date.fromisoformat(today)
         self.progress[today] = {}
         for document_id, (states, index) in tuple(self._histories.items()):
-            for state_index, (text, counts) in enumerate(states):
-                updated = dict(counts)
-                updated.pop(today, None)
-                states[state_index] = (text, updated)
+            updated_counts: dict[int, dict[str, int]] = {}
+            for state_index, (fingerprint, counts) in enumerate(states):
+                if today not in counts:
+                    continue
+                key = id(counts)
+                if key not in updated_counts:
+                    updated = dict(counts)
+                    updated.pop(today)
+                    updated_counts[key] = updated
+                states[state_index] = (fingerprint, updated_counts[key])
             self._histories[document_id] = (states, index)
 
     def to_mapping(self) -> dict[str, object]:

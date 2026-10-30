@@ -1785,4 +1785,39 @@
         <translation>Слова, написані сьогодні</translation>
     </message>
 </context>
+<context>
+    <name>AIActivityPanel</name>
+    <message><source>AI activity</source><translation>Активність ШІ</translation></message>
+    <message><source>AI tasks for this session. Manuscript text is not shown.</source><translation>Завдання ШІ поточного сеансу. Текст рукопису не показується.</translation></message>
+    <message><source>AI tasks</source><translation>Завдання ШІ</translation></message>
+    <message><source>Cancel task</source><translation>Скасувати завдання</translation></message>
+    <message><source>Show progress</source><translation>Показати перебіг</translation></message>
+    <message><source>Retry</source><translation>Повторити</translation></message>
+    <message><source>Reopen the original document before retrying.</source><translation>Відкрийте початковий документ перед повторною спробою.</translation></message>
+    <message><source>Show AI activity</source><translation>Показати активність ШІ</translation></message>
+    <message><source>AI tasks in progress</source><translation>Завдання ШІ виконуються</translation></message>
+    <message><source>Queued</source><translation>У черзі</translation></message>
+    <message><source>Running</source><translation>Виконується</translation></message>
+    <message><source>Cancelling…</source><translation>Скасування…</translation></message>
+    <message><source>Cancelling after the current request…</source><translation>Скасування після поточного запиту…</translation></message>
+    <message><source>Cancelled</source><translation>Скасовано</translation></message>
+    <message><source>Completed</source><translation>Завершено</translation></message>
+    <message><source>Failed — check the workflow message</source><translation>Помилка — перегляньте повідомлення завдання</translation></message>
+    <message><source>Discarded: context changed</source><translation>Відхилено: контекст змінився</translation></message>
+    <message><source>Character development</source><translation>Розвиток персонажа</translation></message>
+    <message><source>Character suggestions</source><translation>Пропозиції для персонажа</translation></message>
+    <message><source>Text generation</source><translation>Генерування тексту</translation></message>
+    <message><source>Project analysis</source><translation>Аналіз проєкту</translation></message>
+    <message><source>Text completion</source><translation>Продовження тексту</translation></message>
+    <message><source>Spellcheck</source><translation>Перевірка правопису</translation></message>
+    <message><source>Project outline</source><translation>План проєкту</translation></message>
+    <message><source>Story suggestions</source><translation>Пропозиції для історії</translation></message>
+    <message><source>Auto-pilot generation</source><translation>Генерування автопілотом</translation></message>
+    <message><source>Auto-writer</source><translation>Автописьменник</translation></message>
+    <message><source>Project translation</source><translation>Переклад проєкту</translation></message>
+    <message><source>Applying changes…</source><translation>Застосування змін…</translation></message>
+    <message><source>Test AI connection</source><translation>Перевірка з’єднання із ШІ</translation></message>
+    <message><source>AI connection</source><translation>З’єднання із ШІ</translation></message>
+    <message><source>%1 of %2 completed — %3</source><translation>Завершено %1 з %2 — %3</translation></message>
+</context>
 </TS>

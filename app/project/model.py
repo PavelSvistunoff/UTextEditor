@@ -30,6 +30,8 @@ from pathlib import PurePosixPath
 import re
 from uuid import UUID
 
+from .portrait import decode_portrait
+
 FORMAT_VERSION = 1
 MANIFEST_NAME = "utexteditor.yaml"
 NOTE_TYPES = frozenset({"character", "setting", "timeline", "research", "general"})
@@ -161,6 +163,7 @@ class Character:
     internal_conflicts: list[str] = field(default_factory=list)
     knowledge: list[CharacterKnowledge] = field(default_factory=list)
     arc: dict[str, str] = field(default_factory=dict)
+    portrait: str = ""
 
 
 @dataclass
@@ -501,7 +504,7 @@ def _character_state_change(value: object, label: str) -> CharacterStateChange:
 
 def _character(value: object, label: str) -> Character:
     row = _mapping(value, label)
-    fields = {"id", "full_name", "display_name", "aliases", "role", "description", "background", "personality", "primary_motivation", "secondary_motivations", "goals", "desires", "needs", "obstacles", "accepted_risks", "refusals", "internal_conflicts", "knowledge", "arc"}
+    fields = {"id", "full_name", "display_name", "aliases", "role", "description", "background", "personality", "primary_motivation", "secondary_motivations", "goals", "desires", "needs", "obstacles", "accepted_risks", "refusals", "internal_conflicts", "knowledge", "arc", "portrait"}
     _keys(row, {"id", "full_name"}, fields, label)
     goals = []
     for i, value in enumerate(_list(row.get("goals", []), f"{label}.goals")):
@@ -522,6 +525,7 @@ def _character(value: object, label: str) -> Character:
         primary_motivation=_text(row.get("primary_motivation", ""), f"{label}.primary_motivation"), secondary_motivations=_text_list(row.get("secondary_motivations", []), f"{label}.secondary_motivations"),
         goals=goals, desires=_text_list(row.get("desires", []), f"{label}.desires"), needs=_text_list(row.get("needs", []), f"{label}.needs"), obstacles=_text_list(row.get("obstacles", []), f"{label}.obstacles"), accepted_risks=_text_list(row.get("accepted_risks", []), f"{label}.accepted_risks"), refusals=_text_list(row.get("refusals", []), f"{label}.refusals"), internal_conflicts=_text_list(row.get("internal_conflicts", []), f"{label}.internal_conflicts"), knowledge=knowledge,
         arc=_text_map(row.get("arc", {}), f"{label}.arc", CHARACTER_ARC_FIELDS),
+        portrait=_text(row.get("portrait", ""), f"{label}.portrait"),
     )
 
 
@@ -582,6 +586,10 @@ def _validate_character(character: Character, label: str) -> None:
     _text_map(character.background, f"{label}.background", CHARACTER_BACKGROUND_FIELDS)
     _text_list_map(character.personality, f"{label}.personality", CHARACTER_PERSONALITY_FIELDS)
     _text_map(character.arc, f"{label}.arc", CHARACTER_ARC_FIELDS)
+    try:
+        decode_portrait(character.portrait)
+    except ValueError as exc:
+        raise ProjectFormatError(f"{label}: {exc}") from exc
     if not isinstance(character.goals, list):
         raise ProjectFormatError(f"{label}.goals must be a list")
     for goal in character.goals:
@@ -642,6 +650,8 @@ def _validate_scene_associations(scene: Scene, character_ids: set[str], label: s
 
 def _character_mapping(item: Character) -> dict[str, object]:
     result = {"id": item.id, "full_name": item.full_name, "display_name": item.display_name, "aliases": item.aliases, "role": item.role, "description": item.description, "background": item.background, "personality": item.personality, "primary_motivation": item.primary_motivation, "secondary_motivations": item.secondary_motivations, "goals": [{"description": g.description, "status": g.status, "priority": g.priority, "notes": g.notes} for g in item.goals], "desires": item.desires, "needs": item.needs, "obstacles": item.obstacles, "accepted_risks": item.accepted_risks, "refusals": item.refusals, "internal_conflicts": item.internal_conflicts, "knowledge": [{"kind": k.kind, "statement": k.statement} for k in item.knowledge], "arc": item.arc}
+    if item.portrait:
+        result["portrait"] = item.portrait
     return result
 
 

@@ -19,22 +19,16 @@ temporary projects or in-memory objects and do not modify the user's documents.
 
 ### Confirmed defects
 
-1. **Medium — new-word goal history grows with complete document copies.**
-   `WritingGoalTracker.record_text` appends the entire text on each recorded
-   change and has no retention bound. A 10,000-character document followed by
-   100 single-character edits retained 101 text states totaling 1,015,050
-   characters. Long sessions or large documents can consume substantial memory.
-   Design a bounded or delta-based history that still tracks undo/redo and daily
-   counts accurately; benchmark realistic edits and test branching and date
-   changes. See `app/document/writing_goals.py`.
-2. **Medium — visible AI diagnostics are not bounded like the backing list.**
-   `MainWindow._debug_events` keeps at most 100 events, but an open
-   `AIDebugWindow` appends every interaction to a `QPlainTextEdit` without a
-   corresponding limit. A long session can retain far more text than intended,
-   including manuscript excerpts. Bound both event count and total payload size,
-   make truncation visible, and test clear/reopen and oversized responses. See
-   `app/ui/main_window.py`, `app/ui/ai_debug_window.py`, and the response size
-   limit in `app/ai/ollama_client.py`.
+1. **Medium — writing-goal history metadata grows during long sessions.**
+   The tracker retains one current document copy and a fixed-size fingerprint
+   per state instead of retaining every full text. Edits that do not add words
+   share daily count mappings, including after reset. State records and count
+   changes still grow with edits while a document is open. In a synthetic run,
+   1,000 appended characters on a 10,000-character document retained 1,001
+   states and one count mapping (about 142 KB traced allocations; 0.27 seconds
+   in the review environment). This does not establish a long-session bound.
+   Coordinate any bound with Qt's undo history so supported undo and redo do
+   not silently produce incorrect counts; measure realistic long sessions.
 
 ### Risks requiring further verification
 
@@ -45,10 +39,9 @@ temporary projects or in-memory objects and do not modify the user's documents.
   check alone is not a cross-process lock. See `app/document/file_manager.py`
   and `app/project/service.py`.
 - **Large-document UI latency:** goal tracking, match counts, and some cursor
-  conversions inspect or copy document text on the GUI thread. The full-copy
-  goal history above is confirmed, but the user-visible latency threshold has
-  not been measured. Profile representative documents before selecting an
-  incremental or bounded implementation.
+  conversions inspect or copy document text on the GUI thread. The user-visible
+  latency threshold has not been measured. Profile representative documents
+  before selecting an incremental implementation.
 
 ### Review coverage and verification limits
 
@@ -58,8 +51,7 @@ validation, settings, search, writing goals, localization, and the UI worker
 pattern. The test baseline was
 `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`
 (315 passed). The original reproductions were run with `.venv/bin/python` in
-temporary or in-memory state. The debug-window retention finding follows from
-the code paths; it was not subjected to a long-running memory benchmark. No
+temporary or in-memory state. No
 live Ollama, real multi-process race, screen-reader, or platform-specific GUI
 session was exercised, and this review does not prove other paths defect-free.
 
@@ -74,12 +66,6 @@ session was exercised, and this review does not prove other paths defect-free.
   actual destination rather than assuming it is always local. See
   `app/ui/settings_dialog.py` and the completion/spellcheck request paths in
   `app/ui/main_window.py`.
-- **Inline completion over existing text:** `SPEC.md` §12 says ghost text must
-  not cover existing document text. `EditorWidget.show_completion` checks the
-  viewport width and rejects multiline suggestions, but does not check whether
-  text follows the cursor on the same line; `paintEvent` draws the ghost over
-  that area. A non-destructive presentation for mid-line suggestions remains
-  to be implemented. See `app/ui/editor_widget.py`.
 - **Coalescing slow AI requests:** `SPEC.md` §24.5 calls for at most the latest
   pending spellcheck snapshot while a request is running. The UI cancels the
   previous `FunctionWorker` and starts another, but cancellation does not stop
@@ -87,18 +73,6 @@ session was exercised, and this review does not prove other paths defect-free.
   occupy multiple pool threads. Stale results are discarded; request
   coalescing itself remains incomplete. See `app/ui/workers.py` and
   `app/ui/main_window.py`.
-
-## Character development and AI review
-
-- **Proposed character updates:** AI workflows do not return structured
-  character-state proposals with evidence and individual accept/reject
-  controls. Generated or analyzed content must continue to leave profiles
-  unchanged unless the author edits them directly.
-- **Structured continuity findings:** continuity review is an AI-authored
-  text analysis. It does not yet validate a structured result containing
-  confidence, affected character and scene IDs, evidence references, and
-  suggested resolutions.
-- **Portraits:** character profiles do not manage or package portrait assets.
 
 ## Project and revision workflows
 
@@ -129,7 +103,7 @@ session was exercised, and this review does not prove other paths defect-free.
 - **Additional languages:** writing/spellcheck language choices are Auto,
   English, and Ukrainian. More languages are a future candidate, not a current
   requirement (`SPEC.md` §15).
-- **Inline completion limitations:** multiline suggestions and suggestions too
+- **Inline completion limitations:** mid-line and multiline suggestions and suggestions too
   wide for the available viewport are rejected rather than displayed. The
   specification permits this safe fallback; a readable alternative is a
   possible future improvement (`SPEC.md` §12).
@@ -158,17 +132,6 @@ notes, and recent projects. The following ideas extend those workflows; they
 are proposals except where explicitly identified as a confirmed defect. Priorities
 and effort are relative estimates.
 
-### Fix existing navigation
-
-1. **Preserve project-tree state during refresh** — high priority, medium
-   effort. `ProjectView.show_project` clears and recreates the tree and calls
-   `expandAll()`. Project-scene edits schedule a refresh, so collapsed branches,
-   selection, and the user's place in the tree can be lost while writing.
-   Preserve expansion, selection, current item, and scroll position using stable
-   item IDs; choose a sensible fallback if an item was removed. Test editing,
-   multiple selection, filtering, renaming, and removal without changing project
-   data. See `app/ui/project_view.py` and `_show_project_summary` in
-   `app/ui/main_window.py`.
 ### Make destinations easier to find
 
 4. **Search the whole project** — high priority, medium/high effort. Provide a
@@ -239,53 +202,12 @@ not confirmed defects or commitments. Effort and priority are relative estimates
 they need design and validation before scheduling. The existing gaps above remain
 the authoritative description of what is missing today.
 
-### Make AI activity visible and interactive
+### Optional streaming previews
 
-**Priority: high; estimated effort: medium for a first version.** AI work
-currently has several separate indicators: the status bar shows connection and
-completion activity, Auto-writer displays completed scene drafts in a progress
-window, and project translation has a non-modal progress dialog. Other requests
-do not all have the same visible lifecycle. A consistent activity interface
-would make it easier to see what is happening while continuing to write.
-
-Suggested design:
-
-1. Add a compact, keyboard-accessible **AI activity** control in the status
-   bar. Show an animated busy indicator and a short label such as “Checking
-   spelling…” or “Generating character suggestions…”, with a count if multiple
-   tasks are active. Clicking it opens a non-modal activity panel; it must not
-   steal focus or cover the editor.
-2. In the panel, show each task's name, relevant document or project item,
-   elapsed time, and current state: queued, running, cancelling, completed,
-   failed, or discarded because its context changed. For multi-item jobs,
-   show actual completed/total items and the current scene or field. Use an
-   indeterminate indicator for a single model request when the provider does
-   not report progress; do not invent a percentage or completion time.
-3. Offer a clearly labeled **Cancel** action where cancellation is supported.
-   Explain “Cancelling after the current request…” when a blocking request
-   cannot be interrupted. Report completion or failure in the panel, with a
-   useful next step and a retry action where safe. Retrying must capture fresh
-   document and project state rather than reusing stale results.
-4. Keep Auto-writer's existing live scene drafts and translation's progress;
-   link to or integrate them with the panel rather than creating duplicate
-   tasks. Explicit generation and analysis can open their existing review
-   windows when ready. Automatic completion and spellcheck should use quiet,
-   short-lived indicators to avoid visual noise during normal typing.
-5. Consider optional streaming previews later. Current Ollama requests are
-   non-streaming, so a real token-by-token display requires provider and worker
-   changes. Partial output must remain clearly provisional, bounded in memory,
-   and outside the manuscript until explicitly accepted; cancellation and
-   stale-result checks must still apply. This is a separate, higher-effort
-   enhancement, not a prerequisite for the first version.
-
-Acceptance: every supported AI workflow has a visible start and terminal state;
-simultaneous tasks cannot overwrite one another's status; cancellation and
-stale results are represented accurately; progress remains responsive and
-accessible in English and Ukrainian; and no generated text is inserted without
-the workflow's existing author approval. Keep activity metadata separate from
-the session-only diagnostics payloads and avoid displaying or storing manuscript
-content in the activity history by default. Cover success, failure, cancellation,
-stale responses, overlapping requests, and window closure with fake providers.
+Ollama requests are currently non-streaming. A token-by-token preview would
+require separate provider and worker changes. Partial output must remain
+provisional, bounded in memory, and outside the manuscript until explicitly
+accepted; cancellation and stale-result checks would still apply.
 
 ### High priority
 

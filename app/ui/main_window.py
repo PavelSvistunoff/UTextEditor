@@ -4,9 +4,11 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 import hashlib
 import json
+import re
 from pathlib import Path
 from threading import Event
 from uuid import uuid4
+import weakref
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence, QTextCursor
@@ -24,6 +26,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QProgressDialog,
+    QScrollArea,
     QStatusBar,
     QVBoxLayout,
     QWidget,
@@ -32,6 +35,8 @@ from PySide6.QtWidgets import QApplication
 
 from app.ai.completion_service import CompletionService, build_context, complete_project_scene
 from app.ai.character_profile import suggest_character_fields
+from app.ai.character_development import suggest_character_development
+from app.ai.continuity import format_continuity_findings, parse_continuity_findings
 from app.ai.ollama_client import OllamaClient
 from app.ai.spellcheck_service import SpellcheckService
 from app.document.book_compiler import compile_book_pdf
@@ -71,11 +76,13 @@ from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
 from app.settings.settings import AppSettings
 from app.i18n import format_qt, install_translation
 from .find_replace import FindReplaceWidget
-from .ai_debug_window import AIDebugWindow
+from .ai_debug_window import AIDebugWindow, MAX_DEBUG_EVENTS, format_interaction
+from .ai_activity import AIActivityPanel
 from .generated_text_dialog import GeneratedTextDialog
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
+from .portrait import load_portrait
 from .character_dialog import CharacterDialog
 from .character_relationship_dialog import CharacterRelationshipDialog
 from .project_brief_dialog import ProjectBriefDialog
@@ -118,6 +125,7 @@ class MainWindow(QMainWindow):
     auto_writer_progress = Signal(str)
     auto_writer_scene_completed = Signal(int, str, str, int, int)
     project_translation_progress = Signal(int, str)
+    project_autopilot_progress = Signal(int, int, int, str)
 
     def __init__(
         self,
@@ -172,18 +180,21 @@ class MainWindow(QMainWindow):
         self._project_setup_cancel_event: Event | None = None
         self._project_setup_brief_dialog: ProjectBriefDialog | None = None
         self._project_setup_cancel_action: QAction | None = None
+        self._autopilot_activity = None
         self._auto_writer_generation = 0
         self._auto_writer_worker: FunctionWorker | None = None
         self._auto_writer_cancel_event: Event | None = None
         self._auto_writer_cancel_action: QAction | None = None
         self._auto_writer_committing = False
         self._auto_writer_progress_dialog: AutoWriterProgressDialog | None = None
+        self._auto_writer_activity = None
         self._project_translation_generation = 0
         self._project_translation_worker: FunctionWorker | None = None
         self._project_translation_cancel_event: Event | None = None
         self._project_translation_cancel_action: QAction | None = None
         self._project_translation_progress_dialog: QProgressDialog | None = None
         self._project_translation_committing = False
+        self._translation_activity = None
         self._analysis_windows: list[AnalysisWindow] = []
         self._project_busy = False
         self._project_refresh_timer = QTimer(self)
@@ -204,7 +215,7 @@ class MainWindow(QMainWindow):
         self._recovery_pool = QThreadPool(self)
         self._recovery_pool.setMaxThreadCount(1)
         self._workers: list[FunctionWorker] = []
-        self._debug_events: list[tuple[str, str, dict]] = []
+        self._debug_events: list[str] = []
         self._debug_window: AIDebugWindow | None = None
         self.ai_interaction.connect(self._record_ai_interaction, Qt.ConnectionType.QueuedConnection)
         self.provider = OllamaClient(
@@ -251,6 +262,7 @@ class MainWindow(QMainWindow):
             self._show_project_translation_progress,
             Qt.ConnectionType.QueuedConnection,
         )
+        self.project_autopilot_progress.connect(self._show_autopilot_activity, Qt.ConnectionType.QueuedConnection)
         if self._writing_goal_load_error:
             self.statusBar().showMessage(
                 f"Writing-goal progress could not be loaded: {self._writing_goal_load_error}", 10000
@@ -501,6 +513,11 @@ class MainWindow(QMainWindow):
         self._writing_goal_label = QLabel(self)
         self._writing_goal_label.setAccessibleName("Daily writing goal progress")
         self.status.addPermanentWidget(self._writing_goal_label)
+        self.ai_activity = AIActivityPanel(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.ai_activity)
+        self.ai_activity.hide()
+        self.status.addPermanentWidget(self.ai_activity.busy)
+        self.status.addPermanentWidget(self.ai_activity.status_button)
         self._exit_focus_button = QPushButton("Exit distraction-free mode", self)
         self._exit_focus_button.setAccessibleName("Exit distraction-free mode")
         self._exit_focus_button.clicked.connect(lambda: self._set_focus_mode(False))
@@ -825,7 +842,7 @@ class MainWindow(QMainWindow):
             self._completion_timer.stop()
             self._completion_generation += 1
             if self._completion_worker is not None:
-                self._completion_worker.cancel()
+                self._discard_ai_worker(self._completion_worker)
             if self.ai_status == "AI: Generating...":
                 self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
 
@@ -1090,6 +1107,11 @@ class MainWindow(QMainWindow):
                 )
             ),
         )
+        self._auto_writer_activity = self.ai_activity.add(self.ai_activity.tr("Auto-writer"), context=project.manifest.title, cancel=self.cancel_auto_writer,
+                                                         show=lambda: self._auto_writer_progress_dialog.show() if self._auto_writer_progress_dialog else None)
+        activity = self._auto_writer_activity
+        worker.signals.started.connect(lambda: self.ai_activity.set_state(activity, "running"), Qt.ConnectionType.QueuedConnection)
+        worker.signals.done.connect(lambda: self.ai_activity.set_state(activity, "cancelled") if worker.cancelled else None, Qt.ConnectionType.QueuedConnection)
         self._auto_writer_worker = worker
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -1209,6 +1231,10 @@ class MainWindow(QMainWindow):
             ),
             temperature=self.settings.temperature,
         )
+        self._translation_activity = self.ai_activity.add(self.ai_activity.tr("Project translation"), context=project.manifest.title, cancel=self.cancel_project_translation,
+                                                          show=lambda: self._project_translation_progress_dialog.show() if self._project_translation_progress_dialog else None)
+        activity = self._translation_activity
+        worker.signals.started.connect(lambda: self.ai_activity.set_state(activity, "running"), Qt.ConnectionType.QueuedConnection)
         self._project_translation_worker = worker
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -1254,6 +1280,7 @@ class MainWindow(QMainWindow):
                 project,
                 "Project translation cancelled. No project files were changed. "
                 f"Original snapshot: {translation.snapshot_path}",
+                outcome="cancelled",
             )
             return
         if (
@@ -1271,6 +1298,7 @@ class MainWindow(QMainWindow):
                 "Translation was not applied because the project, settings, or an "
                 "open document changed. Original project files were preserved.",
                 warning=True,
+                outcome="discarded",
             )
             return
 
@@ -1280,6 +1308,9 @@ class MainWindow(QMainWindow):
             )
             self._project_translation_progress_dialog.setCancelButton(None)
         self._project_translation_committing = True
+        if self._translation_activity is not None:
+            self._translation_activity.cancel = None
+            self.ai_activity.set_detail(self._translation_activity, self.ai_activity.tr("Applying changes…"))
         worker = FunctionWorker(commit_project_translation, project, translation)
         self._project_translation_worker = worker
         self._track_worker(worker)
@@ -1373,6 +1404,7 @@ class MainWindow(QMainWindow):
                 else f"Project translation failed. No project files were changed: {error}"
             ),
             warning=not cancelled,
+            outcome="cancelled" if cancelled else "failed",
         )
 
     def _project_translation_commit_failed(
@@ -1399,13 +1431,22 @@ class MainWindow(QMainWindow):
             generation == self._project_translation_generation
             and self._project_translation_worker is not None
         ):
+            if self._translation_activity is not None:
+                match = re.fullmatch(r"(Translating|Translated) (.*) \((\d+) of (\d+)\)[….]", message)
+                if match:
+                    completed = int(match[3]) - (match[1] == "Translating")
+                    detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(completed), match[4], match[2])
+                    self.ai_activity.set_detail(self._translation_activity, detail)
             self.statusBar().showMessage(message)
             if self._project_translation_progress_dialog is not None:
                 self._project_translation_progress_dialog.setLabelText(message)
 
     def _finish_project_translation(
-        self, project: Project, message: str, *, warning: bool = False
+        self, project: Project, message: str, *, warning: bool = False, outcome: str | None = None
     ) -> None:
+        if self._translation_activity is not None:
+            self.ai_activity.set_state(self._translation_activity, outcome or ("failed" if warning else "completed"))
+            self._translation_activity = None
         self._project_translation_worker = None
         self._project_translation_cancel_event = None
         self._project_translation_committing = False
@@ -1435,6 +1476,8 @@ class MainWindow(QMainWindow):
             return
         if self._project_translation_cancel_event is not None:
             self._project_translation_cancel_event.set()
+        if self._translation_activity is not None:
+            self.ai_activity.set_state(self._translation_activity, "cancelling")
         if self._project_translation_cancel_action is not None:
             self._project_translation_cancel_action.setEnabled(False)
         if self._project_translation_progress_dialog is not None:
@@ -1476,10 +1519,14 @@ class MainWindow(QMainWindow):
                 project,
                 "Auto-writer results were not applied because the project, settings, or an "
                 f"open document changed. Original snapshot: {result.snapshot_path}",
+                outcome="discarded",
             )
             return
 
         self._auto_writer_committing = True
+        if self._auto_writer_activity is not None:
+            self._auto_writer_activity.cancel = None
+            self.ai_activity.set_detail(self._auto_writer_activity, self.ai_activity.tr("Applying changes…"))
         applying_message = (
             "Auto-writer drafts are complete; applying snapshot-protected scene updates…"
         )
@@ -1569,10 +1616,16 @@ class MainWindow(QMainWindow):
             "Nothing was replaced; any pre-run revision snapshot is retained. "
             "For a timeout, wait for the local model to finish loading and try a smaller batch.",
             warning=settings_generation == self._settings_generation,
+            outcome="failed",
         )
 
     def _show_auto_writer_progress(self, message: str) -> None:
         if self._auto_writer_worker is not None:
+            if self._auto_writer_activity is not None:
+                match = re.fullmatch(r"Auto-writer generating scene (\d+) of (\d+): (.*)", message)
+                if match:
+                    detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(int(match[1]) - 1), match[2], match[3])
+                    self.ai_activity.set_detail(self._auto_writer_activity, detail)
             self.statusBar().showMessage(message)
             if self._auto_writer_progress_dialog is not None:
                 self._auto_writer_progress_dialog.set_status(message)
@@ -1584,11 +1637,17 @@ class MainWindow(QMainWindow):
             generation == self._auto_writer_generation
             and self._auto_writer_progress_dialog is not None
         ):
+            if self._auto_writer_activity is not None:
+                detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(completed), str(total), title)
+                self.ai_activity.set_detail(self._auto_writer_activity, detail)
             self._auto_writer_progress_dialog.append_scene(
                 title, text, completed, total
             )
 
-    def _finish_auto_writer(self, project, message: str, *, warning: bool = False) -> None:
+    def _finish_auto_writer(self, project, message: str, *, warning: bool = False, outcome: str | None = None) -> None:
+        if self._auto_writer_activity is not None and outcome != "cancelling":
+            self.ai_activity.set_state(self._auto_writer_activity, outcome or ("failed" if warning else "completed"))
+            self._auto_writer_activity = None
         self._auto_writer_cancel_event = None
         self._auto_writer_committing = False
         if self._auto_writer_progress_dialog is not None:
@@ -1615,11 +1674,14 @@ class MainWindow(QMainWindow):
         self._auto_writer_generation += 1
         if self._auto_writer_cancel_event is not None:
             self._auto_writer_cancel_event.set()
+        if self._auto_writer_activity is not None:
+            self.ai_activity.set_state(self._auto_writer_activity, "cancelling")
         worker.cancel()
         self._auto_writer_worker = None
         self._finish_auto_writer(
             self.project,
             "Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available.",
+            outcome="cancelling",
         )
 
     def _start_project_outline_request(self, project: Project, brief: str, character_context: str = "") -> None:
@@ -1642,6 +1704,9 @@ class MainWindow(QMainWindow):
             self.settings.temperature,
             character_context=character_context or project_planning_context(project),
         )
+        self._track_ai_activity(worker, self.ai_activity.tr("Project outline"), context=project.manifest.title,
+                                cancel=self.cancel_project_setup,
+                                current=lambda: generation == self._project_setup_generation and project is self.project and self.settings.ai_enabled and settings_generation == self._settings_generation and project_generation == self._project_generation)
         self._project_setup_worker = worker
         self._set_project_busy(True)
         if self._project_setup_cancel_action is not None:
@@ -1707,6 +1772,9 @@ class MainWindow(QMainWindow):
             1400,
             self.settings.temperature,
         )
+        self._track_ai_activity(worker, self.ai_activity.tr("Story suggestions"), context=project.manifest.title,
+                                cancel=self.cancel_project_setup,
+                                current=lambda: generation == self._project_setup_generation and project is self.project and self.settings.ai_enabled and settings_generation == self._settings_generation and project_generation == self._project_generation and dialog is self._project_setup_brief_dialog and dialog.brief() == brief)
         self._project_setup_worker = worker
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -1786,7 +1854,11 @@ class MainWindow(QMainWindow):
             maximum_tokens=900,
             temperature=self.settings.temperature,
             is_cancelled=cancel_event.is_set,
+            progress=lambda completed, total, title: self.project_autopilot_progress.emit(generation, completed, total, title),
         )
+        self._autopilot_activity = self._track_ai_activity(worker, self.ai_activity.tr("Auto-pilot generation"), context=project.manifest.title,
+                                                          cancel=self.cancel_project_setup,
+                                                          current=lambda: generation == self._project_setup_generation and project is self.project and self.settings.ai_enabled and settings_generation == self._settings_generation and project_generation == self._project_generation and dialog is self._project_setup_brief_dialog)
         self._project_setup_worker = worker
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -1807,6 +1879,11 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
+
+    def _show_autopilot_activity(self, generation: int, completed: int, total: int, title: str) -> None:
+        if generation == self._project_setup_generation and self._autopilot_activity is not None:
+            detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(completed), str(total), title)
+            self.ai_activity.set_detail(self._autopilot_activity, detail)
 
     @staticmethod
     def _project_outline_metadata(project: Project) -> str:
@@ -2487,9 +2564,151 @@ class MainWindow(QMainWindow):
                                    if character.id in (r.source_id, r.target_id)],
         )
         dialog.fill_requested.connect(lambda: self._suggest_character_profile(dialog, self.project))
+        dialog.development_requested.connect(lambda: self._suggest_scene_development(dialog, self.project))
+        dialog.portrait_requested.connect(lambda path: self._load_character_portrait(dialog, path=path))
+        if character.portrait:
+            self._load_character_portrait(dialog, encoded=character.portrait)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self._run_project_mutation(self.project.update_character_with_relationships,
                                        character.id, dialog.character, dialog.relationships)
+
+    def _load_character_portrait(self, dialog: CharacterDialog, *, path: str | None = None, encoded: str | None = None) -> None:
+        revision = dialog.portrait_revision
+        active = [True]
+        worker = FunctionWorker(load_portrait, path=path, encoded=encoded)
+        self._track_worker(worker)
+        dialog.portrait_button.setEnabled(False)
+        dialog.save_button.setEnabled(False)
+
+        def closed(_result):
+            active[0] = False
+            worker.cancel()
+
+        dialog.finished.connect(closed)
+
+        def finished(result):
+            if not active[0]:
+                return
+            dialog.portrait_button.setEnabled(True)
+            dialog.save_button.setEnabled(True)
+            if dialog.portrait_revision == revision:
+                portrait, image = result
+                dialog.character.portrait = portrait
+                dialog.show_portrait(image)
+
+        def failed(error):
+            if not active[0]:
+                return
+            dialog.portrait_button.setEnabled(True)
+            dialog.save_button.setEnabled(True)
+            if dialog.portrait_revision == revision:
+                dialog.portrait_label.setText(dialog.tr("Portrait could not be loaded."))
+                QMessageBox.warning(dialog, dialog.tr("Portrait error"), str(error))
+
+        worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
+
+    def _suggest_scene_development(self, dialog: CharacterDialog, project: Project) -> None:
+        if project is None or project is not self.project or not self.settings.ai_enabled:
+            QMessageBox.information(dialog, dialog.tr("AI unavailable"), dialog.tr("Enable AI in settings before requesting suggestions."))
+            return
+        choices = {}
+        for editor, binding in tuple(self._project_documents.items()):
+            if binding.project is not project or binding.kind != "scene" or self.tabs.indexOf(editor) < 0:
+                continue
+            scene = project.get_scene(binding.item_id)
+            if any(item.character_id == dialog.character.id for item in scene.character_associations):
+                choices[f"{scene.title} [{scene.id}]"] = editor
+        if not choices:
+            QMessageBox.information(dialog, dialog.tr("No open associated scene"), dialog.tr("Open a scene associated with this character before requesting suggestions."))
+            return
+        choice, accepted = QInputDialog.getItem(dialog, dialog.tr("Scene development"), dialog.tr("Choose an open associated scene:"), list(choices), 0, False)
+        if not accepted or choice not in choices:
+            return
+        editor = choices[choice]
+        fields = dialog.profile_fields()
+        text = editor.toPlainText()[:min(self.settings.context_size, 32_000)]
+        if not text.strip():
+            QMessageBox.information(dialog, dialog.tr("Empty scene"), dialog.tr("The selected scene has no text to review."))
+            return
+        message = dialog.tr("Send this profile and the selected scene excerpt to %1 (model %2)? Requests and responses appear in AI diagnostics.")
+        if QMessageBox.question(dialog, dialog.tr("Confirm AI request"), format_qt(message, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+            return
+        revision = editor.revision
+        project_generation, settings_generation = self._project_generation, self._settings_generation
+        active = [True]
+        worker = FunctionWorker(suggest_character_development, self.provider, fields, text, self.settings.language, self.settings.temperature)
+        dialog.development_button.setEnabled(False)
+        dialog.development_button.setText(dialog.tr("Generating suggestions…"))
+        self._track_worker(worker)
+
+        def closed(_result):
+            active[0] = False
+            worker.cancel()
+
+        dialog.finished.connect(closed)
+
+        def current():
+            return (active[0] and not worker.cancelled and self.project is project and self._project_generation == project_generation
+                    and self._settings_generation == settings_generation and self.settings.ai_enabled
+                    and self.tabs.indexOf(editor) >= 0 and editor.revision == revision
+                    and dialog.profile_fields() == fields)
+
+        def cancel_development():
+            worker.cancel()
+            if active[0]:
+                dialog.development_button.setEnabled(True)
+                dialog.development_button.setText(dialog.tr("Suggest Scene Development with AI…"))
+
+        self._track_ai_activity(worker, self.ai_activity.tr("Character development"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_development)
+
+        def finished(proposals):
+            if not active[0] or worker.cancelled:
+                return
+            dialog.development_button.setEnabled(True)
+            dialog.development_button.setText(dialog.tr("Suggest Scene Development with AI…"))
+            if not current():
+                QMessageBox.information(dialog, dialog.tr("Context changed"), dialog.tr("The profile, scene, or project changed. Please try again."))
+                return
+            if not proposals:
+                QMessageBox.information(dialog, dialog.tr("No suggestions"), dialog.tr("The model returned no supported character updates."))
+                return
+            review = QDialog(dialog)
+            review.setWindowTitle(dialog.tr("Review character development"))
+            layout = QVBoxLayout(review)
+            layout.addWidget(QLabel(dialog.tr("Select individual suggestions to stage in the profile. Save the profile to keep them.")))
+            review.resize(700, 500)
+            scroll = QScrollArea(review)
+            scroll.setWidgetResizable(True)
+            review_content = QWidget(scroll)
+            proposals_layout = QVBoxLayout(review_content)
+            checkboxes = []
+            for proposal in proposals:
+                checkbox = QCheckBox(f"{proposal.field}: {proposal.value}\n{dialog.tr('Evidence')}: {proposal.evidence}", review)
+                proposals_layout.addWidget(checkbox)
+                checkboxes.append(checkbox)
+            scroll.setWidget(review_content)
+            layout.addWidget(scroll)
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, parent=review)
+            buttons.accepted.connect(review.accept)
+            buttons.rejected.connect(review.reject)
+            layout.addWidget(buttons)
+            if review.exec() == QDialog.DialogCode.Accepted:
+                if not current():
+                    QMessageBox.information(dialog, dialog.tr("Context changed"), dialog.tr("The profile, scene, or project changed. Please try again."))
+                    return
+                dialog.apply_development_proposals([proposal for proposal, checkbox in zip(proposals, checkboxes) if checkbox.isChecked()])
+
+        def failed(error):
+            if active[0] and not worker.cancelled:
+                dialog.development_button.setEnabled(True)
+                dialog.development_button.setText(dialog.tr("Suggest Scene Development with AI…"))
+                QMessageBox.warning(dialog, dialog.tr("Character development failed"), str(error))
+
+        worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
 
     def _suggest_character_profile(self, dialog: CharacterDialog, project: Project) -> None:
         if project is None or project is not self.project or not self.settings.ai_enabled:
@@ -2515,12 +2734,20 @@ class MainWindow(QMainWindow):
         dialog.finished.connect(closed)
 
         def current():
-            return (active[0] and self.project is project and self._project_generation == project_generation
+            return (active[0] and not worker.cancelled and self.project is project and self._project_generation == project_generation
                     and self._settings_generation == settings_generation and self.settings.ai_enabled
                     and dialog.profile_fields() == fields)
 
+        def cancel_suggestions():
+            worker.cancel()
+            if active[0]:
+                dialog.ai_button.setEnabled(True)
+                dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
+
+        self._track_ai_activity(worker, self.ai_activity.tr("Character suggestions"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_suggestions)
+
         def finished(suggestions):
-            if not active[0]:
+            if not active[0] or worker.cancelled:
                 return
             dialog.ai_button.setEnabled(True)
             dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
@@ -2535,7 +2762,7 @@ class MainWindow(QMainWindow):
                 dialog.apply_profile_suggestions(suggestions)
 
         def failed(error):
-            if active[0]:
+            if active[0] and not worker.cancelled:
                 dialog.ai_button.setEnabled(True)
                 dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
                 if current():
@@ -3773,7 +4000,9 @@ class MainWindow(QMainWindow):
                 )
         self._closing_confirmed = True
         self._quit_in_progress = False
-        self.close()
+        # A recursive close() from inside closeEvent can be ignored by Qt.
+        # Post the confirmed close after the current event has returned.
+        QTimer.singleShot(0, self.close)
 
     def create_revision_snapshot(self) -> None:
         project = self.project
@@ -4291,6 +4520,7 @@ class MainWindow(QMainWindow):
             timer.stop()
         self._project_documents.pop(editor, None)
         self.tabs.remove_tab(index)
+        self._detach_closed_writing_goal_document(editor)
         if self.project is not None:
             self._project_refresh_timer.start(150)
 
@@ -4303,8 +4533,17 @@ class MainWindow(QMainWindow):
                     timer.stop()
                 self._project_documents.pop(editor, None)
                 self.tabs.remove_tab(index)
+                self._detach_closed_writing_goal_document(editor)
                 if self.project is not None:
                     self._project_refresh_timer.start(150)
+
+    def _detach_closed_writing_goal_document(self, editor) -> None:
+        document_id = getattr(editor, "_writing_goal_document_id", None)
+        if isinstance(document_id, str) and not any(
+            getattr(self.tabs.widget(index), "_writing_goal_document_id", None) == document_id
+            for index in range(self.tabs.count())
+        ):
+            self.writing_goals.detach(document_id)
 
     def show_find_replace(self) -> None:
         if self._find_bar is None:
@@ -4351,6 +4590,14 @@ class MainWindow(QMainWindow):
             role=self.settings.ai_role,
             maximum_tokens=self.settings.maximum_suggestion_length,
             temperature=self.settings.temperature,
+        )
+        self._track_ai_activity(
+            worker, self.ai_activity.tr("Text generation"), context=editor.document_state.display_name, retry=self.generate_from_prompt,
+            cancel=lambda: self.cancel_text_generation() if self._generate_worker is worker else worker.cancel(),
+            current=lambda: (generation == self._generate_generation and editor is self.tabs.current_editor()
+                             and editor.revision == revision and self._settings_generation == settings_generation
+                             and editor.textCursor().position() == position
+                             and ((editor.textCursor().selectionStart(), editor.textCursor().selectionEnd()) if editor.textCursor().hasSelection() else (position, position)) == selection),
         )
         self._track_worker(worker)
         self._generate_worker = worker
@@ -4481,6 +4728,14 @@ class MainWindow(QMainWindow):
             self.settings.maximum_suggestion_length,
             self.settings.temperature,
         )
+        self._track_ai_activity(
+            worker, self.ai_activity.tr("Project analysis"), context=scene.title,
+            cancel=lambda: self.cancel_project_analysis() if self._project_ai_worker is worker else worker.cancel(),
+            current=lambda: (request_generation == self._project_ai_generation and project is self.project
+                             and settings_generation == self._settings_generation and project_generation == self._project_generation
+                             and active_generation == self._active_document_generation and selected_refs == self._selected_project_references()
+                             and all(self.tabs.indexOf(editor) >= 0 and editor.revision == revision for editor, revision in source_revisions.values())),
+        )
         self._project_ai_worker = worker
         self._track_worker(worker)
         worker.signals.done.connect(
@@ -4526,15 +4781,27 @@ class MainWindow(QMainWindow):
         temperature: float,
     ) -> str:
         scene = project.get_scene(scene_id)
-        parts = [f"Selected scene: {scene.title}\n{open_text.get(scene_id) if scene_id in open_text else project.read_scene(scene_id)}"]
+        scene_text = open_text[scene_id] if scene_id in open_text else project.read_scene(scene_id)
+        sections = [(scene_id, f"Selected scene ({scene_id}): {scene.title}\n", scene_text)]
         if task == "continuity":
             for note_id in note_ids:
                 note = project.get_note(note_id)
                 text = open_text[note_id] if note_id in open_text else project.read_note(note_id)
-                parts.append(f"Selected reference note ({note.type}): {note.title}\n{text}")
+                sections.append((note_id, f"Selected reference note ({note_id}, {note.type}): {note.title}\n", text))
             character_context = scene_character_context(project, scene_id)
             if character_context:
-                parts.append(f"Characters explicitly associated with this scene:\n{character_context}")
+                sections.append((None, "Characters explicitly associated with this scene:\n", character_context))
+        parts = []
+        source_texts = {}
+        offset = 0
+        for source_id, header, text in sections:
+            if parts:
+                offset += 2
+            visible = max(0, maximum_context - offset - len(header))
+            if source_id is not None:
+                source_texts[source_id] = text[:visible]
+            parts.append(header + text)
+            offset += len(header) + len(text)
         context = "\n\n".join(parts)
         if len(context) > maximum_context:
             context = context[:maximum_context] + "\n[Selected context truncated to the configured limit.]"
@@ -4543,9 +4810,13 @@ class MainWindow(QMainWindow):
         else:
             instruction = (
                 "Review the selected scene against the selected reference notes and explicitly associated character profiles. "
-                "Distinguish definite contradictions supported by explicit facts, probable inconsistencies, and possible creative opportunities. "
-                "For each finding identify character(s), cite the relevant evidence, explain the concern, and ask a useful author-review question. "
-                "Do not treat every personality deviation as an error, and do not invent certainty."
+                "Return only JSON: {\"findings\":[{\"confidence\":\"definite|probable|possible\", "
+                "\"scene_id\":\"scene ID\", \"character_ids\":[\"associated character ID\"], "
+                "\"concern\":\"explanation\", \"evidence\":{\"source_id\":\"scene or selected note ID\", "
+                "\"quote\":\"exact excerpt from that source\"}, \"suggestion\":\"author review question\"}]}. "
+                "Use an empty findings list if none. Do not invent evidence or treat every personality deviation as an error. "
+                f"Scene ID: {scene_id}. Associated characters: "
+                + ", ".join(f"{project.get_character(a.character_id).full_name} ({a.character_id})" for a in scene.character_associations)
             )
         result = provider.generate_private(
             f"{instruction}\n\nOnly analyze this captured context:\n{context}",
@@ -4555,6 +4826,16 @@ class MainWindow(QMainWindow):
         )
         if not isinstance(result, str):
             raise ValueError("The local provider returned a malformed analysis response.")
+        if task == "continuity":
+            # Only accept quotations actually present in the bounded request.
+            findings = parse_continuity_findings(
+                result, scene_id=scene_id,
+                character_ids={item.character_id for item in scene.character_associations},
+                sources=source_texts,
+            )
+            if any(finding.quote not in context for finding in findings):
+                raise ValueError("The model cited text outside the context sent for review.")
+            return format_continuity_findings(findings)
         return result
 
     def _selected_project_references(self) -> tuple[tuple[str, str], ...]:
@@ -4787,6 +5068,9 @@ class MainWindow(QMainWindow):
             host, model, interaction_observer=self._emit_ai_interaction
         )
         worker = FunctionWorker(client.check_connection)
+        self._track_ai_activity(worker, self.ai_activity.tr("Test AI connection"),
+                                current=lambda: generation == self._settings_connection_generation,
+                                successful=bool)
         self._settings_connection_worker = worker
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -4848,8 +5132,8 @@ class MainWindow(QMainWindow):
         if self._debug_window is None:
             self._debug_window = AIDebugWindow(self)
             self._debug_window.cleared.connect(self._debug_events.clear)
-            for event, path, details in self._debug_events:
-                self._debug_window.append_interaction(event, path, details)
+            for entry in self._debug_events:
+                self._debug_window.append_formatted_interaction(entry)
         self._debug_window.show()
         self._debug_window.raise_()
         self._debug_window.activateWindow()
@@ -4859,15 +5143,59 @@ class MainWindow(QMainWindow):
         self.ai_interaction.emit(event, path, details)
 
     def _record_ai_interaction(self, event: str, path: str, details: dict) -> None:
-        self._debug_events.append((event, path, details))
-        if len(self._debug_events) > 100:
-            self._debug_events.pop(0)
+        entry = format_interaction(event, path, details)
+        self._debug_events.append(entry)
+        del self._debug_events[:-MAX_DEBUG_EVENTS]
         if self._debug_window is not None:
-            self._debug_window.append_interaction(event, path, details)
+            self._debug_window.append_formatted_interaction(entry)
 
     def _track_worker(self, worker: FunctionWorker) -> None:
         self._workers.append(worker)
         worker.signals.done.connect(lambda worker=worker: self._drop_worker(worker), Qt.ConnectionType.QueuedConnection)
+
+    def _track_ai_activity(self, worker: FunctionWorker, name: str, *, context: str = "", cancel=None, current=None, successful=None, retry=None):
+        item = self.ai_activity.add(name, context, cancel, retry=retry)
+        worker.signals.started.connect(lambda: self.ai_activity.set_state(item, "running"), Qt.ConnectionType.QueuedConnection)
+        worker.signals.cancelling.connect(lambda: self.ai_activity.set_state(item, "cancelling"), Qt.ConnectionType.QueuedConnection)
+        worker.signals.finished.connect(
+            lambda result: None if worker.cancelled else self.ai_activity.set_state(item, "discarded" if current is not None and not current() else ("completed" if successful is None or successful(result) else "failed")),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda _error: None if worker.cancelled else self.ai_activity.set_state(item, "failed" if current is None or current() else "discarded"),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.done.connect(
+            lambda: self.ai_activity.set_state(item, "discarded" if getattr(worker, "activity_discarded", False) else "cancelled") if worker.cancelled else None,
+            Qt.ConnectionType.QueuedConnection,
+        )
+        return item
+
+    @staticmethod
+    def _discard_ai_worker(worker: FunctionWorker) -> None:
+        worker.activity_discarded = True
+        worker.cancel()
+
+    def _retry_editor_ai(self, editor_ref, action) -> None:
+        editor = editor_ref()
+        if editor is None or editor is not self.tabs.current_editor():
+            self.statusBar().showMessage(self.ai_activity.tr("Reopen the original document before retrying."), 6000)
+            return
+        action()
+
+    def _cancel_activity_completion(self, worker: FunctionWorker) -> None:
+        if self._completion_worker is worker:
+            self._completion_generation += 1
+            self._completion_timer.stop()
+            self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
+            self._update_status()
+        worker.cancel()
+
+    def _cancel_activity_spellcheck(self, worker: FunctionWorker) -> None:
+        if self._spellcheck_worker is worker:
+            self._spellcheck_generation += 1
+            self._spellcheck_timer.stop()
+        worker.cancel()
 
     def _drop_worker(self, worker: FunctionWorker) -> None:
         if worker in self._workers:
@@ -4880,6 +5208,9 @@ class MainWindow(QMainWindow):
     def _check_connection(self) -> None:
         generation = self._settings_generation
         worker = FunctionWorker(self.provider.check_connection)
+        self._track_ai_activity(worker, self.ai_activity.tr("AI connection"),
+                                current=lambda: generation == self._settings_generation,
+                                successful=bool, retry=self._check_connection)
         self._track_worker(worker)
         worker.signals.finished.connect(lambda ok: self._set_ai_status(ok, generation), Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(lambda _: self._set_ai_status(False, generation), Qt.ConnectionType.QueuedConnection)
@@ -4904,7 +5235,7 @@ class MainWindow(QMainWindow):
         self._completion_generation += 1
         generation = self._completion_generation
         if self._completion_worker:
-            self._completion_worker.cancel()
+            self._discard_ai_worker(self._completion_worker)
         cursor = editor.textCursor()
         if cursor.hasSelection():
             editor.clear_completion()
@@ -4945,6 +5276,27 @@ class MainWindow(QMainWindow):
         worker.signals.done.connect(lambda worker=worker: self._clear_worker_reference("_completion_worker", worker), Qt.ConnectionType.QueuedConnection)
         selection = (cursor.selectionStart(), cursor.selectionEnd()) if cursor.hasSelection() else (position, position)
         settings_generation = self._settings_generation
+        def completion_current():
+            current_notes = {
+                item.item_id: (tab, tab.revision)
+                for tab, item in self._project_documents.items()
+                if project is not None and item.project is project and item.kind == "note" and self.tabs.indexOf(tab) >= 0
+            }
+            current_cursor = editor.textCursor() if editor is self.tabs.current_editor() else None
+            current_selection = ((current_cursor.selectionStart(), current_cursor.selectionEnd()) if current_cursor and current_cursor.hasSelection()
+                                 else (position, position))
+            return (generation == self._completion_generation and current_cursor is not None
+                    and editor.revision == revision and self._settings_generation == settings_generation
+                    and current_cursor.position() == position and current_selection == selection
+                    and (project is None or (self.project is project and self._project_generation == project_generation
+                                             and current_notes == note_editors)))
+
+        self._track_ai_activity(
+            worker, self.ai_activity.tr("Text completion"), context=editor.document_state.display_name,
+            current=completion_current,
+            cancel=lambda: self._cancel_activity_completion(worker),
+            retry=lambda editor_ref=weakref.ref(editor): self._retry_editor_ai(editor_ref, self.request_completion),
+        )
         def completed(text):
             if project is not None:
                 current_notes = {
@@ -4963,7 +5315,7 @@ class MainWindow(QMainWindow):
         if self.settings.ai_enabled and self.settings.completion_enabled:
             self._completion_generation += 1
             if self._completion_worker:
-                self._completion_worker.cancel()
+                self._discard_ai_worker(self._completion_worker)
             if self.ai_status == "AI: Generating...":
                 self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
             self._completion_timer.start(self.settings.completion_debounce_ms)
@@ -4989,7 +5341,7 @@ class MainWindow(QMainWindow):
         if self.ai_status == "AI: Generating...":
             self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
         if self._completion_worker:
-            self._completion_worker.cancel()
+            self._discard_ai_worker(self._completion_worker)
         for index in range(self.tabs.count()):
             editor = self.tabs.widget(index)
             if editor:
@@ -5039,8 +5391,16 @@ class MainWindow(QMainWindow):
         self._spellcheck_generation += 1
         spellcheck_generation = self._spellcheck_generation
         if self._spellcheck_worker is not None:
-            self._spellcheck_worker.cancel()
+            self._discard_ai_worker(self._spellcheck_worker)
         worker = FunctionWorker(self.spellcheck_service.check, text, self.settings.language, revision)
+        self._track_ai_activity(
+            worker, self.ai_activity.tr("Spellcheck"), context=editor.document_state.display_name,
+            cancel=lambda: self._cancel_activity_spellcheck(worker),
+            retry=lambda editor_ref=weakref.ref(editor): self._retry_editor_ai(editor_ref, self.check_spelling),
+            current=lambda: (self.settings.ai_enabled and editor is self.tabs.current_editor() and editor.revision == revision
+                             and settings_generation == self._settings_generation and active_generation == self._active_document_generation
+                             and spellcheck_generation == self._spellcheck_generation),
+        )
         self._spellcheck_worker = worker
         self._track_worker(worker)
         worker.signals.done.connect(lambda worker=worker: self._clear_worker_reference("_spellcheck_worker", worker), Qt.ConnectionType.QueuedConnection)

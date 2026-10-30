@@ -7,6 +7,20 @@ from typing import Any
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QLabel, QPlainTextEdit, QVBoxLayout
 
+MAX_DEBUG_EVENTS = 100
+MAX_DEBUG_EVENT_CHARS = 16_384
+TRUNCATED = "\n… [diagnostic event truncated]"
+
+
+def format_interaction(event: str, path: str, details: dict[str, Any]) -> str:
+    """Format and bound an event before retaining potentially sensitive text."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    formatted = json.dumps(details, ensure_ascii=False, indent=2, default=str)
+    entry = f"[{timestamp}] {event} {path}\n{formatted}\n"
+    if len(entry) > MAX_DEBUG_EVENT_CHARS:
+        entry = entry[:MAX_DEBUG_EVENT_CHARS - len(TRUNCATED)] + TRUNCATED
+    return entry
+
 
 class AIDebugWindow(QDialog):
     """Shows request and response data without persisting document contents."""
@@ -17,6 +31,7 @@ class AIDebugWindow(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Ollama Debug")
         self.resize(760, 520)
+        self._entries: list[str] = []
         self.output = QPlainTextEdit(readOnly=True)
         warning = QLabel("Requests can contain document text. This debug history is kept only in memory.")
         warning.setWordWrap(True)
@@ -32,11 +47,19 @@ class AIDebugWindow(QDialog):
         layout.addWidget(buttons)
 
     def append_interaction(self, event: str, path: str, details: dict[str, Any]) -> None:
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        formatted = json.dumps(details, ensure_ascii=False, indent=2, default=str)
-        self.output.appendPlainText(f"[{timestamp}] {event} {path}\n{formatted}\n")
+        self.append_formatted_interaction(format_interaction(event, path, details))
+
+    def append_formatted_interaction(self, entry: str) -> None:
+        self._entries.append(entry)
+        if len(self._entries) > MAX_DEBUG_EVENTS:
+            del self._entries[:-MAX_DEBUG_EVENTS]
+            self.output.setPlainText("\n".join(self._entries))
+        else:
+            self.output.appendPlainText(entry)
+        self.output.moveCursor(self.output.textCursor().MoveOperation.End)
 
     def clear(self) -> None:
+        self._entries.clear()
         self.output.clear()
         self.cleared.emit()
 

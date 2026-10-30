@@ -1,7 +1,7 @@
 """Accessible project navigation tree with manuscript word-count summaries."""
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QAbstractItemView, QMenu, QTreeWidget, QTreeWidgetItem
+from PySide6.QtCore import QItemSelectionModel, Qt, Signal
+from PySide6.QtWidgets import QAbstractItemView, QMenu, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator
 
 from app.project import Project, WordCount
 
@@ -20,6 +20,18 @@ class ProjectView(QTreeWidget):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
         self.character_filter = ""
         self._characters = ()
+        self._project_root = None
+
+    @staticmethod
+    def _item_key(item: QTreeWidgetItem) -> tuple[str, str]:
+        return (str(item.data(0, Qt.ItemDataRole.UserRole) or ""),
+                str(item.data(0, Qt.ItemDataRole.UserRole + 1) or ""))
+
+    def _items(self):
+        iterator = QTreeWidgetItemIterator(self)
+        while iterator.value() is not None:
+            yield iterator.value()
+            iterator += 1
 
     def show_project(
         self,
@@ -29,7 +41,15 @@ class ProjectView(QTreeWidget):
         project_count: WordCount,
         unavailable_ids: set[str] | None = None,
     ) -> None:
+        same_project = self._project_root == project.root and self.topLevelItemCount() > 0
+        old_items = list(self._items()) if same_project else []
+        expanded = {self._item_key(item) for item in old_items if item.isExpanded()}
+        known = {self._item_key(item) for item in old_items}
+        selected = {self._item_key(item) for item in old_items if item.isSelected()}
+        current = self._item_key(self.currentItem()) if same_project and self.currentItem() else None
+        scroll = self.verticalScrollBar().value()
         self.clear()
+        self._project_root = project.root
         self._characters = tuple(project.manifest.characters)
         unavailable_ids = unavailable_ids or set()
         root = QTreeWidgetItem([self._count_label(project.manifest.title, project_count)])
@@ -48,12 +68,14 @@ class ProjectView(QTreeWidget):
         if project.manifest.ungrouped_scenes:
             ungrouped = QTreeWidgetItem([self.tr("Ungrouped scenes")])
             ungrouped.setData(0, Qt.ItemDataRole.UserRole, "group")
+            ungrouped.setData(0, Qt.ItemDataRole.UserRole + 1, "ungrouped")
             root.addChild(ungrouped)
             for scene in project.manifest.ungrouped_scenes:
                 self._add_scene(ungrouped, scene.id, scene.title, scene_counts[scene.id], scene.id in unavailable_ids)
 
         notes = QTreeWidgetItem([self.tr("Reference notes")])
         notes.setData(0, Qt.ItemDataRole.UserRole, "group")
+        notes.setData(0, Qt.ItemDataRole.UserRole + 1, "notes")
         root.addChild(notes)
         titles = {
             scene.id: scene.title for scene in project.iter_scenes()
@@ -85,9 +107,18 @@ class ProjectView(QTreeWidget):
             item.setData(0, Qt.ItemDataRole.UserRole + 1, character.id)
             item.setToolTip(0, self.tr("%1 — %2").replace("%1", character.role).replace("%2", character.primary_motivation).strip(" —"))
             characters.addChild(item)
-        root.setExpanded(True)
-        self.expandAll()
+        if same_project:
+            for item in self._items():
+                key = self._item_key(item)
+                item.setExpanded(key in expanded or key not in known)
+                if key == current:
+                    self.setCurrentItem(item, 0, QItemSelectionModel.SelectionFlag.NoUpdate)
+                item.setSelected(key in selected)
+        else:
+            self.expandAll()
         self.filter_characters(self.character_filter)
+        if same_project:
+            self.verticalScrollBar().setValue(scroll)
 
     def filter_characters(self, query: str) -> None:
         """Filter the character section by identity and descriptive metadata."""

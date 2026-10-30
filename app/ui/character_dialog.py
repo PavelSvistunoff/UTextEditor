@@ -7,8 +7,10 @@ from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QPlainTextEdit,
     QTabWidget, QVBoxLayout, QWidget,
     QMessageBox, QListWidget, QListWidgetItem, QPushButton, QHBoxLayout, QInputDialog,
+    QFileDialog, QLabel,
 )
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QPixmap
 
 from app.project.model import (
     CHARACTER_ARC_FIELDS, CHARACTER_GOAL_STATES, CHARACTER_KNOWLEDGE_KINDS,
@@ -20,6 +22,8 @@ from .character_relationship_dialog import CharacterRelationshipDialog
 class CharacterDialog(QDialog):
     """Edit an author's character profile with explicit Save/Cancel controls."""
     fill_requested = Signal()
+    development_requested = Signal()
+    portrait_requested = Signal(str)
 
     def __init__(
         self,
@@ -34,6 +38,7 @@ class CharacterDialog(QDialog):
         self.setWindowTitle(self.tr("Character Profile"))
         self.setMinimumSize(560, 520)
         self.character = deepcopy(character)
+        self.portrait_revision = 0
         tabs = QTabWidget(self)
         identity = QWidget(tabs)
         identity_form = QFormLayout(identity)
@@ -42,12 +47,30 @@ class CharacterDialog(QDialog):
         self.aliases = QPlainTextEdit("\n".join(character.aliases))
         self.role = QLineEdit(character.role)
         self.description = QPlainTextEdit(character.description)
+        self.portrait_label = QLabel(self.tr("No portrait") if not character.portrait else self.tr("Loading portrait…"))
+        self.portrait_label.setAccessibleName(self.tr("Character portrait"))
+        self.portrait_label.setMinimumHeight(110)
+        portrait_controls = QWidget(identity)
+        portrait_layout = QHBoxLayout(portrait_controls)
+        portrait_layout.setContentsMargins(0, 0, 0, 0)
+        self.portrait_button = QPushButton(self.tr("Choose Portrait…"))
+        self.remove_portrait_button = QPushButton(self.tr("Remove Portrait"))
+        self.portrait_button.clicked.connect(self._choose_portrait)
+        self.remove_portrait_button.clicked.connect(self._remove_portrait)
+        portrait_layout.addWidget(self.portrait_button)
+        portrait_layout.addWidget(self.remove_portrait_button)
         identity_form.addRow(self.tr("Full name"), self.full_name)
         identity_form.addRow(self.tr("Display name"), self.display_name)
         identity_form.addRow(self.tr("Aliases (one per line)"), self.aliases)
         identity_form.addRow(self.tr("Role"), self.role)
         identity_form.addRow(self.tr("Description"), self.description)
         tabs.addTab(identity, self.tr("Identity"))
+        portrait_page = QWidget(tabs)
+        portrait_page_layout = QVBoxLayout(portrait_page)
+        portrait_page_layout.addWidget(self.portrait_label)
+        portrait_page_layout.addWidget(portrait_controls)
+        portrait_page_layout.addStretch()
+        tabs.addTab(portrait_page, self.tr("Portrait"))
 
         story = QWidget(tabs)
         story_form = QFormLayout(story)
@@ -131,17 +154,36 @@ class CharacterDialog(QDialog):
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)
         buttons.button(QDialogButtonBox.StandardButton.Save).setText(self.tr("Save"))
+        self.save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
         buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         layout = QVBoxLayout(self)
         layout.addWidget(tabs)
         self.ai_button = QPushButton(self.tr("Fill Empty Fields with AI…"), self)
         self.ai_button.clicked.connect(self.fill_requested.emit)
         layout.addWidget(self.ai_button)
+        self.development_button = QPushButton(self.tr("Suggest Scene Development with AI…"), self)
+        self.development_button.clicked.connect(self.development_requested.emit)
+        layout.addWidget(self.development_button)
         layout.addWidget(buttons)
 
     def profile_fields(self) -> dict[str, str]:
         return {key: (widget.text() if isinstance(widget, QLineEdit) else widget.toPlainText())
                 for key, widget in self._profile_widgets().items()}
+
+    def _choose_portrait(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Choose portrait"), "", self.tr("Images (*.png *.jpg *.jpeg)"))
+        if path:
+            self.portrait_revision += 1
+            self.portrait_requested.emit(path)
+
+    def _remove_portrait(self) -> None:
+        self.portrait_revision += 1
+        self.character.portrait = ""
+        self.portrait_label.clear()
+        self.portrait_label.setText(self.tr("No portrait"))
+
+    def show_portrait(self, image) -> None:
+        self.portrait_label.setPixmap(QPixmap.fromImage(image).scaled(160, 110, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
     def _profile_widgets(self) -> dict:
         return {
@@ -163,6 +205,15 @@ class CharacterDialog(QDialog):
                     widget.setText(value)
             elif not widget.toPlainText().strip():
                 widget.setPlainText(value)
+
+    def apply_development_proposals(self, proposals) -> None:
+        replacements = {proposal.field: proposal.value for proposal in proposals}
+        if not replacements:
+            return
+        lines = self.arc.toPlainText().splitlines()
+        retained = [line for line in lines if line.partition(":")[0].strip() not in replacements]
+        retained.extend(f"{field}: {value}" for field, value in replacements.items())
+        self.arc.setPlainText("\n".join(retained))
 
     def _refresh_relationships(self) -> None:
         self.relationship_list.clear()

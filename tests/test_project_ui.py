@@ -269,6 +269,35 @@ def test_shutdown_waits_for_queued_recovery_cleanup(application, tmp_path, monke
     assert not store.scan().entries
 
 
+def test_project_tree_refresh_preserves_navigation_state(application, tmp_path):
+    project = Project.create(tmp_path / "tree-state", "Novel")
+    first = project.add_character("Mara")
+    second = project.add_character("Ira")
+    view = ProjectView()
+    view.show_project(project, {}, {}, WordCount(0, True))
+    root = view.topLevelItem(0)
+    notes, characters = root.child(0), root.child(1)
+    notes.setExpanded(False)
+    view.setCurrentItem(characters.child(0))
+    characters.child(1).setSelected(True)
+
+    view.show_project(project, {}, {}, WordCount(1, True))
+
+    root = view.topLevelItem(0)
+    assert not root.child(0).isExpanded()
+    assert root.child(1).isExpanded()
+    assert {item.data(0, Qt.ItemDataRole.UserRole + 1) for item in view.selectedItems()} == {first.id, second.id}
+    assert view.currentItem().data(0, Qt.ItemDataRole.UserRole + 1) == first.id
+
+    view.filter_characters("Ira")
+    project.remove_character(first.id)
+    view.show_project(project, {}, {}, WordCount(1, True))
+    characters = view.topLevelItem(0).child(1)
+    assert characters.childCount() == 1
+    assert not characters.child(0).isHidden()
+    assert characters.child(0).data(0, Qt.ItemDataRole.UserRole + 1) == second.id
+
+
 def test_activating_character_profile_opens_editor_instead_of_note_document(
     application, tmp_path, monkeypatch
 ):
@@ -1004,6 +1033,7 @@ def test_project_translation_actions_translate_and_refresh_open_documents(
     assert editor.toPlainText() == "Translated 5"
     assert not editor.document_state.dirty
     assert any("Unsaved scene text." in prompt for prompt in prompts)
+    assert any(item.name == "Project translation" and item.state == "completed" for item in window.ai_activity.activities)
     editor.document_state.mark_saved()
     window.close()
 
@@ -1138,7 +1168,7 @@ def test_project_analysis_uses_only_explicit_scene_and_reference_context(tmp_pat
 
         def generate_private(self, prompt, **_options):
             self.prompt = prompt
-            return ""
+            return '{"findings": []}'
 
     provider = FakeProvider()
     result = MainWindow._run_project_analysis(
@@ -1154,7 +1184,7 @@ def test_project_analysis_uses_only_explicit_scene_and_reference_context(tmp_pat
         0.2,
     )
 
-    assert result == ""
+    assert "No continuity findings" in result
     assert "scene text" in provider.prompt
     assert "selected reference" in provider.prompt
     assert "private unrelated note" not in provider.prompt
@@ -1180,13 +1210,31 @@ def test_project_analysis_includes_only_associated_character_context(tmp_path):
 
         def generate_private(self, prompt, **_options):
             self.prompt = prompt
-            return "review"
+            return '{"findings": []}'
 
     provider = FakeProvider()
     MainWindow._run_project_analysis(provider, project, "continuity", scene.id, (), {}, 4000, "review", 100, 0.2)
     assert "Expose the council" in provider.prompt
     assert "The witness survived" in provider.prompt
     assert "Irrelevant plan" not in provider.prompt
+
+
+def test_project_continuity_rejects_evidence_truncated_from_request(tmp_path):
+    import json
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="start " + "x" * 300 + " hidden evidence")
+
+    class FakeProvider:
+        def generate_private(self, _prompt, **_options):
+            return json.dumps({"findings": [{
+                "confidence": "possible", "scene_id": scene.id, "character_ids": [],
+                "concern": "Check this", "suggestion": "Review",
+                "evidence": {"source_id": scene.id, "quote": "hidden evidence"},
+            }]})
+
+    with pytest.raises(ValueError, match="evidence"):
+        MainWindow._run_project_analysis(FakeProvider(), project, "continuity", scene.id, (), {}, 120, "review", 100, 0.2)
 
 
 def test_project_scene_completion_receives_notes_and_associated_characters(application, tmp_path, monkeypatch):

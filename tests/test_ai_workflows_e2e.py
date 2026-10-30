@@ -1,18 +1,20 @@
 """Offline Qt workflows using real workers and controlled fake AI responses."""
 
+import json
 from threading import Event
 from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import QEventLoop, QTimer, Qt
-from PySide6.QtGui import QTextCursor
+from PySide6.QtGui import QImage, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QDialog, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QDialog, QInputDialog, QMessageBox
 
 from app.ai.models import Suggestion
 from app.project import Project, SceneCharacterAssociation
 from app.settings.settings import AppSettings
 from app.ui.main_window import MainWindow
+from app.ui.character_dialog import CharacterDialog
 
 
 @pytest.fixture
@@ -80,6 +82,7 @@ def test_completion_worker_requires_tab_and_discards_stale_response(window, monk
     window._completion_timer.stop()
     release.set()
     wait_until(lambda: window._completion_worker is None)
+    wait_until(lambda: any(item.name == "Text completion" and item.state == "discarded" for item in window.ai_activity.activities))
     assert not editor.has_completion
     assert editor.toPlainText() == "Hello!"
 
@@ -120,6 +123,7 @@ def test_spellcheck_worker_discards_results_after_edit(window, monkeypatch):
         window._completion_timer.stop()
         release.set()
         wait_until(lambda: window._spellcheck_worker is None)
+        wait_until(lambda: any(item.name == "Spellcheck" and item.state == "discarded" for item in window.ai_activity.activities))
         assert editor.toPlainText() == "teh cat!"
         assert not editor.spell_suggestions
     finally:
@@ -141,6 +145,31 @@ def test_completion_worker_error_keeps_document_editable(window, monkeypatch):
     assert "model unavailable" in window.status.currentMessage()
     editor.insertPlainText("!")
     assert editor.toPlainText() == "Hello!"
+
+
+def test_activity_panel_cancels_completion_without_inserting_text(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Hello")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    started, release = Event(), Event()
+
+    def complete(*_args, **_kwargs):
+        started.set()
+        assert release.wait(3)
+        return " world"
+
+    monkeypatch.setattr(window.provider, "complete", complete)
+    window.request_completion()
+    wait_until(started.is_set)
+    item = next(item for item in reversed(window.ai_activity.activities) if item.name == "Text completion")
+    window.ai_activity.list.setCurrentRow(window.ai_activity.activities.index(item))
+    window.ai_activity.cancel_button.click()
+    assert item.state == "cancelling"
+    release.set()
+    wait_until(lambda: item.state == "cancelled")
+    assert editor.toPlainText() == "Hello"
+    assert not editor.has_completion
 
 
 def test_overlapping_generation_keeps_new_request_cancellable(window, monkeypatch):
@@ -257,7 +286,12 @@ def test_continuity_analysis_worker_reviews_selected_scene_and_character(window,
 
     def analyze(prompt, **_kwargs):
         prompts.append(prompt)
-        return "Check the key."
+        return json.dumps({"findings": [{
+            "confidence": "possible", "scene_id": scene.id,
+            "character_ids": [character.id], "concern": "Check the key.",
+            "evidence": {"source_id": scene.id, "quote": "Mara opens the door."},
+            "suggestion": "Review the scene.",
+        }]})
 
     monkeypatch.setattr(window.provider, "generate_private", analyze)
     monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
@@ -265,6 +299,131 @@ def test_continuity_analysis_worker_reviews_selected_scene_and_character(window,
     wait_until(lambda: bool(window._analysis_windows))
     assert "Mara opens the door" in prompts[0]
     assert "Find the key" in prompts[0]
-    assert window._analysis_windows[-1].output.toPlainText() == "Check the key."
+    assert "Check the key." in window._analysis_windows[-1].output.toPlainText()
     assert project.read_scene(scene.id) == "Mara opens the door."
     window._analysis_windows[-1].close()
+
+
+def test_scene_development_stages_only_selected_proposal(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "development", "Novel")
+    scene = project.add_scene("Opening", content="Mara opens the door.")
+    character = project.add_character("Mara")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: any(binding.item_id == scene.id for binding in window._project_documents.values()))
+    dialog = CharacterDialog(character, parent=window)
+    response = {"proposals": [
+        {"field": "current_state", "value": "Curious", "evidence": "opens the door"},
+        {"field": "lessons", "value": "Be cautious", "evidence": "Mara opens"},
+    ]}
+    monkeypatch.setattr(window.provider, "generate_private", lambda *_args, **_kwargs: json.dumps(response))
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _label, choices, *_args: (choices[0], True))
+
+    def review(dialog_box):
+        checkboxes = dialog_box.findChildren(QCheckBox)
+        assert len(checkboxes) == 2
+        checkboxes[0].setChecked(True)
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(QDialog, "exec", review)
+    window._suggest_scene_development(dialog, project)
+    wait_until(lambda: dialog.development_button.isEnabled())
+    assert dialog.arc.toPlainText() == "current_state: Curious"
+    assert project.get_character(character.id).arc == {}
+    dialog._accept()
+    project.update_character_with_relationships(character.id, dialog.character, dialog.relationships)
+    assert Project.open(project.root).get_character(character.id).arc == {"current_state": "Curious"}
+
+
+def test_scene_development_discards_result_when_scene_changes(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "stale-development", "Novel")
+    scene = project.add_scene("Opening", content="Mara opens the door.")
+    character = project.add_character("Mara")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: any(binding.item_id == scene.id for binding in window._project_documents.values()))
+    editor = next(editor for editor, binding in window._project_documents.items() if binding.item_id == scene.id)
+    dialog = CharacterDialog(character, parent=window)
+    started, release = Event(), Event()
+
+    def generate(*_args, **_kwargs):
+        started.set()
+        assert release.wait(3)
+        return json.dumps({"proposals": [{"field": "current_state", "value": "Curious", "evidence": "opens the door"}]})
+
+    notices = []
+    monkeypatch.setattr(window.provider, "generate_private", generate)
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, "information", lambda *_args: notices.append(_args))
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _label, choices, *_args: (choices[0], True))
+    window._suggest_scene_development(dialog, project)
+    wait_until(started.is_set)
+    editor.insertPlainText("Changed ")
+    release.set()
+    wait_until(lambda: bool(notices))
+    assert not dialog.arc.toPlainText()
+    assert project.get_character(character.id).arc == {}
+    dialog.reject()
+
+
+def test_portrait_load_is_staged_and_cancel_preserves_profile(window, tmp_path):
+    project = Project.create(tmp_path / "portrait-project", "Novel")
+    character = project.add_character("Mara")
+    image = QImage(8, 8, QImage.Format.Format_RGB32)
+    image.fill(0xff884422)
+    path = tmp_path / "portrait.png"
+    assert image.save(str(path))
+    dialog = CharacterDialog(character, parent=window)
+    window._load_character_portrait(dialog, path=str(path))
+    assert not dialog.save_button.isEnabled()
+    wait_until(lambda: dialog.save_button.isEnabled())
+    assert dialog.character.portrait
+    assert not project.get_character(character.id).portrait
+    dialog.reject()
+    assert not Project.open(project.root).get_character(character.id).portrait
+
+
+def test_portrait_can_be_saved_then_removed(window, tmp_path):
+    project = Project.create(tmp_path / "portrait-save", "Novel")
+    character = project.add_character("Mara")
+    image = QImage(8, 8, QImage.Format.Format_RGB32)
+    image.fill(0xff884422)
+    path = tmp_path / "portrait.png"
+    assert image.save(str(path))
+    dialog = CharacterDialog(character, parent=window)
+    window._load_character_portrait(dialog, path=str(path))
+    wait_until(lambda: dialog.save_button.isEnabled())
+    dialog._accept()
+    project.update_character_with_relationships(character.id, dialog.character, dialog.relationships)
+    saved = Project.open(project.root).get_character(character.id)
+    assert saved.portrait
+    dialog = CharacterDialog(saved, parent=window)
+    dialog._remove_portrait()
+    dialog._accept()
+    project.update_character_with_relationships(character.id, dialog.character, dialog.relationships)
+    assert not Project.open(project.root).get_character(character.id).portrait
+
+
+def test_removing_portrait_discards_late_load(window, monkeypatch):
+    from app.project.model import Character
+    from uuid import uuid4
+
+    dialog = CharacterDialog(Character(str(uuid4()), "Mara"), parent=window)
+    started, release = Event(), Event()
+
+    def delayed(**_kwargs):
+        started.set()
+        assert release.wait(3)
+        return "late image", QImage(1, 1, QImage.Format.Format_RGB32)
+
+    monkeypatch.setattr("app.ui.main_window.load_portrait", delayed)
+    window._load_character_portrait(dialog, path="unused")
+    wait_until(started.is_set)
+    dialog._remove_portrait()
+    release.set()
+    wait_until(lambda: dialog.save_button.isEnabled())
+    assert dialog.character.portrait == ""
+    dialog.reject()

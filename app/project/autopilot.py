@@ -33,6 +33,7 @@ def run_autopilot(
     maximum_tokens: int,
     temperature: float,
     is_cancelled: Callable[[], bool],
+    progress: Callable[[int, int, str], None] | None = None,
 ) -> AutopilotDraft:
     """Refine an additive project plan and draft each new scene before any writes."""
     _check_cancelled(is_cancelled)
@@ -72,11 +73,14 @@ def run_autopilot(
     chapters: list[tuple[str, tuple[tuple[str, str], ...]]] = []
     previous_scenes: list[str] = []
     scene_number = 0
+    total_scenes = sum(len(chapter["scenes"]) for chapter in plan["chapters"])
     for chapter in plan["chapters"]:
         drafted_scenes: list[tuple[str, str]] = []
         for scene in chapter["scenes"]:
             _check_cancelled(is_cancelled)
             scene_number += 1
+            if progress is not None:
+                progress(scene_number - 1, total_scenes, scene["title"])
             prior_context = "\n\n".join(previous_scenes[-2:])
             scene_prompt = (
                 "Write a first-draft scene for the author's project. Follow the supplied "
@@ -111,6 +115,8 @@ def run_autopilot(
             content = content.strip()
             drafted_scenes.append((scene["title"], content))
             previous_scenes.append(f"{chapter['title']} — {scene['title']}\n{content[:1600]}")
+            if progress is not None:
+                progress(scene_number, total_scenes, scene["title"])
         chapters.append((chapter["title"], tuple(drafted_scenes)))
 
     _check_cancelled(is_cancelled)

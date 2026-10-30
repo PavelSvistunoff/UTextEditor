@@ -133,7 +133,9 @@ class EditorWidget(QPlainTextEdit):
             return
         source = self.toPlainText()
         suffix = source[qt_position_to_python_index(source, position):]
-        if suffix.startswith(text.strip()):
+        # Painting at the cursor would cover any remaining text in this block,
+        # including text on a wrapped visual line.
+        if suffix.partition("\n")[0]:
             return
         available = max(1, self.viewport().width() - self.cursorRect().left())
         if QFontMetrics(self.font()).horizontalAdvance(text) > available:

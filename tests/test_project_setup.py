@@ -185,6 +185,7 @@ def test_autopilot_creates_bounded_plan_and_sequential_scene_drafts():
             return f"Draft scene {len(self.prompts) - 1}."
 
     provider = FakeProvider()
+    progress = []
     draft = run_autopilot(
         provider,
         "A cartographer finds a secret map.",
@@ -192,6 +193,7 @@ def test_autopilot_creates_bounded_plan_and_sequential_scene_drafts():
         maximum_tokens=900,
         temperature=0.3,
         is_cancelled=lambda: False,
+        progress=lambda completed, total, title: progress.append((completed, total, title)),
     )
 
     assert draft.chapters == (
@@ -207,6 +209,8 @@ def test_autopilot_creates_bounded_plan_and_sequential_scene_drafts():
     assert "A cartographer finds a secret map." in provider.prompts[0]
     assert "existing project outline metadata" in provider.prompts[0]
     assert "Draft scene 1." in provider.prompts[2]
+    assert progress == [(0, 2, "A Missing Atlas"), (1, 2, "A Missing Atlas"),
+                        (1, 2, "The Night Visit"), (2, 2, "The Night Visit")]
 
 
 def test_autopilot_cancellation_prevents_later_ai_calls():
@@ -733,6 +737,7 @@ def test_auto_writer_ui_refines_scene_and_updates_open_buffer(
     assert editor.toPlainText() == "Revised scene text."
     assert not editor.document_state.dirty
     assert binding.expected_text == "Revised scene text."
+    assert any(item.name == "Auto-writer" and item.state == "completed" for item in window.ai_activity.activities)
     window.close()
 
 
