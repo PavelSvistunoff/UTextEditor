@@ -142,7 +142,7 @@ class ProjectView(QTreeWidget):
         menu = QMenu(self)
         actions = self.context_actions(str(kind or ""))
         for index, (label, action_id) in enumerate(actions):
-            if index == 3:
+            if index == 4:
                 menu.addSeparator()
             self._add_context_action(menu, self._translate_context_action(label), action_id)
         selected = menu.exec(event.globalPos())
@@ -157,6 +157,7 @@ class ProjectView(QTreeWidget):
             ("New Chapter", "new_chapter"),
             ("New Scene", "new_scene"),
             ("New Reference Note", "new_note"),
+            ("New Character…", "new_character"),
         ]
         if kind == "character":
             actions.extend((
@@ -213,6 +214,7 @@ class ProjectView(QTreeWidget):
             "New Chapter": self.tr("New Chapter"),
             "New Scene": self.tr("New Scene"),
             "New Reference Note": self.tr("New Reference Note"),
+            "New Character…": self.tr("New Character…"),
             "Open": self.tr("Open"),
             "Find Scenes Mentioning Character…": self.tr("Find Scenes Mentioning Character…"),
             "Import Character Profile…": self.tr("Import Character Profile…"),

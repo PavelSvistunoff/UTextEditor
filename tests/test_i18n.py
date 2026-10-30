@@ -78,6 +78,7 @@ def test_translation_catalog_loads_and_translates_interface(application):
         assert view._count_label("Сцена", WordCount(3, True)) == "Сцена — 3 слова"
         assert view._count_label("Сцена", WordCount(5, True)) == "Сцена — 5 слів"
         assert view._translate_context_action("Find Scenes Mentioning Character…") == "Знайти сцени зі згадкою персонажа…"
+        assert view._translate_context_action("New Character…") == "Новий персонаж…"
         view.close()
     finally:
         application.removeTranslator(translator)

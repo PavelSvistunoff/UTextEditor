@@ -98,6 +98,10 @@
 <context>
     <name>CharacterDialog</name>
     <message>
+        <source>Generating suggestions…</source>
+        <translation>Створення пропозицій…</translation>
+    </message>
+    <message>
         <location filename="../app/ui/character_dialog.py" line="28"/>
         <source>Character Profile</source>
         <translation>Профіль персонажа</translation>
@@ -331,6 +335,86 @@
         <location filename="../app/ui/character_dialog.py" line="166"/>
         <source>Use a supported arc field followed by &apos;: &apos; and a value.</source>
         <translation>Укажіть припустиме поле арки, двокрапку й значення.</translation>
+    </message>
+    <message>
+        <source>Add Relationship…</source>
+        <translation>Додати зв’язок…</translation>
+    </message>
+    <message>
+        <source>Edit Relationship…</source>
+        <translation>Редагувати зв’язок…</translation>
+    </message>
+    <message>
+        <source>Remove Relationship</source>
+        <translation>Видалити зв’язок</translation>
+    </message>
+    <message>
+        <source>Character relationship</source>
+        <translation>Зв’язок персонажа</translation>
+    </message>
+    <message>
+        <source>Related character:</source>
+        <translation>Пов’язаний персонаж:</translation>
+    </message>
+    <message>
+        <source>Remove relationship</source>
+        <translation>Видалити зв’язок</translation>
+    </message>
+    <message>
+        <source>Remove this directed relationship?</source>
+        <translation>Видалити цей спрямований зв’язок?</translation>
+    </message>
+    <message>
+        <source>Fill Empty Fields with AI…</source>
+        <translation>Заповнити порожні поля за допомогою ШІ…</translation>
+    </message>
+    <message>
+        <source>AI unavailable</source>
+        <translation>ШІ недоступний</translation>
+    </message>
+    <message>
+        <source>Enable AI in settings before requesting suggestions.</source>
+        <translation>Увімкніть ШІ в налаштуваннях, перш ніж запитувати пропозиції.</translation>
+    </message>
+    <message>
+        <source>No empty fields</source>
+        <translation>Немає порожніх полів</translation>
+    </message>
+    <message>
+        <source>There are no empty fields to fill.</source>
+        <translation>Немає порожніх полів для заповнення.</translation>
+    </message>
+    <message>
+        <source>Confirm AI request</source>
+        <translation>Підтвердьте запит до ШІ</translation>
+    </message>
+    <message>
+        <source>Send the current character profile to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.</source>
+        <translation>Надіслати поточний профіль персонажа до %1 (модель %2), щоб запропонувати значення для порожніх полів? Запит і відповідь відображаються в діагностиці ШІ.</translation>
+    </message>
+    <message>
+        <source>Profile changed</source>
+        <translation>Профіль змінено</translation>
+    </message>
+    <message>
+        <source>The profile or project changed while suggestions were generated. Please try again.</source>
+        <translation>Профіль або проєкт змінився під час створення пропозицій. Спробуйте ще раз.</translation>
+    </message>
+    <message>
+        <source>Review character suggestions</source>
+        <translation>Перегляд пропозицій для персонажа</translation>
+    </message>
+    <message>
+        <source>Fill empty fields</source>
+        <translation>Заповнити порожні поля</translation>
+    </message>
+    <message>
+        <source>Review these suggestions before filling the empty fields. Save the profile to keep them.</source>
+        <translation>Перегляньте ці пропозиції перед заповненням порожніх полів. Збережіть профіль, щоб їх залишити.</translation>
+    </message>
+    <message>
+        <source>AI suggestions failed</source>
+        <translation>Не вдалося отримати пропозиції ШІ</translation>
     </message>
 </context>
 <context>
@@ -1204,6 +1288,10 @@
 </context>
 <context>
     <name>ProjectView</name>
+    <message>
+        <source>New Character…</source>
+        <translation>Новий персонаж…</translation>
+    </message>
     <message>
         <location filename="../app/ui/project_view.py" line="49"/>
         <source>Ungrouped scenes</source>

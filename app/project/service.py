@@ -546,6 +546,26 @@ class Project:
         index = self.manifest.characters.index(current)
         self._update(lambda: self.manifest.characters.__setitem__(index, deepcopy(updated)))
 
+    def update_character_with_relationships(
+        self, character_id: str, updated: Character, relationships: list[CharacterRelationship]
+    ) -> None:
+        """Save a profile and its staged relationships as one manifest update."""
+        current = self.get_character(character_id)
+        if updated.id != character_id:
+            raise ProjectError("A character ID cannot be changed")
+        if any(character_id not in (item.source_id, item.target_id) for item in relationships):
+            raise ProjectError("Each relationship must involve the edited character")
+        index = next(i for i, item in enumerate(self.manifest.characters) if item.id == current.id)
+
+        def change() -> None:
+            self.manifest.characters[index] = deepcopy(updated)
+            self.manifest.character_relationships = [
+                item for item in self.manifest.character_relationships
+                if character_id not in (item.source_id, item.target_id)
+            ] + deepcopy(relationships)
+
+        self._update(change)
+
     def duplicate_character(self, character_id: str) -> Character:
         original = self.get_character(character_id)
         duplicate = deepcopy(original)

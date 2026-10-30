@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtWidgets import QApplication
 
 from app.ai.completion_service import CompletionService, build_context, complete_project_scene
+from app.ai.character_profile import suggest_character_fields
 from app.ai.ollama_client import OllamaClient
 from app.ai.spellcheck_service import SpellcheckService
 from app.document.book_compiler import compile_book_pdf
@@ -68,7 +69,7 @@ from app.document.text_formatting import (
 )
 from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
 from app.settings.settings import AppSettings
-from app.i18n import install_translation
+from app.i18n import format_qt, install_translation
 from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow
 from .generated_text_dialog import GeneratedTextDialog
@@ -2457,14 +2458,6 @@ class MainWindow(QMainWindow):
     def _edit_character(self, character: Character) -> None:
         if self.project is None:
             return
-        labels = []
-        for relation in self.project.manifest.character_relationships:
-            if relation.source_id == character.id:
-                other = self.project.get_character(relation.target_id)
-                labels.append(f"→ {other.display_name or other.full_name}: {relation.relationship_type} — {relation.description}")
-            elif relation.target_id == character.id:
-                other = self.project.get_character(relation.source_id)
-                labels.append(f"← {other.display_name or other.full_name}: {relation.relationship_type} — {relation.description}")
         current_state = self.project.character_current_state(character.id)
         history = self.project.character_state_history(character.id)
         timeline = ["Current recorded state:"] if current_state else ["No character state changes recorded."]
@@ -2475,14 +2468,70 @@ class MainWindow(QMainWindow):
             before = f"{change.previous_value} → " if change.previous_value else ""
             evidence = f" — {change.evidence}" if change.evidence else ""
             timeline.append(f"{scene.title}: {change.field}: {before}{change.value}{evidence}")
-        dialog = CharacterDialog(character, labels, timeline, self)
+        dialog = CharacterDialog(
+            character, timeline=timeline, parent=self,
+            project_characters=self.project.manifest.characters,
+            project_relationships=[r for r in self.project.manifest.character_relationships
+                                   if character.id in (r.source_id, r.target_id)],
+        )
+        dialog.fill_requested.connect(lambda: self._suggest_character_profile(dialog, self.project))
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                self.project.update_character(character.id, dialog.character)
-            except (ProjectError, ValueError) as exc:
-                QMessageBox.warning(self, "Invalid character profile", str(exc))
+            self._run_project_mutation(self.project.update_character_with_relationships,
+                                       character.id, dialog.character, dialog.relationships)
+
+    def _suggest_character_profile(self, dialog: CharacterDialog, project: Project) -> None:
+        if project is None or project is not self.project or not self.settings.ai_enabled:
+            QMessageBox.information(dialog, dialog.tr("AI unavailable"), dialog.tr("Enable AI in settings before requesting suggestions."))
+            return
+        fields = dialog.profile_fields()
+        if not any(not value.strip() for value in fields.values()):
+            QMessageBox.information(dialog, dialog.tr("No empty fields"), dialog.tr("There are no empty fields to fill."))
+            return
+        confirmation = dialog.tr("Send the current character profile to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.")
+        if QMessageBox.question(dialog, dialog.tr("Confirm AI request"), format_qt(confirmation, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+            return
+        settings_generation = self._settings_generation
+        project_generation = self._project_generation
+        active = [True]
+        worker = FunctionWorker(suggest_character_fields, self.provider, fields, self.settings.language, self.settings.temperature)
+        dialog.ai_button.setEnabled(False)
+        dialog.ai_button.setText(dialog.tr("Generating suggestions…"))
+        self._track_worker(worker)
+        def closed(_result):
+            active[0] = False
+            worker.cancel()
+        dialog.finished.connect(closed)
+
+        def current():
+            return (active[0] and self.project is project and self._project_generation == project_generation
+                    and self._settings_generation == settings_generation and self.settings.ai_enabled
+                    and dialog.profile_fields() == fields)
+
+        def finished(suggestions):
+            if not active[0]:
                 return
-            self._refresh_project_view()
+            dialog.ai_button.setEnabled(True)
+            dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
+            if not current():
+                QMessageBox.information(dialog, dialog.tr("Profile changed"), dialog.tr("The profile or project changed while suggestions were generated. Please try again."))
+                return
+            preview = GeneratedTextDialog("\n\n".join(f"{key}:\n{value}" for key, value in suggestions.items()), dialog)
+            preview.setWindowTitle(dialog.tr("Review character suggestions"))
+            preview.insert_button.setText(dialog.tr("Fill empty fields"))
+            preview.findChild(QLabel).setText(dialog.tr("Review these suggestions before filling the empty fields. Save the profile to keep them."))
+            if preview.exec() == QDialog.DialogCode.Accepted and current():
+                dialog.apply_profile_suggestions(suggestions)
+
+        def failed(error):
+            if active[0]:
+                dialog.ai_button.setEnabled(True)
+                dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
+                if current():
+                    QMessageBox.warning(dialog, dialog.tr("AI suggestions failed"), str(error))
+
+        worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
 
     def associate_project_character(self) -> None:
         if self.project is None:

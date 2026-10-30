@@ -167,6 +167,118 @@ def test_character_profile_dialog_keeps_edits_pending_until_save(application, mo
     dialog.close()
 
 
+def test_character_ai_suggestions_require_review_and_leave_existing_fields(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    dialog = CharacterDialog(character)
+    dialog.description.setPlainText("Existing description")
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(window.provider, "generate_private", lambda *args, **kwargs: '{"primary_motivation":"Find the key"}')
+    monkeypatch.setattr("app.ui.main_window.GeneratedTextDialog.exec", lambda self: self.DialogCode.Accepted)
+    window._suggest_character_profile(dialog, project)
+    wait_until(lambda: dialog.ai_button.isEnabled(), application)
+    assert dialog.motivation.toPlainText() == "Find the key"
+    assert dialog.description.toPlainText() == "Existing description"
+    assert project.get_character(character.id).primary_motivation == ""
+    dialog.reject()
+    window.close()
+
+
+def test_character_ai_discards_result_if_profile_changes(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    dialog = CharacterDialog(character)
+    started, release = Event(), Event()
+    def generate(*args, **kwargs):
+        started.set()
+        release.wait(3)
+        return '{"primary_motivation":"Generated"}'
+    messages = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, "information", lambda *args: messages.append(args))
+    monkeypatch.setattr(window.provider, "generate_private", generate)
+    window._suggest_character_profile(dialog, project)
+    wait_until(started.is_set, application)
+    dialog.motivation.setPlainText("My idea")
+    release.set()
+    wait_until(lambda: bool(messages), application)
+    assert dialog.motivation.toPlainText() == "My idea"
+    dialog.reject()
+    window.close()
+
+
+def test_character_profile_relationships_are_staged_and_saved_together(application, tmp_path, monkeypatch):
+    from app.project import CharacterRelationship
+    from uuid import uuid4
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    mara = project.add_character("Mara")
+    ivo = project.add_character("Ivo")
+    relation = CharacterRelationship(str(uuid4()), ivo.id, mara.id, relationship_type="rival")
+    project.add_character_relationship(relation)
+    dialog = CharacterDialog(mara, project_characters=project.manifest.characters,
+                             project_relationships=project.manifest.character_relationships)
+    assert "← Ivo: rival" in dialog.relationship_list.item(0).text()
+    dialog.relationship_list.setCurrentRow(0)
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    dialog._remove_relationship()
+    assert len(project.manifest.character_relationships) == 1
+    dialog.full_name.setText("Mara Venn")
+    dialog._accept()
+    project.update_character_with_relationships(mara.id, dialog.character, dialog.relationships)
+    reopened = Project.open(project.root)
+    assert reopened.get_character(mara.id).full_name == "Mara Venn"
+    assert reopened.manifest.character_relationships == []
+    dialog.close()
+
+
+def test_character_profile_adds_relationship_without_mutating_project(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    mara = project.add_character("Mara")
+    ivo = project.add_character("Ivo")
+    dialog = CharacterDialog(mara, project_characters=project.manifest.characters)
+    monkeypatch.setattr(QInputDialog, "getItem", lambda *args: (args[3][0], True))
+    monkeypatch.setattr(CharacterRelationshipDialog, "exec", lambda self: self.DialogCode.Accepted)
+    dialog._add_relationship()
+    assert len(dialog.relationships) == 1
+    assert (dialog.relationships[0].source_id, dialog.relationships[0].target_id) == (mara.id, ivo.id)
+    dialog.relationship_list.setCurrentRow(0)
+    def edit_relationship(self):
+        self.relationship.relationship_type = "ally"
+        return self.DialogCode.Accepted
+    monkeypatch.setattr(CharacterRelationshipDialog, "exec", edit_relationship)
+    dialog._edit_relationship()
+    assert dialog.relationships[0].relationship_type == "ally"
+    assert not project.manifest.character_relationships
+    dialog.reject()
+    assert not Project.open(project.root).manifest.character_relationships
+
+
+def test_profile_and_relationship_update_rolls_back_on_write_failure(tmp_path, monkeypatch):
+    from app.project import CharacterRelationship
+    from uuid import uuid4
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    mara = project.add_character("Mara")
+    ivo = project.add_character("Ivo")
+    mara.full_name = "Changed"
+    relationship = CharacterRelationship(str(uuid4()), mara.id, ivo.id, "ally")
+    def fail_write():
+        raise OSError("write failed")
+    monkeypatch.setattr(project, "_write_manifest", fail_write)
+    with pytest.raises(OSError, match="write failed"):
+        project.update_character_with_relationships(mara.id, mara, [relationship])
+    assert project.get_character(mara.id).full_name == "Mara"
+    assert not project.manifest.character_relationships
+    assert Project.open(project.root).get_character(mara.id).full_name == "Mara"
+
+
 def test_character_profile_dialog_rejects_invalid_goal_status(application, monkeypatch):
     from app.project import Character
 
@@ -359,6 +471,23 @@ def test_character_context_menu_exposes_relationship_io_and_scene_search():
         "import_character",
         "export_character",
     } <= action_ids
+
+
+@pytest.mark.parametrize("kind", ["", "project", "group", "character", "scene", "note", "chapter"])
+def test_project_context_menu_offers_new_character(kind):
+    assert ("New Character…", "new_character") in ProjectView.context_actions(kind)
+
+
+def test_project_context_menu_creates_character(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    monkeypatch.setattr(QInputDialog, "getText", lambda *args: ("Mara", True))
+    window.project_view.context_action_requested.emit("new_character", "group", "")
+    wait_until(lambda: any(c.full_name == "Mara" for c in project.manifest.characters) and not window._project_busy, application)
+    assert Project.open(project.root).manifest.characters[0].full_name == "Mara"
+    window.close()
 
 
 def test_repeated_project_document_open_coalesces_pending_reads(
