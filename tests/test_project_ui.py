@@ -921,6 +921,37 @@ def test_character_profile_dialog_keeps_edits_pending_until_save(application, mo
     dialog.close()
 
 
+def test_character_profile_long_forms_scroll_and_preserve_fields(application):
+    from PySide6.QtWidgets import QScrollArea, QTabWidget
+    from app.project import Character
+
+    original = Character(id="00000000-0000-4000-8000-000000000001", full_name="Mara")
+    dialog = CharacterDialog(original)
+    dialog.resize(400, 380)
+    dialog.show()
+    tabs = dialog.findChild(QTabWidget)
+    tabs.setCurrentIndex(2)
+    application.processEvents()
+    story_scroll = tabs.currentWidget()
+    assert isinstance(story_scroll, QScrollArea)
+    assert story_scroll.verticalScrollBar().maximum() > 0
+    dialog.conflicts.setPlainText("Trust versus loyalty")
+    story_scroll.ensureWidgetVisible(dialog.conflicts)
+    assert story_scroll.verticalScrollBar().value() > 0
+    tabs.setCurrentIndex(3)
+    application.processEvents()
+    context_scroll = tabs.currentWidget()
+    assert isinstance(context_scroll, QScrollArea)
+    assert context_scroll.verticalScrollBar().maximum() > 0
+    dialog.personality_fields["attitudes"].setPlainText("guarded")
+    context_scroll.ensureWidgetVisible(dialog.personality_fields["attitudes"])
+    assert context_scroll.verticalScrollBar().value() > 0
+    dialog._accept()
+    assert dialog.character.internal_conflicts == ["Trust versus loyalty"]
+    assert dialog.character.personality["attitudes"] == ["guarded"]
+    assert original.internal_conflicts == []
+
+
 def test_character_ai_suggestions_require_review_and_leave_existing_fields(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     character = project.add_character("Mara")

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QPlainTextEdit,
     QTabWidget, QVBoxLayout, QWidget,
     QMessageBox, QListWidget, QListWidgetItem, QPushButton, QHBoxLayout, QInputDialog,
-    QFileDialog, QLabel,
+    QFileDialog, QLabel, QScrollArea,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
@@ -36,7 +36,7 @@ class CharacterDialog(QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Character Profile"))
-        self.setMinimumSize(560, 520)
+        self.setMinimumSize(360, 360)
         self.character = deepcopy(character)
         self.portrait_revision = 0
         tabs = QTabWidget(self)
@@ -99,7 +99,10 @@ class CharacterDialog(QDialog):
         story_form.addRow(self.tr("Risks they accept"), self.accepted_risks)
         story_form.addRow(self.tr("Things they refuse to do"), self.refusals)
         story_form.addRow(self.tr("Internal conflicts"), self.conflicts)
-        tabs.addTab(story, self.tr("Story"))
+        story_scroll = QScrollArea(tabs)
+        story_scroll.setWidgetResizable(True)
+        story_scroll.setWidget(story)
+        tabs.addTab(story_scroll, self.tr("Story"))
 
         context = QWidget(tabs)
         context_form = QFormLayout(context)
@@ -124,7 +127,10 @@ class CharacterDialog(QDialog):
             widget = QPlainTextEdit("\n".join(character.personality.get(field, [])))
             self.personality_fields[field] = widget
             context_form.addRow(labels[label], widget)
-        tabs.addTab(context, self.tr("Background and personality"))
+        context_scroll = QScrollArea(tabs)
+        context_scroll.setWidgetResizable(True)
+        context_scroll.setWidget(context)
+        tabs.addTab(context_scroll, self.tr("Background and personality"))
 
         self.project_characters = {item.id: deepcopy(item) for item in (project_characters or [])}
         self.relationships = deepcopy(project_relationships or [])

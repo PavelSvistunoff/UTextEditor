@@ -221,6 +221,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   inclusion. An export preview, PDF scene/heading choices, broader pagination
   and layout checks, compiled translations and native review remain; do not
   mark complete. Full offline suite: 511 passed, 2 skipped.
+- **TASK-030 — in progress:** the long Story and Background and personality
+  forms now scroll in smaller profile windows; an offscreen test covers access
+  to their last fields and unchanged staged-save behavior. Character-to-scene
+  navigation and a safe return path still depend on TASK-015, and native
+  keyboard/accessibility verification remains outstanding. Do not mark
+  complete. Full offline suite: 512 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
