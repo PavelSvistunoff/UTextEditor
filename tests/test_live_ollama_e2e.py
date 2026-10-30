@@ -21,7 +21,8 @@ pytestmark = [
 ]
 
 
-def test_real_ollama_generation_is_reviewed_and_undoable(tmp_path, monkeypatch):
+@pytest.mark.parametrize("replace_selection", [False, True], ids=["insertion", "replacement"])
+def test_real_ollama_generation_is_reviewed_and_undoable(tmp_path, monkeypatch, replace_selection):
     """Send a synthetic prompt through the UI, worker, provider, and review dialog."""
     settings = AppSettings.load()
     settings.ai_enabled = True
@@ -36,13 +37,22 @@ def test_real_ollama_generation_is_reviewed_and_undoable(tmp_path, monkeypatch):
     window = MainWindow()
     window.provider.timeout = 300
     editor = window.tabs.current_editor()
-    editor.setPlainText("Synthetic test: ")
-    editor.moveCursor(QTextCursor.MoveOperation.End)
+    editor.setPlainText("The lantern is blue." if replace_selection else "Synthetic test: ")
+    if replace_selection:
+        cursor = editor.textCursor()
+        cursor.setPosition(len("The lantern is "))
+        cursor.setPosition(len("The lantern is blue"), QTextCursor.MoveMode.KeepAnchor)
+        editor.setTextCursor(cursor)
+    else:
+        editor.moveCursor(QTextCursor.MoveOperation.End)
     original = editor.toPlainText()
     reviewed = []
     monkeypatch.setattr(
         QInputDialog, "getMultiLineText",
-        lambda *_args: ("Write one short sentence about a red kite in the sky.", True),
+        lambda *_args: (
+            "Write one color word to replace the selected text." if replace_selection
+            else "Write one short sentence about a red kite in the sky.", True
+        ),
     )
     original_exec = GeneratedTextDialog.exec
 
@@ -71,7 +81,8 @@ def test_real_ollama_generation_is_reviewed_and_undoable(tmp_path, monkeypatch):
             f"No generated text reached review. AI status: {window.ai_status}; "
             f"message: {window.status.currentMessage()}"
         )
-        assert editor.toPlainText() == original + reviewed[0]
+        expected = "The lantern is " + reviewed[0] + "." if replace_selection else original + reviewed[0]
+        assert editor.toPlainText() == expected
         editor.undo()
         assert editor.toPlainText() == original
     finally:

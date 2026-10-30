@@ -109,9 +109,9 @@ Ollama host and model saved in your application settings, start Ollama and run:
 QT_QPA_PLATFORM=offscreen UTEXTEDITOR_LIVE_AI=1 python -m pytest -v tests/test_live_ollama_e2e.py
 ```
 
-The test sends a short synthetic prompt to that configured destination, exercises
-generation and the review dialog through the desktop worker, and checks that the
-accepted insertion can be undone. It uses a temporary copy of settings and does
+The tests send short synthetic prompts to that configured destination, exercise
+generation and the review dialog through the desktop worker, and check that
+accepted insertions and selected-text replacements can be undone. They use a temporary copy of settings and do
 not open or modify your documents. It can take several minutes while the model
 loads; an unavailable server or model causes the explicitly enabled test to fail.
 
