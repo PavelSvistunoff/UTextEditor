@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from app.document.recovery import RecoveryConflictError, RecoveryStore
+from app.document.file_manager import FileManager
 
 
 def test_recovery_snapshot_is_local_and_restores_as_dirty_without_writing_source(tmp_path: Path) -> None:
@@ -68,6 +69,29 @@ def test_scan_reports_corrupt_snapshot_and_preserves_it_for_diagnosis(tmp_path: 
     assert len(scan.issues) == 1
     assert scan.issues[0].snapshot_path == corrupt
     assert corrupt.exists()
+
+
+def test_empty_recovery_snapshot_can_be_scanned_and_restored(tmp_path: Path) -> None:
+    store = RecoveryStore(tmp_path / "recovery")
+    store.save("scene", "")
+
+    scan = store.scan()
+
+    assert not scan.issues
+    assert store.restore(scan.entries[0]).text == ""
+
+
+@pytest.mark.parametrize("ending", [b"\r\n", b"\r"])
+def test_restored_document_preserves_canonical_line_endings_on_save(tmp_path: Path, ending: bytes) -> None:
+    canonical = tmp_path / "draft.txt"
+    canonical.write_bytes(b"first" + ending + b"second")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("scene", "changed\ntext", canonical_path=canonical)
+
+    recovered = store.restore(entry)
+    FileManager().save(recovered)
+
+    assert canonical.read_bytes() == b"changed" + ending + b"text"
 
 
 def test_recovery_retention_keeps_latest_snapshots_for_document(tmp_path: Path) -> None:

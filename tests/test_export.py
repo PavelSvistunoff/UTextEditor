@@ -72,6 +72,18 @@ def test_failed_export_preserves_existing_destination(tmp_path: Path, manuscript
     assert target.read_text(encoding="utf-8") == "prior"
 
 
+def test_export_normalizes_all_line_endings_to_lf(tmp_path: Path) -> None:
+    target = tmp_path / "manuscript.txt"
+    scenes = [ExportScene("one", "First"), ExportScene("two", "Second")]
+
+    export_manuscript(
+        target, [], scenes, {"one": "first\r\nsecond\rthird", "two": "last"},
+        format="text", include_scene_headings=False, separator="\r\n---\r",
+    )
+
+    assert target.read_bytes() == b"first\nsecond\nthird\n---\nlast"
+
+
 def test_missing_selected_scene_text_is_reported_instead_of_exporting_partial_text() -> None:
     scene = ExportScene("s1", "Opening")
 

@@ -458,6 +458,29 @@ def test_story_planning_context_includes_directed_relationship_conflicts(tmp_pat
     assert "Nia" not in context
 
 
+def test_scene_context_includes_each_associated_directed_relationship_once(tmp_path):
+    from uuid import uuid4
+
+    from app.project import CharacterRelationship, SceneCharacterAssociation
+    from app.project.character_context import scene_character_context
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening")
+    mara = project.add_character("Mara")
+    ivo = project.add_character("Ivo")
+    outsider = project.add_character("Nia")
+    for character in (mara, ivo):
+        project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    for source, target, kind in ((mara, ivo, "trusts"), (ivo, mara, "fears"), (mara, outsider, "knows")):
+        project.add_character_relationship(CharacterRelationship(str(uuid4()), source.id, target.id, relationship_type=kind))
+
+    context = scene_character_context(project, scene.id)
+
+    assert context.count("Relationship: Mara → Ivo: trusts") == 1
+    assert context.count("Relationship: Ivo → Mara: fears") == 1
+    assert "Nia" not in context
+
+
 def test_auto_writer_writes_only_empty_scenes(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter")

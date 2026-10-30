@@ -12,6 +12,7 @@ from uuid import uuid4
 import difflib
 
 from .document import Document
+from .encoding import detect_line_ending
 
 
 @dataclass(frozen=True)
@@ -175,6 +176,7 @@ class RecoveryStore:
 
     def restore(self, entry: RecoveryEntry) -> Document:
         canonical_digest = None
+        line_ending = "LF"
         if entry.canonical_path is not None:
             canonical = Path(entry.canonical_path)
             if canonical.exists():
@@ -182,12 +184,14 @@ class RecoveryStore:
                     raise RecoveryConflictError(
                         f"{canonical} appeared after this recovery snapshot; save recovered text elsewhere."
                     )
-                current_digest = self.digest(canonical.read_bytes())
+                current_bytes = canonical.read_bytes()
+                current_digest = self.digest(current_bytes)
                 if current_digest != entry.canonical_digest:
                     raise RecoveryConflictError(
                         f"{canonical} changed after this recovery snapshot; compare or save the recovered text elsewhere."
                     )
                 canonical_digest = current_digest
+                line_ending = detect_line_ending(current_bytes.decode("utf-8-sig"))
             elif entry.canonical_existed:
                 raise RecoveryConflictError(
                     f"{canonical} was removed after this recovery snapshot; locate it or save the recovered text elsewhere."
@@ -195,6 +199,7 @@ class RecoveryStore:
         document = Document(
             text=entry.text,
             path=Path(entry.canonical_path) if entry.canonical_path else None,
+            line_ending=line_ending,
             dirty=True,
         )
         document.disk_digest = canonical_digest
@@ -228,9 +233,11 @@ class RecoveryStore:
             payload = json.load(stream)
         if not isinstance(payload, dict) or payload.get("format_version") != cls.FORMAT_VERSION:
             raise ValueError("Unsupported recovery snapshot format.")
-        required = ("snapshot_id", "document_id", "text", "captured_at")
+        required = ("snapshot_id", "document_id", "captured_at")
         if any(not isinstance(payload.get(key), str) or not payload[key] for key in required):
             raise ValueError("Recovery snapshot is missing required fields.")
+        if not isinstance(payload.get("text"), str):
+            raise ValueError("Recovery snapshot has invalid text.")
         if payload.get("canonical_digest") is not None and not isinstance(payload["canonical_digest"], str):
             raise ValueError("Recovery snapshot has an invalid canonical digest.")
         if not isinstance(payload.get("canonical_existed"), bool):

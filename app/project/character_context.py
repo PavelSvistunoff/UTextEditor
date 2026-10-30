@@ -66,9 +66,6 @@ def scene_character_context(project, scene_id: str, *, limit: int = MAX_CHARACTE
             if relationship.source_id == character.id and relationship.target_id in selected:
                 other = characters[relationship.target_id]
                 lines.append(f"Relationship: {character.full_name} → {other.full_name}: {relationship.relationship_type}; {relationship.description}; attitude={relationship.attitude}; trust={relationship.trust}")
-            elif relationship.target_id == character.id and relationship.source_id in selected:
-                other = characters[relationship.source_id]
-                lines.append(f"Relationship: {other.full_name} → {character.full_name}: {relationship.relationship_type}; {relationship.description}; attitude={relationship.attitude}; trust={relationship.trust}")
     return "\n".join(lines)[:limit]
 
 

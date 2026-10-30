@@ -6,6 +6,8 @@ from pathlib import Path
 import tempfile
 from typing import Mapping, Sequence
 
+from .encoding import normalize_line_endings
+
 
 @dataclass(frozen=True)
 class ExportScene:
@@ -87,7 +89,7 @@ def export_manuscript(
     target = Path(destination)
     if target.exists() and not replace_existing:
         raise FileExistsError(f"Export destination already exists: {target}")
-    content = render_manuscript(
+    content = normalize_line_endings(render_manuscript(
         chapters,
         ungrouped_scenes,
         scene_texts,
@@ -96,7 +98,7 @@ def export_manuscript(
         include_chapter_headings=include_chapter_headings,
         include_scene_headings=include_scene_headings,
         separator=separator,
-    )
+    ))
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
     temporary = Path(temporary_name)
