@@ -2022,4 +2022,13 @@
     <message><source>Read-only preview; external resources are disabled.</source><translation>Перегляд лише для читання; зовнішні ресурси вимкнено.</translation></message>
     <message><source>Could not render this Markdown preview.</source><translation>Не вдалося створити перегляд Markdown.</translation></message>
 </context>
+<context>
+    <name>PdfOptionsDialog</name>
+    <message><source>Book PDF options</source><translation>Параметри книги PDF</translation></message>
+    <message><source>Title</source><translation>Назва</translation></message>
+    <message><source>Author</source><translation>Автор</translation></message>
+    <message><source>Page size</source><translation>Розмір сторінки</translation></message>
+    <message><source>OK</source><translation>Гаразд</translation></message>
+    <message><source>Cancel</source><translation>Скасувати</translation></message>
+</context>
 </TS>

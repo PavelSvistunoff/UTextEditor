@@ -33,16 +33,22 @@ def compile_book_pdf(
     scene_texts: Mapping[str, str],
     *,
     replace_existing: bool = False,
+    page_size: str = "A5",
+    author: str = "",
 ) -> Path:
-    """Write an A5 PDF with a title page, ordered chapters, and page numbers."""
+    """Write a PDF with a title page, ordered chapters, and page numbers."""
     target = Path(destination)
     if target.exists() and not replace_existing:
         raise FileExistsError(f"Book destination already exists: {target}")
     if not isinstance(title, str) or not title.strip():
         raise ValueError("Book title must contain visible text.")
+    if page_size not in {"A5", "A4", "Letter"}:
+        raise ValueError("Unsupported page size.")
+    if not isinstance(author, str):
+        raise TypeError("Author must be text.")
 
     _validate_scenes(chapters, ungrouped_scenes, scene_texts)
-    document = _build_document(title, chapters, ungrouped_scenes, scene_texts)
+    document = _build_document(title, chapters, ungrouped_scenes, scene_texts, author=author)
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
@@ -50,7 +56,7 @@ def compile_book_pdf(
     os.close(descriptor)
     temporary = Path(temporary_name)
     try:
-        _write_pdf(temporary, title, document)
+        _write_pdf(temporary, title, document, page_size)
         if target.exists() and replace_existing:
             os.chmod(temporary, target.stat().st_mode)
             os.replace(temporary, target)
@@ -98,6 +104,8 @@ def _build_document(
     chapters: Sequence[ExportChapter],
     ungrouped_scenes: Sequence[ExportScene],
     scene_texts: Mapping[str, str],
+    *,
+    author: str = "",
 ) -> QTextDocument:
     document = QTextDocument()
     document.setDefaultFont(QFont("Georgia", 11))
@@ -107,6 +115,8 @@ def _build_document(
     cover_format = _block_format(Qt.AlignmentFlag.AlignHCenter)
     cover_format.setTopMargin(150)
     _insert_block(cursor, title, cover_format, _char_format(25, bold=True))
+    if author.strip():
+        _insert_block(cursor, author.strip(), _block_format(Qt.AlignmentFlag.AlignHCenter), _char_format(14))
     _insert_block(
         cursor,
         "Compiled manuscript",
@@ -213,12 +223,14 @@ def _char_format(size: int, *, bold: bool = False) -> QTextCharFormat:
     return result
 
 
-def _write_pdf(path: Path, title: str, document: QTextDocument) -> None:
+def _write_pdf(path: Path, title: str, document: QTextDocument, page_size: str = "A5") -> None:
     writer = QPdfWriter(str(path))
     writer.setTitle(title)
     writer.setCreator("UTextEditor")
     writer.setResolution(72)
-    writer.setPageSize(QPageSize(QPageSize.PageSizeId.A5))
+    sizes = {"A5": QPageSize.PageSizeId.A5, "A4": QPageSize.PageSizeId.A4,
+             "Letter": QPageSize.PageSizeId.Letter}
+    writer.setPageSize(QPageSize(sizes[page_size]))
     # Use full-page painter coordinates, then apply the book margins to the
     # document exactly once. QPdfWriter offsets painter coordinates by its
     # configured margins, so adding paintRect.x/y to that would double them.

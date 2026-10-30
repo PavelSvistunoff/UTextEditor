@@ -85,6 +85,7 @@ from .ai_context_disclosure import AIContextDisclosure
 from .ai_activity import AIActivityPanel
 from .generated_text_dialog import GeneratedTextDialog, StreamingPreviewDialog
 from .markdown_preview import MarkdownPreview
+from .pdf_options_dialog import PdfOptionsDialog
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
@@ -3700,6 +3701,10 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
+        options = self._ask_pdf_options(project.manifest.title)
+        if options is None:
+            return
+        book_title, author, page_size = options
         destination, _selected_filter = QFileDialog.getSaveFileName(
             self,
             "Compile book as PDF",
@@ -3752,12 +3757,14 @@ class MainWindow(QMainWindow):
         worker = FunctionWorker(
             self._compile_project_book_snapshot,
             project,
-            project.manifest.title,
+            book_title,
             chapters,
             ungrouped,
             open_text,
             target,
             replace_existing,
+            page_size,
+            author,
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -3780,6 +3787,8 @@ class MainWindow(QMainWindow):
         open_text,
         target,
         replace_existing,
+        page_size="A5",
+        author="",
     ):
         texts = {
             scene.id: (
@@ -3796,7 +3805,15 @@ class MainWindow(QMainWindow):
             ungrouped,
             texts,
             replace_existing=replace_existing,
+            page_size=page_size,
+            author=author,
         )
+
+    def _ask_pdf_options(self, title: str):
+        dialog = PdfOptionsDialog(title, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        return dialog.title.text().strip(), dialog.author.text().strip(), dialog.page_size.currentText()
 
     def _project_book_compiled(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)

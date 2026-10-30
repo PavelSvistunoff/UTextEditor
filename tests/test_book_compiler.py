@@ -8,10 +8,11 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QPalette
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QDialogButtonBox
 
 from app.document.book_compiler import _build_document, compile_book_pdf
 from app.document.export import ExportChapter, ExportScene
+from app.ui.pdf_options_dialog import PdfOptionsDialog
 
 
 @pytest.fixture(scope="module")
@@ -135,6 +136,36 @@ def test_compile_book_rejects_missing_scene_text(application, tmp_path: Path) ->
             [],
             {},
         )
+
+
+@pytest.mark.parametrize("page_size, width", [("A5", 420), ("A4", 595), ("Letter", 612)])
+def test_pdf_page_size_and_title_page_author(application, tmp_path, page_size, width):
+    from PySide6.QtPdf import QPdfDocument
+
+    path = tmp_path / f"{page_size}.pdf"
+    compile_book_pdf(path, "Title", [], [], {}, page_size=page_size, author="Author Name")
+    pdf = QPdfDocument(application)
+    pdf.load(str(path))
+    assert abs(pdf.pagePointSize(0).width() - width) < 3
+    assert "Author Name" in pdf.getAllText(0).text()
+
+
+def test_pdf_rejects_unknown_page_size_before_writing(application, tmp_path):
+    target = tmp_path / "book.pdf"
+    with pytest.raises(ValueError, match="page size"):
+        compile_book_pdf(target, "Title", [], [], {}, page_size="unknown")
+    assert not target.exists()
+
+
+def test_pdf_options_require_a_title_and_default_to_a5(application):
+    dialog = PdfOptionsDialog("Novel")
+    ok = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.StandardButton.Ok)
+    assert dialog.page_size.currentText() == "A5"
+    assert ok.isEnabled()
+    dialog.title.setText("  ")
+    assert not ok.isEnabled()
+    dialog.title.setText("New title")
+    assert ok.isEnabled()
 
 
 def test_failed_book_compilation_preserves_existing_destination(

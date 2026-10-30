@@ -64,4 +64,13 @@
     <message><source>Read-only preview; external resources are disabled.</source><translation>Read-only preview; external resources are disabled.</translation></message>
     <message><source>Could not render this Markdown preview.</source><translation>Could not render this Markdown preview.</translation></message>
 </context>
+<context>
+    <name>PdfOptionsDialog</name>
+    <message><source>Book PDF options</source><translation>Book PDF options</translation></message>
+    <message><source>Title</source><translation>Title</translation></message>
+    <message><source>Author</source><translation>Author</translation></message>
+    <message><source>Page size</source><translation>Page size</translation></message>
+    <message><source>OK</source><translation>OK</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+</context>
 </TS>

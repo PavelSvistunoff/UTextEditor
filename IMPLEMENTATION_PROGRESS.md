@@ -215,6 +215,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   blocking and the input limit. Large-document preview and responsiveness,
   compiled translations, and native accessibility review remain outstanding;
   do not mark complete. Full offline suite: 506 passed, 2 skipped.
+- **TASK-028 — in progress:** PDF compilation now offers A5, A4 and Letter
+  paper, an editable book title and an optional title-page author. Tests check
+  actual page dimensions, author text, invalid sizes, and unsaved scene
+  inclusion. An export preview, PDF scene/heading choices, broader pagination
+  and layout checks, compiled translations and native review remain; do not
+  mark complete. Full offline suite: 511 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
