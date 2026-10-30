@@ -1251,14 +1251,20 @@ def test_main_menus_group_project_and_ai_workflows(application, tmp_path):
     project_actions = menus["Project"].actions()
     texts = [action.text() if not action.isSeparator() else "|" for action in project_actions]
     assert texts.index("Close Project") < texts.index("New Chapter…") < texts.index("Rename Selected…")
-    assert texts.index("Review Revision Snapshots…") < texts.index("Export Manuscript…") < texts.index("AI Project Setup…")
-    for label in ("New Chapter…", "Rename Selected…", "Link Note…", "Create Revision Snapshot…", "Export Manuscript…", "AI Project Setup…"):
+    assert texts.index("Move Items") < texts.index("Links") < texts.index("Revisions") < texts.index("Export") < texts.index("Project AI")
+    for label in ("New Chapter…", "Rename Selected…"):
         assert texts[texts.index(label) - 1] == "|"
+    grouped = {action.text(): action.menu() for action in project_actions if action.menu()}
+    assert "Review Revision Snapshots…" in [action.text() for action in grouped["Revisions"].actions()]
+    assert "Export Manuscript…" in [action.text() for action in grouped["Export"].actions()]
+    assert "AI Project Setup…" in [action.text() for action in grouped["Project AI"].actions()]
     file_actions = [action.text() for action in menus["File"].actions()]
     assert file_actions.index("Inspect Recovery…") < file_actions.index("Quit")
     ai_actions = [action.text() if not action.isSeparator() else "|" for action in menus["AI"].actions()]
     assert ai_actions.index("Check Continuity Against Selected Notes") < ai_actions.index("Cancel Project Analysis") < ai_actions.index("Ollama Debug")
     assert not window._project_actions["New Character…"].isEnabled()
+    assert "project" in window._project_actions["New Character…"].toolTip().lower()
+    assert "selected" in window._project_actions["Move Scene Up"].toolTip().lower()
     project = Project.create(tmp_path / "novel", "Novel")
     window._project_opened(project)
     assert window._project_actions["New Character…"].isEnabled()
@@ -1563,7 +1569,8 @@ def test_project_translation_actions_translate_and_refresh_open_documents(
         for action in window.menuBar().actions()
         if action.text() == "Project"
     )
-    menu_actions = {action.text() for action in project_menu.actions()}
+    project_ai = next(action.menu() for action in project_menu.actions() if action.text() == "Project AI")
+    menu_actions = {action.text() for action in project_ai.actions()}
     assert "Translate Project to Ukrainian…" in menu_actions
     assert "Translate Project to English…" in menu_actions
 

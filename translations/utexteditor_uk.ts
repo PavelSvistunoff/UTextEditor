@@ -1263,6 +1263,13 @@
         <translation type="vanished">Не вдалося з’єднатися або знайти модель «%1». Перевірте, чи запущено Ollama, і за потреби виконайте `ollama pull %1`.</translation>
     </message>
     <message><source>Search Project Text…</source><translation>Пошук у тексті проєкту…</translation></message>
+    <message><source>Move Items</source><translation>Перемістити елементи</translation></message>
+    <message><source>Links</source><translation>Зв’язки</translation></message>
+    <message><source>Revisions</source><translation>Редакції</translation></message>
+    <message><source>Export</source><translation>Експорт</translation></message>
+    <message><source>Project AI</source><translation>ШІ проєкту</translation></message>
+    <message><source>Requires an open project.</source><translation>Потрібен відкритий проєкт.</translation></message>
+    <message><source>Requires an open project and a suitable selected item.</source><translation>Потрібні відкритий проєкт і відповідний вибраний елемент.</translation></message>
     <message><source>Open linked item</source><translation>Відкрити пов’язаний елемент</translation></message>
     <message><source>This item has no links.</source><translation>Цей елемент не має зв’язків.</translation></message>
     <message><source>Quick Open…</source><translation>Швидке відкриття…</translation></message>

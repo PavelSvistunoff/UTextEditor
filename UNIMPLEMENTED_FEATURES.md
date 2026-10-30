@@ -135,12 +135,10 @@ and effort are relative estimates.
 8. **Verify open-tab navigation on native platforms** — small effort. Qt's
    next/previous-tab shortcuts and the searchable open-tab list are available;
    manual native-platform shortcut verification remains outstanding.
-10. **Improve menu discoverability** — medium priority, medium effort. Review
-    the long Project and AI menus with real usage scenarios; consider grouped
-    submenus or a searchable command picker while retaining existing actions
-    and shortcuts. Show why context-dependent actions are unavailable and
-    avoid adding conflicting shortcuts. Validate the grouping with keyboard and
-    screen-reader users instead of moving actions solely for cosmetic reasons.
+10. **Validate menu discoverability** — medium priority. Project actions are
+    grouped into submenus and describe their prerequisites. Review Project and
+    AI workflows with keyboard and screen-reader users; a command picker or
+    further changes should be driven by that feedback.
 11. **Add navigation history and return-to-writing** — lower priority, medium
     effort. Record a bounded, session-only back/forward history of explicit
     scene, note, and search-result jumps, including cursor position where safe.

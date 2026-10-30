@@ -405,14 +405,41 @@ class MainWindow(QMainWindow):
             "Indent Lines": self.tr("Indent Lines"), "Outdent Lines": self.tr("Outdent Lines"),
             "Trim Trailing Whitespace": self.tr("Trim Trailing Whitespace"),
         }
+        groups = {
+            "Move Scene to Chapter…": "move", "Move Scene Up": "move", "Move Scene Down": "move",
+            "Move Chapter Up": "move", "Move Chapter Down": "move",
+            "Link Note…": "links", "Unlink Note…": "links", "Open Linked Item…": "links",
+            "Create Revision Snapshot…": "revisions", "Review Revision Snapshots…": "revisions",
+            "Export Manuscript…": "export", "Compile Book as PDF…": "export",
+            "AI Project Setup…": "ai", "Auto-writer…": "ai",
+            "Translate Project to Ukrainian…": "ai", "Translate Project to English…": "ai",
+        }
+        group_labels = {"move": self.tr("Move Items"), "links": self.tr("Links"),
+                        "revisions": self.tr("Revisions"), "export": self.tr("Export"),
+                        "ai": self.tr("Project AI")}
+        group_menus = {}
+        project_menu.setToolTipsVisible(True)
         for title, handler, requires_project in project_actions:
-            if title in {"New Chapter…", "Rename Selected…", "Link Note…", "Create Revision Snapshot…", "Export Manuscript…", "AI Project Setup…"}:
+            if title in {"New Chapter…", "Rename Selected…"}:
                 project_menu.addSeparator()
             action = QAction(action_text[title], self)
             action.triggered.connect(handler)
-            project_menu.addAction(action)
+            group = groups.get(title)
+            if group is not None:
+                if group not in group_menus:
+                    group_menus[group] = project_menu.addMenu(group_labels[group])
+                    group_menus[group].setToolTipsVisible(True)
+                group_menus[group].addAction(action)
+            else:
+                project_menu.addAction(action)
             self._project_actions[title] = action
             action.setEnabled(not requires_project)
+            if requires_project:
+                explanation = self.tr("Requires an open project.")
+                if title in {"Rename Selected…", "Duplicate Selected…", "Remove Selected…", "Move Scene to Chapter…", "Move Scene Up", "Move Scene Down", "Move Chapter Up", "Move Chapter Down", "Link Note…", "Unlink Note…", "Open Linked Item…"}:
+                    explanation = self.tr("Requires an open project and a suitable selected item.")
+                action.setToolTip(explanation)
+                action.setStatusTip(explanation)
         reveal_action = QAction(self.tr("Reveal Current Document in Project"), self)
         reveal_action.triggered.connect(self.reveal_current_project_document)
         project_menu.addAction(reveal_action)
@@ -429,7 +456,7 @@ class MainWindow(QMainWindow):
         self._project_translation_cancel_action.triggered.connect(
             self.cancel_project_translation
         )
-        project_menu.addAction(self._project_translation_cancel_action)
+        group_menus["ai"].addAction(self._project_translation_cancel_action)
 
         self.focus_mode_action = QAction(self.tr("Distraction-free mode"), self)
         self.focus_mode_action.setCheckable(True)

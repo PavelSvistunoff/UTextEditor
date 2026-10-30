@@ -124,6 +124,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   project pattern and needs a non-blocking, serialized persistence design.
   Do not mark complete until these issues are resolved. Full offline suite:
   464 passed, 2 skipped.
+- **TASK-018 — in progress:** grouped Project movement, links, revisions,
+  export and AI actions into submenus while retaining their existing action
+  objects, and added project/selection requirement descriptions. AI menu
+  separators and existing keyboard shortcuts remain in place. Automated tests
+  cover grouping and action availability; native keyboard and accessibility
+  review and compilation of Ukrainian source strings remain outstanding.
+  Do not mark complete until manual review is performed. Full offline suite:
+  464 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
