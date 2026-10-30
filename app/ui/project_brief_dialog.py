@@ -56,7 +56,7 @@ class ProjectBriefDialog(QDialog):
         self.resize(680, 650)
 
         instructions = QLabel(
-            self.tr("Edit this template with the details you know. Leave anything undecided as a prompt, or use Suggest to ask the configured local AI to propose ideas for gaps. Review suggestions before continuing."),
+            self.tr("Edit this template with the details you know. Leave anything undecided as a prompt, or use Suggest to ask the configured AI to propose ideas for gaps. Review suggestions before continuing."),
             self,
         )
         instructions.setWordWrap(True)
@@ -99,7 +99,7 @@ class ProjectBriefDialog(QDialog):
         self.autopilot_button.setEnabled(not suggesting)
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(not suggesting)
         self.status.setText(
-            message or ("Asking the local model for suggestions…" if suggesting else "")
+            message or (self.tr("Asking the model for suggestions…") if suggesting else "")
         )
 
     def set_autopilot_running(self, running: bool, message: str = "") -> None:

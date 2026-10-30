@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
+import subprocess
+import sys
 from threading import Event, Thread, current_thread
 from uuid import uuid4
 
@@ -466,6 +469,47 @@ def test_text_saves_are_atomic_and_reject_stale_disk_snapshots(tmp_path):
         project.write_note(note.id, "replacement", expected_content="reference")
     assert project.read_note(note.id) == "external change"
     assert not list((project.root / "notes").glob("*.tmp"))
+
+
+def test_project_save_detects_separate_process_edit_during_staging(tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    path = project.root / scene.path
+    original_fsync = os.fsync
+    changed = []
+
+    def change_after_stage(fd):
+        original_fsync(fd)
+        if not changed:
+            subprocess.run([sys.executable, "-c", "from pathlib import Path; import sys; Path(sys.argv[1]).write_text('external edit', encoding='utf-8')", str(path)], check=True)
+            changed.append(True)
+
+    monkeypatch.setattr(project_service.os, "fsync", change_after_stage)
+    with pytest.raises(ProjectError, match="during saving"):
+        project.write_scene(scene.id, "my edit", expected_content="original")
+    assert path.read_text(encoding="utf-8") == "external edit"
+    assert not list(path.parent.glob(".scene.txt.*.tmp"))
+
+
+def test_manifest_save_detects_separate_process_edit_during_staging(tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Novel")
+    chapter = project.add_chapter("Original")
+    path = project.root / "utexteditor.yaml"
+    original_fsync = os.fsync
+    changed = []
+
+    def change_after_stage(fd):
+        original_fsync(fd)
+        if not changed:
+            subprocess.run([sys.executable, "-c", "from pathlib import Path; import sys; p=Path(sys.argv[1]); p.write_bytes(p.read_bytes()+b'\\n# external edit\\n')", str(path)], check=True)
+            changed.append(True)
+
+    monkeypatch.setattr(project_service.os, "fsync", change_after_stage)
+    with pytest.raises(ProjectError, match="during saving"):
+        project.rename_chapter(chapter.id, "Changed")
+    assert path.read_bytes().endswith(b"# external edit\n")
+    assert project.manifest.chapters[0].title == "Original"
+    assert not list(project.root.glob(".utexteditor.yaml.*.tmp"))
 
 
 def test_project_save_serializes_compare_and_replace(tmp_path, monkeypatch):

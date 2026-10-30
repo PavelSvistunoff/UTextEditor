@@ -106,7 +106,7 @@ character YAML exports carry the image, so imports and copies remain portable.
 
 ## 5. Main window and navigation
 
-The main window contains a menu bar, tabbed document area, central editor, and status bar. A toolbar is optional. Keep AI status visible but unobtrusive; a connection failure must not disable ordinary editing.
+The main window contains a menu bar, tabbed document area, central editor, and status bar. A toolbar is optional. Keep AI status visible but unobtrusive; a connection failure must not disable ordinary editing. Project > Reveal Current Document in Project selects the stable ID of the open bound scene or reference note, expanding its ancestors while preserving other branches; standalone documents receive an explanation.
 
 Expected menus and actions:
 
@@ -349,7 +349,7 @@ This section makes the preceding requirements concrete for common user flows. It
 - Missing or unreadable optional settings must not prevent startup. Use validated defaults; show a warning only when the user needs to act.
 - AI connectivity may be checked after the window is responsive. Progress and results must not take focus, open a modal dialog, or disable editing.
 - When Ollama is unavailable, editing, local file operations, and search remain usable. AI actions explain the failure and how to reach settings.
-- Before the first request containing document context, disclose that nearby text is sent to the configured Ollama host. Avoid repeated notices unless the destination materially changes.
+- Before the first request containing document context, disclose the categories of data sent to the configured Ollama host and require consent. Save the approved destination without manuscript content; a changed host requires fresh consent. Declining suppresses repeated automatic prompts for that host during the session, while an explicit action may ask again. After approval, automatic requests capture fresh editor state; explicit actions can be retried by the author. Existing workers retain their original provider when settings change.
 
 ### 24.2 File operation transaction boundaries
 

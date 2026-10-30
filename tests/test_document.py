@@ -1,4 +1,7 @@
 from pathlib import Path
+import os
+import subprocess
+import sys
 
 import pytest
 
@@ -146,6 +149,29 @@ def test_file_manager_refuses_to_overwrite_external_changes(tmp_path: Path) -> N
 
     assert path.read_text(encoding="utf-8") == "external version"
     assert document.dirty
+
+
+def test_save_detects_separate_process_edit_during_staging(tmp_path: Path, monkeypatch) -> None:
+    path = tmp_path / "draft.txt"
+    path.write_text("original", encoding="utf-8")
+    manager = FileManager()
+    document = manager.open(path)
+    document.update_text("my edit")
+    original_fsync = os.fsync
+    changed = []
+
+    def change_after_stage(fd):
+        original_fsync(fd)
+        if not changed:
+            subprocess.run([sys.executable, "-c", "from pathlib import Path; import sys; Path(sys.argv[1]).write_text('external edit', encoding='utf-8')", str(path)], check=True)
+            changed.append(True)
+
+    monkeypatch.setattr("app.document.file_manager.os.fsync", change_after_stage)
+    with pytest.raises(ExternalChangeError, match="during saving"):
+        manager.save(document)
+    assert path.read_text(encoding="utf-8") == "external edit"
+    assert document.dirty
+    assert not list(tmp_path.glob(".draft.txt.*.tmp"))
 
 
 def test_file_manager_updates_disk_digest_for_repeated_saves(tmp_path: Path) -> None:

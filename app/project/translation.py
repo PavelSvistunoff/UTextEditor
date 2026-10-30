@@ -181,7 +181,7 @@ def run_project_translation(
                 or "\x00" in translated
                 or len(translated) > MAX_TRANSLATION_OUTPUT_LENGTH
             ):
-                raise ProjectError(f"The local model returned invalid text for {label}.")
+                raise ProjectError(f"The model returned invalid text for {label}.")
             translated = _preserve_edge_layout(value, translated.strip())
         else:
             translated = value

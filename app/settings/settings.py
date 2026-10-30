@@ -37,6 +37,8 @@ class AppSettings:
     autosave_enabled: bool = True
     autosave_idle_ms: int = 2000
     recent_projects: list[str] = field(default_factory=list)
+    # Empty in existing settings until the first disclosure is accepted.
+    ai_context_consent_host: str = ""
 
     @staticmethod
     def _default_settings_path() -> Path:
@@ -92,6 +94,14 @@ class AppSettings:
         self.ollama_host = self._string(self.ollama_host, defaults.ollama_host, 2048).rstrip("/")
         if not self._valid_host(self.ollama_host):
             self.ollama_host = defaults.ollama_host
+        if isinstance(self.ai_context_consent_host, str):
+            self.ai_context_consent_host = self.ai_context_consent_host.strip().rstrip("/")
+        if (
+            not isinstance(self.ai_context_consent_host, str)
+            or len(self.ai_context_consent_host) > 2048
+            or not self._valid_host(self.ai_context_consent_host)
+        ):
+            self.ai_context_consent_host = ""
         self.ollama_model = self._string(self.ollama_model, defaults.ollama_model, 256)
         self.ai_role = self._string(self.ai_role, defaults.ai_role, 4000)
         self.completion_template = self._string(self.completion_template, defaults.completion_template, 8000)
@@ -145,6 +155,14 @@ class AppSettings:
             temperature = math.nan
         self.temperature = temperature if math.isfinite(temperature) and 0 <= temperature <= 2 else defaults.temperature
         return self
+
+    def has_ai_context_consent(self, destination: str) -> bool:
+        """Consent applies only to the exact validated destination approved."""
+        return bool(
+            self.ai_context_consent_host
+            and isinstance(destination, str)
+            and destination.rstrip("/") == self.ai_context_consent_host
+        )
 
     @staticmethod
     def _string(value, fallback: str, maximum: int) -> str:

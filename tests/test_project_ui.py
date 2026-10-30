@@ -39,7 +39,7 @@ def isolate_settings(tmp_path, monkeypatch):
         "_default_settings_path",
         staticmethod(lambda: settings_path),
     )
-    AppSettings(ui_language="en").save(settings_path)
+    AppSettings(ui_language="en", ai_context_consent_host="http://localhost:11434").save(settings_path)
 
 
 def wait_until(predicate, application):
@@ -95,6 +95,45 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
     assert project.read_scene(scene.id) == "edited manuscript"
     assert not editor.document_state.dirty
     assert root.child(2).text(0) == "Characters (0)"
+    window.close()
+
+
+@pytest.mark.parametrize("kind", ["scene", "note"])
+def test_reveal_current_project_document_uses_stable_id_and_preserves_other_branches(application, tmp_path, kind):
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter")
+    scene = project.add_scene("Shared", chapter_id=chapter.id, content="draft")
+    note = project.add_note("Shared", content="note")
+    item = scene if kind == "scene" else note
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    wait_until(lambda: window.project_view is not None and window.project_view.topLevelItemCount() > 0, application)
+    view = window.project_view
+    root = view.topLevelItem(0)
+    for child in (root, *(root.child(i) for i in range(root.childCount()))):
+        child.setExpanded(False)
+    unrelated = next(root.child(i) for i in range(root.childCount()) if root.child(i).data(0, Qt.ItemDataRole.UserRole + 1) == "characters")
+    window._open_project_document(kind, item.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.insertPlainText(" unsaved")
+    before = editor.toPlainText()
+    window.reveal_current_project_document()
+    selected = view.currentItem()
+    assert view._item_key(selected) == (kind, item.id)
+    assert root.isExpanded() and selected.parent().isExpanded()
+    assert not unrelated.isExpanded()
+    assert editor.toPlainText() == before
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_reveal_standalone_document_explains_unbound_state(application):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.reveal_current_project_document()
+    assert "not bound" in window.statusBar().currentMessage()
     window.close()
 
 

@@ -53,6 +53,17 @@ class FileManager:
                 os.fsync(stream.fileno())
             if write_target.exists():
                 os.chmod(temporary, write_target.stat().st_mode)
+            if same_document and document.disk_digest is not None:
+                try:
+                    current = write_target.read_bytes()
+                except FileNotFoundError as exc:
+                    raise ExternalChangeError(
+                        f"{target} was removed during saving; use Save As to create a new file."
+                    ) from exc
+                if hashlib.sha256(current).hexdigest() != document.disk_digest:
+                    raise ExternalChangeError(
+                        f"{target} changed on disk during saving; reload, compare, or use Save As."
+                    )
             os.replace(temporary, write_target)
         except BaseException:
             try:

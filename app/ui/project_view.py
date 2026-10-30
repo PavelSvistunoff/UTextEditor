@@ -137,6 +137,21 @@ class ProjectView(QTreeWidget):
                 group.setHidden(bool(self.character_filter) and not any(not group.child(i).isHidden() for i in range(group.childCount())))
                 break
 
+    def reveal_item(self, kind: str, identifier: str) -> bool:
+        """Select a stable project item, opening only its ancestor branches."""
+        item = next((item for item in self._items() if self._item_key(item) == (kind, identifier)), None)
+        if item is None or item.isHidden():
+            return False
+        ancestor = item.parent()
+        while ancestor is not None:
+            ancestor.setExpanded(True)
+            ancestor = ancestor.parent()
+        self.clearSelection()
+        self.setCurrentItem(item)
+        self.scrollToItem(item)
+        self.setFocus()
+        return True
+
     def _count_label(self, title: str, count: WordCount) -> str:
         if count.complete:
             word_count = self.tr("%n words", None, count.count)

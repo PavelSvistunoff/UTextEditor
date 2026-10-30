@@ -166,7 +166,7 @@ class SettingsDialog(QDialog):
         if not host or not model:
             self.connection_status.setText(self.tr("Enter both a host and model."))
             return
-        self.connection_status.setText(self.tr("Testing local model connection…"))
+        self.connection_status.setText(self.tr("Testing model connection…"))
         self.connection_test_requested.emit(host, model)
 
     def set_connection_test_result(self, available: bool, model: str) -> None:

@@ -105,6 +105,7 @@ class WritingGoalTracker:
         local_date: str | None = None,
         undo: bool = False,
         redo: bool = False,
+        merge_with_previous: bool = False,
     ) -> int:
         if not isinstance(text, str):
             raise TypeError("Writing-goal text must be a string.")
@@ -141,11 +142,23 @@ class WritingGoalTracker:
             # previous one for edits that do not add a word.
             counts = dict(counts)
             counts[today] = counts.get(today, 0) + added
-        states.append((fingerprint, counts))
+        # Qt may merge many keystrokes into a single undo command. Its
+        # intermediate contents cannot be reached by undo or redo, so the UI
+        # may replace the previous endpoint when it knows the command merged.
+        if merge_with_previous and index > 0:
+            states[index] = (fingerprint, counts)
+        else:
+            states.append((fingerprint, counts))
         self._current_text[document_id] = text
         self._histories[document_id] = (states, len(states) - 1)
         self._replace_document_progress(document_id, counts)
         return added
+
+    def discard_unreachable_history(self, document_id: str) -> None:
+        """Retain only the current state after the editor clears its undo stack."""
+        if document_id in self._histories:
+            states, index = self._histories[document_id]
+            self._histories[document_id] = ([states[index]], 0)
 
     def count_new_words(self, document_ids: set[str] | tuple[str, ...] | list[str], *, local_date: str | None = None) -> int:
         today = local_date or self.local_date()

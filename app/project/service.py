@@ -1316,7 +1316,8 @@ class Project:
         if lexical_target.is_symlink():
             raise ProjectPathError("Saving through a symbolic link is not supported")
         try:
-            current = target.read_bytes().decode("utf-8")
+            original_bytes = target.read_bytes()
+            current = original_bytes.decode("utf-8")
             original_mode = target.stat().st_mode
         except (OSError, UnicodeError) as exc:
             raise ProjectError(f"Cannot verify the current file before saving: {exc}") from exc
@@ -1333,6 +1334,10 @@ class Project:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.chmod(temporary, original_mode)
+            if lexical_target.is_symlink() or target.read_bytes() != original_bytes:
+                raise ProjectError(
+                    f"File changed on disk during saving: {relative_path}; reload or compare first"
+                )
             os.replace(temporary, target)
             try:
                 directory_fd = os.open(target.parent, os.O_RDONLY)
@@ -1592,6 +1597,15 @@ class Project:
                 stream.write(encoded)
                 stream.flush()
                 os.fsync(stream.fileno())
+            try:
+                latest_digest = hashlib.sha256(destination.read_bytes()).digest()
+            except FileNotFoundError:
+                latest_digest = None
+            if destination.is_symlink() or latest_digest != self._manifest_digest:
+                raise ProjectError(
+                    "The project manifest changed outside UTextEditor during saving. "
+                    "Reopen the project before saving further project changes."
+                )
             os.replace(temporary, destination)
             self._manifest_digest = hashlib.sha256(encoded).digest()
             try:

@@ -30,6 +30,8 @@ def test_real_ollama_generation_is_reviewed_and_undoable(tmp_path, monkeypatch, 
     settings.automatic_spellcheck = False
     settings.maximum_suggestion_length = 128
     settings.ui_language = "en"
+    # This opt-in test sends synthetic text to the configured destination.
+    settings.ai_context_consent_host = settings.ollama_host
     settings_path = tmp_path / "settings.yaml"
     settings.save(settings_path)
     monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: settings_path))

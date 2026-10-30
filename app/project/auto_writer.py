@@ -187,9 +187,9 @@ def run_auto_writer(
             timeout=AUTO_WRITER_REQUEST_TIMEOUT_SECONDS,
         )
         if not isinstance(generated, str) or not generated.strip():
-            raise ProjectError(f"The local model returned an empty result for scene {title!r}.")
+            raise ProjectError(f"The model returned an empty result for scene {title!r}.")
         if len(generated) > MAX_SCENE_OUTPUT_LENGTH or "\x00" in generated:
-            raise ProjectError(f"The local model returned invalid or oversized text for scene {title!r}.")
+            raise ProjectError(f"The model returned invalid or oversized text for scene {title!r}.")
         generated = generated.strip()
         replacements[scene_id] = generated
         if scene_completed is not None:

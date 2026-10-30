@@ -10,7 +10,7 @@ pytest.importorskip("PySide6")
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QAction, QFontDatabase, QIcon, QPalette, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QPlainTextEdit
 
 from app.document.document import Document
 from app.document.text_formatting import indent_lines, outdent_lines
@@ -39,7 +39,7 @@ def isolate_settings(tmp_path, monkeypatch):
         "_default_settings_path",
         staticmethod(lambda: settings_path),
     )
-    AppSettings(ui_language="en").save(settings_path)
+    AppSettings(ui_language="en", ai_context_consent_host="http://localhost:11434").save(settings_path)
 
 
 def test_completion_is_non_destructive_and_tab_accepts_it(application: QApplication) -> None:
@@ -738,6 +738,115 @@ def test_daily_new_words_goal_tracks_typing_undo_and_redo(application: QApplicat
     editor.redo()
     assert window.writing_goals.count_new_words({document_id}) == 2
 
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_compacts_merged_qt_commands_and_keeps_undo_branches(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(1000, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+    for character in "one two three":
+        editor.insertPlainText(character)
+    assert len(window.writing_goals._histories[document_id][0]) == 2
+    assert window.writing_goals.count_new_words({document_id}) == 3
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 3
+
+    editor.moveCursor(QTextCursor.MoveOperation.Start)
+    editor.insertPlainText("four ")
+    assert window.writing_goals.count_new_words({document_id}) == 4
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 3
+    editor.insertPlainText("five ")
+    assert window.writing_goals.count_new_words({document_id}) == 4
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 3
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_releases_states_when_qt_clears_undo_history(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(100, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+    editor.insertPlainText("one two")
+    editor.setPlainText("replacement")
+    states, index = window.writing_goals._histories[document_id]
+    assert len(states) == 1 and index == 0
+    assert not editor.document().isUndoAvailable()
+    assert window.writing_goals.count_new_words({document_id}) == 3
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_long_merged_typing_session_has_two_states(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(1000, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+    for _ in range(1200):
+        editor.insertPlainText("x")
+    assert len(window.writing_goals._histories[document_id][0]) == 2
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_tracks_native_qt_undo_and_redo_slots(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(10, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+    editor.insertPlainText("one two")
+    QPlainTextEdit.undo(editor)
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    QPlainTextEdit.redo(editor)
+    assert window.writing_goals.count_new_words({document_id}) == 2
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_many_independent_commands_undo_and_redo(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(1000, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+    for _ in range(120):
+        cursor = editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText("word ")
+        cursor.endEditBlock()
+    assert window.writing_goals.count_new_words({document_id}) == 120
+    for _ in range(120):
+        editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    for _ in range(120):
+        editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 120
     editor.document_state.mark_saved()
     window._writing_goal_persist_timer.stop()
     window.close()

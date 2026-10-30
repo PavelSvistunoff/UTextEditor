@@ -109,7 +109,7 @@ def run_autopilot(
                 temperature=temperature,
             )
             if not isinstance(content, str) or not content.strip():
-                raise ProjectError(f"The local model returned an empty draft for scene {scene_number}.")
+                raise ProjectError(f"The model returned an empty draft for scene {scene_number}.")
             if len(content) > 18000 or "\x00" in content:
                 raise ProjectError(f"The generated draft for scene {scene_number} is invalid or too long.")
             content = content.strip()
@@ -128,7 +128,7 @@ def run_autopilot(
 
 def _parse_plan(raw: object) -> dict:
     if not isinstance(raw, str) or not raw.strip():
-        raise ProjectError("The local model returned an empty project plan.")
+        raise ProjectError("The model returned an empty project plan.")
     candidate = raw.strip()
     if candidate.startswith("```") and candidate.endswith("```"):
         candidate = candidate[3:-3].strip()
@@ -137,11 +137,11 @@ def _parse_plan(raw: object) -> dict:
     try:
         plan = json.loads(candidate, object_pairs_hook=_unique_object)
     except json.JSONDecodeError as exc:
-        raise ProjectError(f"The local model returned an invalid JSON plan: {exc}") from exc
+        raise ProjectError(f"The model returned an invalid JSON plan: {exc}") from exc
     except ValueError as exc:
-        raise ProjectError(f"The local model returned an invalid JSON plan: {exc}") from exc
+        raise ProjectError(f"The model returned an invalid JSON plan: {exc}") from exc
     if not isinstance(plan, dict) or set(plan) != {"chapters", "characters"}:
-        raise ProjectError("The local model's project plan has an unsupported structure.")
+        raise ProjectError("The model's project plan has an unsupported structure.")
     chapters = plan["chapters"]
     characters = plan["characters"]
     if not isinstance(chapters, list) or not 1 <= len(chapters) <= MAX_AUTOPILOT_CHAPTERS:

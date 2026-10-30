@@ -28,7 +28,7 @@ def isolate_settings(tmp_path, monkeypatch):
         "_default_settings_path",
         staticmethod(lambda: settings_path),
     )
-    AppSettings(ui_language="en").save(settings_path)
+    AppSettings(ui_language="en", ai_context_consent_host="http://localhost:11434").save(settings_path)
 
 
 def test_parse_outline_returns_chapters_and_scenes():
@@ -765,6 +765,42 @@ def test_project_brief_dialog_starts_with_editable_template():
     dialog.editor.setPlainText("My story details")
     assert dialog.brief() == "My story details"
     dialog.close()
+
+
+@pytest.mark.parametrize("host", ["http://localhost:11434", "https://ollama.example:11434"])
+def test_project_ai_confirmations_identify_the_configured_destination(tmp_path, monkeypatch, host):
+    application = QApplication.instance() or QApplication([])
+    project = Project.create(tmp_path / "novel", "Novel")
+    project.add_scene("Opening", content="Original text")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.provider.host = host
+    window.settings.ai_context_consent_host = host
+    confirmations = []
+
+    def decline(_parent, title, message, *_args):
+        confirmations.append((title, message))
+        return QMessageBox.StandardButton.Cancel
+
+    monkeypatch.setattr(QMessageBox, "question", decline)
+    monkeypatch.setattr(AutoWriterDialog, "exec", lambda _self: QDialog.DialogCode.Accepted)
+    monkeypatch.setattr(AutoWriterDialog, "values", lambda _self: ("write_empty", ""))
+    window.start_auto_writer()
+    dialog = ProjectBriefDialog(window)
+    window._project_setup_brief_dialog = dialog
+    window._suggest_project_brief(project, dialog, "A story")
+    window._start_project_autopilot(project, dialog, "A story")
+
+    assert len(confirmations) == 3
+    for title, message in confirmations:
+        assert host in message
+        assert window.provider.model in message
+        assert "local model" not in message.lower()
+        assert "local ai" not in title.lower()
+    assert project.read_scene(next(project.iter_scenes()).id) == "Original text"
+    dialog.close()
+    window.close()
 
 
 def test_suggest_action_fills_template_using_private_local_ai(tmp_path, monkeypatch):

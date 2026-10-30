@@ -123,6 +123,20 @@ def test_unchanged_progress_snapshots_are_shared_and_remain_correct_after_reset(
     assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 1
 
 
+def test_compacted_command_preserves_daily_counts_through_reset_undo_and_redo() -> None:
+    tracker = WritingGoalTracker(10, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "one", local_date="2026-10-17")
+    tracker.record_text("doc", "one two", local_date="2026-10-18", merge_with_previous=True)
+    assert len(tracker._histories["doc"][0]) == 2
+    tracker.reset_today(local_date="2026-10-18")
+    tracker.record_text("doc", "", local_date="2026-10-18", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
+    tracker.record_text("doc", "one two", local_date="2026-10-18", redo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 1
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 0
+
+
 def test_goal_settings_and_progress_round_trip_atomically(tmp_path: Path) -> None:
     store = WritingGoalStore(tmp_path / "settings" / "writing-goals.json")
     tracker = WritingGoalTracker(250, "new_words")

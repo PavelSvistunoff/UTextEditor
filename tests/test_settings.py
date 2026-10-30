@@ -65,6 +65,25 @@ def test_ui_language_is_a_separate_persisted_setting_and_invalid_values_fall_bac
     assert AppSettings(ui_language=["uk"]).validated().ui_language == "system"
 
 
+def test_ai_context_consent_is_destination_specific_and_round_trips(tmp_path):
+    path = tmp_path / "settings.yaml"
+    settings = AppSettings(ai_context_consent_host="https://ollama.example:11434/")
+    settings.save(path)
+    loaded = AppSettings.load(path)
+
+    assert loaded.has_ai_context_consent("https://ollama.example:11434")
+    assert loaded.has_ai_context_consent("https://ollama.example:11434/")
+    assert not loaded.has_ai_context_consent("http://localhost:11434")
+    assert not loaded.has_ai_context_consent("http://ollama.example:11434")
+    assert not AppSettings().has_ai_context_consent("http://localhost:11434")
+
+
+def test_invalid_ai_context_consent_is_not_trusted():
+    for value in (None, 123, "invalid", "https://user:password@example.com", "https://example.com/path"):
+        settings = AppSettings(ai_context_consent_host=value).validated()
+        assert settings.ai_context_consent_host == ""
+
+
 def test_autosave_preferences_round_trip_and_validate_idle_interval(tmp_path) -> None:
     path = tmp_path / "settings.yaml"
     settings = AppSettings(autosave_enabled=False, autosave_idle_ms=3500)

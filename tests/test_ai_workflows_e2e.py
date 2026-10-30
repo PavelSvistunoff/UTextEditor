@@ -8,13 +8,15 @@ import pytest
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QImage, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QCheckBox, QDialog, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QDialog, QDialogButtonBox, QInputDialog, QMessageBox
 
 from app.ai.models import Suggestion
 from app.project import Project, SceneCharacterAssociation
 from app.settings.settings import AppSettings
 from app.ui.main_window import MainWindow
 from app.ui.character_dialog import CharacterDialog
+from app.ui.project_brief_dialog import ProjectBriefDialog
+from app.ui.settings_dialog import SettingsDialog
 
 
 @pytest.fixture
@@ -25,7 +27,7 @@ def app():
 @pytest.fixture
 def window(app, tmp_path, monkeypatch):
     monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: tmp_path / "settings.yaml"))
-    AppSettings(ui_language="en", automatic_spellcheck=False).save(tmp_path / "settings.yaml")
+    AppSettings(ui_language="en", automatic_spellcheck=False, ai_context_consent_host="http://localhost:11434").save(tmp_path / "settings.yaml")
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()
     yield window
@@ -48,6 +50,147 @@ def wait_until(predicate):
     loop.exec()
     poll.stop()
     assert predicate(), "Timed out waiting for AI workflow"
+
+
+@pytest.mark.parametrize("operation", ["completion", "spellcheck"])
+def test_first_context_request_requires_remote_disclosure_and_consent(window, monkeypatch, operation):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Draft text")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    window.provider.host = "https://remote.example:11434"
+    window.settings.ollama_host = window.provider.host
+    window.settings.ai_context_consent_host = ""
+    calls = []
+    monkeypatch.setattr(window.provider, "complete", lambda *args, **kwargs: calls.append("completion") or "")
+    monkeypatch.setattr(window.provider, "check_spelling", lambda *args, **kwargs: calls.append("spellcheck") or [])
+    request = window.request_completion if operation == "completion" else window.check_spelling
+
+    request(automatic=True)
+    disclosure = window._ai_disclosure
+    assert disclosure is not None and window.provider.host in disclosure.message.text()
+    assert not calls
+    disclosure.buttons.button(QDialogButtonBox.StandardButton.No).click()
+    request(automatic=True)
+    assert window._ai_disclosure is None and not calls
+    assert editor.toPlainText() == "Draft text"
+
+    request()
+    window._ai_disclosure.buttons.button(QDialogButtonBox.StandardButton.Yes).click()
+    wait_until(lambda: calls == [operation])
+    assert AppSettings.load().has_ai_context_consent("https://remote.example:11434")
+    assert editor.toPlainText() == "Draft text"
+
+
+def test_disclosure_does_not_authorize_changed_destination(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Draft")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    window.settings.ai_context_consent_host = ""
+    calls = []
+    monkeypatch.setattr(window.provider, "complete", lambda *args, **kwargs: calls.append(True) or "")
+    window.request_completion()
+    disclosure = window._ai_disclosure
+    window.provider.host = "https://new.example"
+    disclosure.buttons.button(QDialogButtonBox.StandardButton.Yes).click()
+    QApplication.processEvents()
+    assert not calls
+    assert not window.settings.has_ai_context_consent("https://new.example")
+    window.request_completion()
+    assert "https://new.example" in window._ai_disclosure.message.text()
+    window._ai_disclosure.reject()
+
+
+def test_consent_save_failure_does_not_send_context(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Draft")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    window.settings.ai_context_consent_host = ""
+    calls = []
+    messages = []
+    window.statusBar().messageChanged.connect(messages.append)
+    monkeypatch.setattr(window.provider, "complete", lambda *a, **k: calls.append(True) or "")
+    def fail_save(*_args, **_kwargs):
+        raise OSError("disk full")
+    monkeypatch.setattr(window.settings, "save", fail_save)
+    window.request_completion()
+    window._ai_disclosure.buttons.button(QDialogButtonBox.StandardButton.Yes).click()
+    QApplication.processEvents()
+    assert not calls
+    assert not window.settings.ai_context_consent_host
+    assert any("disk full" in message for message in messages)
+
+
+def test_disclosure_remains_accessible_from_modal_workflow(window):
+    window.settings.ai_context_consent_host = ""
+    parent = QDialog(window)
+    parent.setModal(True)
+    parent.show()
+    QApplication.processEvents()
+    try:
+        assert not window._ensure_ai_context_consent()
+        assert window._ai_disclosure.parentWidget() is parent
+        assert not window._ai_disclosure.isModal()
+        window._ai_disclosure.reject()
+        assert window._ai_disclosure is None
+    finally:
+        parent.close()
+
+
+def test_changing_ai_host_does_not_redirect_existing_provider(window, monkeypatch):
+    old_provider = window.provider
+    old_host = old_provider.host
+    monkeypatch.setattr(window, "_check_connection", lambda: None)
+
+    def accept_settings(_dialog):
+        window.settings.ollama_host = "https://new.example:11434"
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(SettingsDialog, "exec", accept_settings)
+    window.show_settings()
+    assert old_provider.host == old_host
+    assert window.provider is not old_provider
+    assert window.provider.host == "https://new.example:11434"
+    assert window.completion_service.provider is window.provider
+    assert window.spellcheck_service.provider is window.provider
+    assert not window.settings.has_ai_context_consent(window.provider.host)
+
+
+def test_all_explicit_context_workflows_require_disclosure(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "consent-project", "Novel")
+    project.add_scene("Opening", content="private scene")
+    character = project.add_character("Mara")
+    window._project_opened(project)
+    window.settings.ai_context_consent_host = ""
+    brief_dialog = ProjectBriefDialog(window)
+    window._project_setup_brief_dialog = brief_dialog
+    character_dialog = CharacterDialog(character, parent=window)
+    calls = []
+    monkeypatch.setattr(window.provider, "generate", lambda *a, **k: calls.append("generate") or "")
+    monkeypatch.setattr(window.provider, "generate_private", lambda *a, **k: calls.append("private") or "")
+    actions = [
+        window.setup_project_with_ai,
+        window.start_auto_writer,
+        window.translate_project_to_ukrainian,
+        lambda: window._start_project_outline_request(project, "brief"),
+        lambda: window._suggest_project_brief(project, brief_dialog, "brief"),
+        lambda: window._start_project_autopilot(project, brief_dialog, "brief"),
+        lambda: window._suggest_scene_development(character_dialog, project),
+        lambda: window._suggest_character_profile(character_dialog, project),
+        window.generate_from_prompt,
+        lambda: window._start_project_analysis("summary"),
+    ]
+    for action in actions:
+        action()
+        assert window._ai_disclosure is not None
+        window._ai_disclosure.reject()
+    QApplication.processEvents()
+    assert not calls
+    assert project.read_scene(next(project.iter_scenes()).id) == "private scene"
+    brief_dialog.close()
+    character_dialog.close()
 
 
 def test_completion_worker_requires_tab_and_discards_stale_response(window, monkeypatch):
@@ -126,6 +269,126 @@ def test_spellcheck_worker_discards_results_after_edit(window, monkeypatch):
         wait_until(lambda: any(item.name == "Spellcheck" and item.state == "discarded" for item in window.ai_activity.activities))
         assert editor.toPlainText() == "teh cat!"
         assert not editor.spell_suggestions
+    finally:
+        release.set()
+
+
+@pytest.mark.parametrize("first_fails", [False, True])
+def test_slow_spellcheck_coalesces_to_latest_pending_document(window, monkeypatch, first_fails):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("first")
+    window._completion_timer.stop()
+    started, release = Event(), Event()
+    calls = []
+
+    def check(text, _language):
+        calls.append(text)
+        if len(calls) == 1:
+            started.set()
+            assert release.wait(3)
+            if first_fails:
+                raise RuntimeError("first call failed")
+        return []
+
+    monkeypatch.setattr(window.provider, "check_spelling", check)
+    try:
+        window.check_spelling()
+        wait_until(started.is_set)
+        for text in ("second", "third", "last"):
+            editor.setPlainText(text)
+            window.check_spelling()
+        assert calls == ["first"]
+        release.set()
+        wait_until(lambda: len(calls) == 2 and window._spellcheck_worker is None)
+        assert calls == ["first", "last"]
+        assert editor.toPlainText() == "last"
+    finally:
+        release.set()
+
+
+def test_pending_spellcheck_is_discarded_when_document_changes(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("first")
+    window._completion_timer.stop()
+    started, release = Event(), Event()
+    calls = []
+
+    def check(text, _language):
+        calls.append(text)
+        started.set()
+        assert release.wait(3)
+        return []
+
+    monkeypatch.setattr(window.provider, "check_spelling", check)
+    try:
+        window.check_spelling()
+        wait_until(started.is_set)
+        editor.setPlainText("pending")
+        window.check_spelling()
+        editor.setPlainText("changed again")
+        release.set()
+        wait_until(lambda: window._spellcheck_worker is None)
+        assert calls == ["first"]
+        assert not editor.spell_suggestions
+    finally:
+        release.set()
+
+
+def test_cancelling_spellcheck_clears_pending_request_and_keeps_ui_responsive(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("first")
+    window._completion_timer.stop()
+    started, release = Event(), Event()
+    calls = []
+    timer_ran = []
+
+    def check(text, _language):
+        calls.append(text)
+        started.set()
+        assert release.wait(3)
+        return []
+
+    monkeypatch.setattr(window.provider, "check_spelling", check)
+    try:
+        window.check_spelling()
+        wait_until(started.is_set)
+        editor.setPlainText("pending")
+        window.check_spelling()
+        QTimer.singleShot(0, lambda: timer_ran.append(True))
+        wait_until(lambda: bool(timer_ran))
+        window._cancel_activity_spellcheck(window._spellcheck_worker)
+        release.set()
+        wait_until(lambda: window._spellcheck_worker is None)
+        assert calls == ["first"]
+        assert window._spellcheck_pending is None
+    finally:
+        release.set()
+
+
+def test_shutdown_cancels_pending_spellcheck_without_starting_it(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("first")
+    window._completion_timer.stop()
+    started, release = Event(), Event()
+    calls = []
+
+    def check(text, _language):
+        calls.append(text)
+        started.set()
+        assert release.wait(3)
+        return []
+
+    monkeypatch.setattr(window.provider, "check_spelling", check)
+    try:
+        window.check_spelling()
+        wait_until(started.is_set)
+        editor.setPlainText("pending")
+        window.check_spelling()
+        window._cancel_pending_ai()
+        release.set()
+        wait_until(lambda: window._spellcheck_worker is None)
+        assert calls == ["first"]
+        assert window._spellcheck_pending is None
     finally:
         release.set()
 

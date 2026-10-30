@@ -2,6 +2,19 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="uk_UA">
 <context>
+    <name>AIContextDisclosure</name>
+    <message>
+        <source>AI context and destination</source>
+        <translation>Контекст і адреса ШІ</translation>
+    </message>
+    <message>
+        <source>AI requests can send document text, writing instructions, project outlines, reference notes, and associated character information to %1. The destination may be remote. Requests and responses may also appear in this session's AI diagnostics. Allow AI context to be sent to this destination?</source>
+        <translation>Запити до ШІ можуть надсилати до %1 текст документів, письменницькі вказівки, плани проєкту, довідкові нотатки та відомості про пов’язаних персонажів. Ця адреса може бути віддаленою. Запити та відповіді також можуть відображатися в діагностиці ШІ поточного сеансу. Дозволити надсилання контексту ШІ на цю адресу?</translation>
+    </message>
+    <message><source>Allow</source><translation>Дозволити</translation></message>
+    <message><source>Not now</source><translation>Не зараз</translation></message>
+</context>
+<context>
     <name>AnalysisWindow</name>
     <message>
         <location filename="../app/ui/analysis_window.py" line="17"/>
@@ -18,8 +31,8 @@
     </message>
     <message>
         <location filename="../app/ui/auto_writer_dialog.py" line="24"/>
-        <source>This project currently has %1 scenes. Auto-writer uses the configured local model, project outline, and reference notes. It first creates a complete local revision snapshot. All generated scene changes are applied together only after every result is ready.</source>
-        <translation>У проєкті зараз %1 сцен. Автоматичне написання використовує налаштовану локальну модель, план проєкту й довідкові нотатки. Спочатку створюється повний знімок редакції. Усі зміни сцен застосовуються разом, лише коли готові всі результати.</translation>
+        <source>This project currently has %1 scenes. Auto-writer uses the configured model, project outline, and reference notes. It first creates a complete local revision snapshot. All generated scene changes are applied together only after every result is ready.</source>
+        <translation>У проєкті зараз %1 сцен. Автоматичне написання використовує налаштовану модель, план проєкту й довідкові нотатки. Спочатку створюється повний знімок редакції. Усі зміни сцен застосовуються разом, лише коли готові всі результати.</translation>
     </message>
     <message>
         <location filename="../app/ui/auto_writer_dialog.py" line="29"/>
@@ -615,8 +628,8 @@
     </message>
     <message>
         <location filename="../app/ui/generated_text_dialog.py" line="19"/>
-        <source>Review the local model&apos;s draft. It will not enter your document unless you choose Insert.</source>
-        <translation>Перегляньте чернетку локальної моделі. Її не буде додано до документа, доки ви не натиснете «Вставити».</translation>
+        <source>Review the model&apos;s draft. It will not enter your document unless you choose Insert.</source>
+        <translation>Перегляньте чернетку моделі. Її не буде додано до документа, доки ви не натиснете «Вставити».</translation>
     </message>
     <message>
         <location filename="../app/ui/generated_text_dialog.py" line="23"/>
@@ -641,6 +654,26 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>AI consent could not be saved: %1</source>
+        <translation>Не вдалося зберегти згоду на використання ШІ: %1</translation>
+    </message>
+    <message>
+        <source>AI context allowed. Please retry the action.</source>
+        <translation>Надсилання контексту ШІ дозволено. Повторіть дію.</translation>
+    </message>
+    <message>
+        <source>Reveal Current Document in Project</source>
+        <translation>Показати поточний документ у проєкті</translation>
+    </message>
+    <message>
+        <source>The current document is not bound to the open project.</source>
+        <translation>Поточний документ не прив’язаний до відкритого проєкту.</translation>
+    </message>
+    <message>
+        <source>The project item is not available in the navigation tree.</source>
+        <translation>Елемент проєкту недоступний у дереві навігації.</translation>
+    </message>
     <message>
         <location filename="../app/ui/main_window.py" line="269"/>
         <source>File</source>
@@ -1218,8 +1251,8 @@
         <translation type="vanished">Укажіть адресу сервера й модель.</translation>
     </message>
     <message>
-        <source>Testing local model connection…</source>
-        <translation type="vanished">Перевірка з’єднання з локальною моделлю…</translation>
+        <source>Testing model connection…</source>
+        <translation type="vanished">Перевірка з’єднання з моделлю…</translation>
     </message>
     <message>
         <source>Connected; model “%1” is available.</source>
@@ -1233,14 +1266,18 @@
 <context>
     <name>ProjectBriefDialog</name>
     <message>
+        <source>Asking the model for suggestions…</source>
+        <translation>Запит пропозицій у моделі…</translation>
+    </message>
+    <message>
         <location filename="../app/ui/project_brief_dialog.py" line="55"/>
         <source>Set up writing project</source>
         <translation>Налаштування письмового проєкту</translation>
     </message>
     <message>
         <location filename="../app/ui/project_brief_dialog.py" line="59"/>
-        <source>Edit this template with the details you know. Leave anything undecided as a prompt, or use Suggest to ask the configured local AI to propose ideas for gaps. Review suggestions before continuing.</source>
-        <translation>Заповніть шаблон відомими подробицями. Невизначені пункти залиште як запитання або натисніть «Запропонувати», щоб локальний ШІ доповнив пропуски. Перегляньте пропозиції, перш ніж продовжити.</translation>
+        <source>Edit this template with the details you know. Leave anything undecided as a prompt, or use Suggest to ask the configured AI to propose ideas for gaps. Review suggestions before continuing.</source>
+        <translation>Заповніть шаблон відомими подробицями. Невизначені пункти залиште як запитання або натисніть «Запропонувати», щоб налаштований ШІ доповнив пропуски. Перегляньте пропозиції, перш ніж продовжити.</translation>
     </message>
     <message>
         <location filename="../app/ui/project_brief_dialog.py" line="68"/>
@@ -1726,8 +1763,8 @@
     </message>
     <message>
         <location filename="../app/ui/settings_dialog.py" line="169"/>
-        <source>Testing local model connection…</source>
-        <translation>Перевірка з’єднання з локальною моделлю…</translation>
+        <source>Testing model connection…</source>
+        <translation>Перевірка з’єднання з моделлю…</translation>
     </message>
     <message>
         <location filename="../app/ui/settings_dialog.py" line="175"/>

@@ -77,6 +77,7 @@ from app.settings.settings import AppSettings
 from app.i18n import format_qt, install_translation
 from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow, MAX_DEBUG_EVENTS, format_interaction
+from .ai_context_disclosure import AIContextDisclosure
 from .ai_activity import AIActivityPanel
 from .generated_text_dialog import GeneratedTextDialog
 from .analysis_window import AnalysisWindow
@@ -234,8 +235,11 @@ class MainWindow(QMainWindow):
         self._active_document_generation = 0
         self._find_bar = None
         self._connected = False
+        self._ai_disclosure = None
+        self._ai_disclosure_declined_host = None
         self._spellcheck_generation = 0
         self._spellcheck_worker = None
+        self._spellcheck_pending = None
         self._generate_worker = None
         self._saving_editors = set()
         self._quit_in_progress = False
@@ -245,11 +249,11 @@ class MainWindow(QMainWindow):
         self._completion_worker = None
         self._completion_timer = QTimer(self)
         self._completion_timer.setSingleShot(True)
-        self._completion_timer.timeout.connect(self.request_completion)
+        self._completion_timer.timeout.connect(lambda: self.request_completion(automatic=True))
         # Spellcheck timer for automatic spell checking on pause
         self._spellcheck_timer = QTimer(self)
         self._spellcheck_timer.setSingleShot(True)
-        self._spellcheck_timer.timeout.connect(self.check_spelling)
+        self._spellcheck_timer.timeout.connect(lambda: self.check_spelling(automatic=True))
         self._build_actions()
         self._build_status_bar()
         self.auto_writer_progress.connect(
@@ -397,6 +401,9 @@ class MainWindow(QMainWindow):
             project_menu.addAction(action)
             self._project_actions[title] = action
             action.setEnabled(not requires_project)
+        reveal_action = QAction(self.tr("Reveal Current Document in Project"), self)
+        reveal_action.triggered.connect(self.reveal_current_project_document)
+        project_menu.addAction(reveal_action)
         self._recent_projects_menu = QMenu(self.tr("Open Recent Project"), self)
         self._recent_projects_menu.setAccessibleName(self.tr("Open Recent Project"))
         self._recent_projects_menu.aboutToShow.connect(self._populate_recent_projects_menu)
@@ -570,6 +577,7 @@ class MainWindow(QMainWindow):
         self._spellcheck_timer.stop()
         self._completion_generation += 1
         self._spellcheck_generation += 1
+        self._spellcheck_pending = None
         if self._completion_worker:
             self._completion_worker.cancel()
         if self._find_bar is not None:
@@ -603,6 +611,11 @@ class MainWindow(QMainWindow):
     def _wire_editor(self, editor) -> None:
         editor.apply_settings(self.settings)
         self._attach_writing_goal_document(editor)
+        editor._goal_undo_command_added = False
+        editor._goal_undo_merge_active = False
+        editor.document().undoCommandAdded.connect(
+            lambda editor=editor: setattr(editor, "_goal_undo_command_added", True)
+        )
         editor.escape_pressed.connect(self._handle_editor_escape)
         editor.content_changed.connect(self.schedule_completion)
         editor.content_changed.connect(
@@ -664,6 +677,10 @@ class MainWindow(QMainWindow):
         else:
             self.writing_goals.attach(document_id, editor.toPlainText())
         editor._writing_goal_document_id = document_id
+        editor._goal_undo_merge_active = False
+        editor._goal_undo_command_added = False
+        editor._goal_undo_steps = editor.document().availableUndoSteps()
+        editor._goal_redo_available = editor.document().isRedoAvailable()
         self._refresh_writing_goal()
 
     def _record_writing_goal_text(self, editor) -> None:
@@ -675,15 +692,44 @@ class MainWindow(QMainWindow):
         ):
             self.writing_goals.attach(document_id, editor.toPlainText())
             editor._writing_goal_document_id = document_id
+            editor._goal_undo_merge_active = False
+            editor._goal_undo_command_added = False
+            editor._goal_undo_steps = editor.document().availableUndoSteps()
+            editor._goal_redo_available = editor.document().isRedoAvailable()
             return
         if getattr(editor, "_writing_goal_document_id", None) != document_id:
             self._attach_writing_goal_document(editor)
+        history_action = editor._history_action
+        document = editor.document()
+        # Qt's standard context menu can invoke the native undo slot without
+        # going through EditorWidget.undo(). Detect that path from the stack.
+        if history_action is None and not editor._goal_undo_command_added:
+            steps = document.availableUndoSteps()
+            if steps < editor._goal_undo_steps and document.isRedoAvailable():
+                history_action = "undo"
+            elif steps > editor._goal_undo_steps and editor._goal_redo_available:
+                history_action = "redo"
+        can_merge = (
+            history_action is None
+            and editor._goal_undo_merge_active
+            and not editor._goal_undo_command_added
+            and document.availableUndoSteps() == editor._goal_undo_steps
+        )
         self.writing_goals.record_text(
             document_id,
             editor.toPlainText(),
-            undo=editor._history_action == "undo",
-            redo=editor._history_action == "redo",
+            undo=history_action == "undo",
+            redo=history_action == "redo",
+            merge_with_previous=can_merge,
         )
+        if not document.isUndoAvailable() and not document.isRedoAvailable():
+            self.writing_goals.discard_unreachable_history(document_id)
+            editor._goal_undo_merge_active = False
+        else:
+            editor._goal_undo_merge_active = history_action is None
+        editor._goal_undo_command_added = False
+        editor._goal_undo_steps = document.availableUndoSteps()
+        editor._goal_redo_available = document.isRedoAvailable()
         self._schedule_writing_goal_persist()
         self._refresh_writing_goal()
 
@@ -970,6 +1016,8 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None or self._project_busy or not self.settings.ai_enabled:
             return
+        if not self._ensure_ai_context_consent():
+            return
         dialog = ProjectBriefDialog(self)
         self._project_setup_brief_dialog = dialog
         dialog.suggest_requested.connect(
@@ -1001,7 +1049,7 @@ class MainWindow(QMainWindow):
             return
         character_context = project_planning_context(project)
         confirmation = (
-            f"Send your {len(brief)}-character writing brief and these compact character profiles to the configured local model?\n\n"
+            f"Send your {len(brief)}-character writing brief and these compact character profiles to the configured model?\n\n"
             f"{character_context or '[No profiles with motivations, active goals, or internal conflicts.]'}\n\n"
             f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
             "No manuscript or reference-note contents will be sent. The model will "
@@ -1009,7 +1057,7 @@ class MainWindow(QMainWindow):
         )
         if QMessageBox.question(
             self,
-            "Confirm local AI project setup",
+            "Confirm AI project setup",
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
@@ -1019,6 +1067,8 @@ class MainWindow(QMainWindow):
     def start_auto_writer(self) -> None:
         project = self.project
         if project is None or self._project_busy or not self.settings.ai_enabled:
+            return
+        if not self._ensure_ai_context_consent():
             return
         scene_count = sum(1 for _scene in project.iter_scenes())
         dialog = AutoWriterDialog(scene_count, self)
@@ -1034,7 +1084,7 @@ class MainWindow(QMainWindow):
             f"Auto-writer will {operation} using the project outline, scene text, reference "
             "notes, characters associated with each scene, your optional instructions, and current AI settings.\n\n"
             f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
-            "Project text and reference notes are sent only to this configured local model. "
+            "Project text and reference notes are sent only to this configured model. "
             "A complete local revision snapshot is created before generation. All scene "
             "changes are applied together only after every scene succeeds. Refine mode "
             "automatically replaces existing text."
@@ -1045,6 +1095,8 @@ class MainWindow(QMainWindow):
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
         if any(
             binding.project is project and editor in self._saving_editors
@@ -1152,6 +1204,8 @@ class MainWindow(QMainWindow):
                 "Enable AI before translating a project.",
             )
             return
+        if not self._ensure_ai_context_consent():
+            return
         if any(
             binding.project is project and editor in self._saving_editors
             for editor, binding in tuple(self._project_documents.items())
@@ -1180,6 +1234,8 @@ class MainWindow(QMainWindow):
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
 
         open_text: dict[str, str] = {}
@@ -1482,11 +1538,11 @@ class MainWindow(QMainWindow):
             self._project_translation_cancel_action.setEnabled(False)
         if self._project_translation_progress_dialog is not None:
             self._project_translation_progress_dialog.setLabelText(
-                "Cancelling after the current local model request…"
+                "Cancelling after the current model request…"
             )
             self._project_translation_progress_dialog.setCancelButton(None)
         self.statusBar().showMessage(
-            "Cancelling project translation after the current local model request…"
+            "Cancelling project translation after the current model request…"
         )
 
     def _auto_writer_generated(
@@ -1614,7 +1670,7 @@ class MainWindow(QMainWindow):
             project,
             f"Auto-writer failed before applying scene changes: {error}. "
             "Nothing was replaced; any pre-run revision snapshot is retained. "
-            "For a timeout, wait for the local model to finish loading and try a smaller batch.",
+            "For a timeout, wait for the model to finish loading and try a smaller batch.",
             warning=settings_generation == self._settings_generation,
             outcome="failed",
         )
@@ -1691,6 +1747,8 @@ class MainWindow(QMainWindow):
             or self._project_busy
         ):
             return
+        if not self._ensure_ai_context_consent():
+            return
 
         self._project_setup_generation += 1
         generation = self._project_setup_generation
@@ -1711,7 +1769,7 @@ class MainWindow(QMainWindow):
         self._set_project_busy(True)
         if self._project_setup_cancel_action is not None:
             self._project_setup_cancel_action.setEnabled(True)
-        self.statusBar().showMessage("Generating a project outline with the configured local model…")
+        self.statusBar().showMessage("Generating a project outline with the configured model…")
         self._track_worker(worker)
         worker.signals.finished.connect(
             lambda outline: self._project_setup_finished(
@@ -1736,6 +1794,9 @@ class MainWindow(QMainWindow):
             or self._project_busy
         ):
             return
+        if not self._ensure_ai_context_consent():
+            dialog.set_suggesting(False)
+            return
         if not brief.strip():
             dialog.set_suggesting(False, "Add some story details before requesting suggestions.")
             return
@@ -1743,17 +1804,19 @@ class MainWindow(QMainWindow):
             dialog.set_suggesting(False, "The template must be no longer than 6,000 characters.")
             return
         confirmation = (
-            f"Send this {len(brief)}-character template to the configured local model "
+            f"Send this {len(brief)}-character template to the configured model "
             "to suggest ideas for its gaps?\n\n"
             f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
             "Only the template text is sent. No project files or open documents are included."
         )
         if QMessageBox.question(
             self,
-            "Confirm local AI suggestions",
+            "Confirm AI suggestions",
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
 
         self._project_setup_generation += 1
@@ -1807,6 +1870,9 @@ class MainWindow(QMainWindow):
             or not self.settings.ai_enabled
         ):
             return
+        if not self._ensure_ai_context_consent():
+            dialog.set_autopilot_running(False)
+            return
         if not brief.strip():
             dialog.set_autopilot_running(False, "Add story details before starting Auto-pilot.")
             return
@@ -1817,7 +1883,7 @@ class MainWindow(QMainWindow):
         character_context = project_planning_context(project)
         confirmation = (
             "Auto-pilot will send your edited setup template and existing project outline "
-            "metadata plus these compact character profiles to the configured local model.\n\n"
+            "metadata plus these compact character profiles to the configured model.\n\n"
             f"{character_context or '[No profiles with motivations, active goals, or internal conflicts.]'}\n\n"
             f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
             f"It may add up to {MAX_AUTOPILOT_CHAPTERS} chapters, {MAX_AUTOPILOT_SCENES} "
@@ -1828,10 +1894,12 @@ class MainWindow(QMainWindow):
         )
         if QMessageBox.question(
             self,
-            "Confirm autonomous local Auto-pilot",
+            "Confirm autonomous Auto-pilot",
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
 
         self._project_setup_generation += 1
@@ -2000,9 +2068,9 @@ class MainWindow(QMainWindow):
             temperature=temperature,
         )
         if not isinstance(result, str) or not result.strip():
-            raise ValueError("The local model returned empty or malformed template suggestions.")
+            raise ValueError("The model returned empty or malformed template suggestions.")
         if len(result) > 15000:
-            raise ValueError("The local model returned suggestions that are too long to review.")
+            raise ValueError("The model returned suggestions that are too long to review.")
         return result
 
     def _project_brief_suggestion_finished(
@@ -2090,7 +2158,7 @@ class MainWindow(QMainWindow):
             temperature=temperature,
         )
         if not isinstance(result, str) or not result.strip():
-            raise ValueError("The local model returned an empty or malformed outline.")
+            raise ValueError("The model returned an empty or malformed outline.")
         return result
 
     def _project_setup_finished(
@@ -2295,6 +2363,16 @@ class MainWindow(QMainWindow):
         self._project_dock.setWindowTitle(self.project.manifest.title)
         self._project_dock.show()
         self._update_project_actions()
+
+    def reveal_current_project_document(self) -> None:
+        editor = self.tabs.current_editor()
+        binding = self._project_documents.get(editor)
+        if self.project is None or binding is None or binding.project is not self.project:
+            self.statusBar().showMessage(self.tr("The current document is not bound to the open project."), 5000)
+            return
+        self._show_project_dock()
+        if not self.project_view.reveal_item(binding.kind, binding.item_id):
+            self.statusBar().showMessage(self.tr("The project item is not available in the navigation tree."), 5000)
 
     def close_project(self) -> None:
         if self._project_busy:
@@ -2613,6 +2691,8 @@ class MainWindow(QMainWindow):
         if project is None or project is not self.project or not self.settings.ai_enabled:
             QMessageBox.information(dialog, dialog.tr("AI unavailable"), dialog.tr("Enable AI in settings before requesting suggestions."))
             return
+        if not self._ensure_ai_context_consent():
+            return
         choices = {}
         for editor, binding in tuple(self._project_documents.items()):
             if binding.project is not project or binding.kind != "scene" or self.tabs.indexOf(editor) < 0:
@@ -2634,6 +2714,8 @@ class MainWindow(QMainWindow):
             return
         message = dialog.tr("Send this profile and the selected scene excerpt to %1 (model %2)? Requests and responses appear in AI diagnostics.")
         if QMessageBox.question(dialog, dialog.tr("Confirm AI request"), format_qt(message, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
         revision = editor.revision
         project_generation, settings_generation = self._project_generation, self._settings_generation
@@ -2714,12 +2796,16 @@ class MainWindow(QMainWindow):
         if project is None or project is not self.project or not self.settings.ai_enabled:
             QMessageBox.information(dialog, dialog.tr("AI unavailable"), dialog.tr("Enable AI in settings before requesting suggestions."))
             return
+        if not self._ensure_ai_context_consent():
+            return
         fields = dialog.profile_fields()
         if not any(not value.strip() for value in fields.values()):
             QMessageBox.information(dialog, dialog.tr("No empty fields"), dialog.tr("There are no empty fields to fill."))
             return
         confirmation = dialog.tr("Send the current character profile to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.")
         if QMessageBox.question(dialog, dialog.tr("Confirm AI request"), format_qt(confirmation, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
         settings_generation = self._settings_generation
         project_generation = self._project_generation
@@ -4567,6 +4653,8 @@ class MainWindow(QMainWindow):
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled:
             return
+        if not self._ensure_ai_context_consent():
+            return
         prompt, accepted = QInputDialog.getMultiLineText(
             self,
             "Generate..",
@@ -4574,6 +4662,8 @@ class MainWindow(QMainWindow):
             "",
         )
         if not accepted or not prompt.strip():
+            return
+        if not self._ensure_ai_context_consent():
             return
         self._generate_generation += 1
         generation = self._generate_generation
@@ -4658,6 +4748,8 @@ class MainWindow(QMainWindow):
         if project is None or self.project_view is None:
             QMessageBox.information(self, "No project open", "Open a project and select a scene first.")
             return
+        if not self._ensure_ai_context_consent():
+            return
         selected = self.project_view.selectedItems()
         selected_refs = tuple(
             sorted(
@@ -4698,6 +4790,8 @@ class MainWindow(QMainWindow):
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
+            return
+        if not self._ensure_ai_context_consent():
             return
         open_text: dict[str, str] = {}
         source_revisions: dict[str, tuple[object, int]] = {}
@@ -4764,7 +4858,7 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self._set_project_analysis_active(True)
-        self.statusBar().showMessage("Sending selected project context to the configured local Ollama model…")
+        self.statusBar().showMessage("Sending selected project context to the configured Ollama model…")
         self.thread_pool.start(worker)
 
     @staticmethod
@@ -4825,7 +4919,7 @@ class MainWindow(QMainWindow):
             temperature=temperature,
         )
         if not isinstance(result, str):
-            raise ValueError("The local provider returned a malformed analysis response.")
+            raise ValueError("The provider returned a malformed analysis response.")
         if task == "continuity":
             # Only accept quotations actually present in the bounded request.
             findings = parse_continuity_findings(
@@ -5025,8 +5119,16 @@ class MainWindow(QMainWindow):
                     self.tr("Language changed"),
                     self.tr("The interface language will change after you restart UTextEditor."),
                 )
-            self.provider.host = self.settings.ollama_host.rstrip("/")
-            self.provider.model = self.settings.ollama_model
+            if (self.provider.host != self.settings.ollama_host.rstrip("/")
+                    or self.provider.model != self.settings.ollama_model):
+                # Existing workers keep their original destination, even if
+                # settings change before a queued provider call starts.
+                self.provider = OllamaClient(
+                    self.settings.ollama_host, self.settings.ollama_model,
+                    interaction_observer=self._emit_ai_interaction,
+                )
+                self.completion_service = CompletionService(self.provider)
+                self.spellcheck_service = SpellcheckService(self.provider)
             self._configure_autosave()
             self._apply_editor_settings()
             self.ai_status = "AI: Connecting..." if self.settings.ai_enabled else "AI: Disabled"
@@ -5108,6 +5210,7 @@ class MainWindow(QMainWindow):
             self._settings_connection_generation += 1
 
     def _cancel_active_ai_workers(self) -> None:
+        self._spellcheck_pending = None
         for worker in (
             self._completion_worker,
             self._spellcheck_worker,
@@ -5195,6 +5298,7 @@ class MainWindow(QMainWindow):
         if self._spellcheck_worker is worker:
             self._spellcheck_generation += 1
             self._spellcheck_timer.stop()
+            self._spellcheck_pending = None
         worker.cancel()
 
     def _drop_worker(self, worker: FunctionWorker) -> None:
@@ -5227,7 +5331,59 @@ class MainWindow(QMainWindow):
         self.ai_status = "AI: Connected" if connected else "AI: Offline"
         self._update_status()
 
-    def request_completion(self) -> None:
+    def _ensure_ai_context_consent(self, *, automatic: bool = False, retry=None) -> bool:
+        """Gate context-bearing calls before capturing or dispatching their work."""
+        host = self.provider.host.rstrip("/")
+        if self.settings.has_ai_context_consent(host):
+            return True
+        if self._ai_disclosure is not None:
+            return False
+        if automatic and self._ai_disclosure_declined_host == host:
+            return False
+        # Character and project setup dialogs can themselves be modal; a
+        # disclosure parented to the main window would be blocked behind them.
+        parent = QApplication.activeModalWidget() or self
+        dialog = AIContextDisclosure(host, parent)
+        self._ai_disclosure = dialog
+
+        def destroyed(*_args):
+            if self._ai_disclosure is dialog:
+                self._ai_disclosure = None
+
+        dialog.destroyed.connect(destroyed)
+
+        def finished(result):
+            if self._ai_disclosure is dialog:
+                self._ai_disclosure = None
+            if self._closing_confirmed:
+                return
+            if result != QDialog.DialogCode.Accepted:
+                self._ai_disclosure_declined_host = host
+                return
+            if self.provider.host.rstrip("/") != host or not self.settings.ai_enabled:
+                return
+            previous = self.settings.ai_context_consent_host
+            self.settings.ai_context_consent_host = host
+            try:
+                self.settings.save()
+            except OSError as exc:
+                self.settings.ai_context_consent_host = previous
+                self.statusBar().showMessage(format_qt(self.tr("AI consent could not be saved: %1"), str(exc)), 10000)
+                return
+            if not self.settings.has_ai_context_consent(host):
+                self.settings.ai_context_consent_host = previous
+                return
+            self._ai_disclosure_declined_host = None
+            if retry is not None:
+                QTimer.singleShot(0, retry)
+            else:
+                self.statusBar().showMessage(self.tr("AI context allowed. Please retry the action."), 6000)
+
+        dialog.finished.connect(finished)
+        dialog.show()
+        return False
+
+    def request_completion(self, *, automatic: bool = False) -> None:
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled or not self.settings.completion_enabled:
             return
@@ -5243,6 +5399,13 @@ class MainWindow(QMainWindow):
         revision, position = editor.revision, cursor.position()
         context = build_context(editor.toPlainText(), qt_position_to_python_index(editor.toPlainText(), position), maximum_characters=self.settings.context_size)
         if not context.strip():
+            return
+        if not self._ensure_ai_context_consent(
+            automatic=automatic,
+            retry=lambda editor_ref=weakref.ref(editor): self._retry_editor_ai(
+                editor_ref, lambda: self.request_completion(automatic=automatic)
+            ),
+        ):
             return
         self.ai_status = "AI: Generating..."
         self._update_status()
@@ -5338,6 +5501,7 @@ class MainWindow(QMainWindow):
         self._completion_timer.stop()
         self._spellcheck_timer.stop()
         self._spellcheck_generation += 1
+        self._spellcheck_pending = None
         if self.ai_status == "AI: Generating...":
             self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
         if self._completion_worker:
@@ -5381,9 +5545,16 @@ class MainWindow(QMainWindow):
         self.ai_status = "AI: Error"
         self.status.showMessage(f"AI completion failed: {error}")
 
-    def check_spelling(self) -> None:
+    def check_spelling(self, *, automatic: bool = False) -> None:
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled or not self.settings.spellcheck_enabled:
+            return
+        if not self._ensure_ai_context_consent(
+            automatic=automatic,
+            retry=lambda editor_ref=weakref.ref(editor): self._retry_editor_ai(
+                editor_ref, lambda: self.check_spelling(automatic=automatic)
+            ),
+        ):
             return
         text, revision = editor.toPlainText(), editor.revision
         settings_generation = self._settings_generation
@@ -5391,7 +5562,11 @@ class MainWindow(QMainWindow):
         self._spellcheck_generation += 1
         spellcheck_generation = self._spellcheck_generation
         if self._spellcheck_worker is not None:
+            # A synchronous provider call cannot be interrupted. Remember only
+            # the newest eligible request until that call has actually ended.
+            self._spellcheck_pending = (weakref.ref(editor), revision, settings_generation, active_generation)
             self._discard_ai_worker(self._spellcheck_worker)
+            return
         worker = FunctionWorker(self.spellcheck_service.check, text, self.settings.language, revision)
         self._track_ai_activity(
             worker, self.ai_activity.tr("Spellcheck"), context=editor.document_state.display_name,
@@ -5403,7 +5578,7 @@ class MainWindow(QMainWindow):
         )
         self._spellcheck_worker = worker
         self._track_worker(worker)
-        worker.signals.done.connect(lambda worker=worker: self._clear_worker_reference("_spellcheck_worker", worker), Qt.ConnectionType.QueuedConnection)
+        worker.signals.done.connect(lambda worker=worker: self._spellcheck_done(worker), Qt.ConnectionType.QueuedConnection)
         worker.signals.finished.connect(
             lambda suggestions: self._apply_spellcheck_results(editor, revision, suggestions, settings_generation, active_generation, spellcheck_generation),
             Qt.ConnectionType.QueuedConnection,
@@ -5413,6 +5588,24 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
+
+    def _spellcheck_done(self, worker: FunctionWorker) -> None:
+        if self._spellcheck_worker is not worker:
+            return
+        self._spellcheck_worker = None
+        pending, self._spellcheck_pending = self._spellcheck_pending, None
+        if pending is None or self._closing_confirmed:
+            return
+        editor_ref, revision, settings_generation, active_generation = pending
+        editor = editor_ref()
+        if (
+            editor is not None and editor is self.tabs.current_editor()
+            and editor.revision == revision
+            and settings_generation == self._settings_generation
+            and active_generation == self._active_document_generation
+            and self.settings.ai_enabled and self.settings.spellcheck_enabled
+        ):
+            self.check_spelling()
 
     def _spellcheck_failed(self, error, editor, revision, settings_generation, active_generation, spellcheck_generation) -> None:
         if (editor is not self.tabs.current_editor() or editor.revision != revision
@@ -5438,6 +5631,7 @@ class MainWindow(QMainWindow):
     def _cancel_pending_ai(self) -> None:
         self._completion_timer.stop()
         self._spellcheck_timer.stop()
+        self._spellcheck_pending = None
         self._completion_generation += 1
         self._generate_generation += 1
         self._settings_generation += 1

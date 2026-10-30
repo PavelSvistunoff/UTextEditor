@@ -10,7 +10,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QCoreApplication
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox
 
 from app.i18n import format_qt, install_translation, resolve_ui_language
 from app.settings.settings import AppSettings
@@ -21,6 +21,7 @@ from app.ui.project_view import ProjectView
 from app.ui.main_window import MainWindow
 from app.ui.revision_history_dialog import RevisionHistoryDialog
 from app.ui.writing_goal_dialog import WritingGoalDialog
+from app.ui.ai_context_disclosure import AIContextDisclosure
 
 
 @pytest.fixture(scope="module")
@@ -67,12 +68,27 @@ def test_qt_placeholder_formatting_preserves_placeholder_like_user_text():
     assert format_qt("%1 — %2", "%2 manuscript", 3) == "%2 manuscript — 3"
 
 
+@pytest.mark.parametrize("button,result", [
+    (QDialogButtonBox.StandardButton.Yes, QDialog.DialogCode.Accepted),
+    (QDialogButtonBox.StandardButton.No, QDialog.DialogCode.Rejected),
+])
+def test_ai_disclosure_shows_destination_and_explicit_choice(application, button, result):
+    dialog = AIContextDisclosure("https://remote.example:11434")
+    assert not dialog.isModal()
+    assert "https://remote.example:11434" in dialog.message.text()
+    assert "document text" in dialog.message.text()
+    assert "reference notes" in dialog.message.text()
+    dialog.buttons.button(button).click()
+    assert dialog.result() == result
+
+
 def test_translation_catalog_loads_and_translates_interface(application):
     language, translator = install_translation(application, "uk")
     try:
         assert language == "uk"
         assert translator is not None
         assert QCoreApplication.translate("MainWindow", "Project") == "Проєкт"
+        assert QCoreApplication.translate("MainWindow", "Reveal Current Document in Project") == "Показати поточний документ у проєкті"
         assert QCoreApplication.translate("AIActivityPanel", "AI activity") == "Активність ШІ"
         assert QCoreApplication.translate("AIActivityPanel", "Discarded: context changed") == "Відхилено: контекст змінився"
         assert QCoreApplication.translate("MainWindow", "Uncatalogued text") == "Uncatalogued text"

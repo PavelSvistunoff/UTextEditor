@@ -20,30 +20,26 @@ temporary projects or in-memory objects and do not modify the user's documents.
 ### Confirmed defects
 
 1. **Medium — writing-goal history metadata grows during long sessions.**
-   The tracker retains one current document copy and a fixed-size fingerprint
-   per state instead of retaining every full text. Edits that do not add words
-   share daily count mappings, including after reset. State records and count
-   changes still grow with edits while a document is open. In a synthetic run,
-   1,000 appended characters on a 10,000-character document retained 1,001
-   states and one count mapping (about 142 KB traced allocations; 0.27 seconds
-   in the review environment). This does not establish a long-session bound.
-   Coordinate any bound with Qt's undo history so supported undo and redo do
-   not silently produce incorrect counts; measure realistic long sessions.
-2. **Medium — some AI messages mislabel remote destinations as local.**
-   Project setup and Auto-writer confirmation text describes the configured
-   model as local even when the Ollama host is remote. The destination address
-   is shown, but the label may still mislead users about where text is sent.
-   Update affected confirmations and status text, translations, and tests to
-   describe the configured destination accurately.
+   The tracker keeps one current document copy and a fingerprint per reachable
+   state. Consecutive edits merged by Qt into one undo command now share one
+   endpoint, and a cleared Qt undo stack releases unreachable states. For a
+   synthetic 3,000-character typing session starting with 2,400 characters,
+   Python's `tracemalloc` measured about 510 KB retained before compaction and
+   6 KB after (3,001 versus 2 states; 0.88 versus 0.69 seconds). This measures
+   Python allocations in the tracker, not Qt memory or process RSS. Separate
+   Qt undo commands still each require a state, so metadata remains unbounded.
+   Qt offers no per-command pruning for its native text undo stack; a complete
+   solution must preserve counts without silently discarding supported undo.
 
 ### Risks requiring further verification
 
-- **Save conflict check versus replacement:** standalone and project saves
-  compare disk contents before atomic replacement, but an independent process
-  can still change a file between that check and the replacement. Investigate
-  platform-appropriate coordination and document residual race conditions; a
-  check alone is not a cross-process lock. See `app/document/file_manager.py`
-  and `app/project/service.py`.
+- **Save conflict check versus replacement:** standalone saves, project text,
+  and project manifests recheck disk contents after staging. Separate-process
+  tests detect edits made during staging. A separate-process edit injected
+  immediately after the final check was nevertheless overwritten by atomic
+  replacement, confirming a residual race. Investigate platform-appropriate
+  coordination; a check alone is not a cross-process lock. See
+  `app/document/file_manager.py` and `app/project/service.py`.
 - **Large-document UI latency:** goal tracking, match counts, and some cursor
   conversions inspect or copy document text on the GUI thread. The user-visible
   latency threshold has not been measured. Profile representative documents
@@ -63,22 +59,6 @@ session was exercised, and this review does not prove other paths defect-free.
 
 ## Current behavior that falls short of documented requirements
 
-- **First-use AI context disclosure:** `SPEC.md` §24.1 calls for disclosure
-  before the first request containing document context, and again when the
-  destination materially changes. Settings explains that text goes to the
-  configured host, and several project workflows request confirmation, but
-  automatic completion and spellcheck do not have a corresponding first-use
-  disclosure. The host can be configured to a non-local address; describe the
-  actual destination rather than assuming it is always local. See
-  `app/ui/settings_dialog.py` and the completion/spellcheck request paths in
-  `app/ui/main_window.py`.
-- **Coalescing slow AI requests:** `SPEC.md` §24.5 calls for at most the latest
-  pending spellcheck snapshot while a request is running. The UI cancels the
-  previous `FunctionWorker` and starts another, but cancellation does not stop
-  a provider call already in progress. Repeated slow requests can therefore
-  occupy multiple pool threads. Stale results are discarded; request
-  coalescing itself remains incomplete. See `app/ui/workers.py` and
-  `app/ui/main_window.py`.
 
 ## Project and revision workflows
 
@@ -153,11 +133,6 @@ and effort are relative estimates.
    Use existing IDs to route selections and handle deleted or unavailable
    items. A title picker complements full-text search and should not silently
    close or replace an unsaved tab.
-6. **Find the current document in the project tree** — medium priority, small
-   to medium effort. Add a “Reveal in Project” action for a bound scene or note
-   that expands only its ancestors, selects the matching stable ID, and scrolls
-   it into view. Disable it or explain why it is unavailable for standalone or
-   unbound tabs. Coordinate with tree-state preservation above.
 7. **Navigate between related items** — medium priority, medium effort. Build
    on existing note links, scene associations, and character scene search with
    accessible lists that open a linked item or associated scene directly, and

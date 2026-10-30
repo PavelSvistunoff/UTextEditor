@@ -16,7 +16,7 @@ class GeneratedTextDialog(QDialog):
         self.setWindowTitle(self.tr("Review generated text"))
         self.resize(680, 520)
         instructions = QLabel(
-            self.tr("Review the local model's draft. It will not enter your document unless you choose Insert.")
+            self.tr("Review the model's draft. It will not enter your document unless you choose Insert.")
         )
         instructions.setWordWrap(True)
         self.output = QPlainTextEdit(self)
