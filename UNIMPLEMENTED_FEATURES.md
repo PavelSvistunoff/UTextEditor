@@ -1,9 +1,136 @@
 # Remaining features and known limitations
 
-This file lists work that is not currently implemented. Completed project,
-document, AI, export, and character workflows are described in `README.md` and
-are intentionally omitted here. The detailed product requirements and
-acceptance guidance remain in `SPEC.md`.
+This inventory compares the repository's Markdown documents with the current
+implementation. `README.md` is the source of truth for current product scope;
+`SPEC.md` and the later sections of `README.uk.md` also describe older
+requirements and future ideas. Items below distinguish incomplete current
+requirements from optional future work. They are not promises to implement
+every candidate. Completed workflows are described in `README.md`.
+
+The review also covered `AGENTS.md` (development instructions) and
+`codex_run.md` (command examples); neither defines a separate product feature.
+
+## Code-review findings
+
+The following are unfixed findings from a code and offline-test review. Severity
+is an estimate of impact, not proof of how often the issue occurs. The existing
+315-test suite passed in the review environment; the reproductions below use
+temporary projects or in-memory objects and do not modify the user's documents.
+
+### Confirmed defects
+
+1. **High — project recovery snapshots cannot normally be restored to their
+   project item.** `MainWindow._recovery_payloads` assigns an arbitrary recovery
+   UUID to a newly opened editor, including project scenes and notes. However,
+   `_prepare_recovery_restore` treats that UUID as the scene or note ID. A
+   temporary project snapshot reproduced an “Unknown note ID” result and no
+   recovered document; the snapshot remained on disk. See
+   `app/ui/main_window.py` (`_recovery_payloads`, `_prepare_recovery_restore`,
+   and `_open_project_document`). Store the stable project item identity
+   separately from the recovery identity, support existing snapshots safely,
+   and fall back to opening recoverable text as an untitled document if a
+   project item cannot be located. Test both scenes and notes, relocated
+   projects, conflicts, and older snapshots end to end.
+2. **High — binding an already-open standalone file to a project can bypass
+   external-change protection.** `_bind_existing_project_document` and the
+   duplicate-tab path of `_project_document_opened` use a fresh disk read as the
+   binding's expected text without checking the standalone editor's original
+   disk digest. If the file changed externally after it was opened, a later
+   project save can overwrite that change. A temporary-project reproduction
+   opened `original`, changed the disk to `external`, then saved through a
+   binding built from the fresh disk text; the disk became `my unsaved work`.
+   Verify the editor's captured disk version before adopting the binding and
+   retain a conflict when it differs. Add an integration regression test for
+   both binding paths and a change while the background read is pending.
+3. **High — malformed writing-goal progress can prevent startup.**
+   `WritingGoalTracker.from_mapping({"progress": [1]})` raises
+   `AttributeError` because the constructor calls `.items()` without validating
+   the outer progress value. `MainWindow.__init__` catches `OSError`, `TypeError`,
+   and `ValueError`, but not that exception. Validate the mapping at the store
+   boundary and preserve the existing startup fallback and warning; test bad
+   JSON shapes as well as malformed JSON in `tests/test_writing_goals.py` and
+   a startup test. See `app/document/writing_goals.py` and
+   `app/ui/main_window.py`.
+4. **Medium — a failed Find changes the user's cursor and selection.**
+   `FindReplaceWidget._find` moves the editor cursor while searching and wraps
+   to the start or end without restoring the original cursor on no match. An
+   offscreen reproduction with `alpha beta`, selection `(anchor=4, position=6)`,
+   and query `missing` returned false with both positions at zero. Preserve the
+   original cursor on failure and add forward/backward, selection, and Unicode
+   regression cases. See `app/ui/find_replace.py` and `SPEC.md` §24.4.
+5. **Medium — new-word goal history grows with complete document copies.**
+   `WritingGoalTracker.record_text` appends the entire text on each recorded
+   change and has no retention bound. A 10,000-character document followed by
+   100 single-character edits retained 101 text states totaling 1,015,050
+   characters. Long sessions or large documents can consume substantial memory.
+   Design a bounded or delta-based history that still tracks undo/redo and daily
+   counts accurately; benchmark realistic edits and test branching and date
+   changes. See `app/document/writing_goals.py`.
+6. **Medium — visible AI diagnostics are not bounded like the backing list.**
+   `MainWindow._debug_events` keeps at most 100 events, but an open
+   `AIDebugWindow` appends every interaction to a `QPlainTextEdit` without a
+   corresponding limit. A long session can retain far more text than intended,
+   including manuscript excerpts. Bound both event count and total payload size,
+   make truncation visible, and test clear/reopen and oversized responses. See
+   `app/ui/main_window.py`, `app/ui/ai_debug_window.py`, and the response size
+   limit in `app/ai/ollama_client.py`.
+
+### Risks requiring further verification
+
+- **Save conflict check versus replacement:** standalone and project saves
+  compare disk contents before atomic replacement, but an independent process
+  can still change a file between that check and the replacement. Investigate
+  platform-appropriate coordination and document residual race conditions; a
+  check alone is not a cross-process lock. See `app/document/file_manager.py`
+  and `app/project/service.py`.
+- **Recovery save/discard ordering:** recovery capture and cleanup are
+  dispatched as separate workers. Test whether a slow snapshot write can finish
+  after a clean save has discarded older snapshots, leaving an obsolete recovery
+  entry. If reproducible, serialize or generation-check these operations;
+  preserve valid recovery data on failures.
+- **Large-document UI latency:** goal tracking, match counts, and some cursor
+  conversions inspect or copy document text on the GUI thread. The full-copy
+  goal history above is confirmed, but the user-visible latency threshold has
+  not been measured. Profile representative documents before selecting an
+  incremental or bounded implementation.
+
+### Review coverage and verification limits
+
+The review traced document save/recovery, project paths and mutations,
+translation and Auto-writer, character context and profiles, AI requests and
+validation, settings, search, writing goals, localization, and the UI worker
+pattern. The test baseline was
+`QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`
+(315 passed). The five reproductions above were run with `.venv/bin/python` in
+temporary or in-memory state. The debug-window retention finding follows from
+the code paths; it was not subjected to a long-running memory benchmark. No
+live Ollama, real multi-process race, screen-reader, or platform-specific GUI
+session was exercised, and this review does not prove other paths defect-free.
+
+## Current behavior that falls short of documented requirements
+
+- **First-use AI context disclosure:** `SPEC.md` §24.1 calls for disclosure
+  before the first request containing document context, and again when the
+  destination materially changes. Settings explains that text goes to the
+  configured host, and several project workflows request confirmation, but
+  automatic completion and spellcheck do not have a corresponding first-use
+  disclosure. The host can be configured to a non-local address; describe the
+  actual destination rather than assuming it is always local. See
+  `app/ui/settings_dialog.py` and the completion/spellcheck request paths in
+  `app/ui/main_window.py`.
+- **Inline completion over existing text:** `SPEC.md` §12 says ghost text must
+  not cover existing document text. `EditorWidget.show_completion` checks the
+  viewport width and rejects multiline suggestions, but does not check whether
+  text follows the cursor on the same line; `paintEvent` draws the ghost over
+  that area. A non-destructive presentation for mid-line suggestions remains
+  to be implemented. See `app/ui/editor_widget.py`.
+- **Coalescing slow AI requests:** `SPEC.md` §24.5 calls for at most the latest
+  pending spellcheck snapshot while a request is running. The UI cancels the
+  previous `FunctionWorker` and starts another, but cancellation does not stop
+  a provider call already in progress. Repeated slow requests can therefore
+  occupy multiple pool threads. Stale results are discarded; request
+  coalescing itself remains incomplete. See `app/ui/workers.py` and
+  `app/ui/main_window.py`.
 
 ## Character development and AI review
 
@@ -27,7 +154,8 @@ acceptance guidance remain in `SPEC.md`.
   but not all chapter, link, and project-structure changes.
 - **Large documents and encodings:** files are read into memory as a whole;
   the editor supports UTF-8 only, and encoding and line-ending choices are not
-  selectable in the status bar.
+  selectable in the status bar. Detection of binary files beyond embedded NULs
+  is also not implemented.
 - **Standalone-document recency:** the Project menu tracks recent projects;
   there is no recent standalone-document list.
 
@@ -40,6 +168,20 @@ acceptance guidance remain in `SPEC.md`.
 - **Project-wide search:** character profile search and scene search by a
   character's name or aliases are available. General full-text search across
   all manuscript and reference-note content is not.
+- **Markdown preview:** Markdown export is available, but the Markdown preview
+  suggested in `SPEC.md` §22 and `README.uk.md` §32 is not implemented.
+- **Additional languages:** writing/spellcheck language choices are Auto,
+  English, and Ukrainian. More languages are a future candidate, not a current
+  requirement (`SPEC.md` §15).
+- **Inline completion limitations:** multiline suggestions and suggestions too
+  wide for the available viewport are rejected rather than displayed. The
+  specification permits this safe fallback; a readable alternative is a
+  possible future improvement (`SPEC.md` §12).
+- **Per-scene AI draft review:** prompt generation has an explicit review
+  dialog, and Auto-writer shows live drafts after prior confirmation. It does
+  not provide a separate accept/reject decision for each generated scene before
+  its successful batch is applied. More granular proposed-edit review is a
+  future candidate (`SPEC.md` §22 and `README.uk.md` §32).
 
 ## Interface localization
 
@@ -51,6 +193,285 @@ acceptance guidance remain in `SPEC.md`.
 - **Catalog audit tooling:** extraction and compilation are documented, but a
   dedicated automated check for missing translations and placeholder parity
   across all UI catalogs is not yet part of the developer workflow.
+
+## Navigation assessment and suggestions
+
+The app already has a project tree with context actions, a character filter,
+tabbed documents, active-document Find, character-name scene search, linked
+notes, and recent projects. The following ideas extend those workflows; they
+are proposals except where explicitly identified as a confirmed defect. Priorities
+and effort are relative estimates.
+
+### Fix existing navigation
+
+1. **Preserve project-tree state during refresh** — high priority, medium
+   effort. `ProjectView.show_project` clears and recreates the tree and calls
+   `expandAll()`. Project-scene edits schedule a refresh, so collapsed branches,
+   selection, and the user's place in the tree can be lost while writing.
+   Preserve expansion, selection, current item, and scroll position using stable
+   item IDs; choose a sensible fallback if an item was removed. Test editing,
+   multiple selection, filtering, renaming, and removal without changing project
+   data. See `app/ui/project_view.py` and `_show_project_summary` in
+   `app/ui/main_window.py`.
+2. **Fix the character filter in Ukrainian** — high priority, small effort,
+   confirmed. `filter_characters` identifies the character group using the
+   English text prefix `Characters (`; the displayed group is translated. In
+   an offscreen Ukrainian run, filtering `Mara` left both `Mara` and `Ivo`
+   visible. Identify the group using stable item data instead of its label, and
+   test filtering and clearing in English and Ukrainian, including empty
+   results and tree refresh. See `app/ui/project_view.py`.
+3. **Keep the cursor on a failed search** — medium priority. The confirmed
+   Find selection issue is documented under Code-review findings above; fixing
+   it prevents a failed navigation attempt from moving the writer away from
+   their place.
+
+### Make destinations easier to find
+
+4. **Search the whole project** — high priority, medium/high effort. Provide a
+   persistent, keyboard-accessible results list for scenes and notes with
+   titles, excerpts, and locations; include open unsaved buffers and report
+   unreadable files. Selecting a result should open the item and select its
+   match only if the captured text is still current. This elaborates the
+   existing project-wide search proposal above; keep the first version read-only
+   and cancellable.
+5. **Quickly open a project item** — high priority, medium effort. Add a
+   keyboard-invoked picker for scene, chapter, note, and character names and
+   aliases, with type and chapter context to disambiguate duplicate titles.
+   Use existing IDs to route selections and handle deleted or unavailable
+   items. A title picker complements full-text search and should not silently
+   close or replace an unsaved tab.
+6. **Find the current document in the project tree** — medium priority, small
+   to medium effort. Add a “Reveal in Project” action for a bound scene or note
+   that expands only its ancestors, selects the matching stable ID, and scrolls
+   it into view. Disable it or explain why it is unavailable for standalone or
+   unbound tabs. Coordinate with tree-state preservation above.
+7. **Navigate between related items** — medium priority, medium effort. Build
+   on existing note links, scene associations, and character scene search with
+   accessible lists that open a linked item or associated scene directly, and
+   provide a way back. Clearly distinguish an explicit scene association from
+   a text mention; do not infer new relationships or change project metadata.
+   Keep unsaved character-profile edits safe when navigating away.
+
+### Reduce navigation friction
+
+8. **Improve open-tab navigation** — medium priority, small/medium effort.
+   Consider next/previous-tab shortcuts and a searchable open-tab list showing
+   project context and dirty markers. Ensure duplicate names are distinguishable,
+   use platform-appropriate shortcuts, and route closing through existing
+   unsaved-change prompts. Verify native Qt shortcuts before assigning new ones.
+9. **Add recent standalone documents** — medium priority, medium effort.
+   Recent projects already exist; add a separate recent-file list with clear and
+   missing-file handling. Reopen via the normal duplicate-tab and error paths,
+   preserve unsaved buffers, and do not record document contents. This expands
+   the existing recency proposal above.
+10. **Improve menu discoverability** — medium priority, medium effort. Review
+    the long Project and AI menus with real usage scenarios; consider grouped
+    submenus or a searchable command picker while retaining existing actions
+    and shortcuts. Show why context-dependent actions are unavailable and
+    avoid adding conflicting shortcuts. Validate the grouping with keyboard and
+    screen-reader users instead of moving actions solely for cosmetic reasons.
+11. **Add navigation history and return-to-writing** — lower priority, medium
+    effort. Record a bounded, session-only back/forward history of explicit
+    scene, note, and search-result jumps, including cursor position where safe.
+    Skip removed or stale targets with clear feedback and preserve unsaved
+    buffers. Do not treat ordinary typing or every cursor move as a history
+    entry.
+12. **Improve find controls and focus** — lower priority, small/medium effort.
+    Consider distinct Find and Replace focus targets, optional matching modes,
+    and predictable focus return on close. Retain current literal,
+    case-sensitive defaults, match counts, and undo behavior; test keyboard
+    navigation, Unicode, zero matches, and small windows.
+
+All navigation changes should work without Ollama, be translated into the
+supported interface languages, preserve the editor's current text and selection
+unless navigation explicitly requires a change, and have offscreen Qt tests plus
+manual keyboard and accessibility checks. The filter result above was reproduced
+with an offscreen Qt session; other proposals are not claims that every workflow
+has been manually usability-tested.
+
+## Prioritized upgrade proposals
+
+These are recommendations derived from the product goals and current workflows,
+not confirmed defects or commitments. Effort and priority are relative estimates;
+they need design and validation before scheduling. The existing gaps above remain
+the authoritative description of what is missing today.
+
+### Make AI activity visible and interactive
+
+**Priority: high; estimated effort: medium for a first version.** AI work
+currently has several separate indicators: the status bar shows connection and
+completion activity, Auto-writer displays completed scene drafts in a progress
+window, and project translation has a non-modal progress dialog. Other requests
+do not all have the same visible lifecycle. A consistent activity interface
+would make it easier to see what is happening while continuing to write.
+
+Suggested design:
+
+1. Add a compact, keyboard-accessible **AI activity** control in the status
+   bar. Show an animated busy indicator and a short label such as “Checking
+   spelling…” or “Generating character suggestions…”, with a count if multiple
+   tasks are active. Clicking it opens a non-modal activity panel; it must not
+   steal focus or cover the editor.
+2. In the panel, show each task's name, relevant document or project item,
+   elapsed time, and current state: queued, running, cancelling, completed,
+   failed, or discarded because its context changed. For multi-item jobs,
+   show actual completed/total items and the current scene or field. Use an
+   indeterminate indicator for a single model request when the provider does
+   not report progress; do not invent a percentage or completion time.
+3. Offer a clearly labeled **Cancel** action where cancellation is supported.
+   Explain “Cancelling after the current request…” when a blocking request
+   cannot be interrupted. Report completion or failure in the panel, with a
+   useful next step and a retry action where safe. Retrying must capture fresh
+   document and project state rather than reusing stale results.
+4. Keep Auto-writer's existing live scene drafts and translation's progress;
+   link to or integrate them with the panel rather than creating duplicate
+   tasks. Explicit generation and analysis can open their existing review
+   windows when ready. Automatic completion and spellcheck should use quiet,
+   short-lived indicators to avoid visual noise during normal typing.
+5. Consider optional streaming previews later. Current Ollama requests are
+   non-streaming, so a real token-by-token display requires provider and worker
+   changes. Partial output must remain clearly provisional, bounded in memory,
+   and outside the manuscript until explicitly accepted; cancellation and
+   stale-result checks must still apply. This is a separate, higher-effort
+   enhancement, not a prerequisite for the first version.
+
+Acceptance: every supported AI workflow has a visible start and terminal state;
+simultaneous tasks cannot overwrite one another's status; cancellation and
+stale results are represented accurately; progress remains responsive and
+accessible in English and Ukrainian; and no generated text is inserted without
+the workflow's existing author approval. Keep activity metadata separate from
+the session-only diagnostics payloads and avoid displaying or storing manuscript
+content in the activity history by default. Cover success, failure, cancellation,
+stale responses, overlapping requests, and window closure with fake providers.
+
+### High priority
+
+1. **Review AI context before it is sent** (medium effort). Project-scene
+   completion already uses bounded associated characters and reference notes,
+   while Auto-writer and analysis have confirmation flows. Offer an accessible
+   summary of the destination, included material, and truncation, with an
+   option to exclude reference notes or disable automatic project context.
+   Acceptance: the preview matches the captured request, unsaved buffers are
+   identified, and changing the selection invalidates stale results. Preserve
+   scene association boundaries and do not expose other characters implicitly.
+   This complements the first-use disclosure gap above; it adds UI complexity
+   and must avoid interrupting every keystroke.
+2. **Resolve external file conflicts in the editor** (medium/high effort).
+   Saves already detect changed project files and leave buffers dirty. Add a
+   review flow showing the saved base, current disk version, and open buffer,
+   with explicit reload, save elsewhere, or reviewed merge choices. Acceptance:
+   cancellation preserves all versions, the disk is rechecked before writing,
+   and no conflict is overwritten silently. A three-way merge needs careful
+   testing for concurrent changes and unsaved tabs.
+3. **Make revision snapshots actionable** (high effort). Build on existing
+   snapshots and comparisons with previewed, selective restore and confirmed
+   deletion, followed by optional scheduling and retention settings. Acceptance:
+   show affected files and dirty buffers before restore, create a safety
+   snapshot, recheck disk and project state, and either apply transactionally or
+   leave the original intact. This depends on the revision-management gap
+   above and requires especially careful failure and rollback tests.
+4. **Improve recovery triage** (medium/high effort). Extend the existing scan,
+   comparison, relocation, and restore choices with per-document status,
+   timestamps, readable corruption details, and selective recovery/export of
+   valid content. Acceptance: damaged entries remain available for diagnosis;
+   no repair or discard occurs without explicit action, and canonical files
+   changed on disk are never overwritten silently. Partial or corrupt snapshots
+   may not contain enough data to recover; the UI must say so.
+
+### Medium priority
+
+5. **Project-wide search with navigation** (medium/high effort). Extend the
+   existing character-name search and active-document Find to manuscript and
+   reference notes, using open unsaved buffers where available. Show item,
+   snippet, and location; opening a result should select the match only if its
+   captured content is still current. Clearly report unreadable files, support
+   cancellation, and bound work for large projects. Start read-only; project-wide
+   replacement would need a separate preview and transactional design.
+6. **Review translations before applying a batch** (high effort). Translation
+   already snapshots and applies only after all fields succeed. Add a review of
+   original and translated titles and text, with per-item navigation and an
+   explicit final apply or cancel. Acceptance: preserve IDs, paths, links, and
+   line endings, recheck the captured project state, and retain all-or-nothing
+   behavior. Selective application and translation of character metadata would
+   require separate decisions about consistency and scope.
+7. **Batch spelling review** (medium effort). Build on validated individual
+   suggestions with a navigable list, explanations, and explicit selection of
+   corrections. Acceptance: reject stale or overlapping ranges, group accepted
+   edits into an undoable operation, and leave text untouched on cancel. Model
+   output remains untrusted; this is not automatic correction.
+8. **Portable project backup and validation** (medium/high effort). Project
+   files are already portable YAML and UTF-8, and snapshots live inside the
+   project. Offer a user-selected backup destination and a read-only integrity
+   report for missing files, invalid paths, and unreadable snapshots. Acceptance:
+   explain whether open unsaved buffers and revisions are included, never
+   overwrite without confirmation, and test restoring a backup in a separate
+   directory. This must not imply that recovery snapshots are a complete backup.
+9. **Improve manuscript export and PDF options** (medium effort). Existing
+   Markdown/plain-text export supports scene subsets; PDF currently uses a
+   fixed A5 layout. Consider a preview and choices for page size, title-page
+   metadata, headings, and scene selection. Acceptance: use a captured buffer
+   state, show omissions and unsaved content, preserve source files, and retain
+   explicit replacement confirmation. Page-numbered contents and stable
+   pagination need dedicated PDF testing across platforms.
+10. **Accessibility and localization audit** (medium effort). Extend the
+    current keyboard-accessible menus and partial Ukrainian catalogs by testing
+    complete workflows with keyboard navigation, accessible names, screen
+    readers, and system palettes. Include translation completeness and
+    placeholder checks in automated tooling. Acceptance: report unresolved
+    strings and barriers without translating manuscript data or AI prompts.
+    Screen-reader and platform behavior also needs manual verification.
+
+### Lower priority and exploratory
+
+11. **Find controls and navigation** (small/medium effort). Active-document
+    find currently uses literal, case-sensitive matching. Add optional
+    case-insensitive or whole-word matching and a recent standalone-document
+    list, keeping existing defaults. Acceptance: counts, navigation, replacement,
+    Unicode handling, and undo agree under each chosen mode. Regular expressions
+    would need separate safeguards and clear error reporting.
+12. **Writing-goal history** (medium effort). Daily progress is stored locally
+    and already accounts for undo/redo. A local history view could show past
+    days and scope without changing manuscript text. Acceptance: explain the
+    local-date and counting semantics, honor pause/reset, and provide a clear
+    way to remove local progress. Avoid presenting approximate inserted-word
+    counts as exact writing analytics.
+13. **Measure large-project responsiveness** (medium effort). Establish
+    repeatable benchmarks for opening, editing, search, word counts, snapshots,
+    and AI context construction before optimizing. Then address measured
+    bottlenecks with bounded memory and cancellable background work. Acceptance:
+    record representative input sizes and compare results without weakening
+    conflict detection or correctness. Very large-file editing may require a
+    broader design change rather than a simple optimization.
+14. **Optional interface and provider extensions** (design decision). The
+    older Ukrainian document suggests a toolbar, a dark-mode choice, and other
+    AI providers. A toolbar could expose common actions; an appearance override
+    would extend the current system-palette behavior. Other providers require
+    explicit privacy, configuration, and compatibility decisions. None is
+    necessary for the current local-first scope; cloud services are outside it.
+15. **Make character profiles easier to navigate** (small/medium effort).
+    The profile dialog groups many editable fields into Story and Background
+    tabs. Consider scrollable sections, clearer field grouping, and navigation
+    from a character's scene history to the related scene. Acceptance: all
+    fields remain reachable at small window sizes and by keyboard, existing
+    values and directed relationships round-trip unchanged, and opening a
+    scene never discards unsaved profile edits. Verify with manual accessibility
+    testing before treating layout concerns as confirmed defects.
+
+## Documentation discrepancies to resolve
+
+- `SPEC.md` §2 still lists editor appearance settings as a gap, although font,
+  font size, tab width, word wrap, and line-number controls are present and
+  applied by the editor. `SPEC.md` §5 also places AI Settings in the AI menu;
+  the current application and `README.md` place it under Settings.
+- `README.uk.md` contains older example menus and refers to a dark-mode setting
+  (§22). The current design follows the system palette and does not provide a
+  separate dark-mode toggle. Its current-status summary also does not yet cover
+  all newer UI workflows, such as AI filling empty character fields and the
+  character Relationships tab.
+- Some older wording describes AI as necessarily local. The default Ollama
+  destination is localhost, but users can configure another HTTP(S) host. The
+  documents should consistently describe the configured destination and avoid
+  implying that an arbitrary host is guaranteed to be local.
 
 These gaps are independent of basic standalone editing, which remains usable
 without a project or a running Ollama server.
