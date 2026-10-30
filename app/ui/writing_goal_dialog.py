@@ -18,7 +18,9 @@ class WritingGoalDialog(QDialog):
         self.target.setSpecialValueText(self.tr("Off"))
         self.target.setValue(target)
         self.scope = QComboBox(self)
-        for label, value in self._scopes:
+        labels = (self.tr("Active scene/document words"), self.tr("Project manuscript words"),
+                  self.tr("Words newly written today"))
+        for label, (_, value) in zip(labels, self._scopes):
             self.scope.addItem(label, value)
         index = self.scope.findData(scope)
         self.scope.setCurrentIndex(max(0, index))

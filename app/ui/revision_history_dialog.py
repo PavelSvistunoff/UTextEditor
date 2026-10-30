@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.document.revisions import RevisionComparison, RevisionIssue, RevisionSnapshot
+from app.i18n import format_qt
 
 
 class RevisionHistoryDialog(QDialog):
@@ -59,10 +60,8 @@ class RevisionHistoryDialog(QDialog):
         self.snapshots.clear()
         for snapshot in snapshots:
             note_count = len(set(snapshot.documents) - set(snapshot.scene_order))
-            label = (
-                f"{snapshot.name} — {snapshot.captured_at} "
-                f"({len(snapshot.scene_order)} scenes, {note_count} notes)"
-            )
+            label = format_qt(self.tr("%1 — %2 (%3 scenes, %4 notes)"),
+                              snapshot.name, snapshot.captured_at, len(snapshot.scene_order), note_count)
             item = QListWidgetItem(label)
             item.setData(Qt.ItemDataRole.UserRole, snapshot)
             self.snapshots.addItem(item)
@@ -72,39 +71,43 @@ class RevisionHistoryDialog(QDialog):
         )
         if snapshots:
             self.status.setText(
-                f"{len(snapshots)} snapshot(s) loaded"
-                + (f"; {len(issues)} unreadable" if issues else "")
+                format_qt(self.tr("%1 snapshot(s) loaded"), len(snapshots))
+                + (format_qt(self.tr("; %1 unreadable"), len(issues)) if issues else "")
             )
         elif issues:
-            self.status.setText(f"No valid snapshots; {len(issues)} unreadable")
+            self.status.setText(format_qt(self.tr("No valid snapshots; %1 unreadable"), len(issues)))
         else:
-            self.status.setText("No revision snapshots yet.")
+            self.status.setText(self.tr("No revision snapshots yet."))
         self.details.setPlainText(issue_text)
         self._update_compare_enabled()
 
     def show_comparison(self, comparison: RevisionComparison) -> None:
         self._update_compare_enabled()
         if not comparison.changes:
-            self.details.setPlainText("No scene or reference-note changes between these snapshots.")
-            self.status.setText("Snapshots compared; no changes found.")
+            self.details.setPlainText(self.tr("No scene or reference-note changes between these snapshots."))
+            self.status.setText(self.tr("Snapshots compared; no changes found."))
             return
 
         sections: list[str] = []
         for change in comparison.changes:
             title = change.new_title or change.old_title or change.scene_id
-            change_label = change.kind.replace("-", " ").title()
+            labels = {"added": self.tr("Added"), "removed": self.tr("Removed"),
+                      "moved": self.tr("Moved"), "title-changed": self.tr("Title Changed"),
+                      "text-changed": self.tr("Text Changed"), "type-changed": self.tr("Type Changed")}
+            change_label = labels.get(change.kind, change.kind)
             if change.item_type == "note":
-                change_label = f"Reference Note {change_label}"
+                change_label = format_qt(self.tr("Reference Note %1"), change_label)
             sections.append(f"{change_label}: {title}")
             if change.kind == "type-changed":
                 sections.append(
-                    f"Type: {change.old_note_type or 'unknown'} → "
-                    f"{change.new_note_type or 'unknown'}"
+                    format_qt(self.tr("Type: %1 → %2"),
+                              change.old_note_type or self.tr("unknown"),
+                              change.new_note_type or self.tr("unknown"))
                 )
             if change.diff:
                 sections.append(change.diff.rstrip())
         self.details.setPlainText("\n\n".join(sections))
-        self.status.setText(f"{len(comparison.changes)} project item change(s) found.")
+        self.status.setText(format_qt(self.tr("%1 project item change(s) found."), len(comparison.changes)))
 
     def show_error(self, message: str) -> None:
         self._update_compare_enabled()
@@ -125,5 +128,5 @@ class RevisionHistoryDialog(QDialog):
             key=lambda snapshot: snapshot.captured_at,
         )
         self.compare_button.setEnabled(False)
-        self.status.setText("Comparing snapshots…")
+        self.status.setText(self.tr("Comparing snapshots…"))
         self.compare_requested.emit(snapshots[0], snapshots[1])

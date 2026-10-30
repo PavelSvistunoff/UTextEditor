@@ -114,7 +114,7 @@ AI completions are suggestions and do not enter the document until accepted. Mod
 
 ## Interface localization
 
-The interface uses Qt Linguist source catalogs in `translations/` and compiled Qt `.qm` catalogs packaged under `app/resources/translations/`. `system`, `en`, and `uk` are the persisted interface-language values. System mode uses Qt's preferred UI locales, matches regional variants by language, and falls back to English. Language selection does not change manuscript language, writing instructions, project content, filenames, or AI prompts. Interface changes take effect after restart.
+The interface uses Qt Linguist source catalogs in `translations/` and compiled Qt `.qm` catalogs packaged under `app/resources/translations/`. `system`, `en`, and `uk` are the persisted interface-language values. System mode uses Qt's preferred UI locales, matches regional variants by language, and falls back to English. The daily writing goal selector and revision comparison statuses and change labels support Ukrainian. Language selection does not change manuscript language, writing instructions, project content, filenames, or AI prompts. Interface changes take effect after restart.
 
 When adding or changing translatable UI text, use `self.tr("English source text")` in the owning widget. Extract and compile catalogs with the PySide6 Qt Linguist tools:
 

@@ -60,3 +60,9 @@ def test_indent_and_outdent_preserve_blank_lines_and_line_endings():
     assert indent_lines(original) == indented
     assert outdent_lines(indented) == original
     assert outdent_lines("\tindented\n") == "indented\n"
+
+
+def test_formatting_does_not_treat_unicode_separators_as_file_line_endings():
+    text = "first\u2028second\nthird"
+    assert indent_lines(text) == "    first\u2028second\n    third"
+    assert outdent_lines("    first\u2028    second") == "first\u2028    second"

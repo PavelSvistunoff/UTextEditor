@@ -1376,6 +1376,78 @@
         <source>Revision comparison</source>
         <translation>Порівняння редакцій</translation>
     </message>
+    <message>
+        <source>%1 — %2 (%3 scenes, %4 notes)</source>
+        <translation>%1 — %2 (сцен: %3, нотаток: %4)</translation>
+    </message>
+    <message>
+        <source>%1 snapshot(s) loaded</source>
+        <translation>Завантажено знімків: %1</translation>
+    </message>
+    <message>
+        <source>; %1 unreadable</source>
+        <translation>; не вдалося прочитати: %1</translation>
+    </message>
+    <message>
+        <source>No valid snapshots; %1 unreadable</source>
+        <translation>Немає придатних знімків; не вдалося прочитати: %1</translation>
+    </message>
+    <message>
+        <source>No revision snapshots yet.</source>
+        <translation>Знімків редакцій ще немає.</translation>
+    </message>
+    <message>
+        <source>No scene or reference-note changes between these snapshots.</source>
+        <translation>Між цими знімками немає змін сцен або довідкових нотаток.</translation>
+    </message>
+    <message>
+        <source>Snapshots compared; no changes found.</source>
+        <translation>Знімки порівняно; змін не знайдено.</translation>
+    </message>
+    <message>
+        <source>Added</source>
+        <translation>Додано</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <translation>Видалено</translation>
+    </message>
+    <message>
+        <source>Moved</source>
+        <translation>Переміщено</translation>
+    </message>
+    <message>
+        <source>Title Changed</source>
+        <translation>Назву змінено</translation>
+    </message>
+    <message>
+        <source>Text Changed</source>
+        <translation>Текст змінено</translation>
+    </message>
+    <message>
+        <source>Type Changed</source>
+        <translation>Тип змінено</translation>
+    </message>
+    <message>
+        <source>Reference Note %1</source>
+        <translation>Довідкова нотатка: %1</translation>
+    </message>
+    <message>
+        <source>Type: %1 → %2</source>
+        <translation>Тип: %1 → %2</translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation>невідомо</translation>
+    </message>
+    <message>
+        <source>%1 project item change(s) found.</source>
+        <translation>Знайдено змін елементів проєкту: %1</translation>
+    </message>
+    <message>
+        <source>Comparing snapshots…</source>
+        <translation>Порівняння знімків…</translation>
+    </message>
 </context>
 <context>
     <name>SettingsDialog</name>
@@ -1611,6 +1683,18 @@
         <location filename="../app/ui/writing_goal_dialog.py" line="35"/>
         <source>Cancel</source>
         <translation>Скасувати</translation>
+    </message>
+    <message>
+        <source>Active scene/document words</source>
+        <translation>Слова в активній сцені або документі</translation>
+    </message>
+    <message>
+        <source>Project manuscript words</source>
+        <translation>Слова в рукописі проєкту</translation>
+    </message>
+    <message>
+        <source>Words newly written today</source>
+        <translation>Слова, написані сьогодні</translation>
     </message>
 </context>
 </TS>

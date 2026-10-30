@@ -18,6 +18,8 @@ from app.ui.settings_dialog import SettingsDialog
 from app.project import WordCount
 from app.ui.project_view import ProjectView
 from app.ui.main_window import MainWindow
+from app.ui.revision_history_dialog import RevisionHistoryDialog
+from app.ui.writing_goal_dialog import WritingGoalDialog
 
 
 @pytest.fixture(scope="module")
@@ -127,6 +129,21 @@ def test_settings_dialog_uses_loaded_ukrainian_catalog(application):
         assert dialog.windowTitle() == "Налаштування ШІ"
         assert dialog.ui_language.itemText(0) == "Мова системи"
         dialog.close()
+    finally:
+        application.removeTranslator(translator)
+
+
+def test_goal_and_revision_workflows_use_ukrainian_catalog(application):
+    _, translator = install_translation(application, "uk")
+    try:
+        goal = WritingGoalDialog(100, "new_words")
+        assert goal.scope.currentText() == "Слова, написані сьогодні"
+        assert goal.values() == (100, "new_words")
+        history = RevisionHistoryDialog()
+        history.set_snapshots((), ())
+        assert history.status.text() == "Знімків редакцій ще немає."
+        goal.close()
+        history.close()
     finally:
         application.removeTranslator(translator)
 
