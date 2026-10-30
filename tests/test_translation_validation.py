@@ -1,6 +1,12 @@
 """Localization validation works without a compiled Qt catalog."""
 
 import xml.etree.ElementTree as ET
+from pathlib import Path
+import subprocess
+import sys
+
+import pytest
+from PySide6.QtCore import QTranslator
 
 from tools.check_translations import main, validate
 
@@ -48,3 +54,16 @@ def test_empty_malformed_and_valid_catalogs(tmp_path):
     assert any("invalid catalog" in error for error in validate(target))
     catalog(target, [("Hello {name} %1", "Привіт {name} %1", False)])
     assert validate(target) == []
+
+
+def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
+    lrelease = Path(sys.executable).parent / "pyside6-lrelease"
+    if not lrelease.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    target = tmp_path / "uk.qm"
+    subprocess.run([str(lrelease), "translations/utexteditor_uk.ts", "-qm", str(target)], check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(target))
+    assert translator.translate("CharacterDialog", "Choose Portrait…") == "Вибрати портрет…"
+    assert translator.translate("CharacterDialog", "No open associated scene") == "Немає відкритої пов’язаної сцени"
+    assert translator.translate("MainWindow", "Open failed") == "Не вдалося відкрити"

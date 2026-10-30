@@ -251,6 +251,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   as `dialog.tr`. Extraction, validation and compilation are documented.
   Resolve the context discrepancies and remaining localization coverage before
   treating the audit as complete. Full offline suite: 538 passed, 2 skipped.
+- **TASK-032 — in progress:** the Ukrainian source catalog now covers the
+  previously missing character portrait and scene-development workflow labels,
+  prompts and errors, plus the main-window open-error title. A full UI audit,
+  extraction-context cleanup and compiled catalog remain outstanding. Do not
+  mark complete. Temporary-catalog runtime translation tests passed; full
+  offline suite: 539 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

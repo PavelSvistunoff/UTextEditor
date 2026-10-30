@@ -2037,4 +2037,35 @@
     <message><source>Navigation Forward</source><translation>Уперед у навігації</translation></message>
     <message><source>No available navigation history.</source><translation>Немає доступних записів історії навігації.</translation></message>
 </context>
+<context>
+    <name>CharacterDialog</name>
+    <message><source>No portrait</source><translation>Портрет відсутній</translation></message>
+    <message><source>Loading portrait…</source><translation>Завантаження портрета…</translation></message>
+    <message><source>Character portrait</source><translation>Портрет персонажа</translation></message>
+    <message><source>Choose Portrait…</source><translation>Вибрати портрет…</translation></message>
+    <message><source>Remove Portrait</source><translation>Видалити портрет</translation></message>
+    <message><source>Portrait</source><translation>Портрет</translation></message>
+    <message><source>Suggest Scene Development with AI…</source><translation>Запропонувати розвиток у сцені за допомогою ШІ…</translation></message>
+    <message><source>Choose portrait</source><translation>Вибрати портрет</translation></message>
+    <message><source>Images (*.png *.jpg *.jpeg)</source><translation>Зображення (*.png *.jpg *.jpeg)</translation></message>
+    <message><source>Portrait could not be loaded.</source><translation>Не вдалося завантажити портрет.</translation></message>
+    <message><source>Portrait error</source><translation>Помилка портрета</translation></message>
+    <message><source>No open associated scene</source><translation>Немає відкритої пов’язаної сцени</translation></message>
+    <message><source>Open a scene associated with this character before requesting suggestions.</source><translation>Перш ніж запитувати пропозиції, відкрийте сцену, пов’язану з цим персонажем.</translation></message>
+    <message><source>Choose an open associated scene:</source><translation>Виберіть відкриту пов’язану сцену:</translation></message>
+    <message><source>Empty scene</source><translation>Порожня сцена</translation></message>
+    <message><source>The selected scene has no text to review.</source><translation>Вибрана сцена не містить тексту для перегляду.</translation></message>
+    <message><source>Send this profile and the selected scene excerpt to %1 (model %2)? Requests and responses appear in AI diagnostics.</source><translation>Надіслати цей профіль і уривок вибраної сцени до %1 (модель %2)? Запити та відповіді відображаються в діагностиці ШІ.</translation></message>
+    <message><source>Context changed</source><translation>Контекст змінився</translation></message>
+    <message><source>The profile, scene, or project changed. Please try again.</source><translation>Профіль, сцена або проєкт змінилися. Спробуйте ще раз.</translation></message>
+    <message><source>No suggestions</source><translation>Немає пропозицій</translation></message>
+    <message><source>The model returned no supported character updates.</source><translation>Модель не повернула підтримуваних оновлень персонажа.</translation></message>
+    <message><source>Review character development</source><translation>Переглянути розвиток персонажа</translation></message>
+    <message><source>Select individual suggestions to stage in the profile. Save the profile to keep them.</source><translation>Виберіть окремі пропозиції для внесення до профілю. Збережіть профіль, щоб їх залишити.</translation></message>
+    <message><source>Character development failed</source><translation>Не вдалося запропонувати розвиток персонажа</translation></message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Open failed</source><translation>Не вдалося відкрити</translation></message>
+</context>
 </TS>
