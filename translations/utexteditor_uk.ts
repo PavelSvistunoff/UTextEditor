@@ -1266,6 +1266,11 @@
     <message><source>Open linked item</source><translation>Відкрити пов’язаний елемент</translation></message>
     <message><source>This item has no links.</source><translation>Цей елемент не має зв’язків.</translation></message>
     <message><source>Quick Open…</source><translation>Швидке відкриття…</translation></message>
+    <message><source>Open Tabs…</source><translation>Відкриті вкладки…</translation></message>
+    <message><source>Open Tabs</source><translation>Відкриті вкладки</translation></message>
+    <message><source>Untitled</source><translation>Без назви</translation></message>
+    <message><source>Search open tabs</source><translation>Пошук відкритих вкладок</translation></message>
+    <message><source>Matching open tabs</source><translation>Знайдені відкриті вкладки</translation></message>
     <message><source>Quick Open</source><translation>Швидке відкриття</translation></message>
     <message><source>Open a project first.</source><translation>Спочатку відкрийте проєкт.</translation></message>
     <message><source>Ungrouped</source><translation>Без розділу</translation></message>
@@ -1296,6 +1301,7 @@
     <message><source>Chapter</source><translation>Розділ</translation></message>
     <message><source>Reference note</source><translation>Довідкова нотатка</translation></message>
     <message><source>Character</source><translation>Персонаж</translation></message>
+    <message><source>Tab</source><translation>Вкладка</translation></message>
 </context>
 <context>
     <name>ProjectSearchPanel</name>

@@ -17,11 +17,12 @@ class QuickOpenItem:
 
 
 class QuickOpenDialog(QDialog):
-    def __init__(self, items: tuple[QuickOpenItem, ...], parent=None):
+    def __init__(self, items: tuple[QuickOpenItem, ...], parent=None, *, show_id: bool = True):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Quick Open"))
         self.resize(650, 450)
         self.items = items
+        self.show_id = show_id
         layout = QVBoxLayout(self)
         self.query = QLineEdit(self)
         self.query.setPlaceholderText(self.tr("Search project items"))
@@ -45,12 +46,14 @@ class QuickOpenDialog(QDialog):
         self.results.clear()
         query = query.casefold().strip()
         types = {"scene": self.tr("Scene"), "chapter": self.tr("Chapter"),
-                 "note": self.tr("Reference note"), "character": self.tr("Character")}
+                 "note": self.tr("Reference note"), "character": self.tr("Character"),
+                 "tab": self.tr("Tab")}
         for entry in self.items:
             if query not in " ".join((entry.title, entry.context, *entry.aliases)).casefold():
                 continue
             context = f" — {entry.context}" if entry.context else ""
-            item = QListWidgetItem(f"{entry.title} — {types[entry.kind]}{context} [{entry.id}]")
+            identifier = f" [{entry.id}]" if self.show_id else ""
+            item = QListWidgetItem(f"{entry.title} — {types[entry.kind]}{context}{identifier}")
             item.setData(Qt.ItemDataRole.UserRole, entry)
             self.results.addItem(item)
         if self.results.count():

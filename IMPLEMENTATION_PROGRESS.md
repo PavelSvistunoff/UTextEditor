@@ -108,6 +108,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   staged character-profile edits, broader navigation tests, and compiled
   Ukrainian strings remain outstanding. Do not mark complete. Full offline
   suite: 460 passed, 2 skipped.
+- **TASK-016 — in progress:** Qt's existing Ctrl+Tab and Ctrl+Shift+Tab
+  behavior was verified with offscreen keyboard tests, and View > Open Tabs
+  provides a searchable picker with modified markers, file/project context,
+  and distinct labels for duplicate untitled tabs. Closing remains handled by
+  the existing unsaved-change flow. Compiled Ukrainian strings and manual
+  native-platform shortcut verification remain outstanding; do not mark
+  complete until verified. Full offline suite: 462 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

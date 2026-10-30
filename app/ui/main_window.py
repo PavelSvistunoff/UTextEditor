@@ -521,6 +521,9 @@ class MainWindow(QMainWindow):
         quick_open_action.setShortcut(QKeySequence("Ctrl+P"))
         quick_open_action.triggered.connect(self.quick_open_project_item)
         search_menu.addAction(quick_open_action)
+        open_tabs_action = QAction(self.tr("Open Tabs…"), self)
+        open_tabs_action.triggered.connect(self.select_open_tab)
+        view_menu.addAction(open_tabs_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
@@ -4798,6 +4801,30 @@ class MainWindow(QMainWindow):
                 self._project_item_no_longer_exists()
             return
         self._open_project_document(selected.kind, selected.id)
+
+    def select_open_tab(self) -> None:
+        editors = [self.tabs.widget(index) for index in range(self.tabs.count())]
+        items = []
+        for index, editor in enumerate(editors):
+            document = editor.document_state
+            binding = self._project_documents.get(editor)
+            location = str(document.path) if document.path else self.tr("Untitled")
+            context = f"{index + 1}: {location}"
+            if binding is not None:
+                context = f"{binding.project.manifest.title} — {context}"
+            title = document.display_name + (" *" if document.dirty else "")
+            items.append(QuickOpenItem("tab", str(id(editor)), title, context))
+        dialog = QuickOpenDialog(tuple(items), self, show_id=False)
+        dialog.setWindowTitle(self.tr("Open Tabs"))
+        dialog.query.setPlaceholderText(self.tr("Search open tabs"))
+        dialog.query.setAccessibleName(self.tr("Search open tabs"))
+        dialog.results.setAccessibleName(self.tr("Matching open tabs"))
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        selected = dialog.selected()
+        editor = next((editor for editor in editors if selected is not None and str(id(editor)) == selected.id), None)
+        if editor is not None and self.tabs.indexOf(editor) >= 0:
+            self.tabs.setCurrentWidget(editor)
 
     def _cancel_project_text_search(self) -> None:
         if self._project_search_cancel is not None:

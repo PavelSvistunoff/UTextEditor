@@ -134,11 +134,9 @@ and effort are relative estimates.
 
 ### Reduce navigation friction
 
-8. **Improve open-tab navigation** — medium priority, small/medium effort.
-   Consider next/previous-tab shortcuts and a searchable open-tab list showing
-   project context and dirty markers. Ensure duplicate names are distinguishable,
-   use platform-appropriate shortcuts, and route closing through existing
-   unsaved-change prompts. Verify native Qt shortcuts before assigning new ones.
+8. **Verify open-tab navigation on native platforms** — small effort. Qt's
+   next/previous-tab shortcuts and the searchable open-tab list are available;
+   manual native-platform shortcut verification remains outstanding.
 9. **Add recent standalone documents** — medium priority, medium effort.
    Recent projects already exist; add a separate recent-file list with clear and
    missing-file handling. Reopen via the normal duplicate-tab and error paths,

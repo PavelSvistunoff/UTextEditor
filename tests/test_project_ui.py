@@ -495,6 +495,53 @@ def test_open_linked_item_navigates_from_scene_to_note_without_changing_links(ap
     window.close()
 
 
+def test_native_tab_shortcuts_switch_without_discarding_changes(application):
+    from PySide6.QtTest import QTest
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    first = window.tabs.current_editor()
+    first.setPlainText("unsaved")
+    second = window.tabs.new_document()
+    window.tabs.setCurrentWidget(first)
+    window.show()
+    application.processEvents()
+    QTest.keyClick(first, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier)
+    assert window.tabs.current_editor() is second
+    QTest.keyClick(second, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)
+    assert window.tabs.current_editor() is first
+    assert first.toPlainText() == "unsaved" and first.document_state.dirty
+    first.document_state.mark_saved()
+    window.close()
+
+
+def test_open_tabs_picker_shows_modified_and_distinguishes_untitled_tabs(application, monkeypatch):
+    from PySide6.QtWidgets import QDialog
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    first = window.tabs.current_editor()
+    first.setPlainText("unsaved")
+    second = window.tabs.new_document()
+    class Picker:
+        def __init__(self, items, parent, *, show_id):
+            assert not show_id and items[0].title.endswith(" *")
+            assert items[0].context != items[1].context
+            self.item = items[0]
+            self.query = type("Input", (), {"setPlaceholderText": lambda *a: None, "setAccessibleName": lambda *a: None})()
+            self.results = type("Results", (), {"setAccessibleName": lambda *a: None})()
+        def setWindowTitle(self, title):
+            pass
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+        def selected(self):
+            return self.item
+    monkeypatch.setattr("app.ui.main_window.QuickOpenDialog", Picker)
+    assert window.tabs.current_editor() is second
+    window.select_open_tab()
+    assert window.tabs.current_editor() is first and first.toPlainText() == "unsaved"
+    first.document_state.mark_saved()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
