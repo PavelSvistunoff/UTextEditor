@@ -22,6 +22,15 @@ def test_new_words_count_handles_repeated_text_without_quadratic_diff() -> None:
     assert WritingGoalTracker._new_tokens_added("word", "wordx") == 0
 
 
+def test_new_words_count_handles_changes_across_long_unchanged_spans() -> None:
+    prefix = "word " * 1000
+    suffix = " end" * 1300
+    before = prefix + "old" + suffix
+    after = prefix + "new words" + suffix
+    assert WritingGoalTracker._new_tokens_added(before, after) == 2
+    assert WritingGoalTracker._new_tokens_added(after, before) == 1
+
+
 def test_undo_and_redo_restore_daily_insertion_contribution() -> None:
     tracker = WritingGoalTracker(10, "new_words")
     tracker.attach("doc", "existing text")

@@ -150,6 +150,8 @@ The small English catalog supplies Qt numerus forms; ordinary English text remai
 
 Recurring glossary: project — проєкт; chapter — розділ; scene — сцена; character — персонаж; reference note — довідкова нотатка; revision snapshot — знімок редакції; recovery — відновлення; inline completion — продовження тексту; continuity check — перевірка узгодженості; Auto-writer — автоматичне написання; writing goal — ціль письма.
 
+For performance investigation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/completion_context.py` for the completion-context microbenchmark, or `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/editor_responsiveness.py` for editor operation timings and peak process memory. These measurements are diagnostic, not portable pass/fail thresholds.
+
 ## Product direction
 
 The project-workspace, character reference, Ollama AI planning and review, manuscript export, and named revision-snapshot foundations are implemented. The next useful increments are the remaining gaps listed in `UNIMPLEMENTED_FEATURES.md`: broader revision management, recovery diagnosis, project-wide text search, and complete interface translation. These are candidates, not promises or descriptions of current behavior. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or a separate cloud AI provider without a separate product decision.

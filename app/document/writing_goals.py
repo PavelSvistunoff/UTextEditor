@@ -232,10 +232,21 @@ class WritingGoalTracker:
         """Count words wholly inside the single changed span of an editor edit."""
         shared_limit = min(len(before), len(after))
         prefix = 0
+        # Compare long unchanged spans in C rather than one Python character
+        # at a time. The final short scan keeps exact code-point boundaries.
+        chunk_size = 4096
+        while prefix + chunk_size <= shared_limit and before[prefix:prefix + chunk_size] == after[prefix:prefix + chunk_size]:
+            prefix += chunk_size
         while prefix < shared_limit and before[prefix] == after[prefix]:
             prefix += 1
 
         suffix = 0
+        while suffix + chunk_size <= shared_limit - prefix:
+            old_end = len(before) - suffix
+            new_end = len(after) - suffix
+            if before[old_end - chunk_size:old_end] != after[new_end - chunk_size:new_end]:
+                break
+            suffix += chunk_size
         while suffix < shared_limit - prefix and before[-suffix - 1] == after[-suffix - 1]:
             suffix += 1
 

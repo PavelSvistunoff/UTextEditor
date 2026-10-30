@@ -39,6 +39,23 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   cross-platform verification is performed. The full offline suite after this
   mitigation passed: 424 passed, 2 skipped (`QT_QPA_PLATFORM=offscreen
   PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`).
+- **TASK-006 — in progress:** bounded completion-context construction now
+  searches only the requested window, avoiding a copy of the entire prefix.
+  On this machine, `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python
+  benchmarks/completion_context.py` measured 100 middle-of-document calls on
+  five million characters: previous 0.0459 s and 2,504,082 peak Python bytes;
+  current 0.0001 s and 4,041 bytes. These are microbenchmarks, not GUI latency
+  or process memory measurements. An offscreen GUI baseline is now available
+  via `benchmarks/editor_responsiveness.py`, with new-word tracking enabled.
+  For 100,000/1,000,000 characters, before the tracker optimization, opening
+  in Qt took 8.48/73.63 ms, typing 10.98/78.85 ms, cursor movement 1.91/14.83
+  ms, word counting 1.40/14.33 ms, and cumulative peak RSS was 102/125 MB.
+  Comparing unchanged edit spans in chunks reduced measured typing to
+  8.68/67.20 ms in a subsequent run; Qt opening was 8.71/77.89 ms. These
+  single-run, offscreen timings include GUI callbacks but exclude rendering
+  and are not platform-independent thresholds. The one-million-character
+  case remains slow; representative repeated measurements, GUI event-loop
+  latency and further investigation are still needed. Do not mark complete.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report
@@ -48,6 +65,6 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   (`QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m
   pytest -q`).
 
-The initial worktree included staged `.DS_Store` files and Python bytecode,
-as well as unstaged changes from previous work. Preserve these unrelated
-changes. No commit has been made for this checkpoint.
+The initial worktree included staged `.DS_Store` files and Python bytecode.
+Preserve these unrelated changes. Earlier checkpoint implementation was
+committed in `c5c2330`; the subsequent character AI fix is in `82b693f`.

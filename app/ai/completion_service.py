@@ -13,10 +13,13 @@ def build_context(text: str, cursor: int, *, maximum_characters: int = 4000) -> 
     if maximum_characters <= 0:
         return ""
     cursor = max(0, min(cursor, len(text)))
-    before = text[:cursor]
-    separator = before.rfind("\n\n")
-    paragraph_start = separator + 2 if separator >= 0 else 0
-    return before[max(paragraph_start, len(before) - maximum_characters):]
+    start = max(0, cursor - maximum_characters)
+    # Only a separator overlapping or following the window can change its
+    # start. Include one preceding character for a boundary-spanning separator.
+    separator = text.rfind("\n\n", max(0, start - 1), cursor)
+    if separator >= 0:
+        start = max(start, separator + 2)
+    return text[start:cursor]
 
 
 class CompletionService:

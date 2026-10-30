@@ -23,6 +23,13 @@ def test_context_clamps_cursor_and_honours_character_limit() -> None:
     assert build_context("abcdefgh", 8, maximum_characters=3) == "fgh"
 
 
+def test_context_honours_paragraph_boundaries_at_and_across_window_edge() -> None:
+    assert build_context("old\n\nnew text", 13, maximum_characters=9) == "new text"
+    assert build_context("old\n\nnew text", 13, maximum_characters=8) == "new text"
+    assert build_context("old\n\nnew text", 13, maximum_characters=4) == "text"
+    assert build_context("old\n\nnew\n\nlast", 14, maximum_characters=12) == "last"
+
+
 def test_completion_service_delegates_options_to_provider() -> None:
     provider = FakeProvider()
 
