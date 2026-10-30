@@ -41,7 +41,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Status display for UTF-8, detected line-ending style (LF, CRLF, or CR), cursor line and column, and AI connection state.
 - Local Ollama connection using `http://localhost:11434` and `gemma4:12b` by default; host and model can be changed in AI Settings.
 - Inline completions shown as non-destructive ghost text. `Tab` accepts a suggestion and `Esc` dismisses it. Suggestions are discarded when the relevant text, cursor, selection, or active document changes.
-- Debounced completion requests with bounded context, background workers, and stale-result checks.
+- Debounced completion requests with bounded context, background workers, and stale-result checks. When completing a project scene, requests also include its explicitly associated characters and up to 10,000 characters of project reference notes (using open unsaved note buffers when available). This material is sent to the configured Ollama destination and appears in AI diagnostics.
 - AI-assisted spelling and grammar suggestions with underlines, context-menu replace/ignore actions, response validation, and undo support for edits.
 - Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance.
 - Settings are grouped into Connection, Writing, AI assistance, and Advanced prompts tabs, with a reset-to-defaults option; the Connection tab can test the configured Ollama host/model and suggests how to install a missing model.

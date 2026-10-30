@@ -397,6 +397,7 @@ def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
 
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening")
+    note = project.add_note("World", "general", content="Old note")
     associated = project.add_character("Mara")
     associated.primary_motivation = "Expose the council"
     project.update_character(associated.id, associated)
@@ -419,8 +420,10 @@ def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
             return "Draft text."
 
     provider = FakeProvider()
-    run_auto_writer(provider, project, "write_empty", "", {}, maximum_tokens=900,
+    run_auto_writer(provider, project, "write_empty", "", {note.id: "Unsaved world detail"}, maximum_tokens=900,
                     temperature=0.2, snapshot_name="Before draft", is_cancelled=lambda: False)
+    assert "Unsaved world detail" in provider.prompt
+    assert "Old note" not in provider.prompt
     assert "Expose the council" in provider.prompt
     assert "learned the code" in provider.prompt
     assert "Read the letter" in provider.prompt

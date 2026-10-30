@@ -866,6 +866,36 @@ def test_project_analysis_includes_only_associated_character_context(tmp_path):
     assert "Irrelevant plan" not in provider.prompt
 
 
+def test_project_scene_completion_receives_notes_and_associated_characters(application, tmp_path, monkeypatch):
+    from app.project import SceneCharacterAssociation
+    from PySide6.QtGui import QTextCursor
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="The beginning")
+    note = project.add_note("World", content="A hidden door")
+    character = project.add_character("Mara")
+    character.primary_motivation = "Find the key"
+    project.update_character(character.id, character)
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: any(b.item_id == scene.id for b in window._project_documents.values()), application)
+    editor = window.tabs.current_editor()
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window.settings.ai_enabled = True
+    window.settings.completion_enabled = True
+    received = []
+    monkeypatch.setattr(window.completion_service, "complete", lambda context, language, **kw: (received.append(context) or " continues"))
+    window.request_completion()
+    wait_until(lambda: bool(received), application)
+    assert "Find the key" in received[0]
+    assert "A hidden door" in received[0]
+    assert "The beginning" in received[0]
+    window.close()
+
+
 def test_scene_summary_requires_confirmation_and_never_modifies_source(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Scene", content="original manuscript")

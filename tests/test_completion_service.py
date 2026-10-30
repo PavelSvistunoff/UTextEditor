@@ -1,4 +1,4 @@
-from app.ai.completion_service import CompletionService, build_context
+from app.ai.completion_service import CompletionService, build_context, complete_project_scene
 
 
 class FakeProvider:
@@ -43,3 +43,22 @@ def test_completion_service_delegates_options_to_provider() -> None:
             {"role": "Custom role", "template": "Context: {context}", "maximum_tokens": 12, "temperature": 0.5},
         )
     ]
+
+
+def test_project_completion_uses_open_notes_and_bounds_disk_notes():
+    class Project:
+        def read_note(self, note_id):
+            assert note_id == "disk"
+            return "x" * 20000
+
+    provider = FakeProvider()
+    result = complete_project_scene(
+        CompletionService(provider), Project(),
+        (("open", "People", "character"), ("disk", "World", "general")),
+        {"open": "Unsaved detail"}, "Character: Mara", "The story", "English",
+    )
+    context = provider.calls[0][0]
+    assert result == " continuation"
+    assert "Character: Mara" in context and "Unsaved detail" in context
+    assert context.endswith("Text to continue:\nThe story")
+    assert "x" * (10000 - len("character: People\nUnsaved detail") - len("general: World\n")) in context

@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import QApplication
 
-from app.ai.completion_service import CompletionService, build_context
+from app.ai.completion_service import CompletionService, build_context, complete_project_scene
 from app.ai.ollama_client import OllamaClient
 from app.ai.spellcheck_service import SpellcheckService
 from app.document.book_compiler import compile_book_pdf
@@ -4832,10 +4832,26 @@ class MainWindow(QMainWindow):
             return
         self.ai_status = "AI: Generating..."
         self._update_status()
+        binding = self._project_documents.get(editor)
+        project = self.project if binding and binding.project is self.project and binding.kind == "scene" else None
+        note_editors = {
+            item.item_id: (tab, tab.revision)
+            for tab, item in self._project_documents.items()
+            if project is not None and item.project is project and item.kind == "note" and self.tabs.indexOf(tab) >= 0
+        }
+        project_generation = self._project_generation
+        if project is not None:
+            function = complete_project_scene
+            args = (self.completion_service, project,
+                    tuple((note.id, note.title, note.type) for note in project.manifest.notes),
+                    {item_id: tab.toPlainText() for item_id, (tab, _) in note_editors.items()},
+                    scene_character_context(project, binding.item_id), context, self.settings.language)
+        else:
+            function = self.completion_service.complete
+            args = (context, self.settings.language)
         worker = FunctionWorker(
-            self.completion_service.complete,
-            context,
-            self.settings.language,
+            function,
+            *args,
             role=self.settings.ai_role,
             template=self.settings.completion_template,
             maximum_tokens=self.settings.maximum_suggestion_length,
@@ -4846,7 +4862,17 @@ class MainWindow(QMainWindow):
         worker.signals.done.connect(lambda worker=worker: self._clear_worker_reference("_completion_worker", worker), Qt.ConnectionType.QueuedConnection)
         selection = (cursor.selectionStart(), cursor.selectionEnd()) if cursor.hasSelection() else (position, position)
         settings_generation = self._settings_generation
-        worker.signals.finished.connect(lambda text: self._completion_finished(generation, editor, revision, position, text, selection, settings_generation), Qt.ConnectionType.QueuedConnection)
+        def completed(text):
+            if project is not None:
+                current_notes = {
+                    item.item_id: (tab, tab.revision)
+                    for tab, item in self._project_documents.items()
+                    if item.project is project and item.kind == "note" and self.tabs.indexOf(tab) >= 0
+                }
+                if self.project is not project or self._project_generation != project_generation or current_notes != note_editors:
+                    return
+            self._completion_finished(generation, editor, revision, position, text, selection, settings_generation)
+        worker.signals.finished.connect(completed, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(lambda exc: self._completion_failed(exc, generation, settings_generation), Qt.ConnectionType.QueuedConnection)
         self.thread_pool.start(worker)
 

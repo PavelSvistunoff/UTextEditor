@@ -56,3 +56,25 @@ class CompletionService:
             maximum_tokens=maximum_tokens,
             temperature=temperature,
         )
+
+
+def complete_project_scene(service: CompletionService, project, notes, open_notes, characters: str,
+                           context: str, language: str, **options) -> str:
+    """Read bounded project reference material in the completion worker."""
+    remaining = 10000
+    parts = []
+    for note_id, title, note_type in notes:
+        if remaining <= 0:
+            break
+        text = open_notes[note_id] if note_id in open_notes else project.read_note(note_id)
+        entry = f"{note_type}: {title}\n{text}"
+        parts.append(entry[:remaining])
+        remaining -= len(parts[-1])
+    reference = "\n\n".join(parts)
+    project_context = (
+        "Project reference material (background only; continue the text below):\n"
+        f"<characters>\n{characters}\n</characters>\n"
+        f"<reference_notes>\n{reference}\n</reference_notes>\n\n"
+        f"Text to continue:\n{context}"
+    )
+    return service.complete(project_context, language, **options)
