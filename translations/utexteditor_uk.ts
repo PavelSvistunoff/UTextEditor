@@ -24,6 +24,7 @@
 </context>
 <context>
     <name>AutoWriterDialog</name>
+    <message><source>This project currently has %1 scenes. Auto-writer creates a snapshot and lets you review generated drafts before applying selected scenes together.</source><translation>У проєкті зараз %1 сцен. Автопис створює знімок і дає змогу переглянути створені чернетки перед спільним застосуванням вибраних сцен.</translation></message>
     <message>
         <location filename="../app/ui/auto_writer_dialog.py" line="20"/>
         <source>Auto-writer</source>
@@ -72,6 +73,7 @@
 </context>
 <context>
     <name>AutoWriterProgressDialog</name>
+    <message><source>Each draft appears as soon as it is complete. Review the drafts before applying selected scenes together.</source><translation>Кожна чернетка з’являється після завершення. Перегляньте чернетки перед спільним застосуванням вибраних сцен.</translation></message>
     <message>
         <location filename="../app/ui/auto_writer_dialog.py" line="62"/>
         <source>Auto-writer progress</source>
@@ -656,6 +658,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Auto-writer drafts were not applied because the project or an open document changed.</source><translation>Чернетки автопису не застосовано, оскільки проєкт або відкритий документ змінилися.</translation></message>
+    <message><source>No Auto-writer drafts were applied.</source><translation>Жодну чернетку автопису не застосовано.</translation></message>
     <message><source>Project translation cancelled. No project files were changed.</source><translation>Переклад проєкту скасовано. Файли проєкту не змінено.</translation></message>
     <message><source>Translation was not applied because the project, settings, or an open document changed.</source><translation>Переклад не застосовано, оскільки проєкт, налаштування або відкритий документ змінилися.</translation></message>
     <message><source>Project title</source><translation>Назва проєкту</translation></message>
@@ -1986,5 +1990,12 @@
     <message><source>Translated text</source><translation>Перекладений текст</translation></message>
     <message><source>Original</source><translation>Оригінал</translation></message>
     <message><source>Translation</source><translation>Переклад</translation></message>
+</context>
+<context>
+    <name>AutoWriterReviewDialog</name>
+    <message><source>Review Auto-writer drafts</source><translation>Перегляд чернеток автопису</translation></message>
+    <message><source>Select drafts to apply together. Later drafts may depend on earlier drafts, including drafts you reject.</source><translation>Виберіть чернетки для спільного застосування. Пізніші чернетки можуть залежати від попередніх, зокрема відхилених.</translation></message>
+    <message><source>Scene drafts</source><translation>Чернетки сцен</translation></message>
+    <message><source>Draft preview</source><translation>Перегляд чернетки</translation></message>
 </context>
 </TS>

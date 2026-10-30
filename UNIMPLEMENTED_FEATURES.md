@@ -92,11 +92,9 @@ session was exercised, and this review does not prove other paths defect-free.
   wide for the available viewport are rejected rather than displayed. The
   specification permits this safe fallback; a readable alternative is a
   possible future improvement (`SPEC.md` §12).
-- **Per-scene AI draft review:** prompt generation has an explicit review
-  dialog, and Auto-writer shows live drafts after prior confirmation. It does
-  not provide a separate accept/reject decision for each generated scene before
-  its successful batch is applied. More granular proposed-edit review is a
-  future candidate (`SPEC.md` §22 and `README.uk.md` §32).
+- **Per-scene AI draft review:** Auto-writer offers draft selection after the
+  batch completes and applies selected scenes transactionally. Compiled
+  Ukrainian strings and native accessibility verification remain outstanding.
 
 ## Interface localization
 

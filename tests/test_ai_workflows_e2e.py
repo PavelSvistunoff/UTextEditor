@@ -211,6 +211,41 @@ def test_review_identifies_omitted_document_prefix(window, monkeypatch):
     wait_until(lambda: window._completion_worker is None)
 
 
+@pytest.mark.parametrize("decision", ["select", "cancel", "stale"])
+def test_auto_writer_review_applies_only_selected_and_rejects_stale(window, tmp_path, monkeypatch, decision):
+    project = Project.create(tmp_path / "draft-review", "Novel")
+    first = project.add_scene("First", content="First original")
+    second = project.add_scene("Second", content="Second original")
+    window._project_opened(project)
+    window._open_project_document("scene", first.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    editor = window.tabs.current_editor()
+    monkeypatch.setattr("app.ui.main_window.AutoWriterDialog.exec", lambda _: QDialog.DialogCode.Accepted)
+    monkeypatch.setattr("app.ui.main_window.AutoWriterDialog.values", lambda _: ("refine_all", ""))
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(window.provider, "generate_private", lambda *_args, **_kwargs: "Draft text")
+    reviewed = []
+
+    def review(dialog):
+        dialog.list.setCurrentRow(1)
+        assert dialog.preview.toPlainText() == "Draft text"
+        reviewed.append(True)
+        if decision == "cancel":
+            return QDialog.DialogCode.Rejected
+        if decision == "stale":
+            editor.setPlainText("Newer edit")
+            window._completion_timer.stop()
+        else:
+            dialog.list.item(1).setCheckState(Qt.CheckState.Unchecked)
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.AutoWriterReviewDialog.exec", review)
+    window.start_auto_writer()
+    wait_until(lambda: bool(reviewed) and not window._project_busy)
+    assert project.read_scene(first.id) == ("Draft text" if decision == "select" else "First original")
+    assert project.read_scene(second.id) == "Second original"
+
+
 @pytest.mark.parametrize("operation", ["completion", "spellcheck"])
 def test_first_context_request_requires_remote_disclosure_and_consent(window, monkeypatch, operation):
     editor = window.tabs.current_editor()

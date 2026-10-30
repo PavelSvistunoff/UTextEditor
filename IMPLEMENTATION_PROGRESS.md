@@ -179,6 +179,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   unsaved source, cancellation, changed buffers and the full apply path.
   Ukrainian catalog compilation and native accessibility review remain
   outstanding. Full offline suite: 489 passed, 2 skipped.
+- **TASK-024 — in progress:** after generation, Auto-writer presents a
+  navigable, read-only per-scene review with individual selection. It warns
+  that later drafts can depend on rejected drafts, rechecks open project
+  buffers and applies selected scenes through the existing transaction.
+  Tests cover selection, cancellation, stale edits and preview navigation.
+  Compiled Ukrainian strings and native accessibility review remain
+  outstanding. Full offline suite: 492 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

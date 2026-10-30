@@ -702,6 +702,7 @@ def test_auto_writer_ui_refines_scene_and_updates_open_buffer(
     monkeypatch.setattr(
         AutoWriterDialog, "exec", lambda _self: QDialog.DialogCode.Accepted
     )
+    monkeypatch.setattr("app.ui.main_window.AutoWriterReviewDialog.exec", lambda _self: QDialog.DialogCode.Accepted)
     monkeypatch.setattr(
         AutoWriterDialog, "values", lambda _self: ("refine_all", "Keep the voice quiet.")
     )

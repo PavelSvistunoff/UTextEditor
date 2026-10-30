@@ -97,6 +97,7 @@ from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
+from .auto_writer_review_dialog import AutoWriterReviewDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -1158,8 +1159,8 @@ class MainWindow(QMainWindow):
             f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
             "Project text and reference notes are sent only to this configured model. "
             "A complete local revision snapshot is created before generation. All scene "
-            "changes are applied together only after every scene succeeds. Refine mode "
-            "automatically replaces existing text."
+            "changes are applied together only after every scene succeeds and you "
+            "review the drafts. Refine mode may replace existing text."
         )
         if QMessageBox.question(
             self,
@@ -1651,17 +1652,16 @@ class MainWindow(QMainWindow):
         self._auto_writer_cancel_event = None
         if self._auto_writer_cancel_action is not None:
             self._auto_writer_cancel_action.setEnabled(False)
-        stale_editor = any(
-            self.tabs.indexOf(editor) < 0 or editor.revision != revision
-            for editor, revision in editor_states.values()
-        )
-        if (
-            project is not self.project
-            or project_generation != self._project_generation
-            or settings_generation != self._settings_generation
-            or not self.settings.ai_enabled
-            or stale_editor
-        ):
+        def current():
+            current_editors = {binding.item_id: (editor, editor.revision)
+                               for editor, binding in self._project_documents.items()
+                               if binding.project is project and self.tabs.indexOf(editor) >= 0}
+            return (generation == self._auto_writer_generation and project is self.project
+                    and project_generation == self._project_generation
+                    and settings_generation == self._settings_generation and self.settings.ai_enabled
+                    and current_editors == editor_states)
+
+        if not current():
             self._finish_auto_writer(
                 project,
                 "Auto-writer results were not applied because the project, settings, or an "
@@ -1670,6 +1670,20 @@ class MainWindow(QMainWindow):
             )
             return
 
+        scenes = [(scene.id, scene.title, result.replacements[scene.id])
+                  for scene in project.iter_scenes() if scene.id in result.replacements]
+        review = AutoWriterReviewDialog(scenes, self)
+        accepted = review.exec() == QDialog.DialogCode.Accepted
+        selected = review.selected_ids() if accepted else set()
+        if not current():
+            self._finish_auto_writer(project, self.tr("Auto-writer drafts were not applied because the project or an open document changed."), outcome="discarded")
+            return
+        if not selected:
+            self._finish_auto_writer(project, self.tr("No Auto-writer drafts were applied."), outcome="cancelled")
+            return
+        result = replace(result,
+                         replacements={key: value for key, value in result.replacements.items() if key in selected},
+                         expected_disk_text={key: value for key, value in result.expected_disk_text.items() if key in selected})
         self._auto_writer_committing = True
         if self._auto_writer_activity is not None:
             self._auto_writer_activity.cancel = None

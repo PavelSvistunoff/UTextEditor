@@ -21,7 +21,7 @@ class AutoWriterDialog(QDialog):
         self.resize(600, 480)
 
         self.description = QLabel(
-            format_qt(self.tr("This project currently has %1 scenes. Auto-writer uses the configured model, project outline, and reference notes. It first creates a complete local revision snapshot. All generated scene changes are applied together only after every result is ready."), scene_count),
+            format_qt(self.tr("This project currently has %1 scenes. Auto-writer creates a snapshot and lets you review generated drafts before applying selected scenes together."), scene_count),
             self,
         )
         self.description.setWordWrap(True)
@@ -76,7 +76,7 @@ class AutoWriterProgressDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(
             QLabel(
-                self.tr("Each draft appears as soon as it is complete. Drafts are applied to the project together only after every scene succeeds."),
+                self.tr("Each draft appears as soon as it is complete. Review the drafts before applying selected scenes together."),
                 self,
             )
         )
