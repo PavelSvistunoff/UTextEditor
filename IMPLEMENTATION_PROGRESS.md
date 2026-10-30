@@ -264,6 +264,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   reader and system-palette audits across core workflows, as well as compiled
   translations, remain outstanding. Do not mark complete. Full offline suite:
   541 passed, 2 skipped.
+- **TASK-035 — complete:** documented independent scope and decisions for
+  toolbar, appearance override, interface languages, writing languages and
+  alternative providers in `UNIMPLEMENTED_FEATURES.md`. All are deferred for
+  the stated usability, verification, maintenance or privacy reasons; no new
+  extension is selected. Existing local-first behavior is unchanged. This is
+  a documentation-only decision and needs no platform-specific verification.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

@@ -442,7 +442,7 @@ A task requiring manual or platform-specific verification must remain partially 
 ## TASK-035 — Evaluate and implement selected interface extensions
 **Priority:** Low  
 **Effort:** Design dependent  
-**Status:** [ ]
+**Status:** [x]
 
 Evaluate the following independently before implementation:
 

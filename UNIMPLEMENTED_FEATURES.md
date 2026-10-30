@@ -263,11 +263,24 @@ network read may continue until data arrives or the connection times out.
     conflict detection or correctness. Very large-file editing may require a
     broader design change rather than a simple optimization.
 14. **Optional interface and provider extensions** (design decision). The
-    older Ukrainian document suggests a toolbar, a dark-mode choice, and other
-    AI providers. A toolbar could expose common actions; an appearance override
-    would extend the current system-palette behavior. Other providers require
-    explicit privacy, configuration, and compatibility decisions. None is
-    necessary for the current local-first scope; cloud services are outside it.
+    following options have been evaluated independently; none is selected for
+    implementation in the current scope:
+    - **Toolbar:** defer. An optional toolbar could expose existing file and
+      editing actions, but needs a keyboard/accessibility review and a choice
+      of commands before adding another navigation surface.
+    - **Appearance override:** defer. The editor follows the system palette;
+      a light/dark override would need consistent palette coverage and native
+      platform testing across dialogs before it could be offered reliably.
+    - **Additional interface languages:** defer until the Ukrainian catalog
+      audit and ongoing translation validation are complete. Each new locale
+      needs maintained translations, plural rules, and native UI review.
+    - **Additional writing/spellcheck languages:** defer until detection and
+      model behavior are evaluated for each language. Explicit selection and
+      uncertainty handling would need tests without changing existing text.
+    - **Alternative AI providers:** defer. A provider would require explicit
+      destination, credential, data-handling, disclosure, configuration and
+      compatibility decisions. No provider or cloud service is enabled by
+      this evaluation; the existing local-first default is preserved.
 15. **Make character profiles easier to navigate** (small/medium effort).
     The profile dialog groups many editable fields into Story and Background
     tabs. Consider scrollable sections, clearer field grouping, and navigation
