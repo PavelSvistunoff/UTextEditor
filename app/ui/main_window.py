@@ -58,7 +58,7 @@ from app.project.autopilot import (
 from app.project.auto_writer import AutoWriterResult, run_auto_writer
 from app.project.model import Character, CharacterRelationship, CharacterStateChange
 from app.project.model import SceneCharacterAssociation
-from app.project.character_context import project_planning_context, scene_character_context
+from app.project.character_context import MAX_CHARACTER_CONTEXT, project_planning_context, scene_character_context
 from app.project.outline import parse_outline
 from app.project.translation import (
     ProjectTranslation,
@@ -5800,7 +5800,9 @@ class MainWindow(QMainWindow):
             editor.clear_completion()
             return
         revision, position = editor.revision, cursor.position()
-        context = build_context(editor.toPlainText(), qt_position_to_python_index(editor.toPlainText(), position), maximum_characters=self.settings.context_size)
+        editor_text = editor.toPlainText()
+        python_position = qt_position_to_python_index(editor_text, position)
+        context = build_context(editor_text, python_position, maximum_characters=self.settings.context_size)
         if not context.strip():
             return
         if not self._ensure_ai_context_consent(
@@ -5821,13 +5823,17 @@ class MainWindow(QMainWindow):
             if project is not None and item.project is project and item.kind == "note" and self.tabs.indexOf(tab) >= 0
         }
         project_generation = self._project_generation
+        character_truncated = False
         if project is not None:
+            characters = scene_character_context(project, binding.item_id, limit=MAX_CHARACTER_CONTEXT + int(review))
+            character_truncated = len(characters) > MAX_CHARACTER_CONTEXT
+            characters = characters[:MAX_CHARACTER_CONTEXT]
             function = complete_project_scene
             args = (self.completion_service, project,
                     tuple((note.id, note.title, note.type) for note in project.manifest.notes
                           if note.id not in self._completion_excluded_notes),
                     {item_id: tab.toPlainText() for item_id, (tab, _) in note_editors.items()},
-                    scene_character_context(project, binding.item_id), context, self.settings.language)
+                    characters, context, self.settings.language)
         else:
             function = self.completion_service.complete
             args = (context, self.settings.language)
@@ -5836,7 +5842,8 @@ class MainWindow(QMainWindow):
             args = (_captured, self.settings.language)
         if review:
             self._review_completion_context(editor, revision, position, generation, project,
-                                            project_generation, note_editors, args, context)
+                                            project_generation, note_editors, args, context,
+                                            len(context) < python_position, character_truncated)
             return
         worker = FunctionWorker(
             function,
@@ -5887,7 +5894,8 @@ class MainWindow(QMainWindow):
         self.thread_pool.start(worker)
 
     def _review_completion_context(self, editor, revision, position, generation, project,
-                                   project_generation, note_editors, args, context) -> None:
+                                   project_generation, note_editors, args, context,
+                                   document_truncated, character_truncated) -> None:
         settings_generation = self._settings_generation
         destination = self.settings.ollama_host
         active_project = self.project
@@ -5919,6 +5927,10 @@ class MainWindow(QMainWindow):
             lines = [self.tr("The text below is the captured completion context.")]
             if editor.document_state.dirty:
                 lines.append(self.tr("The document has unsaved changes."))
+            if document_truncated:
+                lines.append(self.tr("Only part of the text before the cursor is included."))
+            if character_truncated:
+                lines.append(self.tr("Associated character context was truncated."))
             if captured is not None:
                 for note in captured.notes:
                     labels = []

@@ -656,6 +656,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Only part of the text before the cursor is included.</source><translation>Включено лише частину тексту перед курсором.</translation></message>
+    <message><source>Associated character context was truncated.</source><translation>Контекст пов’язаних персонажів скорочено.</translation></message>
     <message><source>Review Completion Context…</source><translation>Переглянути контекст продовження…</translation></message>
     <message><source>The text below is the captured completion context.</source><translation>Нижче наведено зафіксований контекст продовження.</translation></message>
     <message><source>The document has unsaved changes.</source><translation>Документ має незбережені зміни.</translation></message>

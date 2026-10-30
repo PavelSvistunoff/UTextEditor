@@ -159,9 +159,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   context, destination, unsaved buffers and note truncation, and checks editor,
   project, settings and open-note state before sending and applying results.
   Tests cover exact context, cancellation and edits during review. Closed-note
-  external changes and document/character truncation reporting still need
-  handling; compiled Ukrainian translations also remain outstanding. Full
-  offline suite: 478 passed, 2 skipped.
+  external changes and reporting of character-detail limits still need
+  handling; compiled Ukrainian translations also remain outstanding. The
+  preview flags omitted document prefixes and character text cut by the length
+  limit. Full offline suite: 479 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

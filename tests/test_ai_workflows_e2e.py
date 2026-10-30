@@ -8,7 +8,7 @@ import pytest
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QImage, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QCheckBox, QDialog, QDialogButtonBox, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QDialog, QDialogButtonBox, QInputDialog, QLabel, QMessageBox
 
 from app.ai.models import Suggestion
 from app.project import Project, SceneCharacterAssociation
@@ -165,6 +165,24 @@ def test_reviewed_completion_does_not_send_after_cancel_or_edit(window, monkeypa
     wait_until(lambda: bool(reviewed))
     wait_until(lambda: window._completion_worker is None)
     assert calls == []
+
+
+def test_review_identifies_omitted_document_prefix(window, monkeypatch):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Old paragraph\n\nCurrent paragraph")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    summaries = []
+
+    def review(dialog):
+        summaries.extend(label.text() for label in dialog.findChildren(QLabel))
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr("app.ui.main_window.CompletionContextDialog.exec", review)
+    window.request_completion(review=True)
+    wait_until(lambda: bool(summaries))
+    assert any("Only part of the text" in text for text in summaries)
+    wait_until(lambda: window._completion_worker is None)
 
 
 @pytest.mark.parametrize("operation", ["completion", "spellcheck"])
