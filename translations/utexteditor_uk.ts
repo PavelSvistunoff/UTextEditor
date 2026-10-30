@@ -656,6 +656,12 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Review Completion Context…</source><translation>Переглянути контекст продовження…</translation></message>
+    <message><source>The text below is the captured completion context.</source><translation>Нижче наведено зафіксований контекст продовження.</translation></message>
+    <message><source>The document has unsaved changes.</source><translation>Документ має незбережені зміни.</translation></message>
+    <message><source>unsaved buffer</source><translation>незбережений вміст</translation></message>
+    <message><source>truncated</source><translation>скорочено</translation></message>
+    <message><source>Notes omitted by the context limit: %1</source><translation>Нотатки, пропущені через обмеження контексту: %1</translation></message>
     <message><source>Completion Reference Notes…</source><translation>Довідкові нотатки для продовження…</translation></message>
     <message><source>Open a project to select completion reference notes.</source><translation>Відкрийте проєкт, щоб вибрати довідкові нотатки для продовження.</translation></message>
     <message><source>Project changed; select reference notes again.</source><translation>Проєкт змінився; виберіть довідкові нотатки знову.</translation></message>

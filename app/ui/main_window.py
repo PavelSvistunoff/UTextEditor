@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import QApplication
 
-from app.ai.completion_service import CompletionService, build_context, complete_project_scene
+from app.ai.completion_service import CompletionService, build_context, capture_project_completion, complete_project_scene
 from app.ai.character_profile import suggest_character_fields
 from app.ai.character_development import suggest_character_development
 from app.ai.continuity import format_continuity_findings, parse_continuity_findings
@@ -92,6 +92,7 @@ from .character_dialog import CharacterDialog
 from .character_relationship_dialog import CharacterRelationshipDialog
 from .conflict_dialog import ConflictDialog
 from .completion_notes_dialog import CompletionNotesDialog
+from .completion_context_dialog import CompletionContextDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -396,6 +397,7 @@ class MainWindow(QMainWindow):
             "Find": self.tr("Find"), "Replace": self.tr("Replace"), "Generate..": self.tr("Generate.."),
             "Generate Completion": self.tr("Generate Completion"), "Check Spelling": self.tr("Check Spelling"),
             "Completion Reference Notes…": self.tr("Completion Reference Notes…"),
+            "Review Completion Context…": self.tr("Review Completion Context…"),
             "Accept Suggestion": self.tr("Accept Suggestion"), "Reject Suggestion": self.tr("Reject Suggestion"),
             "Ollama Debug": self.tr("Ollama Debug"), "AI Settings…": self.tr("AI Settings…"),
             "Summarize Selected Scene": self.tr("Summarize Selected Scene"),
@@ -498,6 +500,7 @@ class MainWindow(QMainWindow):
             (search_menu, "Replace", lambda: self.show_find_replace(replace=True), QKeySequence.StandardKey.Replace),
             (ai_menu, "Generate..", self.generate_from_prompt, QKeySequence()),
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
+            (ai_menu, "Review Completion Context…", lambda: self.request_completion(review=True), QKeySequence()),
             (ai_menu, "Completion Reference Notes…", self.select_completion_notes, QKeySequence()),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
             (ai_menu, "Accept Suggestion", self.accept_completion, QKeySequence()),
@@ -5783,7 +5786,7 @@ class MainWindow(QMainWindow):
         for index in range(self.tabs.count()):
             self.tabs.widget(index).clear_completion()
 
-    def request_completion(self, *, automatic: bool = False) -> None:
+    def request_completion(self, *, automatic: bool = False, review: bool = False, _captured: str | None = None) -> None:
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled or not self.settings.completion_enabled:
             return
@@ -5828,6 +5831,13 @@ class MainWindow(QMainWindow):
         else:
             function = self.completion_service.complete
             args = (context, self.settings.language)
+        if _captured is not None:
+            function = self.completion_service.complete
+            args = (_captured, self.settings.language)
+        if review:
+            self._review_completion_context(editor, revision, position, generation, project,
+                                            project_generation, note_editors, args, context)
+            return
         worker = FunctionWorker(
             function,
             *args,
@@ -5873,6 +5883,60 @@ class MainWindow(QMainWindow):
                     return
             self._completion_finished(generation, editor, revision, position, text, selection, settings_generation)
         worker.signals.finished.connect(completed, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(lambda exc: self._completion_failed(exc, generation, settings_generation), Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
+
+    def _review_completion_context(self, editor, revision, position, generation, project,
+                                   project_generation, note_editors, args, context) -> None:
+        settings_generation = self._settings_generation
+        destination = self.settings.ollama_host
+        active_project = self.project
+        if project is None:
+            function, capture_args = lambda: None, ()
+        else:
+            function, capture_args = capture_project_completion, args[1:-1]
+        worker = FunctionWorker(function, *capture_args)
+        self._completion_worker = worker
+        self._track_worker(worker)
+        worker.signals.done.connect(lambda: self._clear_worker_reference("_completion_worker", worker), Qt.ConnectionType.QueuedConnection)
+
+        def current():
+            cursor = editor.textCursor() if editor is self.tabs.current_editor() else None
+            notes = {item.item_id: (tab, tab.revision) for tab, item in self._project_documents.items()
+                     if project is not None and item.project is project and item.kind == "note" and self.tabs.indexOf(tab) >= 0}
+            return (generation == self._completion_generation and settings_generation == self._settings_generation
+                    and cursor is not None and not cursor.hasSelection() and cursor.position() == position
+                    and editor.revision == revision and self.project is active_project
+                    and self._project_generation == project_generation and notes == note_editors)
+
+        def ready(captured):
+            if not current():
+                if generation == self._completion_generation:
+                    self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
+                    self._update_status()
+                return
+            request_context = captured.context if captured is not None else context
+            lines = [self.tr("The text below is the captured completion context.")]
+            if editor.document_state.dirty:
+                lines.append(self.tr("The document has unsaved changes."))
+            if captured is not None:
+                for note in captured.notes:
+                    labels = []
+                    if note.from_buffer and note_editors[note.id][0].document_state.dirty:
+                        labels.append(self.tr("unsaved buffer"))
+                    if note.truncated:
+                        labels.append(self.tr("truncated"))
+                    lines.append(note.title + (" (" + ", ".join(labels) + ")" if labels else ""))
+                if captured.omitted_note_count:
+                    lines.append(format_qt(self.tr("Notes omitted by the context limit: %1"), captured.omitted_note_count))
+            dialog = CompletionContextDialog(destination, request_context, "\n".join(lines), self)
+            if dialog.exec() == QDialog.DialogCode.Accepted and current():
+                self.request_completion(_captured=request_context)
+            elif generation == self._completion_generation:
+                self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
+                self._update_status()
+
+        worker.signals.finished.connect(ready, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(lambda exc: self._completion_failed(exc, generation, settings_generation), Qt.ConnectionType.QueuedConnection)
         self.thread_pool.start(worker)
 

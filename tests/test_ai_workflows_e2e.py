@@ -118,6 +118,55 @@ def test_completion_note_selection_excludes_notes_and_discards_pending_result(wi
     wait_until(lambda: window._completion_worker is None)
 
 
+def test_reviewed_completion_sends_exact_displayed_context(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "review-context", "Novel")
+    scene = project.add_scene("Scene", content="Draft")
+    project.add_note("Reference", content="A detail")
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    editor = window.tabs.current_editor()
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    shown, calls = [], []
+    monkeypatch.setattr(window.provider, "complete", lambda text, language, **options: calls.append(text) or "")
+
+    def accept(dialog):
+        shown.append(dialog.context.toPlainText())
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.CompletionContextDialog.exec", accept)
+    window.request_completion(review=True)
+    wait_until(lambda: bool(calls))
+    assert calls == shown
+    assert "A detail" in calls[0] and "Draft" in calls[0]
+    wait_until(lambda: window._completion_worker is None)
+
+
+@pytest.mark.parametrize("change", ["cancel", "edit"])
+def test_reviewed_completion_does_not_send_after_cancel_or_edit(window, monkeypatch, change):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Draft")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    calls, reviewed = [], []
+    monkeypatch.setattr(window.provider, "complete", lambda *args, **kwargs: calls.append(args) or "")
+
+    def review(dialog):
+        reviewed.append(True)
+        if change == "edit":
+            editor.insertPlainText(" changed")
+            window._completion_timer.stop()
+            return QDialog.DialogCode.Accepted
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr("app.ui.main_window.CompletionContextDialog.exec", review)
+    window.request_completion(review=True)
+    wait_until(lambda: bool(reviewed))
+    wait_until(lambda: window._completion_worker is None)
+    assert calls == []
+
+
 @pytest.mark.parametrize("operation", ["completion", "spellcheck"])
 def test_first_context_request_requires_remote_disclosure_and_consent(window, monkeypatch, operation):
     editor = window.tabs.current_editor()

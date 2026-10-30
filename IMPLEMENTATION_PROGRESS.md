@@ -144,9 +144,9 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 - **TASK-022 — in progress:** AI Settings now offers a persisted option to
   exclude project characters and reference notes from automatic completions;
   explicit completions retain existing project context. Offline worker tests
-  cover both modes and settings validation. Captured-request preview and
-  compiled Ukrainian translation remain
-  outstanding. Do not mark complete. Full offline suite:
+  cover both modes and settings validation. Further preview validation and
+  compiled Ukrainian translation remain outstanding. Do not mark complete.
+  Full offline suite:
   472 passed, 2 skipped. Context construction now also returns an immutable
   capture with note provenance and truncation metadata for the future preview;
   the existing request path uses the same captured text. Full offline suite
@@ -154,10 +154,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   now excludes selected notes for the project session and invalidates pending
   completions when the selection changes. A worker regression test covers
   selection and stale results. Full offline suite: 474 passed, 2 skipped. A
-  read-only captured-context review dialog has been added and tested, but is
-  not yet connected to a two-stage capture, review and send workflow. That
-  workflow must recheck the captured editor, project, settings and note state
-  before sending and applying results. Full suite: 475 passed, 2 skipped.
+  read-only captured-context review dialog is available through an explicit
+  AI action. It captures reference material in a worker, displays the exact
+  context, destination, unsaved buffers and note truncation, and checks editor,
+  project, settings and open-note state before sending and applying results.
+  Tests cover exact context, cancellation and edits during review. Closed-note
+  external changes and document/character truncation reporting still need
+  handling; compiled Ukrainian translations also remain outstanding. Full
+  offline suite: 478 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
