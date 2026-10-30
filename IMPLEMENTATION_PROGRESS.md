@@ -186,6 +186,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   Tests cover selection, cancellation, stale edits and preview navigation.
   Compiled Ukrainian strings and native accessibility review remain
   outstanding. Full offline suite: 492 passed, 2 skipped.
+- **TASK-025 — in progress:** the provider protocol and Ollama client now
+  support bounded NDJSON streaming with chunk callbacks, cooperative
+  cancellation and explicit malformed/oversized response errors. Tests cover
+  chunks, cancellation including the final chunk, malformed responses and the
+  byte limit. The UI, worker signal delivery, stale-result handling and final
+  acceptance are not yet connected; blocking reads remain subject to the
+  configured network timeout. Full offline suite: 495 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

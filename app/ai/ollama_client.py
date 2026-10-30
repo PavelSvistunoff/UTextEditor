@@ -149,6 +149,53 @@ class OllamaClient:
             json_mode=False,
         )
 
+    def generate_stream(self, prompt: str, *, on_chunk: Callable[[str], None],
+                        is_cancelled: Callable[[], bool], role: str = DEFAULT_AI_ROLE,
+                        maximum_tokens: int = 300, temperature: float = 0.2) -> str:
+        """Read bounded NDJSON generation output, emitting provisional text in the caller's thread."""
+        path = "/api/chat"
+        payload = {"model": self.model, "messages": [{"role": "system", "content": role},
+                   {"role": "user", "content": prompt}], "stream": True, "think": False,
+                   "options": {"num_predict": maximum_tokens, "temperature": temperature}}
+        self._observe("Request", path, payload)
+        req = request.Request(f"{self.host}{path}", data=json.dumps(payload).encode("utf-8"),
+                              headers={"Content-Type": "application/json"})
+        parts: list[str] = []
+        total = 0
+        start = time.time()
+        try:
+            with request.urlopen(req, timeout=self.timeout) as response:
+                while not is_cancelled():
+                    line = response.readline(MAX_RESPONSE_BYTES + 1)
+                    if is_cancelled():
+                        break
+                    if not line:
+                        raise ValueError("Ollama stream ended before completion")
+                    total += len(line)
+                    if total > MAX_RESPONSE_BYTES:
+                        raise ValueError("Ollama response exceeded the 16 MiB size limit")
+                    value = json.loads(line.decode("utf-8"))
+                    if not isinstance(value, dict) or not isinstance(value.get("done"), bool):
+                        raise ValueError("Ollama returned an invalid streaming response")
+                    message = value.get("message", {})
+                    content = message.get("content", "") if isinstance(message, dict) else None
+                    if not isinstance(content, str) or value.get("error"):
+                        raise ValueError("Ollama returned an invalid streaming response")
+                    if content:
+                        parts.append(content)
+                        on_chunk(content)
+                    if is_cancelled():
+                        break
+                    if value["done"]:
+                        result = "".join(parts)
+                        self._observe("Response", path, {"message": {"content": result}, "done": True})
+                        return result
+        except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            self._observe("Error", path, {"message": str(exc), "duration": time.time() - start})
+            raise OllamaError(str(exc)) from exc
+        self._observe("Cancelled", path, {"duration": time.time() - start})
+        return ""
+
     def generate_private(
         self,
         prompt: str,

@@ -15,6 +15,53 @@ def response_with(payload: object) -> MagicMock:
     return response
 
 
+def test_stream_generation_delivers_bounded_provisional_chunks():
+    client = OllamaClient(model="test-model")
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.readline.side_effect = [
+        b'{"message":{"content":"Hello"},"done":false}\n',
+        b'{"message":{"content":" world"},"done":true}\n',
+    ]
+    chunks = []
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response) as urlopen:
+        assert client.generate_stream("prompt", on_chunk=chunks.append, is_cancelled=lambda: False) == "Hello world"
+    assert chunks == ["Hello", " world"]
+    assert json.loads(urlopen.call_args.args[0].data)["stream"] is True
+
+
+def test_stream_generation_discards_cancelled_and_malformed_results():
+    client = OllamaClient()
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.readline.return_value = b'{"message":{"content":"partial"},"done":true}\n'
+    cancelled = False
+    chunks = []
+
+    def receive(text):
+        nonlocal cancelled
+        chunks.append(text)
+        cancelled = True
+
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response):
+        assert client.generate_stream("prompt", on_chunk=receive, is_cancelled=lambda: cancelled) == ""
+    assert chunks == ["partial"]
+    response.readline.return_value = b'{"message":{}}\n'
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response):
+        with pytest.raises(OllamaError, match="invalid streaming"):
+            client.generate_stream("prompt", on_chunk=lambda _: None, is_cancelled=lambda: False)
+
+
+def test_stream_generation_rejects_oversized_response(monkeypatch):
+    monkeypatch.setattr("app.ai.ollama_client.MAX_RESPONSE_BYTES", 12)
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.readline.return_value = b'x' * 13
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response):
+        with pytest.raises(OllamaError, match="size limit"):
+            OllamaClient().generate_stream("prompt", on_chunk=lambda _: None, is_cancelled=lambda: False)
+
+
 def test_complete_sends_a_non_streaming_request_and_returns_text() -> None:
     client = OllamaClient(model="test-model")
     with patch("app.ai.ollama_client.request.urlopen", return_value=response_with({"message": {"content": " done "}})) as urlopen:
