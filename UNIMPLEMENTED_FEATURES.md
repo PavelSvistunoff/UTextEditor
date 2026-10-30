@@ -75,8 +75,9 @@ session was exercised, and this review does not prove other paths defect-free.
 
 ## Writing and language tools
 
-- **Batch spellcheck review:** spelling and grammar suggestions are presented
-  per finding; there is no dedicated batch review workflow.
+- **Batch spellcheck review:** the review dialog supports selecting current
+  validated findings and applying them as a single undoable edit; compiled
+  Ukrainian translations and native accessibility verification remain.
 - **Language detection:** automatic language choice uses local script and
   common-word signals, leaving ambiguous or short text to the model.
 - **Project-wide search:** literal, case-sensitive scene and note text search
@@ -221,11 +222,10 @@ accepted; cancellation and stale-result checks would still apply.
    line endings, recheck the captured project state, and retain all-or-nothing
    behavior. Selective application and translation of character metadata would
    require separate decisions about consistency and scope.
-7. **Batch spelling review** (medium effort). Build on validated individual
-   suggestions with a navigable list, explanations, and explicit selection of
-   corrections. Acceptance: reject stale or overlapping ranges, group accepted
-   edits into an undoable operation, and leave text untouched on cancel. Model
-   output remains untrusted; this is not automatic correction.
+7. **Batch spelling review verification**. The review dialog offers a
+   navigable list, explanations and explicit selection, rejects stale or
+   overlapping ranges, and groups accepted edits into one undo step. Compile
+   the Ukrainian catalog and verify native keyboard and accessibility behavior.
 8. **Portable project backup and validation** (medium/high effort). Project
    files are already portable YAML and UTF-8, and snapshots live inside the
    project. Offer a user-selected backup destination and a read-only integrity

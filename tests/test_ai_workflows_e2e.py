@@ -405,6 +405,41 @@ def test_spellcheck_worker_displays_suggestion_without_editing(window, monkeypat
     assert editor.toPlainText() == "teh cat"
 
 
+@pytest.mark.parametrize("choice", ["apply", "select", "cancel", "stale", "overlap"])
+def test_batch_spelling_review_preserves_selection_and_undo(window, monkeypatch, choice):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("😀 teh kat")
+    window._completion_timer.stop()
+    source, revision = editor.toPlainText(), editor.revision
+    first = Suggestion(2, 5, "the", "spelling", "Typo", "teh", revision, source)
+    second = Suggestion(6, 9, "cat", "spelling", "Typo", "kat", revision, source)
+    editor.set_spell_suggestions([first, second])
+
+    def review(dialog):
+        if choice == "cancel":
+            return QDialog.DialogCode.Rejected
+        if choice == "stale":
+            editor.insertPlainText("!")
+            window._completion_timer.stop()
+        elif choice == "select":
+            dialog.findings.item(1).setCheckState(Qt.CheckState.Unchecked)
+        elif choice == "overlap":
+            dialog.suggestions = (first, Suggestion(2, 5, "that", "grammar", "", "teh", revision, source))
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.SpellcheckReviewDialog.exec", review)
+    window.review_spellcheck()
+    if choice in {"apply", "select"}:
+        assert editor.toPlainText() == ("😀 the cat" if choice == "apply" else "😀 the kat")
+        editor.undo()
+        assert editor.toPlainText() == source
+    elif choice in {"cancel", "overlap"}:
+        assert editor.toPlainText() == source
+    else:
+        assert "the" not in editor.toPlainText()
+        assert "check spelling again" in window.statusBar().currentMessage()
+
+
 def test_spellcheck_worker_discards_results_after_edit(window, monkeypatch):
     editor = window.tabs.current_editor()
     editor.setPlainText("teh cat")

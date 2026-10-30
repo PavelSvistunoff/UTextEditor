@@ -40,6 +40,7 @@ from app.ai.character_development import suggest_character_development
 from app.ai.continuity import format_continuity_findings, parse_continuity_findings
 from app.ai.ollama_client import OllamaClient
 from app.ai.spellcheck_service import SpellcheckService
+from app.ai.validation import valid_suggestion
 from app.document.book_compiler import compile_book_pdf
 from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
@@ -94,6 +95,7 @@ from .character_relationship_dialog import CharacterRelationshipDialog
 from .conflict_dialog import ConflictDialog
 from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
+from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -398,6 +400,7 @@ class MainWindow(QMainWindow):
             "Find": self.tr("Find"), "Replace": self.tr("Replace"), "Generate..": self.tr("Generate.."),
             "Generate Completion": self.tr("Generate Completion"), "Check Spelling": self.tr("Check Spelling"),
             "Completion Reference Notes…": self.tr("Completion Reference Notes…"),
+            "Review Spelling and Grammar…": self.tr("Review Spelling and Grammar…"),
             "Review Completion Context…": self.tr("Review Completion Context…"),
             "Accept Suggestion": self.tr("Accept Suggestion"), "Reject Suggestion": self.tr("Reject Suggestion"),
             "Ollama Debug": self.tr("Ollama Debug"), "AI Settings…": self.tr("AI Settings…"),
@@ -504,6 +507,7 @@ class MainWindow(QMainWindow):
             (ai_menu, "Review Completion Context…", lambda: self.request_completion(review=True), QKeySequence()),
             (ai_menu, "Completion Reference Notes…", self.select_completion_notes, QKeySequence()),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
+            (ai_menu, "Review Spelling and Grammar…", self.review_spellcheck, QKeySequence()),
             (ai_menu, "Accept Suggestion", self.accept_completion, QKeySequence()),
             (ai_menu, "Reject Suggestion", self.reject_completion, QKeySequence()),
             (ai_menu, "Summarize Selected Scene", self.summarize_project_scene, QKeySequence()),
@@ -6103,6 +6107,25 @@ class MainWindow(QMainWindow):
                 or spellcheck_generation != self._spellcheck_generation):
             return
         self.status.showMessage(f"Spellcheck failed: {error}")
+
+    def review_spellcheck(self) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None or not editor.spell_suggestions:
+            self.statusBar().showMessage(self.tr("No spelling or grammar findings to review."), 6000)
+            return
+        revision, source = editor.revision, editor.toPlainText()
+        suggestions = tuple(editor.spell_suggestions)
+        dialog = SpellcheckReviewDialog(suggestions, source, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        selected = sorted(dialog.selected_suggestions(), key=lambda item: (item.start, item.end))
+        if (editor is not self.tabs.current_editor() or editor.revision != revision
+                or tuple(editor.spell_suggestions) != suggestions
+                or any(not valid_suggestion(item, source, revision) for item in selected)
+                or any(left.end > right.start for left, right in zip(selected, selected[1:]))):
+            self.statusBar().showMessage(self.tr("Findings changed; check spelling again."), 6000)
+            return
+        editor.apply_spell_suggestions(selected)
 
     def _apply_spellcheck_results(self, editor, revision: int, suggestions, settings_generation=None, active_generation=None, spellcheck_generation=None) -> None:
         if (not self.settings.ai_enabled or editor is not self.tabs.current_editor()

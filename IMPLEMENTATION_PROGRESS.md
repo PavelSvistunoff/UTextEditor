@@ -141,6 +141,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   Compiled Ukrainian strings and native small-window/keyboard verification
   remain outstanding; large match sets may also need performance work. Do not
   mark complete until verified. Full offline suite: 469 passed, 2 skipped.
+- **TASK-021 — in progress:** AI > Review Spelling and Grammar presents
+  current validated findings with explanations and selection controls. It
+  rejects changed or overlapping selections, and applies selected corrections
+  as one undoable edit. Tests cover cancellation, selection, Unicode, stale
+  edits, overlapping ranges and undo. Compiled Ukrainian translations and
+  native accessibility verification remain outstanding. Full offline suite:
+  486 passed, 2 skipped.
 - **TASK-022 — in progress:** AI Settings now offers a persisted option to
   exclude project characters and reference notes from automatic completions;
   explicit completions retain existing project context. Offline worker tests

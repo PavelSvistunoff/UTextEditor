@@ -656,6 +656,9 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Review Spelling and Grammar…</source><translation>Переглянути правопис і граматику…</translation></message>
+    <message><source>No spelling or grammar findings to review.</source><translation>Немає зауважень до правопису чи граматики для перегляду.</translation></message>
+    <message><source>Findings changed; check spelling again.</source><translation>Зауваження змінилися; перевірте правопис знову.</translation></message>
     <message><source>A reference note changed; request completion again.</source><translation>Довідкова нотатка змінилася; запросіть продовження знову.</translation></message>
     <message><source>Only part of the text before the cursor is included.</source><translation>Включено лише частину тексту перед курсором.</translation></message>
     <message><source>Associated character context was truncated.</source><translation>Контекст пов’язаних персонажів скорочено.</translation></message>
@@ -1959,5 +1962,11 @@
     <message><source>Destination: %1</source><translation>Адреса: %1</translation></message>
     <message><source>Captured completion context</source><translation>Зафіксований контекст продовження</translation></message>
     <message><source>Send completion request</source><translation>Надіслати запит на продовження</translation></message>
+</context>
+<context>
+    <name>SpellcheckReviewDialog</name>
+    <message><source>Review spelling and grammar</source><translation>Перегляд правопису та граматики</translation></message>
+    <message><source>Select the corrections to apply. Cancel leaves the document unchanged.</source><translation>Виберіть виправлення для застосування. Скасування не змінює документ.</translation></message>
+    <message><source>Spelling and grammar findings</source><translation>Зауваження до правопису та граматики</translation></message>
 </context>
 </TS>
