@@ -492,7 +492,7 @@ class MainWindow(QMainWindow):
             (edit_menu, "Paste", lambda: self._edit("paste"), QKeySequence.StandardKey.Paste),
             (edit_menu, "Select All", lambda: self._edit("selectAll"), QKeySequence.StandardKey.SelectAll),
             (search_menu, "Find", self.show_find_replace, QKeySequence.StandardKey.Find),
-            (search_menu, "Replace", self.show_find_replace, QKeySequence.StandardKey.Replace),
+            (search_menu, "Replace", lambda: self.show_find_replace(replace=True), QKeySequence.StandardKey.Replace),
             (ai_menu, "Generate..", self.generate_from_prompt, QKeySequence()),
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
@@ -4830,13 +4830,13 @@ class MainWindow(QMainWindow):
         ):
             self.writing_goals.detach(document_id)
 
-    def show_find_replace(self) -> None:
+    def show_find_replace(self, *, replace: bool = False) -> None:
         if self._find_bar is None:
             self._find_bar = FindReplaceWidget(lambda: self.tabs.current_editor(), self)
             self.statusBar().addPermanentWidget(self._find_bar)
         self._find_bar.show()
         self._find_bar.refresh()
-        self._find_bar.find_edit.setFocus()
+        (self._find_bar.replace_edit if replace else self._find_bar.find_edit).setFocus()
 
     def show_project_search(self) -> None:
         if self.project is None:

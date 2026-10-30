@@ -76,6 +76,86 @@ def test_replace_all_is_one_undoable_edit(application):
     find_bar.hide()
 
 
+def test_case_and_whole_word_options_keep_counts_navigation_and_replacement_consistent(application):
+    editor = EditorWidget()
+    editor.setPlainText("😀 СЛОВО слово словом слово")
+    bar = make_find_bar(editor)
+    bar.find_edit.setText("слово")
+    assert bar.match_count.text() == "3 matches"
+    bar.case_sensitive.setChecked(False)
+    assert bar.match_count.text() == "4 matches"
+    bar.whole_word.setChecked(True)
+    assert bar.match_count.text() == "3 matches"
+    editor.moveCursor(QTextCursor.MoveOperation.Start)
+    assert bar.find_next()
+    assert editor.textCursor().selectedText() == "СЛОВО"
+    bar.replace_edit.setText("текст")
+    bar.replace_all()
+    assert editor.toPlainText() == "😀 текст текст словом текст"
+    editor.undo()
+    assert editor.toPlainText() == "😀 СЛОВО слово словом слово"
+
+
+def test_whole_word_replace_does_not_replace_partial_selection(application):
+    editor = EditorWidget()
+    editor.setPlainText("wording word")
+    bar = make_find_bar(editor)
+    bar.whole_word.setChecked(True)
+    cursor = editor.textCursor()
+    cursor.setPosition(0)
+    cursor.setPosition(4, QTextCursor.MoveMode.KeepAnchor)
+    editor.setTextCursor(cursor)
+    bar.replace_edit.setText("line")
+    bar.replace_one()
+    assert editor.toPlainText() == "wording line"
+
+
+def test_no_match_and_noop_replace_preserve_text_and_undo(application):
+    editor = EditorWidget()
+    editor.setPlainText("word")
+    bar = make_find_bar(editor)
+    bar.replace_edit.setText("word")
+    bar.replace_all()
+    assert editor.toPlainText() == "word"
+    assert not editor.document().isUndoAvailable()
+    bar.find_edit.setText("missing")
+    bar.replace_all()
+    assert editor.toPlainText() == "word"
+
+
+def test_find_replace_focus_and_close_return_to_editor(application, monkeypatch, tmp_path):
+    from unittest.mock import patch
+    from app.settings.settings import AppSettings
+    from app.ui.main_window import MainWindow
+    monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: tmp_path / "settings.yaml"))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.show()
+    search_menu = next(action.menu() for action in window.menuBar().actions() if action.text() == "Search")
+    next(action for action in search_menu.actions() if action.text() == "Find").trigger()
+    application.processEvents()
+    assert window._find_bar.find_edit.hasFocus()
+    next(action for action in search_menu.actions() if action.text() == "Replace").trigger()
+    application.processEvents()
+    assert window._find_bar.replace_edit.hasFocus()
+    window._find_bar.close_find()
+    application.processEvents()
+    assert window.tabs.current_editor().hasFocus()
+    window.close()
+
+
+def test_status_message_does_not_force_find_bar_wider_than_small_window(application):
+    editor = EditorWidget()
+    bar = make_find_bar(editor)
+    bar.message.setText("Replaced 1 match. Selected the next match.")
+    bar.resize(420, 150)
+    bar.show()
+    application.processEvents()
+    assert bar.width() <= 420
+    assert bar.next_button.isVisible() and bar.replace_all_button.isVisible()
+    bar.close()
+
+
 @pytest.mark.parametrize("backwards", [False, True])
 @pytest.mark.parametrize("anchor,position", [(1, 5), (5, 1), (3, 3)])
 def test_failed_find_preserves_cursor_and_selection(application, backwards, anchor, position):

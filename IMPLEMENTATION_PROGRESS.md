@@ -132,6 +132,15 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   review and compilation of Ukrainian source strings remain outstanding.
   Do not mark complete until manual review is performed. Full offline suite:
   464 passed, 2 skipped.
+- **TASK-020 — in progress:** Find and Replace now offer case and whole-word
+  controls while retaining case-sensitive literal defaults. Navigation,
+  counts and replacement use the same Qt matching rules, replace-all remains a
+  single undoable edit, and Find/Replace focus and close behavior are distinct.
+  Tests cover Ukrainian case, Unicode positions, whole-word selections,
+  no-op and no-match behavior, undo, focus and an offscreen small-width layout.
+  Compiled Ukrainian strings and native small-window/keyboard verification
+  remain outstanding; large match sets may also need performance work. Do not
+  mark complete until verified. Full offline suite: 469 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

@@ -145,11 +145,10 @@ and effort are relative estimates.
     Skip removed or stale targets with clear feedback and preserve unsaved
     buffers. Do not treat ordinary typing or every cursor move as a history
     entry.
-12. **Improve find controls and focus** — lower priority, small/medium effort.
-    Consider distinct Find and Replace focus targets, optional matching modes,
-    and predictable focus return on close. Retain current literal,
-    case-sensitive defaults, match counts, and undo behavior; test keyboard
-    navigation, Unicode, zero matches, and small windows.
+12. **Verify find controls in small windows** — lower priority. Find and
+    Replace offer distinct focus targets, case and whole-word controls, and
+    focus return on close. Check the layout and keyboard navigation on native
+    platforms and in small windows.
 
 All navigation changes should work without Ollama, be translated into the
 supported interface languages, preserve the editor's current text and selection
@@ -246,11 +245,8 @@ accepted; cancellation and stale-result checks would still apply.
 
 ### Lower priority and exploratory
 
-11. **Find controls and navigation** (small/medium effort). Active-document
-    find currently uses literal, case-sensitive matching. Add optional
-    case-insensitive or whole-word matching while keeping existing defaults.
-    Acceptance: counts, navigation, replacement,
-    Unicode handling, and undo agree under each chosen mode. Regular expressions
+11. **Further find controls** (small/medium effort). Literal find supports
+    optional case-insensitive and whole-word matching. Regular expressions
     would need separate safeguards and clear error reporting.
 12. **Writing-goal history** (medium effort). Daily progress is stored locally
     and already accounts for undo/redo. A local history view could show past

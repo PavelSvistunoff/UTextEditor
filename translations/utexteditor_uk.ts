@@ -515,6 +515,8 @@
 </context>
 <context>
     <name>FindReplaceWidget</name>
+    <message><source>Match case</source><translation>З урахуванням регістру</translation></message>
+    <message><source>Whole words</source><translation>Лише цілі слова</translation></message>
     <message>
         <location filename="../app/ui/find_replace.py" line="20"/>
         <source>Find</source>
