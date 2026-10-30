@@ -42,10 +42,11 @@ class SearchResult:
 
 
 def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str,
-                   cancel: Event | None = None) -> SearchResult:
+                   cancel: Event | None = None, open_buffers: dict[Path, str] | None = None) -> SearchResult:
     """Search literal, case-sensitive text without modifying any project data."""
     if not query:
         raise ValueError("Search text cannot be empty.")
+    buffers = {path.resolve(): text for path, text in (open_buffers or {}).items()}
     matches: list[SearchMatch] = []
     errors: list[str] = []
     cancelled = False
@@ -55,12 +56,13 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
             cancelled = True
             break
         try:
-            if item.text is not None:
-                text = item.text
+            path = validate_project_path(root, item.path) if item.text is None else None
+            open_text = item.text if item.text is not None else buffers.get(path)
+            if open_text is not None:
+                text = open_text
                 if len(text.encode("utf-8")) > MAX_DOCUMENT_BYTES:
                     raise ValueError("Document exceeds the search size limit")
             else:
-                path = validate_project_path(root, item.path)
                 with path.open("rb") as stream:
                     raw = stream.read(MAX_DOCUMENT_BYTES + 1)
                 if len(raw) > MAX_DOCUMENT_BYTES:

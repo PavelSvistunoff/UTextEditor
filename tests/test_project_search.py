@@ -59,3 +59,10 @@ def test_search_cancels_during_a_document_and_rejects_escaping_paths(tmp_path):
     escaping = SearchDocument("note", "n", "Outside", "../outside.txt")
     result = search_project(tmp_path, (escaping,), "word")
     assert len(result.errors) == 1 and not result.matches
+
+
+def test_large_project_stops_at_result_limit(tmp_path):
+    documents = tuple(SearchDocument("scene", str(i), str(i), f"{i}.txt", "word") for i in range(2500))
+    result = search_project(tmp_path, documents, "word")
+    assert result.limited and len(result.matches) == 1000
+    assert result.matches[-1].id == "999"

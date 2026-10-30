@@ -282,6 +282,86 @@ def test_conflict_review_save_elsewhere_or_reject_unresolved_markers(application
     window.close()
 
 
+def test_project_search_finds_open_unsaved_text_and_navigates_only_current_matches(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="disk content")
+    project.add_note("Note", content="other word")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("😀 unsaved word")
+    window.show_project_search()
+    panel = window._project_search_panel
+    panel.search_requested.emit("word")
+    wait_until(lambda: window._project_search_cancel is None, application)
+    assert panel.results.count() == 2
+    item = panel.results.item(0)
+    panel.result_requested.emit(item.data(Qt.ItemDataRole.UserRole))
+    assert editor.textCursor().selectedText() == "word"
+    editor.setPlainText("changed word")
+    editor.moveCursor(editor.textCursor().MoveOperation.End)
+    before = editor.textCursor().position()
+    panel.result_requested.emit(item.data(Qt.ItemDataRole.UserRole))
+    assert editor.textCursor().position() == before
+    assert "changed" in panel.status.text().lower()
+    assert project.read_scene(scene.id) == "disk content"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("changed", [False, True])
+def test_project_search_opens_closed_note_and_checks_disk_snapshot(application, tmp_path, changed):
+    project = Project.create(tmp_path / "novel", "Novel")
+    note = project.add_note("Note", content="😀 found text")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.show_project_search()
+    panel = window._project_search_panel
+    panel.search_requested.emit("found")
+    wait_until(lambda: window._project_search_cancel is None, application)
+    assert panel.results.count() == 1
+    if changed:
+        (project.root / note.path).write_text("different found", encoding="utf-8")
+    panel.result_requested.emit(panel.results.item(0).data(Qt.ItemDataRole.UserRole))
+    wait_until(lambda: window.tabs.count() == 2, application)
+    if changed:
+        wait_until(lambda: "changed" in panel.status.text().lower(), application)
+        assert not window.tabs.current_editor().textCursor().hasSelection()
+    else:
+        wait_until(lambda: window.tabs.current_editor().textCursor().hasSelection(), application)
+        assert window.tabs.current_editor().textCursor().selectedText() == "found"
+    window.close()
+
+
+def test_project_search_cancel_keeps_gui_responsive(application, tmp_path, monkeypatch):
+    from app.project.search import SearchResult
+    project = Project.create(tmp_path / "novel", "Novel")
+    project.add_scene("Scene", content="word")
+    started, release = Event(), Event()
+    def search(root, documents, query, cancel, buffers):
+        started.set()
+        assert release.wait(3)
+        return SearchResult((), (), cancel.is_set(), False)
+    monkeypatch.setattr("app.ui.main_window.search_project", search)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.show_project_search()
+    panel = window._project_search_panel
+    panel.search_requested.emit("word")
+    wait_until(started.is_set, application)
+    panel.cancel_button.click()
+    assert window._project_search_cancel.is_set()
+    release.set()
+    wait_until(lambda: window._project_search_cancel is None, application)
+    assert "cancel" in panel.status.text().lower()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")

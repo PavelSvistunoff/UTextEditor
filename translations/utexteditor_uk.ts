@@ -1262,6 +1262,16 @@
         <source>Could not connect or find “%1”. Check Ollama is running and run `ollama pull %1` if needed.</source>
         <translation type="vanished">Не вдалося з’єднатися або знайти модель «%1». Перевірте, чи запущено Ollama, і за потреби виконайте `ollama pull %1`.</translation>
     </message>
+    <message><source>Search Project Text…</source><translation>Пошук у тексті проєкту…</translation></message>
+    <message><source>Search Project Text</source><translation>Пошук у тексті проєкту</translation></message>
+    <message><source>Open a project before searching.</source><translation>Відкрийте проєкт перед пошуком.</translation></message>
+    <message><source>Wait for the current search to finish.</source><translation>Зачекайте завершення поточного пошуку.</translation></message>
+    <message><source>Enter text to search.</source><translation>Введіть текст для пошуку.</translation></message>
+    <message><source>Searching…</source><translation>Пошук…</translation></message>
+    <message><source>Project changed. Search again.</source><translation>Проєкт змінився. Повторіть пошук.</translation></message>
+    <message><source>The result no longer exists. Search again.</source><translation>Результат більше не існує. Повторіть пошук.</translation></message>
+    <message><source>The result could not be opened.</source><translation>Не вдалося відкрити результат.</translation></message>
+    <message><source>The document changed. Search again.</source><translation>Документ змінився. Повторіть пошук.</translation></message>
     <message><source>Review External Changes…</source><translation>Переглянути зовнішні зміни…</translation></message>
     <message><source>Review External Changes</source><translation>Перегляд зовнішніх змін</translation></message>
     <message><source>Open a saved document before reviewing disk changes.</source><translation>Відкрийте збережений документ, перш ніж переглядати зміни на диску.</translation></message>
@@ -1270,6 +1280,18 @@
     <message><source>The disk version changed during review. Please review it again.</source><translation>Версія на диску змінилася під час перегляду. Перегляньте її знову.</translation></message>
     <message><source>Version staged in the editor. Save to write it to disk.</source><translation>Версію підготовлено в редакторі. Збережіть документ, щоб записати її на диск.</translation></message>
     <message><source>Use File &gt; Review External Changes… to compare versions and choose how to proceed.</source><translation>Виберіть «Файл &gt; Переглянути зовнішні зміни…», щоб порівняти версії та вибрати подальшу дію.</translation></message>
+</context>
+<context>
+    <name>ProjectSearchPanel</name>
+    <message><source>Search project text</source><translation>Пошук у тексті проєкту</translation></message>
+    <message><source>Search</source><translation>Пошук</translation></message>
+    <message><source>Cancel</source><translation>Скасувати</translation></message>
+    <message><source>Project search results</source><translation>Результати пошуку в проєкті</translation></message>
+    <message><source>Scene</source><translation>Сцена</translation></message>
+    <message><source>Reference note</source><translation>Довідкова нотатка</translation></message>
+    <message><source>Search cancelled.</source><translation>Пошук скасовано.</translation></message>
+    <message><source>Result limit reached.</source><translation>Досягнуто обмеження кількості результатів.</translation></message>
+    <message><source>Search finished.</source><translation>Пошук завершено.</translation></message>
 </context>
 <context>
     <name>ConflictDialog</name>

@@ -41,12 +41,13 @@ from app.ai.ollama_client import OllamaClient
 from app.ai.spellcheck_service import SpellcheckService
 from app.document.book_compiler import compile_book_pdf
 from app.document.document import Document
-from app.document.encoding import detect_line_ending, normalize_line_endings, qt_position_to_python_index
+from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
 from app.document.export import ExportChapter, ExportScene, export_manuscript
 from app.document.file_manager import ExternalChangeError, FileManager
 from app.document.merge import merge_text
 from app.document.recovery import RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, WordCount, count_words
+from app.project.search import SearchDocument, search_project
 from app.project.autopilot import (
     MAX_AUTOPILOT_CHARACTERS,
     MAX_AUTOPILOT_CHAPTERS,
@@ -84,6 +85,7 @@ from .generated_text_dialog import GeneratedTextDialog
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
+from .project_search_panel import ProjectSearchPanel
 from .portrait import load_portrait
 from .character_dialog import CharacterDialog
 from .character_relationship_dialog import CharacterRelationshipDialog
@@ -236,6 +238,13 @@ class MainWindow(QMainWindow):
         self._settings_connection_worker: FunctionWorker | None = None
         self._active_document_generation = 0
         self._find_bar = None
+        self._project_search_panel = None
+        self._project_search_dock = None
+        self._project_search_cancel = None
+        self._project_search_generation = 0
+        self._project_search_navigation = 0
+        self._project_search_context = None
+        self._project_search_query = ""
         self._connected = False
         self._ai_disclosure = None
         self._ai_disclosure_declined_host = None
@@ -503,6 +512,10 @@ class MainWindow(QMainWindow):
         conflict_action = QAction(self.tr("Review External Changes…"), self)
         conflict_action.triggered.connect(self.review_external_changes)
         file_menu.insertAction(recovery_action, conflict_action)
+
+        search_project_action = QAction(self.tr("Search Project Text…"), self)
+        search_project_action.triggered.connect(self.show_project_search)
+        search_menu.addAction(search_project_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
@@ -4735,6 +4748,126 @@ class MainWindow(QMainWindow):
         self._find_bar.show()
         self._find_bar.refresh()
         self._find_bar.find_edit.setFocus()
+
+    def show_project_search(self) -> None:
+        if self.project is None:
+            QMessageBox.information(self, self.tr("Search Project Text"), self.tr("Open a project before searching."))
+            return
+        if self._project_search_panel is None:
+            panel = ProjectSearchPanel(self)
+            dock = QDockWidget(self.tr("Search Project Text"), self)
+            dock.setWidget(panel)
+            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
+            panel.search_requested.connect(self._start_project_text_search)
+            panel.cancel_requested.connect(self._cancel_project_text_search)
+            panel.result_requested.connect(self._open_project_search_result)
+            self._project_search_panel, self._project_search_dock = panel, dock
+        self._project_search_dock.show()
+        self._project_search_panel.query.setFocus()
+
+    def _cancel_project_text_search(self) -> None:
+        if self._project_search_cancel is not None:
+            self._project_search_cancel.set()
+
+    def _start_project_text_search(self, query: str) -> None:
+        panel, project = self._project_search_panel, self.project
+        if panel is None or project is None:
+            return
+        if self._project_search_cancel is not None:
+            panel.status.setText(self.tr("Wait for the current search to finish."))
+            return
+        if not query:
+            panel.status.setText(self.tr("Enter text to search."))
+            return
+        buffers = {}
+        for index in range(self.tabs.count()):
+            editor = self.tabs.widget(index)
+            path = editor.document_state.path
+            if path is not None:
+                buffers[path] = editor.toPlainText()
+        documents = tuple(
+            SearchDocument(kind, item.id, item.title, item.path)
+            for kind, items in (("scene", tuple(project.iter_scenes())), ("note", project.manifest.notes))
+            for item in items
+        )
+        self._project_search_generation += 1
+        self._project_search_navigation += 1
+        generation = self._project_search_generation
+        project_generation = self._project_generation
+        cancel = Event()
+        self._project_search_cancel = cancel
+        panel.set_running(True)
+        panel.results.clear()
+        panel.status.setText(self.tr("Searching…"))
+        worker = FunctionWorker(search_project, project.root, documents, query, cancel, buffers)
+        self._track_worker(worker)
+
+        def finished(result):
+            self._project_search_cancel = None
+            panel.set_running(False)
+            if self.project is not project or self._project_generation != project_generation or self._closing_confirmed:
+                panel.status.setText(self.tr("Project changed. Search again."))
+                return
+            self._project_search_query = query
+            self._project_search_context = (project, project_generation, generation)
+            panel.set_results(result)
+
+        def failed(error):
+            self._project_search_cancel = None
+            panel.set_running(False)
+            panel.status.setText(str(error))
+
+        worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
+
+    def _open_project_search_result(self, match) -> None:
+        project = self.project
+        panel = self._project_search_panel
+        if project is None or panel is None:
+            return
+        if self._project_search_context != (project, self._project_generation, self._project_search_generation):
+            panel.status.setText(self.tr("Project changed. Search again."))
+            return
+        self._project_search_navigation += 1
+        navigation = self._project_search_navigation
+        generation = self._project_search_generation
+        project_generation = self._project_generation
+        query = self._project_search_query
+        try:
+            item = project.get_scene(match.id) if match.kind == "scene" else project.get_note(match.id)
+        except ProjectError:
+            panel.status.setText(self.tr("The result no longer exists. Search again."))
+            return
+        path = (project.root / item.path).resolve()
+        self._open_project_document(match.kind, match.id)
+
+        def locate(attempts=0):
+            if (self._closing_confirmed or self.project is not project or self._project_generation != project_generation
+                    or self._project_search_generation != generation or self._project_search_navigation != navigation):
+                return
+            editor = next((self.tabs.widget(index) for index in range(self.tabs.count())
+                           if self.tabs.widget(index).document_state.path is not None
+                           and self.tabs.widget(index).document_state.path.resolve() == path), None)
+            if editor is None:
+                if attempts < 200:
+                    QTimer.singleShot(25, lambda: locate(attempts + 1))
+                else:
+                    panel.status.setText(self.tr("The result could not be opened."))
+                return
+            text = editor.toPlainText()
+            digest = hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest()
+            if digest != match.digest or text[match.offset:match.offset + len(query)] != query:
+                panel.status.setText(self.tr("The document changed. Search again."))
+                return
+            cursor = editor.textCursor()
+            cursor.setPosition(python_index_to_qt_position(text, match.offset))
+            cursor.setPosition(python_index_to_qt_position(text, match.offset + len(query)), QTextCursor.MoveMode.KeepAnchor)
+            editor.setTextCursor(cursor)
+            self.tabs.setCurrentWidget(editor)
+            editor.setFocus()
+
+        locate()
 
     def accept_completion(self) -> None:
         editor = self.tabs.current_editor()

@@ -81,9 +81,9 @@ session was exercised, and this review does not prove other paths defect-free.
   per finding; there is no dedicated batch review workflow.
 - **Language detection:** automatic language choice uses local script and
   common-word signals, leaving ambiguous or short text to the model.
-- **Project-wide search:** character profile search and scene search by a
-  character's name or aliases are available. General full-text search across
-  all manuscript and reference-note content is not.
+- **Project-wide search:** literal, case-sensitive scene and note text search
+  is available with bounded results and per-document size limits. Broader
+  matching options and larger-file support remain future work.
 - **Markdown preview:** Markdown export is available, but the Markdown preview
   suggested in `SPEC.md` §22 and `README.uk.md` §32 is not implemented.
 - **Additional languages:** writing/spellcheck language choices are Auto,
@@ -120,13 +120,11 @@ and effort are relative estimates.
 
 ### Make destinations easier to find
 
-4. **Search the whole project** — high priority, medium/high effort. Provide a
-   persistent, keyboard-accessible results list for scenes and notes with
-   titles, excerpts, and locations; include open unsaved buffers and report
-   unreadable files. Selecting a result should open the item and select its
-   match only if the captured text is still current. This elaborates the
-   existing project-wide search proposal above; keep the first version read-only
-   and cancellable.
+4. **Extend project text search** — medium priority. The persistent search
+   panel searches scenes and notes including unsaved buffers and reports files
+   it cannot read. Searches are literal and case-sensitive, limited to 1,000
+   matches and 4 MiB per document. Additional matching options and larger-file
+   support remain future work.
 5. **Quickly open a project item** — high priority, medium effort. Add a
    keyboard-invoked picker for scene, chapter, note, and character names and
    aliases, with type and chapter context to disambiguate duplicate titles.
@@ -226,13 +224,9 @@ accepted; cancellation and stale-result checks would still apply.
 
 ### Medium priority
 
-5. **Project-wide search with navigation** (medium/high effort). Extend the
-   existing character-name search and active-document Find to manuscript and
-   reference notes, using open unsaved buffers where available. Show item,
-   snippet, and location; opening a result should select the match only if its
-   captured content is still current. Clearly report unreadable files, support
-   cancellation, and bound work for large projects. Start read-only; project-wide
-   replacement would need a separate preview and transactional design.
+5. **Extend project-wide search** (medium/high effort). Add matching options
+   and investigate larger-file support. Project-wide replacement would need a
+   separate preview and transactional design.
 6. **Review translations before applying a batch** (high effort). Translation
    already snapshots and applies only after all fields succeed. Add a review of
    original and translated titles and text, with per-item navigation and an

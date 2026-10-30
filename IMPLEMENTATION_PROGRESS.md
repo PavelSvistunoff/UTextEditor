@@ -75,10 +75,15 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   service for captured scene and note descriptors. Open buffer snapshots take
   precedence over disk, unreadable, binary, or oversized files are reported,
   and results carry stable IDs, locations, excerpts, and text fingerprints.
-  The persistent UI, captured project-state checks, safe result navigation,
-  translations, and large-project UI tests remain to be implemented; the
-  service alone is not a user-facing search feature. Full offline suite:
-  449 passed, 2 skipped.
+  Search > Search Project Text now opens a persistent results panel. Navigation
+  checks captured project identity and document fingerprints before selecting
+  a match, including newly opened items. Qt tests cover unsaved Unicode text,
+  stale buffers and files, opening results, and cancellation. Ukrainian source
+  strings are present but the compiled catalog remains to be rebuilt. Large
+  projects still need GUI responsiveness measurements and more stress tests;
+  path resolution now runs in the search worker. Do not mark complete until
+  those issues and localization are verified. Full offline suite: 454 passed,
+  2 skipped.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report
