@@ -144,13 +144,16 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 - **TASK-022 — in progress:** AI Settings now offers a persisted option to
   exclude project characters and reference notes from automatic completions;
   explicit completions retain existing project context. Offline worker tests
-  cover both modes and settings validation. Captured-request context preview,
-  per-note exclusions, corresponding stale checks and compiled Ukrainian
-  translation remain outstanding. Do not mark complete. Full offline suite:
+  cover both modes and settings validation. Captured-request preview and
+  compiled Ukrainian translation remain
+  outstanding. Do not mark complete. Full offline suite:
   472 passed, 2 skipped. Context construction now also returns an immutable
   capture with note provenance and truncation metadata for the future preview;
   the existing request path uses the same captured text. Full offline suite
-  after this refactor: 473 passed, 2 skipped.
+  after this refactor: 473 passed, 2 skipped. AI > Completion Reference Notes
+  now excludes selected notes for the project session and invalidates pending
+  completions when the selection changes. A worker regression test covers
+  selection and stale results. Full offline suite: 474 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

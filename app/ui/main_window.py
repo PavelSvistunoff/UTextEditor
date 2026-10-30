@@ -91,6 +91,7 @@ from .portrait import load_portrait
 from .character_dialog import CharacterDialog
 from .character_relationship_dialog import CharacterRelationshipDialog
 from .conflict_dialog import ConflictDialog
+from .completion_notes_dialog import CompletionNotesDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -177,6 +178,7 @@ class MainWindow(QMainWindow):
         self._project_documents: dict[object, _ProjectDocumentBinding] = {}
         self._pending_project_opens: set[tuple[int, str, str]] = set()
         self._project_generation = 0
+        self._completion_excluded_notes: set[str] = set()
         self._revision_history_dialog: RevisionHistoryDialog | None = None
         self._project_refresh_generation = 0
         self._project_ai_generation = 0
@@ -393,6 +395,7 @@ class MainWindow(QMainWindow):
             "Cut": self.tr("Cut"), "Paste": self.tr("Paste"), "Select All": self.tr("Select All"),
             "Find": self.tr("Find"), "Replace": self.tr("Replace"), "Generate..": self.tr("Generate.."),
             "Generate Completion": self.tr("Generate Completion"), "Check Spelling": self.tr("Check Spelling"),
+            "Completion Reference Notes…": self.tr("Completion Reference Notes…"),
             "Accept Suggestion": self.tr("Accept Suggestion"), "Reject Suggestion": self.tr("Reject Suggestion"),
             "Ollama Debug": self.tr("Ollama Debug"), "AI Settings…": self.tr("AI Settings…"),
             "Summarize Selected Scene": self.tr("Summarize Selected Scene"),
@@ -495,6 +498,7 @@ class MainWindow(QMainWindow):
             (search_menu, "Replace", lambda: self.show_find_replace(replace=True), QKeySequence.StandardKey.Replace),
             (ai_menu, "Generate..", self.generate_from_prompt, QKeySequence()),
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
+            (ai_menu, "Completion Reference Notes…", self.select_completion_notes, QKeySequence()),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
             (ai_menu, "Accept Suggestion", self.accept_completion, QKeySequence()),
             (ai_menu, "Reject Suggestion", self.reject_completion, QKeySequence()),
@@ -2386,6 +2390,7 @@ class MainWindow(QMainWindow):
     def _project_opened(self, project: Project) -> None:
         self._set_project_busy(False)
         self.project = project
+        self._completion_excluded_notes.clear()
         self._project_generation += 1
         self._scene_word_counts = {}
         self._project_count_complete = True
@@ -5755,6 +5760,29 @@ class MainWindow(QMainWindow):
         dialog.show()
         return False
 
+    def select_completion_notes(self) -> None:
+        project = self.project
+        if project is None:
+            self.statusBar().showMessage(self.tr("Open a project to select completion reference notes."), 6000)
+            return
+        generation = self._project_generation
+        dialog = CompletionNotesDialog(project.manifest.notes, self._completion_excluded_notes, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        if self.project is not project or self._project_generation != generation:
+            self.statusBar().showMessage(self.tr("Project changed; select reference notes again."), 6000)
+            return
+        excluded = dialog.excluded_ids()
+        if excluded == self._completion_excluded_notes:
+            return
+        self._completion_excluded_notes = excluded
+        self._completion_generation += 1
+        self._completion_timer.stop()
+        if self._completion_worker:
+            self._cancel_activity_completion(self._completion_worker)
+        for index in range(self.tabs.count()):
+            self.tabs.widget(index).clear_completion()
+
     def request_completion(self, *, automatic: bool = False) -> None:
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled or not self.settings.completion_enabled:
@@ -5793,7 +5821,8 @@ class MainWindow(QMainWindow):
         if project is not None:
             function = complete_project_scene
             args = (self.completion_service, project,
-                    tuple((note.id, note.title, note.type) for note in project.manifest.notes),
+                    tuple((note.id, note.title, note.type) for note in project.manifest.notes
+                          if note.id not in self._completion_excluded_notes),
                     {item_id: tab.toPlainText() for item_id, (tab, _) in note_editors.items()},
                     scene_character_context(project, binding.item_id), context, self.settings.language)
         else:

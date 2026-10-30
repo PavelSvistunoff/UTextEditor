@@ -76,6 +76,48 @@ def test_automatic_project_context_can_be_disabled_without_changing_manual_reque
     wait_until(lambda: window._completion_worker is None)
 
 
+def test_completion_note_selection_excludes_notes_and_discards_pending_result(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "note-selection", "Novel")
+    scene = project.add_scene("Scene", content="Draft")
+    project.add_note("Keep", content="included reference")
+    project.add_note("Exclude", content="excluded reference")
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    editor = window.tabs.current_editor()
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    started, release = Event(), Event()
+    calls = []
+
+    def complete(context, language, **options):
+        calls.append(context)
+        if len(calls) == 1:
+            started.set()
+            release.wait(3)
+        return " continuation"
+
+    monkeypatch.setattr(window.provider, "complete", complete)
+    window.request_completion()
+    wait_until(started.is_set)
+
+    def select():
+        dialog = QApplication.activeModalWidget()
+        dialog.notes.item(1).setCheckState(Qt.CheckState.Unchecked)
+        dialog.accept()
+
+    QTimer.singleShot(0, select)
+    window.select_completion_notes()
+    release.set()
+    wait_until(lambda: window._completion_worker is None)
+    assert not editor.has_completion
+    window.request_completion()
+    wait_until(lambda: len(calls) == 2)
+    assert "included reference" in calls[1]
+    assert "excluded reference" not in calls[1]
+    wait_until(lambda: window._completion_worker is None)
+
+
 @pytest.mark.parametrize("operation", ["completion", "spellcheck"])
 def test_first_context_request_requires_remote_disclosure_and_consent(window, monkeypatch, operation):
     editor = window.tabs.current_editor()

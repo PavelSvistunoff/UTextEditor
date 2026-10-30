@@ -175,9 +175,10 @@ accepted; cancellation and stale-result checks would still apply.
 1. **Review AI context before it is sent** (medium effort). Project-scene
    completion already uses bounded associated characters and reference notes,
    while Auto-writer and analysis have confirmation flows. Offer an accessible
-   summary of the destination, included material, and truncation, with an
-   option to exclude individual reference notes. Automatic completions can
-   already be configured to omit project context.
+   captured-request preview of the destination, included material, and
+   truncation. Individual reference notes can already be
+   excluded for the project session, and automatic completions can be
+   configured to omit project context.
    Acceptance: the preview matches the captured request, unsaved buffers are
    identified, and changing the selection invalidates stale results. Preserve
    scene association boundaries and do not expose other characters implicitly.

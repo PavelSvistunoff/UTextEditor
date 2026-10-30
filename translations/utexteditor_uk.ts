@@ -656,6 +656,9 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Completion Reference Notes…</source><translation>Довідкові нотатки для продовження…</translation></message>
+    <message><source>Open a project to select completion reference notes.</source><translation>Відкрийте проєкт, щоб вибрати довідкові нотатки для продовження.</translation></message>
+    <message><source>Project changed; select reference notes again.</source><translation>Проєкт змінився; виберіть довідкові нотатки знову.</translation></message>
     <message>
         <source>AI consent could not be saved: %1</source>
         <translation>Не вдалося зберегти згоду на використання ШІ: %1</translation>
@@ -1934,5 +1937,11 @@
     <message><source>Test AI connection</source><translation>Перевірка з’єднання із ШІ</translation></message>
     <message><source>AI connection</source><translation>З’єднання із ШІ</translation></message>
     <message><source>%1 of %2 completed — %3</source><translation>Завершено %1 з %2 — %3</translation></message>
+</context>
+<context>
+    <name>CompletionNotesDialog</name>
+    <message><source>Completion Reference Notes</source><translation>Довідкові нотатки для продовження</translation></message>
+    <message><source>Select reference notes to include in project-scene completions for this session.</source><translation>Виберіть довідкові нотатки для продовження сцен проєкту в цьому сеансі.</translation></message>
+    <message><source>Reference notes included in completions</source><translation>Довідкові нотатки, включені до продовжень</translation></message>
 </context>
 </TS>
