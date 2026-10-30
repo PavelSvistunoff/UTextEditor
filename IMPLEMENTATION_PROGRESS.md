@@ -101,6 +101,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   are in the catalog. The full offline suite passed: 414 passed, 2 skipped
   (`QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m
   pytest -q`).
+- **TASK-015 — in progress:** existing linked-note navigation also works from
+  a selected scene, and the scene context menu exposes the action. A Qt test
+  verifies linked-note navigation preserves unsaved scene text and does not
+  change links. Character-to-scene navigation, a return path that preserves
+  staged character-profile edits, broader navigation tests, and compiled
+  Ukrainian strings remain outstanding. Do not mark complete. Full offline
+  suite: 460 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

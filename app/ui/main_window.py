@@ -3329,7 +3329,7 @@ class MainWindow(QMainWindow):
     def open_linked_project_item(self) -> None:
         project = self.project
         kind, note_id = self._selected_project_item()
-        if project is None or kind != "note":
+        if project is None or kind not in {"scene", "note"}:
             return
         links = list(project.links_from(note_id)) + list(project.links_to(note_id))
         targets: dict[str, str] = {}
@@ -3343,7 +3343,7 @@ class MainWindow(QMainWindow):
                 except ProjectError:
                     targets[target_id] = f"Orphaned link ({target_id})"
         if not targets:
-            QMessageBox.information(self, "Open linked item", "This note has no links.")
+            QMessageBox.information(self, self.tr("Open linked item"), self.tr("This item has no links."))
             return
         labels = [f"{title} [{identifier}]" for identifier, title in targets.items()]
         label, accepted = QInputDialog.getItem(

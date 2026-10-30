@@ -1263,6 +1263,8 @@
         <translation type="vanished">Не вдалося з’єднатися або знайти модель «%1». Перевірте, чи запущено Ollama, і за потреби виконайте `ollama pull %1`.</translation>
     </message>
     <message><source>Search Project Text…</source><translation>Пошук у тексті проєкту…</translation></message>
+    <message><source>Open linked item</source><translation>Відкрити пов’язаний елемент</translation></message>
+    <message><source>This item has no links.</source><translation>Цей елемент не має зв’язків.</translation></message>
     <message><source>Quick Open…</source><translation>Швидке відкриття…</translation></message>
     <message><source>Quick Open</source><translation>Швидке відкриття</translation></message>
     <message><source>Open a project first.</source><translation>Спочатку відкрийте проєкт.</translation></message>

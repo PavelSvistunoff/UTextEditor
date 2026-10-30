@@ -229,6 +229,7 @@ class ProjectView(QTreeWidget):
                         ("Move to Chapter…", "move_to_chapter"),
                         ("Summarize Scene…", "summarize"),
                         ("Associate Characters…", "associate_character"),
+                        ("Open Linked Item…", "open_linked"),
                     )
                 )
             else:

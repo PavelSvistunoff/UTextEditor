@@ -470,6 +470,31 @@ def test_quick_open_reveals_chapter_in_tree(application, tmp_path, monkeypatch):
     window.close()
 
 
+def test_open_linked_item_navigates_from_scene_to_note_without_changing_links(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="draft")
+    note = project.add_note("Reference", content="reference")
+    project.link_note(note.id, scene.id)
+    links = tuple(project.manifest.links)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved draft")
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("scene", scene.id))
+    monkeypatch.setattr(QInputDialog, "getItem", lambda parent, title, label, items, *args: (items[0], True))
+    window.open_linked_project_item()
+    wait_until(lambda: window.tabs.count() == 3, application)
+    assert window.tabs.current_editor().toPlainText() == "reference"
+    assert editor.toPlainText() == "unsaved draft" and editor.document_state.dirty
+    assert tuple(project.manifest.links) == links
+    assert ("Open Linked Item…", "open_linked") in ProjectView.context_actions("scene")
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
