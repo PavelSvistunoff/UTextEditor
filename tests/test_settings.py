@@ -176,3 +176,10 @@ def test_settings_load_recovers_from_malformed_yaml(tmp_path) -> None:
     path.write_text("ollama_host: [unclosed\n", encoding="utf-8")
 
     assert AppSettings.load(path) == AppSettings()
+
+
+def test_streaming_preview_setting_round_trips_and_rejects_invalid_values(tmp_path):
+    path = tmp_path / "settings.yaml"
+    AppSettings(streaming_preview=True).save(path)
+    assert AppSettings.load(path).streaming_preview is True
+    assert AppSettings(streaming_preview="yes").validated().streaming_preview is False

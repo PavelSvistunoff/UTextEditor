@@ -83,7 +83,7 @@ from .find_replace import FindReplaceWidget
 from .ai_debug_window import AIDebugWindow, MAX_DEBUG_EVENTS, format_interaction
 from .ai_context_disclosure import AIContextDisclosure
 from .ai_activity import AIActivityPanel
-from .generated_text_dialog import GeneratedTextDialog
+from .generated_text_dialog import GeneratedTextDialog, StreamingPreviewDialog
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
@@ -103,7 +103,7 @@ from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
 from .settings_dialog import SettingsDialog
 from .tab_widget import DocumentTabWidget
-from .workers import FunctionWorker
+from .workers import FunctionWorker, StreamingWorker
 from .writing_goal_dialog import WritingGoalDialog
 
 
@@ -5093,8 +5093,10 @@ class MainWindow(QMainWindow):
         settings_generation = self._settings_generation
         self.ai_status = "AI: Generating..."
         self._update_status()
-        worker = FunctionWorker(
-            self.provider.generate,
+        worker_type = StreamingWorker if self.settings.streaming_preview else FunctionWorker
+        generate = self.provider.generate_stream if self.settings.streaming_preview else self.provider.generate
+        worker = worker_type(
+            generate,
             prompt.strip(),
             role=self.settings.ai_role,
             maximum_tokens=self.settings.maximum_suggestion_length,
@@ -5110,6 +5112,8 @@ class MainWindow(QMainWindow):
         )
         self._track_worker(worker)
         self._generate_worker = worker
+        if isinstance(worker, StreamingWorker):
+            self._show_streaming_preview(worker, generation, editor, revision, position, selection, settings_generation)
         if self._generate_cancel_action is not None:
             self._generate_cancel_action.setEnabled(True)
         worker.signals.done.connect(
@@ -5125,6 +5129,52 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
+
+    def _show_streaming_preview(self, worker, generation, editor, revision, position, selection, settings_generation) -> None:
+        dialog = StreamingPreviewDialog(self)
+        timer = QTimer(dialog)
+        closed = [False]
+
+        def close_preview() -> None:
+            if closed[0]:
+                return
+            closed[0] = True
+            timer.stop()
+            dialog.close()
+            dialog.deleteLater()
+
+        def cancel_preview() -> None:
+            if closed[0]:
+                return
+            if self._generate_worker is worker:
+                self.cancel_text_generation()
+            else:
+                worker.cancel()
+            close_preview()
+
+        def update_preview() -> None:
+            if closed[0]:
+                return
+            cursor = editor.textCursor() if editor is self.tabs.current_editor() else None
+            current_selection = ((cursor.selectionStart(), cursor.selectionEnd()) if cursor and cursor.hasSelection()
+                                 else (cursor.position(), cursor.position()) if cursor else None)
+            if (worker.cancelled or generation != self._generate_generation or cursor is None
+                    or editor.revision != revision or cursor.position() != position
+                    or current_selection != selection or settings_generation != self._settings_generation):
+                cancel_preview()
+                return
+            chunk = worker.take_chunks()
+            if chunk:
+                dialog.append_text(chunk)
+
+        dialog.rejected.connect(cancel_preview)
+        timer.timeout.connect(update_preview)
+        worker.signals.cancelling.connect(cancel_preview, Qt.ConnectionType.QueuedConnection)
+        worker.signals.finished.connect(lambda _result: close_preview(), Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(lambda _error: close_preview(), Qt.ConnectionType.QueuedConnection)
+        worker.signals.done.connect(close_preview, Qt.ConnectionType.QueuedConnection)
+        timer.start(75)
+        dialog.show()
 
     def _generation_worker_done(self, worker: FunctionWorker) -> None:
         if self._generate_worker is not worker:

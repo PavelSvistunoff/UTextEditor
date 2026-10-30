@@ -164,10 +164,9 @@ the authoritative description of what is missing today.
 
 ### Optional streaming previews
 
-Ollama requests are currently non-streaming. A token-by-token preview would
-require separate provider and worker changes. Partial output must remain
-provisional, bounded in memory, and outside the manuscript until explicitly
-accepted; cancellation and stale-result checks would still apply.
+Prompt-based generation offers an optional bounded streaming preview. Other AI
+workflows remain non-streaming. Cancellation is cooperative and a blocked
+network read may continue until data arrives or the connection times out.
 
 ### High priority
 

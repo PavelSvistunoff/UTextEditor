@@ -190,9 +190,15 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   support bounded NDJSON streaming with chunk callbacks, cooperative
   cancellation and explicit malformed/oversized response errors. Tests cover
   chunks, cancellation including the final chunk, malformed responses and the
-  byte limit. The UI, worker signal delivery, stale-result handling and final
-  acceptance are not yet connected; blocking reads remain subject to the
-  configured network timeout. Full offline suite: 495 passed, 2 skipped.
+  byte limit. An opt-in setting now enables a non-modal provisional preview
+  for prompt generation, with bounded worker buffering, cancellation and stale
+  editor checks; the final draft still requires explicit insertion. Offline
+  tests cover incremental updates, cancellation, stale edits, undo and the
+  output limit. Blocking reads remain subject to the configured network
+  timeout; native accessibility review and compiled Ukrainian strings remain
+  outstanding. Do not mark complete until those checks are performed. Full
+  offline suite: 500 passed, 2 skipped; the additional final-review rejection
+  case passed in the focused streaming tests.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

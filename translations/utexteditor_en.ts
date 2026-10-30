@@ -40,4 +40,15 @@
             </translation>
         </message>
     </context>
+<context>
+    <name>SettingsDialog</name>
+    <message><source>Show streaming preview for generated text</source><translation>Show streaming preview for generated text</translation></message>
+</context>
+<context>
+    <name>StreamingPreviewDialog</name>
+    <message><source>Generating text</source><translation>Generating text</translation></message>
+    <message><source>This preview is provisional. Review the finished draft before inserting it.</source><translation>This preview is provisional. Review the finished draft before inserting it.</translation></message>
+    <message><source>Provisional generated text</source><translation>Provisional generated text</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+</context>
 </TS>

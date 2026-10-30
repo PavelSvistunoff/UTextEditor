@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QVBoxLayout,
 )
+from PySide6.QtGui import QTextCursor
 
 
 class GeneratedTextDialog(QDialog):
@@ -41,3 +42,29 @@ class GeneratedTextDialog(QDialog):
         layout.addWidget(instructions)
         layout.addWidget(self.output)
         layout.addWidget(buttons)
+
+
+class StreamingPreviewDialog(QDialog):
+    """Display provisional output without modifying the document."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(self.tr("Generating text"))
+        self.resize(680, 520)
+        label = QLabel(self.tr("This preview is provisional. Review the finished draft before inserting it."))
+        label.setWordWrap(True)
+        self.output = QPlainTextEdit(self)
+        self.output.setReadOnly(True)
+        self.output.setAccessibleName(self.tr("Provisional generated text"))
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel, self)
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
+        buttons.rejected.connect(self.reject)
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+        layout.addWidget(self.output)
+        layout.addWidget(buttons)
+
+    def append_text(self, text: str) -> None:
+        cursor = self.output.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(text)

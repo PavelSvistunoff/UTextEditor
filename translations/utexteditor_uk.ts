@@ -1998,4 +1998,15 @@
     <message><source>Scene drafts</source><translation>Чернетки сцен</translation></message>
     <message><source>Draft preview</source><translation>Перегляд чернетки</translation></message>
 </context>
+<context>
+    <name>SettingsDialog</name>
+    <message><source>Show streaming preview for generated text</source><translation>Показувати поступовий перегляд згенерованого тексту</translation></message>
+</context>
+<context>
+    <name>StreamingPreviewDialog</name>
+    <message><source>Generating text</source><translation>Генерування тексту</translation></message>
+    <message><source>This preview is provisional. Review the finished draft before inserting it.</source><translation>Цей перегляд попередній. Перегляньте готову чернетку перед вставленням.</translation></message>
+    <message><source>Provisional generated text</source><translation>Попередній згенерований текст</translation></message>
+    <message><source>Cancel</source><translation>Скасувати</translation></message>
+</context>
 </TS>

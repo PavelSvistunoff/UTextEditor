@@ -17,6 +17,8 @@ from app.ui.main_window import MainWindow
 from app.ui.character_dialog import CharacterDialog
 from app.ui.project_brief_dialog import ProjectBriefDialog
 from app.ui.settings_dialog import SettingsDialog
+from app.ui.generated_text_dialog import StreamingPreviewDialog
+from app.ui.workers import StreamingWorker
 
 
 @pytest.fixture
@@ -741,6 +743,55 @@ def test_generation_worker_requires_review(window, monkeypatch, decision, expect
     if decision == QDialog.DialogCode.Accepted:
         editor.undo()
         assert editor.toPlainText() == "Start"
+
+
+@pytest.mark.parametrize("outcome", ["accept", "reject", "cancel", "stale"])
+def test_streaming_preview_is_provisional_and_respects_cancellation(window, monkeypatch, outcome):
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Start")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    window.settings.streaming_preview = True
+    started, release = Event(), Event()
+
+    def stream(_prompt, *, on_chunk, is_cancelled, **_kwargs):
+        on_chunk(" generated")
+        started.set()
+        assert release.wait(3)
+        return "" if is_cancelled() else " generated"
+
+    monkeypatch.setattr(window.provider, "generate_stream", stream)
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", lambda *_args: ("write", True))
+    monkeypatch.setattr("app.ui.main_window.GeneratedTextDialog.exec", lambda _dialog: (
+        QDialog.DialogCode.Rejected if outcome == "reject" else QDialog.DialogCode.Accepted
+    ))
+    try:
+        window.generate_from_prompt()
+        wait_until(started.is_set)
+        preview = window.findChild(StreamingPreviewDialog)
+        wait_until(lambda: preview.output.toPlainText() == " generated")
+        assert editor.toPlainText() == "Start"
+        if outcome == "cancel":
+            preview.reject()
+        elif outcome == "stale":
+            editor.insertPlainText("!")
+            wait_until(lambda: window._generate_worker.cancelled)
+        release.set()
+        wait_until(lambda: window._generate_worker is None)
+        assert editor.toPlainText() == {"accept": "Start generated", "reject": "Start", "cancel": "Start", "stale": "Start!"}[outcome]
+        if outcome == "accept":
+            editor.undo()
+            assert editor.toPlainText() == "Start"
+    finally:
+        release.set()
+
+
+def test_streaming_worker_bounds_total_output_even_after_draining():
+    worker = StreamingWorker(lambda *_args, **_kwargs: "")
+    worker._append("a" * worker.MAX_OUTPUT_CHARS)
+    assert len(worker.take_chunks()) == worker.MAX_OUTPUT_CHARS
+    with pytest.raises(ValueError, match="preview limit"):
+        worker._append("b")
 
 
 def test_project_analysis_cancel_action_works_in_ukrainian(app, tmp_path, monkeypatch):
