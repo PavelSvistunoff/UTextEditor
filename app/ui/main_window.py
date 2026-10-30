@@ -5782,7 +5782,8 @@ class MainWindow(QMainWindow):
         self.ai_status = "AI: Generating..."
         self._update_status()
         binding = self._project_documents.get(editor)
-        project = self.project if binding and binding.project is self.project and binding.kind == "scene" else None
+        project = self.project if (binding and binding.project is self.project and binding.kind == "scene"
+                                   and (not automatic or self.settings.automatic_project_context)) else None
         note_editors = {
             item.item_id: (tab, tab.revision)
             for tab, item in self._project_documents.items()

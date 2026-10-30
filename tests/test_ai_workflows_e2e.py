@@ -52,6 +52,30 @@ def wait_until(predicate):
     assert predicate(), "Timed out waiting for AI workflow"
 
 
+def test_automatic_project_context_can_be_disabled_without_changing_manual_requests(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "context-project", "Novel")
+    scene = project.add_scene("Scene", content="The draft")
+    project.add_note("Secret", content="private reference note")
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    editor = window.tabs.current_editor()
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    window.settings.automatic_project_context = False
+    calls = []
+    monkeypatch.setattr(window.provider, "complete", lambda context, language, **options: calls.append(context) or "")
+    window.request_completion(automatic=True)
+    wait_until(lambda: len(calls) == 1)
+    assert calls[0] == "The draft"
+    wait_until(lambda: window._completion_worker is None)
+    window.request_completion()
+    wait_until(lambda: len(calls) == 2)
+    assert "private reference note" in calls[1]
+    assert "The draft" in calls[1]
+    wait_until(lambda: window._completion_worker is None)
+
+
 @pytest.mark.parametrize("operation", ["completion", "spellcheck"])
 def test_first_context_request_requires_remote_disclosure_and_consent(window, monkeypatch, operation):
     editor = window.tabs.current_editor()

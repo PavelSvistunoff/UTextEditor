@@ -1653,6 +1653,7 @@
 </context>
 <context>
     <name>SettingsDialog</name>
+    <message><source>Include project context in automatic completions</source><translation>Додавати контекст проєкту до автоматичних продовжень</translation></message>
     <message>
         <location filename="../app/ui/settings_dialog.py" line="35"/>
         <source>AI Settings</source>

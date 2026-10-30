@@ -141,6 +141,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   Compiled Ukrainian strings and native small-window/keyboard verification
   remain outstanding; large match sets may also need performance work. Do not
   mark complete until verified. Full offline suite: 469 passed, 2 skipped.
+- **TASK-022 — in progress:** AI Settings now offers a persisted option to
+  exclude project characters and reference notes from automatic completions;
+  explicit completions retain existing project context. Offline worker tests
+  cover both modes and settings validation. Captured-request context preview,
+  per-note exclusions, corresponding stale checks and compiled Ukrainian
+  translation remain outstanding. Do not mark complete. Full offline suite:
+  472 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

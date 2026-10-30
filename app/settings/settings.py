@@ -21,6 +21,7 @@ class AppSettings:
     completion_template: str = DEFAULT_COMPLETION_TEMPLATE
     ai_enabled: bool = True
     completion_enabled: bool = True
+    automatic_project_context: bool = True
     completion_debounce_ms: int = 500
     maximum_suggestion_length: int = 100
     temperature: float = 0.2
@@ -160,6 +161,7 @@ class AppSettings:
         self.recent_files = recent_files
         self.ai_enabled = self._bool(self.ai_enabled, defaults.ai_enabled)
         self.completion_enabled = self._bool(self.completion_enabled, defaults.completion_enabled)
+        self.automatic_project_context = self._bool(self.automatic_project_context, defaults.automatic_project_context)
         self.spellcheck_enabled = self._bool(self.spellcheck_enabled, defaults.spellcheck_enabled)
         self.automatic_spellcheck = self._bool(self.automatic_spellcheck, defaults.automatic_spellcheck)
         self.completion_debounce_ms = self._bounded_int(self.completion_debounce_ms, 100, 5000, defaults.completion_debounce_ms)

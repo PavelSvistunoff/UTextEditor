@@ -534,6 +534,14 @@ def test_settings_dialog_groups_preferences_and_checks_connection(application: Q
     dialog.close()
 
 
+def test_settings_dialog_saves_automatic_project_context_choice(application: QApplication) -> None:
+    settings = AppSettings()
+    dialog = SettingsDialog(settings)
+    dialog.automatic_project_context.setChecked(False)
+    dialog.accept()
+    assert settings.automatic_project_context is False
+
+
 def test_text_formatting_actions_transform_selected_text_undoably(
     application: QApplication,
 ) -> None:

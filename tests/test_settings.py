@@ -130,6 +130,13 @@ def test_recent_files_are_separate_bounded_and_persisted(tmp_path):
     assert len(AppSettings(recent_files=[str(tmp_path / str(i)) for i in range(12)]).validated().recent_files) == 10
 
 
+def test_automatic_project_context_setting_round_trips_and_validates(tmp_path):
+    path = tmp_path / "settings.yaml"
+    AppSettings(automatic_project_context=False).save(path)
+    assert not AppSettings.load(path).automatic_project_context
+    assert AppSettings(automatic_project_context="invalid").validated().automatic_project_context is True
+
+
 def test_settings_ignore_legacy_theme_override(tmp_path) -> None:
     path = tmp_path / "settings.yaml"
     path.write_text("theme: Dark\n", encoding="utf-8")
