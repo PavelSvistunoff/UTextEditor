@@ -808,6 +808,37 @@ def test_markdown_preview_tracks_active_unsaved_tab(window):
     assert second.toPlainText() == "**Second draft**"
 
 
+def test_navigation_history_preserves_unsaved_buffers_and_skips_stale_locations(window, tmp_path):
+    project = Project.create(tmp_path / "navigation", "Novel")
+    first = project.add_scene("First", content="first")
+    second = project.add_scene("Second", content="second")
+    window._project_opened(project)
+    window.settings.autosave_enabled = False
+    window._open_project_document("scene", first.id)
+    wait_until(lambda: window.tabs.current_editor().document_state.path is not None)
+    editor_a = window.tabs.current_editor()
+    editor_a.moveCursor(QTextCursor.MoveOperation.End)
+    editor_a.insertPlainText(" unsaved")
+    window._open_project_document("scene", second.id)
+    wait_until(lambda: window.tabs.current_editor() is not editor_a)
+    editor_b = window.tabs.current_editor()
+    window._navigate_history(-1)
+    assert window.tabs.current_editor() is editor_a
+    assert editor_a.textCursor().position() == len("first unsaved")
+    window._navigate_history(1)
+    assert window.tabs.current_editor() is editor_b
+    before = len(window._navigation_history.points)
+    editor_b.insertPlainText("!")
+    assert len(window._navigation_history.points) == before
+    window._navigate_history(-1)
+    assert window.tabs.current_editor() is editor_a
+    assert editor_a.toPlainText() == "first unsaved"
+    window._navigate_history(1)
+    # The destination changed after it was recorded, so it is not restored.
+    assert window.tabs.current_editor() is editor_a
+    assert editor_b.toPlainText().endswith("second")
+
+
 def test_project_analysis_cancel_action_works_in_ukrainian(app, tmp_path, monkeypatch):
     settings_path = tmp_path / "uk.yaml"
     monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: settings_path))

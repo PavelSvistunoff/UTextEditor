@@ -132,6 +132,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   review and compilation of Ukrainian source strings remain outstanding.
   Do not mark complete until manual review is performed. Full offline suite:
   464 passed, 2 skipped.
+- **TASK-019 — in progress:** session-local Back and Forward actions now
+  record explicit scene, note and project-search jumps in a bounded history.
+  They restore positions in still-open, unchanged tabs and skip stale or
+  removed destinations; tests cover branching, limits and unsaved buffers.
+  Reopening closed destinations, broader search/navigation coverage, compiled
+  translations and native keyboard verification remain outstanding. Do not
+  mark complete. Full offline suite: 535 passed, 2 skipped.
 - **TASK-020 — in progress:** Find and Replace now offer case and whole-word
   controls while retaining case-sensitive literal defaults. Navigation,
   counts and replacement use the same Qt matching rules, replace-all remains a

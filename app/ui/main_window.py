@@ -9,6 +9,7 @@ from pathlib import Path
 from threading import Event
 from uuid import uuid4
 import weakref
+from shiboken6 import isValid
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence, QTextCursor
@@ -86,6 +87,7 @@ from .ai_activity import AIActivityPanel
 from .generated_text_dialog import GeneratedTextDialog, StreamingPreviewDialog
 from .markdown_preview import MarkdownPreview
 from .pdf_options_dialog import PdfOptionsDialog
+from .navigation_history import NavigationHistory, NavigationPoint
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
@@ -258,6 +260,7 @@ class MainWindow(QMainWindow):
         self._project_search_query = ""
         self._markdown_preview = None
         self._markdown_dock = None
+        self._navigation_history = NavigationHistory()
         self._connected = False
         self._ai_disclosure = None
         self._ai_disclosure_declined_host = None
@@ -578,6 +581,12 @@ class MainWindow(QMainWindow):
         markdown_action = QAction(self.tr("Markdown Preview"), self)
         markdown_action.triggered.connect(self.show_markdown_preview)
         view_menu.addAction(markdown_action)
+        back_action = QAction(self.tr("Navigation Back"), self)
+        back_action.triggered.connect(lambda: self._navigate_history(-1))
+        view_menu.addAction(back_action)
+        forward_action = QAction(self.tr("Navigation Forward"), self)
+        forward_action.triggered.connect(lambda: self._navigate_history(1))
+        view_menu.addAction(forward_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
@@ -4372,6 +4381,7 @@ class MainWindow(QMainWindow):
             # uncaught exception on the GUI thread.
             self._project_item_no_longer_exists()
             return
+        self._record_navigation()
         path = (project.root / item.path).resolve()
         for index in range(self.tabs.count()):
             editor = self.tabs.widget(index)
@@ -4385,6 +4395,7 @@ class MainWindow(QMainWindow):
                     and binding.kind == kind
                     and binding.item_id == item_id
                 ):
+                    self._record_navigation()
                     return
                 read = project.read_scene if kind == "scene" else project.read_note
                 worker = FunctionWorker(read, item_id)
@@ -4452,12 +4463,15 @@ class MainWindow(QMainWindow):
             self.tabs.setCurrentIndex(index)
             if editor not in self._project_documents:
                 self._bind_existing_project_document(project, editor, kind, item_id, raw)
+            else:
+                self._record_navigation()
             return
         normalized = raw.replace("\r\n", "\n").replace("\r", "\n")
         document = Document.from_text(normalized, path)
         document.line_ending = detect_line_ending(raw)
         editor = self.tabs.add_document(document)
         self._project_documents[editor] = _ProjectDocumentBinding(project, kind, item_id, raw)
+        self._record_navigation()
         self._attach_writing_goal_document(editor)
         self._project_refresh_timer.start(150)
         self._schedule_project_autosave(editor)
@@ -4489,6 +4503,8 @@ class MainWindow(QMainWindow):
                 )
                 return
             self._project_documents[editor] = _ProjectDocumentBinding(project, kind, item_id, raw)
+            if editor is self.tabs.current_editor():
+                self._record_navigation()
             self._attach_writing_goal_document(editor)
             self._project_refresh_timer.start(150)
             self._schedule_project_autosave(editor)
@@ -5078,9 +5094,48 @@ class MainWindow(QMainWindow):
             cursor.setPosition(python_index_to_qt_position(text, match.offset + len(query)), QTextCursor.MoveMode.KeepAnchor)
             editor.setTextCursor(cursor)
             self.tabs.setCurrentWidget(editor)
+            self._record_navigation()
             editor.setFocus()
 
         locate()
+
+    def _record_navigation(self) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None:
+            return
+        cursor = editor.textCursor()
+        binding = self._project_documents.get(editor)
+        self._navigation_history.record(NavigationPoint(
+            weakref.ref(editor), editor.revision, cursor.position(), cursor.anchor(),
+            binding.project if binding else None, binding.kind if binding else None,
+            binding.item_id if binding else None,
+        ))
+
+    def _navigate_history(self, direction: int) -> None:
+        def restore(point):
+            editor = point.editor()
+            if editor is None or not isValid(editor) or self.tabs.indexOf(editor) < 0 or editor.revision != point.revision:
+                return False
+            if point.project is not None:
+                binding = self._project_documents.get(editor)
+                if (point.project is not self.project or binding is None
+                        or binding.project is not point.project or binding.kind != point.kind
+                        or binding.item_id != point.item_id):
+                    return False
+                try:
+                    (self.project.get_scene if point.kind == "scene" else self.project.get_note)(point.item_id)
+                except ProjectError:
+                    return False
+            cursor = editor.textCursor()
+            cursor.setPosition(point.anchor)
+            cursor.setPosition(point.position, QTextCursor.MoveMode.KeepAnchor)
+            self.tabs.setCurrentWidget(editor)
+            editor.setTextCursor(cursor)
+            editor.setFocus()
+            return True
+
+        if not self._navigation_history.move(direction, restore):
+            self.statusBar().showMessage(self.tr("No available navigation history."), 4000)
 
     def accept_completion(self) -> None:
         editor = self.tabs.current_editor()

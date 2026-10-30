@@ -2031,4 +2031,10 @@
     <message><source>OK</source><translation>Гаразд</translation></message>
     <message><source>Cancel</source><translation>Скасувати</translation></message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Navigation Back</source><translation>Назад у навігації</translation></message>
+    <message><source>Navigation Forward</source><translation>Уперед у навігації</translation></message>
+    <message><source>No available navigation history.</source><translation>Немає доступних записів історії навігації.</translation></message>
+</context>
 </TS>

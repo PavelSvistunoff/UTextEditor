@@ -73,4 +73,10 @@
     <message><source>OK</source><translation>OK</translation></message>
     <message><source>Cancel</source><translation>Cancel</translation></message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Navigation Back</source><translation>Navigation Back</translation></message>
+    <message><source>Navigation Forward</source><translation>Navigation Forward</translation></message>
+    <message><source>No available navigation history.</source><translation>No available navigation history.</translation></message>
+</context>
 </TS>
