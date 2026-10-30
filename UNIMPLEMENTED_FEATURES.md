@@ -202,13 +202,13 @@ accepted; cancellation and stale-result checks would still apply.
    scene association boundaries and do not expose other characters implicitly.
    This complements the first-use disclosure gap above; it adds UI complexity
    and must avoid interrupting every keystroke.
-2. **Resolve external file conflicts in the editor** (medium/high effort).
-   Saves already detect changed project files and leave buffers dirty. Add a
-   review flow showing the saved base, current disk version, and open buffer,
-   with explicit reload, save elsewhere, or reviewed merge choices. Acceptance:
-   cancellation preserves all versions, the disk is rechecked before writing,
-   and no conflict is overwritten silently. A three-way merge needs careful
-   testing for concurrent changes and unsaved tabs.
+2. **Complete external file conflict protection** (medium/high effort).
+   The review flow shows the saved base, current disk version, and open buffer,
+   with reload, save elsewhere, or a reviewed merge. The disk is checked again
+   after review and before replacement, but an independent process can still
+   change it between the final check and replacement. A supported coordination
+   guarantee and cross-platform verification remain necessary before claiming
+   that conflicts cannot be overwritten silently.
 3. **Make revision snapshots actionable** (high effort). Build on existing
    snapshots and comparisons with previewed, selective restore and confirmed
    deletion, followed by optional scheduling and retention settings. Acceptance:

@@ -1262,6 +1262,27 @@
         <source>Could not connect or find “%1”. Check Ollama is running and run `ollama pull %1` if needed.</source>
         <translation type="vanished">Не вдалося з’єднатися або знайти модель «%1». Перевірте, чи запущено Ollama, і за потреби виконайте `ollama pull %1`.</translation>
     </message>
+    <message><source>Review External Changes…</source><translation>Переглянути зовнішні зміни…</translation></message>
+    <message><source>Review External Changes</source><translation>Перегляд зовнішніх змін</translation></message>
+    <message><source>Open a saved document before reviewing disk changes.</source><translation>Відкрийте збережений документ, перш ніж переглядати зміни на диску.</translation></message>
+    <message><source>Save file</source><translation>Зберегти файл</translation></message>
+    <message><source>Resolve the conflict markers before staging the merge.</source><translation>Усуньте позначки конфліктів перед застосуванням злиття.</translation></message>
+    <message><source>The disk version changed during review. Please review it again.</source><translation>Версія на диску змінилася під час перегляду. Перегляньте її знову.</translation></message>
+    <message><source>Version staged in the editor. Save to write it to disk.</source><translation>Версію підготовлено в редакторі. Збережіть документ, щоб записати її на диск.</translation></message>
+    <message><source>Use File &gt; Review External Changes… to compare versions and choose how to proceed.</source><translation>Виберіть «Файл &gt; Переглянути зовнішні зміни…», щоб порівняти версії та вибрати подальшу дію.</translation></message>
+</context>
+<context>
+    <name>ConflictDialog</name>
+    <message><source>Review External Changes</source><translation>Перегляд зовнішніх змін</translation></message>
+    <message><source>Review the versions and resolve any conflict markers before staging a merge. Nothing is saved until you save the document.</source><translation>Перегляньте версії та усуньте позначки конфліктів перед застосуванням злиття. Нічого не буде записано, доки ви не збережете документ.</translation></message>
+    <message><source>Saved base</source><translation>Збережена основа</translation></message>
+    <message><source>Disk version</source><translation>Версія на диску</translation></message>
+    <message><source>Open buffer</source><translation>Відкритий буфер</translation></message>
+    <message><source>Proposed merge</source><translation>Запропоноване злиття</translation></message>
+    <message><source>Conflicting changes are marked in the proposed merge.</source><translation>Суперечливі зміни позначено в запропонованому злитті.</translation></message>
+    <message><source>Stage Merge</source><translation>Застосувати злиття</translation></message>
+    <message><source>Reload Disk Version</source><translation>Перезавантажити версію з диска</translation></message>
+    <message><source>Save Elsewhere…</source><translation>Зберегти в іншому місці…</translation></message>
 </context>
 <context>
     <name>ProjectBriefDialog</name>

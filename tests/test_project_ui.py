@@ -118,6 +118,170 @@ def test_save_as_tracks_new_destination_for_later_conflicts(application, tmp_pat
     window.close()
 
 
+@pytest.mark.parametrize("kind", ["standalone", "scene"])
+def test_conflict_review_stages_merge_and_rechecks_disk_on_save(application, tmp_path, monkeypatch, kind):
+    from PySide6.QtWidgets import QDialog
+    if kind == "scene":
+        project = Project.create(tmp_path / "novel", "Novel")
+        scene = project.add_scene("Scene", content="one\ntwo\nthree\n")
+        path = project.root / scene.path
+    else:
+        path = tmp_path / "draft.txt"
+        path.write_text("one\ntwo\nthree\n", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    if kind == "scene":
+        window._project_opened(project)
+        window._open_project_document("scene", scene.id)
+        wait_until(lambda: window.tabs.count() == 2, application)
+    else:
+        window._opened_document(FileManager().open(path))
+    editor = window.tabs.current_editor()
+    editor.setPlainText("ONE\ntwo\nthree\n")
+    path.write_text("one\ntwo\nTHREE\n", encoding="utf-8")
+    shown = []
+
+    class Review:
+        def __init__(self, base, disk, buffer, proposal, conflicts, parent):
+            assert (base, disk, buffer, conflicts) == ("one\ntwo\nthree\n", "one\ntwo\nTHREE\n", "ONE\ntwo\nthree\n", 0)
+            self.choice = "merge"
+            self.merge = type("Merge", (), {"toPlainText": lambda self: proposal})()
+            shown.append(True)
+
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.ConflictDialog", Review)
+    window.review_external_changes()
+    wait_until(lambda: editor.toPlainText() == "ONE\ntwo\nTHREE\n", application)
+    assert shown and editor.document_state.dirty
+    assert path.read_text(encoding="utf-8") == "one\ntwo\nTHREE\n"
+    path.write_text("another external change", encoding="utf-8")
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    result = []
+    window._save_editor(editor, callback=result.append)
+    wait_until(lambda: result, application)
+    assert result == [False]
+    assert path.read_text(encoding="utf-8") == "another external change"
+    assert editor.toPlainText() == "ONE\ntwo\nTHREE\n"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_conflict_review_rejects_disk_change_during_review(application, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QDialog
+    path = tmp_path / "draft.txt"
+    path.write_text("base", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._opened_document(FileManager().open(path))
+    editor = window.tabs.current_editor()
+    editor.setPlainText("buffer")
+    path.write_text("disk", encoding="utf-8")
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+
+    class Review:
+        def __init__(self, *args):
+            self.choice = "reload"
+        def exec(self):
+            path.write_text("changed again", encoding="utf-8")
+            return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.ConflictDialog", Review)
+    window.review_external_changes()
+    wait_until(lambda: warnings, application)
+    assert editor.toPlainText() == "buffer" and editor.document_state.dirty
+    assert path.read_text(encoding="utf-8") == "changed again"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("choice", ["cancel", "reload", "stale"])
+def test_conflict_review_cancel_reload_and_stale_buffer(application, tmp_path, monkeypatch, choice):
+    from PySide6.QtWidgets import QDialog
+    path = tmp_path / "draft.txt"
+    path.write_text("base", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._opened_document(FileManager().open(path))
+    editor = window.tabs.current_editor()
+    editor.setPlainText("buffer")
+    path.write_text("disk", encoding="utf-8")
+    shown = []
+
+    class Review:
+        def __init__(self, *args):
+            self.choice = "reload"
+        def exec(self):
+            shown.append(True)
+            if choice == "stale":
+                editor.setPlainText("newer buffer")
+            return QDialog.DialogCode.Rejected if choice == "cancel" else QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.ConflictDialog", Review)
+    window.review_external_changes()
+    wait_until(lambda: shown, application)
+    if choice == "reload":
+        wait_until(lambda: editor.toPlainText() == "disk", application)
+        assert not editor.document_state.dirty
+        editor.undo()
+        assert editor.toPlainText() == "buffer" and editor.document_state.dirty
+    else:
+        assert editor.toPlainText() == ("newer buffer" if choice == "stale" else "buffer")
+        assert editor.document_state.dirty
+    assert path.read_text(encoding="utf-8") == "disk"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_conflict_dialog_displays_versions_and_proposal(application):
+    from app.ui.conflict_dialog import ConflictDialog
+    dialog = ConflictDialog("base", "disk", "buffer", "proposal", 1)
+    assert [dialog.tabs.widget(i).toPlainText() for i in range(4)] == ["base", "disk", "buffer", "proposal"]
+    assert all(dialog.tabs.widget(i).isReadOnly() for i in range(3))
+    assert not dialog.merge.isReadOnly()
+    dialog.close()
+
+
+@pytest.mark.parametrize("choice", ["elsewhere", "markers"])
+def test_conflict_review_save_elsewhere_or_reject_unresolved_markers(application, tmp_path, monkeypatch, choice):
+    from PySide6.QtWidgets import QDialog
+    path = tmp_path / "draft.txt"
+    copy = tmp_path / "copy.txt"
+    path.write_text("base", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._opened_document(FileManager().open(path))
+    editor = window.tabs.current_editor()
+    editor.setPlainText("buffer")
+    path.write_text("disk", encoding="utf-8")
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args: (str(copy), ""))
+
+    class Review:
+        def __init__(self, base, disk, buffer, proposal, conflicts, parent):
+            self.choice = "elsewhere" if choice == "elsewhere" else "merge"
+            self.merge = type("Merge", (), {"toPlainText": lambda self: proposal})()
+            assert conflicts == 1
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.ConflictDialog", Review)
+    window.review_external_changes()
+    if choice == "elsewhere":
+        wait_until(copy.exists, application)
+        wait_until(lambda: not editor.document_state.dirty, application)
+        assert copy.read_text(encoding="utf-8") == "buffer"
+    else:
+        wait_until(lambda: warnings, application)
+        assert editor.toPlainText() == "buffer" and editor.document_state.dirty
+    assert path.read_text(encoding="utf-8") == "disk"
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")

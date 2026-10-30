@@ -43,7 +43,8 @@ from app.document.book_compiler import compile_book_pdf
 from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, qt_position_to_python_index
 from app.document.export import ExportChapter, ExportScene, export_manuscript
-from app.document.file_manager import FileManager
+from app.document.file_manager import ExternalChangeError, FileManager
+from app.document.merge import merge_text
 from app.document.recovery import RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, WordCount, count_words
 from app.project.autopilot import (
@@ -86,6 +87,7 @@ from .project_view import ProjectView
 from .portrait import load_portrait
 from .character_dialog import CharacterDialog
 from .character_relationship_dialog import CharacterRelationshipDialog
+from .conflict_dialog import ConflictDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -498,6 +500,9 @@ class MainWindow(QMainWindow):
         quit_action = next(action for action in file_menu.actions() if action.text() == action_text["Quit"])
         before_quit = file_menu.actions()[file_menu.actions().index(quit_action) - 1]
         file_menu.insertAction(before_quit, recovery_action)
+        conflict_action = QAction(self.tr("Review External Changes…"), self)
+        conflict_action.triggered.connect(self.review_external_changes)
+        file_menu.insertAction(recovery_action, conflict_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
@@ -4434,6 +4439,95 @@ class MainWindow(QMainWindow):
             return
         self._save_editor(editor)
 
+    @staticmethod
+    def _read_conflict_version(path: Path, base: str, buffer: str, project_file: bool):
+        raw = path.read_bytes()
+        text = raw.decode("utf-8" if project_file else "utf-8-sig")
+        if "\x00" in text:
+            raise ValueError("The disk version contains binary data.")
+        normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        return text, normalized, hashlib.sha256(raw).hexdigest(), merge_text(base, buffer, normalized)
+
+    def review_external_changes(self) -> None:
+        editor = self.tabs.current_editor()
+        if editor is None or editor.document_state.path is None or editor in self._saving_editors:
+            QMessageBox.information(self, self.tr("Review External Changes"), self.tr("Open a saved document before reviewing disk changes."))
+            return
+        document = editor.document_state
+        path = document.path
+        base = document._saved_text
+        buffer = editor.toPlainText()
+        revision = editor.revision
+        binding = self._project_documents.get(editor)
+        expected = binding.expected_text if binding else document.disk_digest
+        project_generation = self._project_generation
+
+        def current():
+            return (self.tabs.indexOf(editor) >= 0 and editor.document_state is document
+                    and document.path == path and document._saved_text == base
+                    and editor.revision == revision and editor.toPlainText() == buffer
+                    and editor not in self._saving_editors
+                    and self._project_documents.get(editor) is binding
+                    and (binding.expected_text if binding else document.disk_digest) == expected
+                    and self._project_generation == project_generation)
+
+        def failed(error):
+            if current():
+                QMessageBox.warning(self, self.tr("Review External Changes"), str(error))
+
+        def read_done(version):
+            if not current():
+                return
+            disk_raw, disk_text, digest, proposal = version
+            dialog = ConflictDialog(base, disk_text, buffer, proposal.text, proposal.conflicts, self)
+            if dialog.exec() != QDialog.DialogCode.Accepted or not current():
+                return
+            if dialog.choice == "elsewhere":
+                target, _ = QFileDialog.getSaveFileName(self, self.tr("Save file"))
+                if target and current():
+                    self._save_editor(editor, target=Path(target))
+                return
+            chosen = disk_text if dialog.choice == "reload" else dialog.merge.toPlainText()
+            if dialog.choice == "merge" and proposal.conflicts and any(marker in chosen for marker in ("<<<<<<< OPEN BUFFER", "=======", ">>>>>>> DISK")):
+                QMessageBox.warning(self, self.tr("Review External Changes"), self.tr("Resolve the conflict markers before staging the merge."))
+                return
+            # Re-read asynchronously after the review; do not stage against a
+            # disk snapshot that changed while the dialog was open.
+            worker = FunctionWorker(lambda: hashlib.sha256(path.read_bytes()).hexdigest())
+            self._track_worker(worker)
+
+            def verified(new_digest):
+                if not current():
+                    return
+                if new_digest != digest:
+                    QMessageBox.warning(self, self.tr("Review External Changes"), self.tr("The disk version changed during review. Please review it again."))
+                    return
+                if binding:
+                    binding.expected_text = disk_raw
+                document.disk_digest = digest
+                document.line_ending = detect_line_ending(disk_raw)
+                document.mark_saved(disk_text)
+                cursor = editor.textCursor()
+                cursor.beginEditBlock()
+                cursor.select(QTextCursor.SelectionType.Document)
+                cursor.insertText(chosen)
+                cursor.endEditBlock()
+                self.tabs._update_tab_title(editor)
+                timer = self._autosave_timers.get(editor)
+                if timer is not None:
+                    timer.stop()
+                self.statusBar().showMessage(self.tr("Version staged in the editor. Save to write it to disk."), 8000)
+
+            worker.signals.finished.connect(verified, Qt.ConnectionType.QueuedConnection)
+            worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+            self.thread_pool.start(worker)
+
+        worker = FunctionWorker(self._read_conflict_version, path, base, buffer, binding is not None)
+        self._track_worker(worker)
+        worker.signals.finished.connect(read_done, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
+
     def _save_editor(
         self,
         editor,
@@ -4569,7 +4663,10 @@ class MainWindow(QMainWindow):
         self._saving_editors.discard(editor)
         if self.tabs.indexOf(editor) >= 0:
             if notify:
-                QMessageBox.warning(self, "Save failed", str(error))
+                message = str(error)
+                if isinstance(error, ExternalChangeError) or (isinstance(error, ProjectError) and "changed on disk" in message):
+                    message += "\n\n" + self.tr("Use File > Review External Changes… to compare versions and choose how to proceed.")
+                QMessageBox.warning(self, "Save failed", message)
             else:
                 self.statusBar().showMessage(f"Autosave failed: {error}", 10000)
         if callback:

@@ -60,15 +60,17 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 - **TASK-007 — in progress:** fixed the standalone save callback to retain the
   newly written disk fingerprint, including after Save As. A Qt regression
   test exercises two saves followed by an external edit and verifies that the
-  conflict preserves the buffer and disk. The requested comparison, reload,
-  save-elsewhere, and reviewed merge workflow is not yet implemented. The
-  existing final-check-to-replace race remains documented; do not mark this
-  task complete until the supported conflict guarantee and review flow are
-  verified. A pure, conservative line-based three-way merge proposal service
-  now combines separated changes and marks overlapping alternatives, with a
-  size limit that falls back to a full conflict. It is not yet connected to
-  the UI and never writes files. Next: build the review flow, including
-  project-bound files, stale-context checks, and explicit application.
+  conflict preserves the buffer and disk. File > Review External Changes now
+  presents saved, disk, and buffer versions alongside an editable conservative
+  merge proposal for standalone and project files. Reload and merge are
+  undoable, Save Elsewhere uses the existing save flow, and the disk is
+  rechecked after review and on save. Tests cover cancellation, stale buffers
+  and disk, unresolved markers, reload, Save Elsewhere, and project and
+  standalone files. The Ukrainian source catalog has been updated; its
+  compiled catalog remains to be rebuilt through the project's release
+  process. The residual cross-process race means the no-silent-overwrite
+  acceptance criterion is not yet fully met; do not mark this task complete.
+  Full offline suite: 444 passed, 2 skipped.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report
