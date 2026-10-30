@@ -1267,6 +1267,9 @@
     <message><source>This item has no links.</source><translation>Цей елемент не має зв’язків.</translation></message>
     <message><source>Quick Open…</source><translation>Швидке відкриття…</translation></message>
     <message><source>Open Tabs…</source><translation>Відкриті вкладки…</translation></message>
+    <message><source>Open Recent File</source><translation>Відкрити нещодавній файл</translation></message>
+    <message><source>No Recent Files</source><translation>Немає нещодавніх файлів</translation></message>
+    <message><source>Clear Recent Files</source><translation>Очистити список нещодавніх файлів</translation></message>
     <message><source>Open Tabs</source><translation>Відкриті вкладки</translation></message>
     <message><source>Untitled</source><translation>Без назви</translation></message>
     <message><source>Search open tabs</source><translation>Пошук відкритих вкладок</translation></message>

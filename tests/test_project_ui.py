@@ -542,6 +542,39 @@ def test_open_tabs_picker_shows_modified_and_distinguishes_untitled_tabs(applica
     window.close()
 
 
+def test_recent_files_reopen_deduplicate_report_missing_and_clear(application, tmp_path, monkeypatch):
+    first = tmp_path / "first.txt"
+    second = tmp_path / "second.txt"
+    first.write_text("first", encoding="utf-8")
+    second.write_text("second", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._open_document_path(str(first))
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved")
+    window._open_document_path(str(second))
+    wait_until(lambda: window.tabs.count() == 3, application)
+    assert window.settings.recent_files == [str(second), str(first)]
+    window._populate_recent_files_menu()
+    next(action for action in window._recent_files_menu.actions() if action.data() == str(first)).trigger()
+    assert window.tabs.count() == 3 and window.tabs.current_editor() is editor
+    assert editor.toPlainText() == "unsaved" and editor.document_state.dirty
+    assert window.settings.recent_files == [str(first), str(second)]
+    window.close_tab(2)
+    second.unlink()
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    window._open_document_path(str(second))
+    wait_until(lambda: warnings, application)
+    assert window.tabs.count() == 2 and editor.toPlainText() == "unsaved"
+    window._clear_recent_files()
+    assert window.settings.recent_files == []
+    assert AppSettings.load().recent_files == []
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")

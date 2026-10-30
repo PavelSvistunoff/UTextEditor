@@ -20,6 +20,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 
 - Native PySide6 desktop window with File, Edit, Search, View, Project, Writing, AI, and Settings menus. Project and AI actions are grouped by workflow; recovery is available in File.
 - New, open, save, and Save As for UTF-8 text files; unsaved-change prompts on close.
+- File > Open Recent File lists up to ten recently opened or saved standalone files. It stores paths only, reuses open tabs, reports missing files, and can clear the list independently of recent projects.
 - File reads and writes run in background workers; saves replace files atomically where supported.
 - File > Review External Changes compares the saved base, disk version, and open buffer. It offers an editable merge proposal, reload, or Save Elsewhere. Staging a merge does not itself save it; the disk is checked again before staging and on the next save.
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.
@@ -70,7 +71,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Writing-goal undo metadata can still grow with the number of separate undo commands in a long editing session; it is not yet bounded.
 - The app currently supports UTF-8 files only. It rejects embedded NULs as likely binary input; broader binary detection is not implemented.
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
-- The UI is minimal and has no toolbar or recent-document list. Open Recent Project is available in the Project menu.
+- The UI is minimal and has no toolbar. Recent standalone files and projects are listed separately.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
 - Scheduled revision snapshots and revision-history deletion/restore controls are not yet available. Revision comparisons cover scene and reference-note additions, removals, titles, note types, text, and scene ordering; broader chapter, link, and project-structure comparisons remain future work.
 - Localization is an initial rollout, not yet a complete translation of every dialog and error/status path. Untranslated strings remain usable in English; the current catalogs cover common workflows listed above.

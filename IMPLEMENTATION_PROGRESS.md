@@ -115,6 +115,15 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   the existing unsaved-change flow. Compiled Ukrainian strings and manual
   native-platform shortcut verification remain outstanding; do not mark
   complete until verified. Full offline suite: 462 passed, 2 skipped.
+- **TASK-017 — in progress:** File > Open Recent File stores up to ten paths
+  independently of recent projects, reuses existing tabs, handles missing
+  files through the normal open-error path, and provides Clear Recent Files.
+  Settings validation and Qt tests cover persistence, duplicates, unsaved
+  buffers, missing files and clearing. Ukrainian source strings need compiling;
+  settings persistence currently follows the existing synchronous recent-
+  project pattern and needs a non-blocking, serialized persistence design.
+  Do not mark complete until these issues are resolved. Full offline suite:
+  464 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

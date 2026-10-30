@@ -510,6 +510,12 @@ class MainWindow(QMainWindow):
         quit_action = next(action for action in file_menu.actions() if action.text() == action_text["Quit"])
         before_quit = file_menu.actions()[file_menu.actions().index(quit_action) - 1]
         file_menu.insertAction(before_quit, recovery_action)
+        self._recent_files_menu = QMenu(self.tr("Open Recent File"), self)
+        self._recent_files_menu.setAccessibleName(self.tr("Open Recent File"))
+        self._recent_files_menu.aboutToShow.connect(self._populate_recent_files_menu)
+        open_action = next(action for action in file_menu.actions() if action.text() == action_text["Open"])
+        next_action = file_menu.actions()[file_menu.actions().index(open_action) + 1]
+        file_menu.insertMenu(next_action, self._recent_files_menu)
         conflict_action = QAction(self.tr("Review External Changes…"), self)
         conflict_action.triggered.connect(self.review_external_changes)
         file_menu.insertAction(recovery_action, conflict_action)
@@ -4429,11 +4435,20 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Open file")
         if not path:
             return
-        resolved = Path(path).resolve()
+        self._open_document_path(path)
+
+    def _open_document_path(self, path: str) -> None:
+        try:
+            resolved = Path(path).resolve()
+        except (OSError, RuntimeError) as exc:
+            QMessageBox.warning(self, self.tr("Open failed"), str(exc))
+            return
         for index in range(self.tabs.count()):
             existing = self.tabs.widget(index)
             if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
                 self.tabs.setCurrentIndex(index)
+                if existing not in self._project_documents:
+                    self._remember_recent_file(resolved)
                 return
         worker = FunctionWorker(self.file_manager.open, path)
         self._track_worker(worker)
@@ -4453,6 +4468,43 @@ class MainWindow(QMainWindow):
                     self.tabs.setCurrentIndex(index)
                     return
         self.tabs.add_document(document)
+        if document.path is not None:
+            self._remember_recent_file(document.path)
+
+    def _populate_recent_files_menu(self) -> None:
+        menu = self._recent_files_menu
+        menu.clear()
+        if not self.settings.recent_files:
+            action = menu.addAction(self.tr("No Recent Files"))
+            action.setEnabled(False)
+            return
+        for file_path in self.settings.recent_files:
+            action = menu.addAction(f"{Path(file_path).name} — {file_path}")
+            action.setData(file_path)
+            action.setToolTip(file_path)
+            action.triggered.connect(lambda _checked=False, path=file_path: self._open_document_path(path))
+        menu.addSeparator()
+        menu.addAction(self.tr("Clear Recent Files")).triggered.connect(self._clear_recent_files)
+
+    def _clear_recent_files(self) -> None:
+        self.settings.recent_files = []
+        try:
+            self.settings.save()
+        except OSError as exc:
+            self.statusBar().showMessage(f"Could not save recent files: {exc}", 8000)
+        self._populate_recent_files_menu()
+
+    def _remember_recent_file(self, path: Path) -> None:
+        try:
+            current = str(path.resolve())
+        except (OSError, RuntimeError) as exc:
+            self.statusBar().showMessage(f"Could not record recent file: {exc}", 8000)
+            return
+        self.settings.recent_files = [current, *(p for p in self.settings.recent_files if p != current)][:10]
+        try:
+            self.settings.save()
+        except OSError as exc:
+            self.statusBar().showMessage(f"Could not save recent files: {exc}", 8000)
 
     def save_document(self) -> None:
         editor = self.tabs.current_editor()
@@ -4657,6 +4709,8 @@ class MainWindow(QMainWindow):
                 if self.project is not None and self.project.root == fresh_project.root:
                     self.project = fresh_project
                     self._project_generation += 1
+        if detach_project:
+            self._remember_recent_file(target)
         self.tabs._update_tab_title(editor)
         self._attach_writing_goal_document(editor)
         self._schedule_project_refresh(editor)

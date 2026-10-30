@@ -72,8 +72,6 @@ session was exercised, and this review does not prove other paths defect-free.
   the editor supports UTF-8 only, and encoding and line-ending choices are not
   selectable in the status bar. Detection of binary files beyond embedded NULs
   is also not implemented.
-- **Standalone-document recency:** the Project menu tracks recent projects;
-  there is no recent standalone-document list.
 
 ## Writing and language tools
 
@@ -137,11 +135,6 @@ and effort are relative estimates.
 8. **Verify open-tab navigation on native platforms** — small effort. Qt's
    next/previous-tab shortcuts and the searchable open-tab list are available;
    manual native-platform shortcut verification remains outstanding.
-9. **Add recent standalone documents** — medium priority, medium effort.
-   Recent projects already exist; add a separate recent-file list with clear and
-   missing-file handling. Reopen via the normal duplicate-tab and error paths,
-   preserve unsaved buffers, and do not record document contents. This expands
-   the existing recency proposal above.
 10. **Improve menu discoverability** — medium priority, medium effort. Review
     the long Project and AI menus with real usage scenarios; consider grouped
     submenus or a searchable command picker while retaining existing actions
@@ -257,8 +250,8 @@ accepted; cancellation and stale-result checks would still apply.
 
 11. **Find controls and navigation** (small/medium effort). Active-document
     find currently uses literal, case-sensitive matching. Add optional
-    case-insensitive or whole-word matching and a recent standalone-document
-    list, keeping existing defaults. Acceptance: counts, navigation, replacement,
+    case-insensitive or whole-word matching while keeping existing defaults.
+    Acceptance: counts, navigation, replacement,
     Unicode handling, and undo agree under each chosen mode. Regular expressions
     would need separate safeguards and clear error reporting.
 12. **Writing-goal history** (medium effort). Daily progress is stored locally

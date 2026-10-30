@@ -115,6 +115,21 @@ def test_recent_projects_round_trip_and_validation(tmp_path) -> None:
     assert len(capped.recent_projects) == 10
 
 
+def test_recent_files_are_separate_bounded_and_persisted(tmp_path):
+    first = str(tmp_path / "first.txt")
+    second = str(tmp_path / "second.txt")
+    settings_path = tmp_path / "settings.yaml"
+    AppSettings(recent_files=[first, second], recent_projects=[str(tmp_path)]).save(settings_path)
+    loaded = AppSettings.load(settings_path)
+    assert loaded.recent_files == [first, second]
+    assert loaded.recent_projects == [str(tmp_path)]
+    cleaned = AppSettings(recent_files=[first, "relative", first, "", 42]).validated()
+    assert cleaned.recent_files == [first]
+    spaced = str(tmp_path / "name with trailing space ")
+    assert AppSettings(recent_files=[spaced]).validated().recent_files == [spaced]
+    assert len(AppSettings(recent_files=[str(tmp_path / str(i)) for i in range(12)]).validated().recent_files) == 10
+
+
 def test_settings_ignore_legacy_theme_override(tmp_path) -> None:
     path = tmp_path / "settings.yaml"
     path.write_text("theme: Dark\n", encoding="utf-8")

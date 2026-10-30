@@ -37,6 +37,7 @@ class AppSettings:
     autosave_enabled: bool = True
     autosave_idle_ms: int = 2000
     recent_projects: list[str] = field(default_factory=list)
+    recent_files: list[str] = field(default_factory=list)
     # Empty in existing settings until the first disclosure is accepted.
     ai_context_consent_host: str = ""
 
@@ -142,6 +143,21 @@ class AppSettings:
                 if len(recent_projects) == 10:
                     break
         self.recent_projects = recent_projects
+        recent_files: list[str] = []
+        seen_files: set[str] = set()
+        if isinstance(self.recent_files, list):
+            for file_path in self.recent_files:
+                if (not isinstance(file_path, str) or not file_path.strip()
+                        or len(file_path) > 4096 or "\x00" in file_path):
+                    continue
+                clean_path = file_path
+                if not Path(clean_path).is_absolute() or clean_path in seen_files:
+                    continue
+                seen_files.add(clean_path)
+                recent_files.append(clean_path)
+                if len(recent_files) == 10:
+                    break
+        self.recent_files = recent_files
         self.ai_enabled = self._bool(self.ai_enabled, defaults.ai_enabled)
         self.completion_enabled = self._bool(self.completion_enabled, defaults.completion_enabled)
         self.spellcheck_enabled = self._bool(self.spellcheck_enabled, defaults.spellcheck_enabled)
