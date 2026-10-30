@@ -4,9 +4,9 @@ This document expands on the product requirements in `README.md` with detailed b
 
 ## 1. Product intent
 
-UTextEditor is a small native desktop application for writing and editing plain text. It supports both standalone documents and local manuscript projects with chapters, scenes, and separate story notes. Local AI is optional assistance, not the main event: users can write, search, open, and save documents without Ollama. The application should feel predictable, protect unsaved work, and avoid surprising edits.
+UTextEditor is a small native desktop application for writing and editing plain text. It supports both standalone documents and local manuscript projects with chapters, scenes, and separate story notes. Ollama AI assistance is optional and uses localhost by default: users can write, search, open, and save documents without Ollama. The application should feel predictable, protect unsaved work, and avoid surprising edits.
 
-The application targets people who need a straightforward multi-document text editor and want opt-in local suggestions and manuscript tools. It is not a code IDE, cloud editor, or general-purpose AI chat client.
+The application targets people who need a straightforward multi-document text editor and want opt-in AI suggestions and manuscript tools. It is not a code IDE, cloud editor, or general-purpose AI chat client.
 
 ### Product principles
 
@@ -18,7 +18,7 @@ The application targets people who need a straightforward multi-document text ed
 
 ## 2. Release scope and status
 
-The current application includes the original editor MVP and the project, recovery, writing-goal, export, snapshot, and local project-AI features listed in `README.md`. This document retains detailed requirements for the original editor workflows and ongoing edge cases; it is not an exhaustive status checklist. Where requirements here conflict with current behavior or documented scope, `README.md` and `UNIMPLEMENTED_FEATURES.md` take precedence.
+The current application includes the original editor MVP and the project, recovery, writing-goal, export, snapshot, and project-AI features listed in `README.md`. This document retains detailed requirements for the original editor workflows and ongoing edge cases; it is not an exhaustive status checklist. Where requirements here conflict with current behavior or documented scope, `README.md` and `UNIMPLEMENTED_FEATURES.md` take precedence.
 
 Project recovery snapshots retain the scene or note identity independently of
 the recovery ID. Older snapshots can use their original project-relative path;
@@ -32,7 +32,7 @@ Invalid saved writing-goal data must not prevent startup: the application uses
 default goal settings and reports the loading problem without rewriting that
 data during startup.
 
-The specification describes intended behavior, not a claim that every requirement is implemented. Remaining gaps include richer `Auto` language detection for mixed and short text, editor appearance settings, and memory-efficient large-file handling. Keep `README.md`'s known-gaps section synchronized with observed behavior.
+The specification describes intended behavior, not a claim that every requirement is implemented. Font, font size, tab width, word wrap, and line-number controls are available; the editor follows the system palette and has no separate dark-mode setting. Remaining gaps include richer `Auto` language detection for mixed and short text and memory-efficient large-file handling. Keep `README.md`'s known-gaps section synchronized with observed behavior.
 
 ## 2.1 Interface localization
 
@@ -113,8 +113,9 @@ Expected menus and actions:
 - File: New, Open, Save, Save As, Close Tab, Quit.
 - Edit: Undo, Redo, Cut, Copy, Paste, Select All.
 - Search: Find, Replace.
-- AI: Enable AI, Check Spelling, Generate Completion, Generate from Prompt, Settings. A session-only diagnostics view is optional.
-- View: editor preferences such as wrapping or line numbers when those features are implemented.
+- AI: Enable AI, Check Spelling, Generate Completion, Generate from Prompt, project analysis, cancellation actions, and session-only diagnostics.
+- Settings: AI Settings and application language. AI Settings includes editor font, font size, tab width, wrapping, and line-number controls.
+- View: distraction-free mode. The Project and Writing menus provide project workflows and writing goals.
 
 Use Qt standard key sequences where possible so modifier keys adapt to the platform. Shortcuts should be shown beside their menu actions. `Ctrl/Cmd+F` should open find; `Ctrl/Cmd+H` should open find/replace. `Ctrl/Cmd+Space` may request a completion immediately. Avoid assigning one shortcut to conflicting actions.
 
@@ -244,7 +245,7 @@ An empty completion is a normal no-suggestion result. A failed request should tr
 
 ## 17. Privacy, safety, and diagnostics
 
-AI output is untrusted text. Never execute it, interpret it as a command, or write it to files without user action. Validate offsets and revisions before editing. Requests may contain nearby document text; clearly disclose that text is sent to the configured local Ollama host. Do not send document text to cloud services.
+AI output is untrusted text. Never execute it, interpret it as a command, or write it to files without user action. Validate offsets and revisions before editing. Requests may contain nearby document text; disclose that text is sent to the configured Ollama host. The default host is localhost, but a user-configured HTTP(S) host can be remote; do not imply that it is necessarily local. No separate cloud AI provider is configured.
 
 Application logs may include operation name, provider, model, request duration, and error category. Do not log full document content or prompt text by default. An optional diagnostics window may display request/response payloads in memory for the current session because those may contain document excerpts. It must be clearly labeled, clearable, and never silently persisted. Retain at most 100 recent events, bound each event, and visibly mark truncated events.
 
@@ -307,7 +308,7 @@ The MVP is ready when each item below is demonstrated manually or by a suitable 
 - [ ] Prompt generation is explicit, runs off-thread, and inserts only into the captured unchanged document state.
 - [ ] Spellcheck suggestions are validated, reviewable, individually replaceable/ignorable, and undoable.
 - [ ] Scheduled spellcheck never changes document text without a user action.
-- [ ] Local-only behavior and the text sent to Ollama are documented to the user.
+- [ ] The configured Ollama destination and the text sent to it are documented to the user, including the possibility of a remote host.
 
 ### Quality
 
@@ -332,7 +333,7 @@ Do not treat future work as MVP acceptance criteria unless scope is explicitly c
 
 ## 22. Future directions
 
-The project workspace, chapter/scene organization, structured character profiles, separate reference notes, word counts, recovery, writing goals, export, revision snapshots, and selected local AI analysis are implemented; see `README.md` for current behavior and gaps. Project recency is available; a recent standalone-document list is not. Further work should improve these flows incrementally. Candidates include Markdown preview, richer encoding and language support, more complete recovery repair and revision comparison/management, proposed-edit previews, and more robust large-file handling. Prioritize author value and privacy; novel-aware AI must use configured local processing, and project features should preserve portability and author control. Avoid cloud services or proprietary formats without a separate product decision.
+The project workspace, chapter/scene organization, structured character profiles, separate reference notes, word counts, recovery, writing goals, export, revision snapshots, and selected AI analysis through the configured Ollama host are implemented; see `README.md` for current behavior and gaps. Project recency is available; a recent standalone-document list is not. Further work should improve these flows incrementally. Candidates include Markdown preview, richer encoding and language support, more complete recovery repair and revision comparison/management, proposed-edit previews, and more robust large-file handling. Prioritize author value and privacy; the default Ollama host is local, and project features should preserve portability and author control. Avoid adding a separate cloud provider or proprietary formats without a separate product decision.
 
 ## 23. Definition of done
 

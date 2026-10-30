@@ -1,15 +1,15 @@
 # UTextEditor
 
-UTextEditor is a native desktop text editor for people who want a simple place to write and edit plain text, with optional local AI assistance. It is inspired by GEdit and built with Python and Qt. The editor remains usable when AI is disabled or Ollama is unavailable.
+UTextEditor is a native desktop text editor for people who want a simple place to write and edit plain text, with optional Ollama AI assistance. It is inspired by GEdit and built with Python and Qt. The editor remains usable when AI is disabled or Ollama is unavailable.
 
-The project aims to keep writing fast and predictable: documents stay under the user's control, AI suggestions are visible before use, and normal editing does not depend on a network service. AI requests use a local Ollama server by default; document text is not sent to a cloud AI provider.
+The project aims to keep writing fast and predictable: documents stay under the user's control, AI suggestions are visible before use, and normal editing does not depend on a network service. AI requests use an Ollama server on localhost by default. The host is configurable and may be remote, so document text sent to it may leave the device. No separate cloud AI provider is configured.
 
 ## Project goals
 
 - Provide a dependable, lightweight writing tool, with a long-term focus on helping novelists manage and write manuscripts.
 - Keep multiple documents and their modified state separate in tabs.
 - Make common editing, search, and file operations easy to reach.
-- Offer optional local completion and spelling assistance without freezing the interface.
+- Offer optional Ollama completion and spelling assistance without freezing the interface.
 - Keep AI integration replaceable and separate from the UI.
 - Prefer explicit user control over generated or corrected text.
 - Keep manuscript content portable and under the author's control.
@@ -28,21 +28,21 @@ The editor supports standalone text files and a local project workspace. Impleme
 - In a character profile, **Fill Empty Fields with AI** sends the current profile fields to the configured Ollama destination after confirmation. Review the proposed values before filling empty fields; save the profile to keep them. Existing fields and relationships are not replaced. Requests and responses appear in AI diagnostics.
 - A character profile can also suggest scene development from an open scene explicitly associated with that character. After confirmation, the configured AI receives the profile and a bounded scene excerpt. Each proposed arc field includes an exact scene quotation; select individual suggestions to stage them in the profile form, then save the profile to keep them. Rejecting or cancelling leaves it unchanged, and results are discarded if the captured context changes.
 - The character profile's Portrait tab can add, preview, replace, or remove a PNG or JPEG portrait. Images are limited to 256 KB and 2048 pixels per side. The portrait is saved with the profile and embedded in the project and character YAML export; Cancel discards staged changes. Older application versions that do not understand portraits may reject projects containing them.
-- Optional local AI project setup starts from an editable story-planning template. Suggest proposes clearly marked ideas for gaps; the author reviews and edits them before requesting an outline. Outline planning receives bounded motivations, goals, conflicts, and directed relationships for relevant profiles. The optional autonomous Auto-pilot can append a bounded new plan, draft its scenes, and create character reference notes after explicit confirmation; it never overwrites existing files and applies no batch if generation fails or is cancelled.
-- Whole-project Auto-writer can draft empty scenes or refine every scene using the project outline, reference notes, characters explicitly associated with each target scene, optional writing instructions, and configured local model settings. It confirms local context use, snapshots the complete project before generation, shows each completed draft immediately in a live progress window, and allows up to five minutes per local model request; it applies all generated scene updates together only after success, so existing files are never partially overwritten.
+- Optional AI project setup starts from an editable story-planning template. Suggest proposes clearly marked ideas for gaps; the author reviews and edits them before requesting an outline. Outline planning receives bounded motivations, goals, conflicts, and directed relationships for relevant profiles. The optional autonomous Auto-pilot can append a bounded new plan, draft its scenes, and create character reference notes after explicit confirmation; it never overwrites existing files and applies no batch if generation fails or is cancelled.
+- Whole-project Auto-writer can draft empty scenes or refine every scene using the project outline, reference notes, characters explicitly associated with each target scene, optional writing instructions, and the configured Ollama model. It confirms context use and the destination, snapshots the complete project before generation, shows each completed draft immediately in a live progress window, and allows up to five minutes per model request; it applies all generated scene updates together only after success, so existing files are never partially overwritten.
 - Project scene and note saves compare against the last-read disk contents. An already-open file is bound to a project only if its captured disk version matches the project read; otherwise it remains a standalone tab with conflict protection. Autosave is configurable (two-second idle interval by default); failures leave documents dirty and report non-blocking feedback.
 - Optional daily writing goals support active-document words, project manuscript words, or newly inserted words. New-word progress is local-date based and undo/redo aware; pausing/resetting tracking never changes manuscript text. Undo tracking keeps one current text copy per open document and fingerprints for earlier states. Invalid saved goal data produces a warning and falls back to defaults without overwriting the data at startup.
 - Local recovery snapshots every 30 seconds while documents are dirty and at orderly shutdown. Startup offers restore, inspect/compare, locate a moved project, discard recovery data, or defer. Project snapshots identify their scene or note, including after relocation; older snapshots use their original project-relative path. If an item cannot be identified or its file changed, recovered text opens separately without overwriting the original.
 - Explicit Markdown/plain-text manuscript export uses current editor buffers, selectable scene subsets, configurable headings and separators, UTF-8 encoding, and LF line endings. Replacing a destination requires confirmation.
 - Project > Compile Book as PDF creates an A5 book with a title page, contents, ordered chapters and scenes, indented left-aligned prose paragraphs, page numbers, and black text on a white page regardless of the system theme. It uses open scene buffers (including unsaved edits after confirmation), excludes reference notes, and never changes project files.
 - Named local revision snapshots capture current project structure and in-memory scene/note text without clearing dirty state. Project > Review Revision Snapshots lists valid local snapshots, reports unreadable ones, and compares two snapshots for scene additions, removals, ordering, title, and text changes, plus reference-note additions, removals, title, type, and text changes.
-- Opt-in local scene summaries and continuity checks send only explicitly selected scenes/notes and, for continuity, the scene's explicitly associated characters after displaying their names and the configured Ollama destination; bounded requests run in workers and stale results are dropped. Continuity findings include confidence, scene and associated-character IDs, a source quotation, and a suggested review question. The app rejects malformed results and quotations outside the captured source excerpts; findings appear in a separate review panel without editing files. An empty findings list does not prove consistency. Outline planning receives compact character motivations and goals.
+- Opt-in scene summaries and continuity checks send only explicitly selected scenes/notes and, for continuity, the scene's explicitly associated characters after displaying their names and the configured Ollama destination; bounded requests run in workers and stale results are dropped. Continuity findings include confidence, scene and associated-character IDs, a source quotation, and a suggested review question. The app rejects malformed results and quotations outside the captured source excerpts; findings appear in a separate review panel without editing files. An empty findings list does not prove consistency. Outline planning receives compact character motivations and goals.
 - Project > Translate Project to Ukrainian/English translates the project title, chapter/scene/reference-note titles, and all scene and note text using the configured Ollama model. It confirms the destination, snapshots the original project, supports cancellation, preserves IDs/paths/order/links and line endings, and commits the result only if all translations succeed and the project has not changed. Each run is limited to 500 translatable fields of up to 32,000 characters each; exceeding a limit aborts without applying partial translations.
 - Distraction-free mode from View or `Ctrl+Shift+F`; `Esc` exits after first dismissing any inline completion, and an accessible status-bar action is always available while the mode is active.
 - Standard editing through Qt, including undo, redo, clipboard actions, and select all. Edit > Text Formatting provides case conversion, line indent/outdent, trailing-whitespace cleanup, and “Like in the book,” which indents the first line of each paragraph while preserving blank lines and line endings. Transformations apply to selected text/lines or the whole document and are undoable. “Format Whole Document…” lets the author choose one operation to apply explicitly across the entire document.
 - Find, previous/next navigation with live match counts, replace-current, and undoable replace-all. A search with no matches preserves the cursor and selection.
 - Status display for UTF-8, detected line-ending style (LF, CRLF, or CR), cursor line and column, and AI connection state.
-- Local Ollama connection using `http://localhost:11434` and `gemma4:12b` by default; host and model can be changed in Settings > AI Settings.
+- Ollama connection using `http://localhost:11434` and `gemma4:12b` by default; host and model can be changed in Settings > AI Settings, including to a remote host.
 - Inline completions shown as non-destructive ghost text. `Tab` accepts a suggestion and `Esc` dismisses it. Suggestions are discarded when the relevant text, cursor, selection, or active document changes, and are not displayed before existing text on the same line.
 - Debounced completion requests with bounded context, background workers, and stale-result checks. When completing a project scene, requests also include its explicitly associated characters and up to 10,000 characters of project reference notes (using open unsaved note buffers when available). This material is sent to the configured Ollama destination and appears in AI diagnostics.
 - AI-assisted spelling and grammar suggestions with underlines, context-menu replace/ignore actions, response validation, and undo support for edits.
@@ -66,6 +66,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
 - Scheduled revision snapshots and revision-history deletion/restore controls are not yet available. Revision comparisons cover scene and reference-note additions, removals, titles, note types, text, and scene ordering; broader chapter, link, and project-structure comparisons remain future work.
 - Localization is an initial rollout, not yet a complete translation of every dialog and error/status path. Untranslated strings remain usable in English; the current catalogs cover common workflows listed above.
+- Some AI confirmation and status messages call the configured model “local” even when the selected Ollama host is remote. Check the displayed destination rather than relying on that label.
 
 ### Project format and local data
 
@@ -124,12 +125,12 @@ loads; an unavailable server or model causes the explicitly enabled test to fail
 
 - Python 3.12+
 - PySide6 / Qt 6
-- Ollama for local AI requests
+- Ollama for AI requests, using a configurable host that defaults to localhost
 - pytest
 
 The application separates document state and file handling (`app/document/`), AI services and the `AIProvider` abstraction (`app/ai/`), persistent settings (`app/settings/`), and Qt UI (`app/ui/`). The Ollama HTTP client is isolated in `app/ai/ollama_client.py`. GUI widgets do not make direct Ollama calls; the UI dispatches AI work to background workers and receives results on the GUI thread.
 
-AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No cloud AI provider is configured.
+AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No separate cloud AI provider is configured; a remote Ollama host can nevertheless receive document text.
 
 ## Interface localization
 
@@ -149,7 +150,7 @@ Recurring glossary: project — проєкт; chapter — розділ; scene �
 
 ## Product direction
 
-The project-workspace, character reference, local AI planning and review, manuscript export, and named revision-snapshot foundations are implemented. The next useful increments are the remaining gaps listed in `UNIMPLEMENTED_FEATURES.md`: broader revision management, recovery diagnosis, project-wide text search, and complete interface translation. These are candidates, not promises or descriptions of current behavior. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or cloud services without a separate product decision.
+The project-workspace, character reference, Ollama AI planning and review, manuscript export, and named revision-snapshot foundations are implemented. The next useful increments are the remaining gaps listed in `UNIMPLEMENTED_FEATURES.md`: broader revision management, recovery diagnosis, project-wide text search, and complete interface translation. These are candidates, not promises or descriptions of current behavior. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or a separate cloud AI provider without a separate product decision.
 
 ## Development expectations
 

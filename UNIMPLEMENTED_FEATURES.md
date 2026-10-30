@@ -29,6 +29,12 @@ temporary projects or in-memory objects and do not modify the user's documents.
    in the review environment). This does not establish a long-session bound.
    Coordinate any bound with Qt's undo history so supported undo and redo do
    not silently produce incorrect counts; measure realistic long sessions.
+2. **Medium — some AI messages mislabel remote destinations as local.**
+   Project setup and Auto-writer confirmation text describes the configured
+   model as local even when the Ollama host is remote. The destination address
+   is shown, but the label may still mislead users about where text is sent.
+   Update affected confirmations and status text, translations, and tests to
+   describe the configured destination accurately.
 
 ### Risks requiring further verification
 
@@ -321,22 +327,6 @@ accepted; cancellation and stale-result checks would still apply.
     values and directed relationships round-trip unchanged, and opening a
     scene never discards unsaved profile edits. Verify with manual accessibility
     testing before treating layout concerns as confirmed defects.
-
-## Documentation discrepancies to resolve
-
-- `SPEC.md` §2 still lists editor appearance settings as a gap, although font,
-  font size, tab width, word wrap, and line-number controls are present and
-  applied by the editor. `SPEC.md` §5 also places AI Settings in the AI menu;
-  the current application and `README.md` place it under Settings.
-- `README.uk.md` contains older example menus and refers to a dark-mode setting
-  (§22). The current design follows the system palette and does not provide a
-  separate dark-mode toggle. Its current-status summary also does not yet cover
-  all newer UI workflows, such as AI filling empty character fields and the
-  character Relationships tab.
-- Some older wording describes AI as necessarily local. The default Ollama
-  destination is localhost, but users can configure another HTTP(S) host. The
-  documents should consistently describe the configured destination and avoid
-  implying that an arbitrary host is guaranteed to be local.
 
 These gaps are independent of basic standalone editing, which remains usable
 without a project or a running Ollama server.
