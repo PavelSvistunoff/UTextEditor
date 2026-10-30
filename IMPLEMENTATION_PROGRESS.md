@@ -153,7 +153,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   after this refactor: 473 passed, 2 skipped. AI > Completion Reference Notes
   now excludes selected notes for the project session and invalidates pending
   completions when the selection changes. A worker regression test covers
-  selection and stale results. Full offline suite: 474 passed, 2 skipped.
+  selection and stale results. Full offline suite: 474 passed, 2 skipped. A
+  read-only captured-context review dialog has been added and tested, but is
+  not yet connected to a two-stage capture, review and send workflow. That
+  workflow must recheck the captured editor, project, settings and note state
+  before sending and applying results. Full suite: 475 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

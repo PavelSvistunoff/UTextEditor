@@ -1944,4 +1944,11 @@
     <message><source>Select reference notes to include in project-scene completions for this session.</source><translation>Виберіть довідкові нотатки для продовження сцен проєкту в цьому сеансі.</translation></message>
     <message><source>Reference notes included in completions</source><translation>Довідкові нотатки, включені до продовжень</translation></message>
 </context>
+<context>
+    <name>CompletionContextDialog</name>
+    <message><source>Review completion context</source><translation>Перегляд контексту продовження</translation></message>
+    <message><source>Destination: %1</source><translation>Адреса: %1</translation></message>
+    <message><source>Captured completion context</source><translation>Зафіксований контекст продовження</translation></message>
+    <message><source>Send completion request</source><translation>Надіслати запит на продовження</translation></message>
+</context>
 </TS>
