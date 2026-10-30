@@ -1,4 +1,5 @@
-from app.ai.completion_service import CompletionService, build_context, capture_project_completion, complete_project_scene
+from app.ai.completion_service import (STALE_PROJECT_CONTEXT, CompletionService, build_context, capture_project_completion,
+                                       complete_captured_project_scene, complete_project_scene)
 
 
 class FakeProvider:
@@ -86,3 +87,26 @@ def test_captured_project_context_records_actual_notes_and_truncation():
     assert captured.omitted_note_count == 1
     assert "Unsaved" in captured.context and "Later" not in captured.context
     assert captured.context.endswith("Text to continue:\nDraft")
+
+
+def test_changed_closed_note_prevents_request_or_discards_result():
+    class Project:
+        text = "old"
+
+        def read_note(self, note_id):
+            return self.text
+
+    project = Project()
+    captured = capture_project_completion(project, (("note", "Reference", "general"),), {}, "", "Draft")
+    provider = FakeProvider()
+    project.text = "changed before send"
+    assert complete_captured_project_scene(CompletionService(provider), project, captured, "English") is STALE_PROJECT_CONTEXT
+    assert not provider.calls
+    project.text = "old"
+
+    def change_during_request(context, language, **options):
+        project.text = "changed during request"
+        return " continuation"
+
+    provider.complete = change_during_request
+    assert complete_captured_project_scene(CompletionService(provider), project, captured, "English") is STALE_PROJECT_CONTEXT

@@ -177,8 +177,9 @@ accepted; cancellation and stale-result checks would still apply.
    while Auto-writer and analysis have confirmation flows. An explicit
    completion review displays captured text, destination, unsaved buffers and
    note truncation before sending, and flags an omitted document prefix or
-   character context cut by the length limit. External note changes and
-   other character-detail limits still need additional handling. Individual reference notes can already be
+   character context cut by the length limit. Closed notes are checked before
+   and after generation; other character-detail limits still need additional
+   handling. Individual reference notes can already be
    excluded for the project session, and automatic completions can be
    configured to omit project context.
    Acceptance: the preview matches the captured request, unsaved buffers are

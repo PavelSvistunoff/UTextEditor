@@ -33,7 +33,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import QApplication
 
-from app.ai.completion_service import CompletionService, build_context, capture_project_completion, complete_project_scene
+from app.ai.completion_service import (STALE_PROJECT_CONTEXT, CompletionService, build_context, capture_project_completion,
+                                       complete_captured_project_scene, complete_project_scene)
 from app.ai.character_profile import suggest_character_fields
 from app.ai.character_development import suggest_character_development
 from app.ai.continuity import format_continuity_findings, parse_continuity_findings
@@ -5786,7 +5787,7 @@ class MainWindow(QMainWindow):
         for index in range(self.tabs.count()):
             self.tabs.widget(index).clear_completion()
 
-    def request_completion(self, *, automatic: bool = False, review: bool = False, _captured: str | None = None) -> None:
+    def request_completion(self, *, automatic: bool = False, review: bool = False, _captured=None) -> None:
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled or not self.settings.completion_enabled:
             return
@@ -5838,8 +5839,12 @@ class MainWindow(QMainWindow):
             function = self.completion_service.complete
             args = (context, self.settings.language)
         if _captured is not None:
-            function = self.completion_service.complete
-            args = (_captured, self.settings.language)
+            if project is None:
+                function = self.completion_service.complete
+                args = (_captured, self.settings.language)
+            else:
+                function = complete_captured_project_scene
+                args = (self.completion_service, project, _captured, self.settings.language)
         if review:
             self._review_completion_context(editor, revision, position, generation, project,
                                             project_generation, note_editors, args, context,
@@ -5888,6 +5893,12 @@ class MainWindow(QMainWindow):
                 }
                 if self.project is not project or self._project_generation != project_generation or current_notes != note_editors:
                     return
+            if text is STALE_PROJECT_CONTEXT:
+                if completion_current():
+                    self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
+                    self._update_status()
+                    self.statusBar().showMessage(self.tr("A reference note changed; request completion again."), 6000)
+                return
             self._completion_finished(generation, editor, revision, position, text, selection, settings_generation)
         worker.signals.finished.connect(completed, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(lambda exc: self._completion_failed(exc, generation, settings_generation), Qt.ConnectionType.QueuedConnection)
@@ -5943,7 +5954,7 @@ class MainWindow(QMainWindow):
                     lines.append(format_qt(self.tr("Notes omitted by the context limit: %1"), captured.omitted_note_count))
             dialog = CompletionContextDialog(destination, request_context, "\n".join(lines), self)
             if dialog.exec() == QDialog.DialogCode.Accepted and current():
-                self.request_completion(_captured=request_context)
+                self.request_completion(_captured=captured if captured is not None else request_context)
             elif generation == self._completion_generation:
                 self.ai_status = "AI: Connected" if self._connected else "AI: Offline"
                 self._update_status()

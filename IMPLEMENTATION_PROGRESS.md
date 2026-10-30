@@ -158,11 +158,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   AI action. It captures reference material in a worker, displays the exact
   context, destination, unsaved buffers and note truncation, and checks editor,
   project, settings and open-note state before sending and applying results.
-  Tests cover exact context, cancellation and edits during review. Closed-note
-  external changes and reporting of character-detail limits still need
-  handling; compiled Ukrainian translations also remain outstanding. The
-  preview flags omitted document prefixes and character text cut by the length
-  limit. Full offline suite: 479 passed, 2 skipped.
+  Tests cover exact context, cancellation and edits during review. Closed
+  notes are now checked in the worker before sending and after generation;
+  stale results are discarded. As with other filesystem checks, a change can
+  still race the final check. Reporting of character-detail limits and compiled
+  Ukrainian translations remain outstanding. The preview flags omitted
+  document prefixes and character text cut by the length limit. Full offline
+  suite: 481 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

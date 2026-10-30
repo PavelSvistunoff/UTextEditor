@@ -1,9 +1,12 @@
 """Pure completion context and request-generation logic."""
 
 from dataclasses import dataclass
+import hashlib
 
 from .provider import AIProvider
 from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
+
+STALE_PROJECT_CONTEXT = object()
 
 
 def build_context(text: str, cursor: int, *, maximum_characters: int = 4000) -> str:
@@ -69,6 +72,7 @@ class CapturedNote:
     title: str
     from_buffer: bool
     truncated: bool
+    digest: str | None
 
 
 @dataclass(frozen=True)
@@ -91,7 +95,8 @@ def capture_project_completion(project, notes, open_notes, characters: str,
         entry = f"{note_type}: {title}\n{text}"
         parts.append(entry[:remaining])
         remaining -= len(parts[-1])
-        included.append(CapturedNote(note_id, title, note_id in open_notes, len(entry) > len(parts[-1])))
+        digest = None if note_id in open_notes else hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest()
+        included.append(CapturedNote(note_id, title, note_id in open_notes, len(entry) > len(parts[-1]), digest))
     reference = "\n\n".join(parts)
     project_context = (
         "Project reference material (background only; continue the text below):\n"
@@ -103,7 +108,24 @@ def capture_project_completion(project, notes, open_notes, characters: str,
 
 
 def complete_project_scene(service: CompletionService, project, notes, open_notes, characters: str,
-                           context: str, language: str, **options) -> str:
+                           context: str, language: str, **options) -> str | object:
     """Read bounded project reference material in the completion worker."""
     captured = capture_project_completion(project, notes, open_notes, characters, context)
-    return service.complete(captured.context, language, **options)
+    return complete_captured_project_scene(service, project, captured, language, **options)
+
+
+def complete_captured_project_scene(service: CompletionService, project, captured: CapturedProjectCompletion,
+                                    language: str, **options) -> str | object:
+    """Discard requests or results when a captured closed note has changed."""
+    def unchanged() -> bool:
+        for note in captured.notes:
+            if note.digest is not None:
+                text = project.read_note(note.id)
+                if hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest() != note.digest:
+                    return False
+        return True
+
+    if not unchanged():
+        return STALE_PROJECT_CONTEXT
+    result = service.complete(captured.context, language, **options)
+    return result if unchanged() else STALE_PROJECT_CONTEXT

@@ -656,6 +656,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>A reference note changed; request completion again.</source><translation>Довідкова нотатка змінилася; запросіть продовження знову.</translation></message>
     <message><source>Only part of the text before the cursor is included.</source><translation>Включено лише частину тексту перед курсором.</translation></message>
     <message><source>Associated character context was truncated.</source><translation>Контекст пов’язаних персонажів скорочено.</translation></message>
     <message><source>Review Completion Context…</source><translation>Переглянути контекст продовження…</translation></message>

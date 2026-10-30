@@ -143,6 +143,32 @@ def test_reviewed_completion_sends_exact_displayed_context(window, tmp_path, mon
     wait_until(lambda: window._completion_worker is None)
 
 
+def test_reviewed_completion_does_not_send_if_closed_note_changes(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "changed-note", "Novel")
+    scene = project.add_scene("Scene", content="Draft")
+    note = project.add_note("Reference", content="Old reference")
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    editor = window.tabs.current_editor()
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    calls, reviewed = [], []
+    monkeypatch.setattr(window.provider, "complete", lambda *args, **kwargs: calls.append(args) or "")
+
+    def review(dialog):
+        project.write_note(note.id, "New reference", expected_content="Old reference")
+        reviewed.append(True)
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.CompletionContextDialog.exec", review)
+    window.request_completion(review=True)
+    wait_until(lambda: bool(reviewed))
+    wait_until(lambda: window._completion_worker is None)
+    assert calls == []
+    assert "reference note changed" in window.statusBar().currentMessage()
+
+
 @pytest.mark.parametrize("change", ["cancel", "edit"])
 def test_reviewed_completion_does_not_send_after_cancel_or_edit(window, monkeypatch, change):
     editor = window.tabs.current_editor()
