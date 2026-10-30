@@ -71,6 +71,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   process. The residual cross-process race means the no-silent-overwrite
   acceptance criterion is not yet fully met; do not mark this task complete.
   Full offline suite: 444 passed, 2 skipped.
+- **TASK-012 — in progress:** added a bounded, cancellable literal search
+  service for captured scene and note descriptors. Open buffer snapshots take
+  precedence over disk, unreadable, binary, or oversized files are reported,
+  and results carry stable IDs, locations, excerpts, and text fingerprints.
+  The persistent UI, captured project-state checks, safe result navigation,
+  translations, and large-project UI tests remain to be implemented; the
+  service alone is not a user-facing search feature. Full offline suite:
+  449 passed, 2 skipped.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report
