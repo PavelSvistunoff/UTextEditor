@@ -1,5 +1,7 @@
 """Pure completion context and request-generation logic."""
 
+from dataclasses import dataclass
+
 from .provider import AIProvider
 from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
 
@@ -61,11 +63,27 @@ class CompletionService:
         )
 
 
-def complete_project_scene(service: CompletionService, project, notes, open_notes, characters: str,
-                           context: str, language: str, **options) -> str:
-    """Read bounded project reference material in the completion worker."""
+@dataclass(frozen=True)
+class CapturedNote:
+    id: str
+    title: str
+    from_buffer: bool
+    truncated: bool
+
+
+@dataclass(frozen=True)
+class CapturedProjectCompletion:
+    context: str
+    notes: tuple[CapturedNote, ...]
+    omitted_note_count: int
+
+
+def capture_project_completion(project, notes, open_notes, characters: str,
+                               context: str) -> CapturedProjectCompletion:
+    """Capture the exact bounded context and its provenance in a worker."""
     remaining = 10000
     parts = []
+    included = []
     for note_id, title, note_type in notes:
         if remaining <= 0:
             break
@@ -73,6 +91,7 @@ def complete_project_scene(service: CompletionService, project, notes, open_note
         entry = f"{note_type}: {title}\n{text}"
         parts.append(entry[:remaining])
         remaining -= len(parts[-1])
+        included.append(CapturedNote(note_id, title, note_id in open_notes, len(entry) > len(parts[-1])))
     reference = "\n\n".join(parts)
     project_context = (
         "Project reference material (background only; continue the text below):\n"
@@ -80,4 +99,11 @@ def complete_project_scene(service: CompletionService, project, notes, open_note
         f"<reference_notes>\n{reference}\n</reference_notes>\n\n"
         f"Text to continue:\n{context}"
     )
-    return service.complete(project_context, language, **options)
+    return CapturedProjectCompletion(project_context, tuple(included), len(notes) - len(included))
+
+
+def complete_project_scene(service: CompletionService, project, notes, open_notes, characters: str,
+                           context: str, language: str, **options) -> str:
+    """Read bounded project reference material in the completion worker."""
+    captured = capture_project_completion(project, notes, open_notes, characters, context)
+    return service.complete(captured.context, language, **options)

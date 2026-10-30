@@ -1,4 +1,4 @@
-from app.ai.completion_service import CompletionService, build_context, complete_project_scene
+from app.ai.completion_service import CompletionService, build_context, capture_project_completion, complete_project_scene
 
 
 class FakeProvider:
@@ -69,3 +69,20 @@ def test_project_completion_uses_open_notes_and_bounds_disk_notes():
     assert "Character: Mara" in context and "Unsaved detail" in context
     assert context.endswith("Text to continue:\nThe story")
     assert "x" * (10000 - len("character: People\nUnsaved detail") - len("general: World\n")) in context
+
+
+def test_captured_project_context_records_actual_notes_and_truncation():
+    class Project:
+        def read_note(self, note_id):
+            assert note_id == "disk"
+            return "x" * 10000
+
+    notes = (("open", "People", "character"), ("disk", "World", "general"),
+             ("omitted", "Later", "general"))
+    captured = capture_project_completion(Project(), notes, {"open": "Unsaved"}, "Mara", "Draft")
+    assert [(note.id, note.from_buffer, note.truncated) for note in captured.notes] == [
+        ("open", True, False), ("disk", False, True),
+    ]
+    assert captured.omitted_note_count == 1
+    assert "Unsaved" in captured.context and "Later" not in captured.context
+    assert captured.context.endswith("Text to continue:\nDraft")

@@ -147,7 +147,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   cover both modes and settings validation. Captured-request context preview,
   per-note exclusions, corresponding stale checks and compiled Ukrainian
   translation remain outstanding. Do not mark complete. Full offline suite:
-  472 passed, 2 skipped.
+  472 passed, 2 skipped. Context construction now also returns an immutable
+  capture with note provenance and truncation metadata for the future preview;
+  the existing request path uses the same captured text. Full offline suite
+  after this refactor: 473 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
