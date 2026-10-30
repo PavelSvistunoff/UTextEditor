@@ -136,3 +136,16 @@ def test_private_generation_can_use_a_longer_operation_timeout() -> None:
         ) == "long result"
 
     assert urlopen.call_args.kwargs["timeout"] == 300
+
+
+def test_private_generation_can_request_json_mode() -> None:
+    client = OllamaClient()
+    with patch(
+        "app.ai.ollama_client.request.urlopen",
+        return_value=response_with({"message": {"content": '{"description":"Writer"}'}}),
+    ) as urlopen:
+        client.generate_private("suggest fields", json_mode=True)
+
+    payload = json.loads(urlopen.call_args.args[0].data.decode())
+    assert payload["format"] == "json"
+    assert payload["think"] is False

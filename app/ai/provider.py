@@ -38,6 +38,7 @@ class AIProvider(Protocol):
         maximum_tokens: int = 300,
         temperature: float = 0.2,
         timeout: float | None = None,
+        json_mode: bool = False,
     ) -> str:
         """Generate locally while keeping the request/response visible to diagnostics."""
         ...

@@ -146,6 +146,7 @@ class OllamaClient:
             temperature=temperature,
             observe=True,
             timeout=timeout,
+            json_mode=False,
         )
 
     def generate_private(
@@ -156,6 +157,7 @@ class OllamaClient:
         maximum_tokens: int = 300,
         temperature: float = 0.2,
         timeout: float | None = None,
+        json_mode: bool = False,
     ) -> str:
         """Generate a local AI response while keeping the interaction visible in diagnostics."""
         # Private here means the request is internal to the app workflow, not that it
@@ -168,6 +170,7 @@ class OllamaClient:
             temperature=temperature,
             observe=True,
             timeout=timeout,
+            json_mode=json_mode,
         )
 
     def _generate(
@@ -179,19 +182,23 @@ class OllamaClient:
         temperature: float,
         observe: bool,
         timeout: float | None,
+        json_mode: bool,
     ) -> str:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": role},
+                {"role": "user", "content": prompt},
+            ],
+            "stream": False,
+            "think": False,
+            "options": {"num_predict": maximum_tokens, "temperature": temperature},
+        }
+        if json_mode:
+            payload["format"] = "json"
         response = self._post(
             "/api/chat",
-            {
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": role},
-                    {"role": "user", "content": prompt},
-                ],
-                "stream": False,
-                "think": False,
-                "options": {"num_predict": maximum_tokens, "temperature": temperature},
-            },
+            payload,
             observe=observe,
             timeout=timeout,
         )

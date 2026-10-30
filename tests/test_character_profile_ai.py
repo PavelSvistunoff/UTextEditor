@@ -9,9 +9,11 @@ class Provider:
     def __init__(self, result):
         self.result = result
         self.prompt = ""
+        self.options = {}
 
     def generate_private(self, prompt, **kwargs):
         self.prompt = prompt
+        self.options = kwargs
         return self.result
 
 
@@ -20,6 +22,9 @@ def test_suggestions_include_profile_and_validate_structured_fields():
     result = suggest_character_fields(provider, {"full_name": "Mara", "description": "", "goals": "", "knowledge": "", "arc": ""}, "English", 0.2)
     assert result["description"] == "A watchmaker"
     assert "Mara" in provider.prompt
+    assert provider.options["timeout"] == 300
+    assert provider.options["json_mode"] is True
+    assert provider.options["maximum_tokens"] == 8192
 
 
 def test_suggestions_accept_fenced_json():

@@ -5,6 +5,8 @@ import re
 
 from app.project.model import CHARACTER_ARC_FIELDS, CHARACTER_GOAL_STATES, CHARACTER_KNOWLEDGE_KINDS
 
+CHARACTER_PROFILE_REQUEST_TIMEOUT_SECONDS = 300
+
 
 def suggest_character_fields(provider, fields: dict[str, str], language: str, temperature: float) -> dict[str, str]:
     empty = {key for key, value in fields.items() if not value.strip()}
@@ -19,11 +21,13 @@ def suggest_character_fields(provider, fields: dict[str, str], language: str, te
         "Use newline-separated entries for lists. For goals use 'description | active | 3 | notes' per line. "
         "For knowledge use 'kind: statement' with kinds: " + ', '.join(sorted(CHARACTER_KNOWLEDGE_KINDS)) + ". "
         "For arc use 'field: value' with fields: " + ', '.join(sorted(CHARACTER_ARC_FIELDS)) + ". "
-        "Write suggestions in the requested language.\n"
+        "Keep each suggestion concise. Write suggestions in the requested language; "
+        "if it is Auto, use the language of the profile.\n"
         f"Language: {language}\nProfile data:\n{data}"
     )
     result = provider.generate_private(prompt, role="You help an author develop fictional characters.",
-                                       maximum_tokens=2400, temperature=temperature)
+                                       maximum_tokens=8192, temperature=temperature,
+                                       timeout=CHARACTER_PROFILE_REQUEST_TIMEOUT_SECONDS, json_mode=True)
     if not isinstance(result, str) or len(result) > 30000:
         raise ValueError("The model returned an invalid or oversized response.")
     result = result.strip()
