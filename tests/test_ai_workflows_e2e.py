@@ -794,6 +794,20 @@ def test_streaming_worker_bounds_total_output_even_after_draining():
         worker._append("b")
 
 
+def test_markdown_preview_tracks_active_unsaved_tab(window):
+    first = window.tabs.current_editor()
+    first.setPlainText("# First draft")
+    window.show_markdown_preview()
+    preview = window._markdown_preview
+    wait_until(lambda: "First draft" in preview.browser.toPlainText())
+    window.new_document()
+    second = window.tabs.current_editor()
+    second.setPlainText("**Second draft**")
+    wait_until(lambda: "Second draft" in preview.browser.toPlainText())
+    assert first.toPlainText() == "# First draft"
+    assert second.toPlainText() == "**Second draft**"
+
+
 def test_project_analysis_cancel_action_works_in_ukrainian(app, tmp_path, monkeypatch):
     settings_path = tmp_path / "uk.yaml"
     monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: settings_path))

@@ -2009,4 +2009,17 @@
     <message><source>Provisional generated text</source><translation>Попередній згенерований текст</translation></message>
     <message><source>Cancel</source><translation>Скасувати</translation></message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Markdown Preview</source><translation>Перегляд Markdown</translation></message>
+</context>
+<context>
+    <name>MarkdownPreview</name>
+    <message><source>Markdown preview</source><translation>Перегляд Markdown</translation></message>
+    <message><source>No active document.</source><translation>Немає активного документа.</translation></message>
+    <message><source>Document is too large to preview safely.</source><translation>Документ завеликий для безпечного перегляду.</translation></message>
+    <message><source>Updating preview…</source><translation>Оновлення перегляду…</translation></message>
+    <message><source>Read-only preview; external resources are disabled.</source><translation>Перегляд лише для читання; зовнішні ресурси вимкнено.</translation></message>
+    <message><source>Could not render this Markdown preview.</source><translation>Не вдалося створити перегляд Markdown.</translation></message>
+</context>
 </TS>

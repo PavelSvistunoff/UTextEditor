@@ -207,6 +207,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   and accessibility verification are also outstanding. Do not mark complete.
   Full offline suite: 502 passed, 2 skipped; focused completion tests also
   passed after the final rendering adjustment.
+- **TASK-027 — in progress:** View > Markdown Preview renders the active
+  unsaved buffer in a read-only dock, debounces changes, checks captured
+  revisions, blocks resource loading, and renders in a worker. Input and
+  rendered output are bounded; documents over 65,536 Qt text units are
+  explicitly declined. Tests cover stale renders, unsaved text, resource
+  blocking and the input limit. Large-document preview and responsiveness,
+  compiled translations, and native accessibility review remain outstanding;
+  do not mark complete. Full offline suite: 506 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

@@ -84,6 +84,7 @@ from .ai_debug_window import AIDebugWindow, MAX_DEBUG_EVENTS, format_interaction
 from .ai_context_disclosure import AIContextDisclosure
 from .ai_activity import AIActivityPanel
 from .generated_text_dialog import GeneratedTextDialog, StreamingPreviewDialog
+from .markdown_preview import MarkdownPreview
 from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
@@ -254,6 +255,8 @@ class MainWindow(QMainWindow):
         self._project_search_navigation = 0
         self._project_search_context = None
         self._project_search_query = ""
+        self._markdown_preview = None
+        self._markdown_dock = None
         self._connected = False
         self._ai_disclosure = None
         self._ai_disclosure_declined_host = None
@@ -571,6 +574,9 @@ class MainWindow(QMainWindow):
         open_tabs_action = QAction(self.tr("Open Tabs…"), self)
         open_tabs_action.triggered.connect(self.select_open_tab)
         view_menu.addAction(open_tabs_action)
+        markdown_action = QAction(self.tr("Markdown Preview"), self)
+        markdown_action.triggered.connect(self.show_markdown_preview)
+        view_menu.addAction(markdown_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
@@ -691,6 +697,7 @@ class MainWindow(QMainWindow):
         )
         editor.escape_pressed.connect(self._handle_editor_escape)
         editor.content_changed.connect(self.schedule_completion)
+        editor.content_changed.connect(lambda editor=editor: self._markdown_changed(editor))
         editor.content_changed.connect(
             lambda: self._find_bar.refresh() if self._find_bar is not None else None
         )
@@ -6072,6 +6079,8 @@ class MainWindow(QMainWindow):
         self._spellcheck_timer.start(delay)
 
     def _on_active_document_changed(self, _: int) -> None:
+        if self._markdown_preview is not None:
+            self._markdown_preview.set_editor(self.tabs.current_editor())
         self._active_document_generation += 1
         self._generate_generation += 1
         self._completion_generation += 1
@@ -6087,6 +6096,20 @@ class MainWindow(QMainWindow):
             editor = self.tabs.widget(index)
             if editor:
                 editor.clear_completion()
+
+    def show_markdown_preview(self) -> None:
+        if self._markdown_dock is None:
+            self._markdown_dock = QDockWidget(self.tr("Markdown Preview"), self)
+            self._markdown_preview = MarkdownPreview(self._markdown_dock)
+            self._markdown_dock.setWidget(self._markdown_preview)
+            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._markdown_dock)
+        self._markdown_preview.set_editor(self.tabs.current_editor())
+        self._markdown_dock.show()
+        self._markdown_dock.raise_()
+
+    def _markdown_changed(self, editor) -> None:
+        if self._markdown_preview is not None and editor is self.tabs.current_editor():
+            self._markdown_preview.changed()
 
     def _apply_completion(self, generation, editor, revision, position, text, selection=None, settings_generation=None) -> None:
         cursor = editor.textCursor()

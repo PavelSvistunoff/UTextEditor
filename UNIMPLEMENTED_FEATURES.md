@@ -83,8 +83,9 @@ session was exercised, and this review does not prove other paths defect-free.
 - **Project-wide search:** literal, case-sensitive scene and note text search
   is available with bounded results and per-document size limits. Broader
   matching options and larger-file support remain future work.
-- **Markdown preview:** Markdown export is available, but the Markdown preview
-  suggested in `SPEC.md` §22 and `README.uk.md` §32 is not implemented.
+- **Markdown preview:** the read-only preview is limited to 65,536 Qt text
+  units; larger documents are not rendered. Large-document responsiveness
+  and native accessibility need further verification.
 - **Additional languages:** writing/spellcheck language choices are Auto,
   English, and Ukrainian. More languages are a future candidate, not a current
   requirement (`SPEC.md` §15).

@@ -51,4 +51,17 @@
     <message><source>Provisional generated text</source><translation>Provisional generated text</translation></message>
     <message><source>Cancel</source><translation>Cancel</translation></message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Markdown Preview</source><translation>Markdown Preview</translation></message>
+</context>
+<context>
+    <name>MarkdownPreview</name>
+    <message><source>Markdown preview</source><translation>Markdown preview</translation></message>
+    <message><source>No active document.</source><translation>No active document.</translation></message>
+    <message><source>Document is too large to preview safely.</source><translation>Document is too large to preview safely.</translation></message>
+    <message><source>Updating preview…</source><translation>Updating preview…</translation></message>
+    <message><source>Read-only preview; external resources are disabled.</source><translation>Read-only preview; external resources are disabled.</translation></message>
+    <message><source>Could not render this Markdown preview.</source><translation>Could not render this Markdown preview.</translation></message>
+</context>
 </TS>
