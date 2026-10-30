@@ -442,15 +442,15 @@ class MainWindow(QMainWindow):
             (ai_menu, "Cancel Auto-writer", self.cancel_auto_writer, QKeySequence()),
             (ai_menu, "Cancel Text Generation", self.cancel_text_generation, QKeySequence()),
             (ai_menu, "Ollama Debug", self.show_ai_debug, QKeySequence()),
-            (ai_menu, "AI Settings…", self.show_settings, QKeySequence()),
+            (settings_menu, "AI Settings…", self.show_settings, QKeySequence()),
         ]
         for menu, title, handler, shortcut in actions:
             if (menu is file_menu and title in {"Save", "Close Tab", "Quit"}) or (menu is edit_menu and title in {"Cut", "Select All"}) or (menu is ai_menu and title in {"Generate..", "Summarize Selected Scene", "Cancel Project Analysis", "Ollama Debug"}):
                 menu.addSeparator()
             action = QAction(action_text[title], self)
-            if menu is ai_menu:
+            if menu is ai_menu or title == "AI Settings…":
                 # macOS otherwise promotes actions named "Settings" to the
-                # application menu, hiding them from the AI menu.
+                # application menu, hiding them from their intended menu.
                 action.setMenuRole(QAction.MenuRole.NoRole)
             action.setShortcut(shortcut)
             if title in {"Summarize Selected Scene", "Check Continuity Against Selected Notes", "Cancel Project Analysis", "Cancel Project Setup", "Cancel Auto-writer", "Cancel Text Generation"}:

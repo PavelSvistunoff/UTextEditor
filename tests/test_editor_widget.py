@@ -608,14 +608,18 @@ def test_line_formatting_operates_on_current_line_and_is_undoable(
     window.close()
 
 
-def test_ai_settings_action_stays_in_the_ai_menu(application: QApplication) -> None:
-    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+def test_ai_settings_action_is_in_settings_menu(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True), patch.object(MainWindow, "show_settings") as show_settings:
         window = MainWindow()
 
     ai_menu = next(action.menu() for action in window.menuBar().actions() if action.text() == "AI")
-    settings = next(action for action in ai_menu.actions() if action.text() == "AI Settings…")
+    settings_menu = next(action.menu() for action in window.menuBar().actions() if action.text() == "Settings")
+    settings = next(action for action in settings_menu.actions() if action.text() == "AI Settings…")
 
+    assert all(action.text() != "AI Settings…" for action in ai_menu.actions())
     assert settings.menuRole() == QAction.MenuRole.NoRole
+    settings.trigger()
+    show_settings.assert_called_once()
     window.close()
 
 
