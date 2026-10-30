@@ -158,6 +158,8 @@ pyside6-lrelease translations/utexteditor_en.ts -qm app/resources/translations/u
 pyside6-lrelease translations/utexteditor_uk.ts -qm app/resources/translations/utexteditor_uk.qm
 ```
 
+Validate existing catalog entries with `python tools/check_translations.py translations/utexteditor_uk.ts`. To audit coverage, extract source strings to a temporary TS file with `pyside6-lupdate app/ui/*.py -ts /tmp/utexteditor-extracted.ts`, then pass `--reference /tmp/utexteditor-extracted.ts` to the checker. It exits nonzero for missing, malformed or unfinished translations and placeholder or plural-form errors, so the same commands can run in CI. Qt extraction may assign a variable name such as `dialog` as the context for `dialog.tr`; review those reports against the actual widget context. The English catalog intentionally contains only selected strings and numerus forms.
+
 The small English catalog supplies Qt numerus forms; ordinary English text remains the source fallback. Ukrainian uses Qt numerus forms, including the three common plural categories. Keep placeholders such as `%1`, `%2`, and `%n` aligned between source and all translation forms. Contexts use stable widget class names. Proper names, shortcuts, filenames, project data, and AI prompt instructions are not translated.
 
 Recurring glossary: project — проєкт; chapter — розділ; scene — сцена; character — персонаж; reference note — довідкова нотатка; revision snapshot — знімок редакції; recovery — відновлення; inline completion — продовження тексту; continuity check — перевірка узгодженості; Auto-writer — автоматичне написання; writing goal — ціль письма.

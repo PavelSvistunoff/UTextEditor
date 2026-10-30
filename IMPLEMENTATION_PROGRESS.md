@@ -242,6 +242,15 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   not a representative accuracy estimate; broader multilingual evaluation
   remains. Do not mark complete on that basis alone. Full offline suite: 533
   passed, 2 skipped.
+- **TASK-033 — in progress:** added a command-line TS validator for missing,
+  unfinished and malformed entries, Qt and named-format placeholder parity,
+  and English/Ukrainian plural forms. It can compare against an independently
+  extracted source catalog, exits nonzero on errors, and has offline tests.
+  Existing catalog entries pass validation; comparison against a fresh Qt
+  extraction reports 57 gaps, including false contexts produced for calls such
+  as `dialog.tr`. Extraction, validation and compilation are documented.
+  Resolve the context discrepancies and remaining localization coverage before
+  treating the audit as complete. Full offline suite: 538 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was
