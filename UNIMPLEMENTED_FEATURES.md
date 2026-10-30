@@ -19,46 +19,7 @@ temporary projects or in-memory objects and do not modify the user's documents.
 
 ### Confirmed defects
 
-1. **High — project recovery snapshots cannot normally be restored to their
-   project item.** `MainWindow._recovery_payloads` assigns an arbitrary recovery
-   UUID to a newly opened editor, including project scenes and notes. However,
-   `_prepare_recovery_restore` treats that UUID as the scene or note ID. A
-   temporary project snapshot reproduced an “Unknown note ID” result and no
-   recovered document; the snapshot remained on disk. See
-   `app/ui/main_window.py` (`_recovery_payloads`, `_prepare_recovery_restore`,
-   and `_open_project_document`). Store the stable project item identity
-   separately from the recovery identity, support existing snapshots safely,
-   and fall back to opening recoverable text as an untitled document if a
-   project item cannot be located. Test both scenes and notes, relocated
-   projects, conflicts, and older snapshots end to end.
-2. **High — binding an already-open standalone file to a project can bypass
-   external-change protection.** `_bind_existing_project_document` and the
-   duplicate-tab path of `_project_document_opened` use a fresh disk read as the
-   binding's expected text without checking the standalone editor's original
-   disk digest. If the file changed externally after it was opened, a later
-   project save can overwrite that change. A temporary-project reproduction
-   opened `original`, changed the disk to `external`, then saved through a
-   binding built from the fresh disk text; the disk became `my unsaved work`.
-   Verify the editor's captured disk version before adopting the binding and
-   retain a conflict when it differs. Add an integration regression test for
-   both binding paths and a change while the background read is pending.
-3. **High — malformed writing-goal progress can prevent startup.**
-   `WritingGoalTracker.from_mapping({"progress": [1]})` raises
-   `AttributeError` because the constructor calls `.items()` without validating
-   the outer progress value. `MainWindow.__init__` catches `OSError`, `TypeError`,
-   and `ValueError`, but not that exception. Validate the mapping at the store
-   boundary and preserve the existing startup fallback and warning; test bad
-   JSON shapes as well as malformed JSON in `tests/test_writing_goals.py` and
-   a startup test. See `app/document/writing_goals.py` and
-   `app/ui/main_window.py`.
-4. **Medium — a failed Find changes the user's cursor and selection.**
-   `FindReplaceWidget._find` moves the editor cursor while searching and wraps
-   to the start or end without restoring the original cursor on no match. An
-   offscreen reproduction with `alpha beta`, selection `(anchor=4, position=6)`,
-   and query `missing` returned false with both positions at zero. Preserve the
-   original cursor on failure and add forward/backward, selection, and Unicode
-   regression cases. See `app/ui/find_replace.py` and `SPEC.md` §24.4.
-5. **Medium — new-word goal history grows with complete document copies.**
+1. **Medium — new-word goal history grows with complete document copies.**
    `WritingGoalTracker.record_text` appends the entire text on each recorded
    change and has no retention bound. A 10,000-character document followed by
    100 single-character edits retained 101 text states totaling 1,015,050
@@ -66,7 +27,7 @@ temporary projects or in-memory objects and do not modify the user's documents.
    Design a bounded or delta-based history that still tracks undo/redo and daily
    counts accurately; benchmark realistic edits and test branching and date
    changes. See `app/document/writing_goals.py`.
-6. **Medium — visible AI diagnostics are not bounded like the backing list.**
+2. **Medium — visible AI diagnostics are not bounded like the backing list.**
    `MainWindow._debug_events` keeps at most 100 events, but an open
    `AIDebugWindow` appends every interaction to a `QPlainTextEdit` without a
    corresponding limit. A long session can retain far more text than intended,
@@ -83,11 +44,6 @@ temporary projects or in-memory objects and do not modify the user's documents.
   platform-appropriate coordination and document residual race conditions; a
   check alone is not a cross-process lock. See `app/document/file_manager.py`
   and `app/project/service.py`.
-- **Recovery save/discard ordering:** recovery capture and cleanup are
-  dispatched as separate workers. Test whether a slow snapshot write can finish
-  after a clean save has discarded older snapshots, leaving an obsolete recovery
-  entry. If reproducible, serialize or generation-check these operations;
-  preserve valid recovery data on failures.
 - **Large-document UI latency:** goal tracking, match counts, and some cursor
   conversions inspect or copy document text on the GUI thread. The full-copy
   goal history above is confirmed, but the user-visible latency threshold has
@@ -101,7 +57,7 @@ translation and Auto-writer, character context and profiles, AI requests and
 validation, settings, search, writing goals, localization, and the UI worker
 pattern. The test baseline was
 `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`
-(315 passed). The five reproductions above were run with `.venv/bin/python` in
+(315 passed). The original reproductions were run with `.venv/bin/python` in
 temporary or in-memory state. The debug-window retention finding follows from
 the code paths; it was not subjected to a long-running memory benchmark. No
 live Ollama, real multi-process race, screen-reader, or platform-specific GUI
@@ -213,18 +169,6 @@ and effort are relative estimates.
    multiple selection, filtering, renaming, and removal without changing project
    data. See `app/ui/project_view.py` and `_show_project_summary` in
    `app/ui/main_window.py`.
-2. **Fix the character filter in Ukrainian** — high priority, small effort,
-   confirmed. `filter_characters` identifies the character group using the
-   English text prefix `Characters (`; the displayed group is translated. In
-   an offscreen Ukrainian run, filtering `Mara` left both `Mara` and `Ivo`
-   visible. Identify the group using stable item data instead of its label, and
-   test filtering and clearing in English and Ukrainian, including empty
-   results and tree refresh. See `app/ui/project_view.py`.
-3. **Keep the cursor on a failed search** — medium priority. The confirmed
-   Find selection issue is documented under Code-review findings above; fixing
-   it prevents a failed navigation attempt from moving the writer away from
-   their place.
-
 ### Make destinations easier to find
 
 4. **Search the whole project** — high priority, medium/high effort. Provide a
@@ -285,8 +229,7 @@ and effort are relative estimates.
 All navigation changes should work without Ollama, be translated into the
 supported interface languages, preserve the editor's current text and selection
 unless navigation explicitly requires a change, and have offscreen Qt tests plus
-manual keyboard and accessibility checks. The filter result above was reproduced
-with an offscreen Qt session; other proposals are not claims that every workflow
+manual keyboard and accessibility checks. The proposals are not claims that every workflow
 has been manually usability-tested.
 
 ## Prioritized upgrade proposals

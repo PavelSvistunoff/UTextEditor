@@ -98,6 +98,14 @@ def test_goal_settings_and_progress_round_trip_atomically(tmp_path: Path) -> Non
     assert loaded.to_mapping() == tracker.to_mapping()
 
 
+@pytest.mark.parametrize("payload", ['{"progress": [1]}', '{"progress": []}', '{"progress": null}', '{"progress": "bad"}', '{"progress": {"2026-01-01": []}}', '{'])
+def test_invalid_persisted_progress_is_reported(tmp_path: Path, payload: str) -> None:
+    path = tmp_path / "writing-goals.json"
+    path.write_text(payload, encoding="utf-8")
+    with pytest.raises(ValueError):
+        WritingGoalStore(path).load()
+
+
 def test_rekeying_a_saved_document_preserves_its_daily_contribution() -> None:
     tracker = WritingGoalTracker(100, "new_words")
     tracker.attach("untitled", "")

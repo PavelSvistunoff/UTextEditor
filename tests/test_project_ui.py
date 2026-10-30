@@ -13,7 +13,9 @@ from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QInputDialog
 
 from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
-from app.project import Project, WordCount
+from app.document.recovery import RecoveryStore
+from app.document.file_manager import FileManager, ExternalChangeError
+from app.project import Project, ProjectError, WordCount
 from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
@@ -94,6 +96,177 @@ def test_project_tree_counts_and_project_scene_save_are_integrated(application, 
     assert not editor.document_state.dirty
     assert root.child(2).text(0) == "Characters (0)"
     window.close()
+
+
+@pytest.mark.parametrize("kind", ["scene", "note"])
+@pytest.mark.parametrize("legacy", [False, True])
+def test_project_recovery_snapshot_restores_after_relocation(application, tmp_path, kind, legacy, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    item = (project.add_scene("Opening", content="saved") if kind == "scene"
+            else project.add_note("Reference", content="saved"))
+    store = RecoveryStore(tmp_path / "recovery")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow(recovery_store=store)
+    window.project = project
+    window._open_project_document(kind, item.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved recovery")
+    payload, = window._recovery_payloads()
+    assert payload.project_item_id == item.id and payload.project_item_kind == kind
+    entries, failures = window._save_recovery_batch(store, (payload,))
+    assert not failures
+    entry = entries[0]
+    if legacy:
+        import json
+        data = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+        del data["project_item_id"], data["project_item_kind"]
+        entry.snapshot_path.write_text(json.dumps(data), encoding="utf-8")
+    entry, = store.scan().entries
+    relocated = tmp_path / "moved"
+    project.root.rename(relocated)
+    restored, = window._prepare_recovery_restore(store, (entry,), relocated)
+    _, document, error = restored
+    assert error is None
+    assert document.path == relocated / item.path
+    assert document.text == "unsaved recovery" and document.dirty
+    assert (relocated / item.path).read_text(encoding="utf-8") == "saved"
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    window._recovery_restore_finished([restored])
+    assert window.tabs.current_editor().toPlainText() == "unsaved recovery"
+    for index in range(window.tabs.count()):
+        window.tabs.widget(index).document_state.dirty = False
+        window.tabs.widget(index).document().setModified(False)
+    window.close()
+
+
+@pytest.mark.parametrize("failure", ["changed", "missing_item", "wrong_project", "unavailable"])
+def test_project_recovery_failures_preserve_text_as_untitled(tmp_path, failure):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="saved")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("recovery-id", "unsaved", canonical_path=project.root / scene.path,
+                       project_path=project.root, project_id=project.manifest.project_id,
+                       project_item_id=scene.id, project_item_kind="scene")
+    located = None
+    if failure == "changed":
+        (project.root / scene.path).write_text("external", encoding="utf-8")
+    elif failure == "missing_item":
+        project.remove_scene(scene.id)
+    elif failure == "wrong_project":
+        project.root.rename(tmp_path / "original")
+        located = Project.create(tmp_path / "other", "Other").root
+    else:
+        project.root.rename(tmp_path / "original")
+    _, document, error = MainWindow._prepare_recovery_restore(store, (entry,), located)[0]
+    assert error and document.path is None and document.text == "unsaved" and document.dirty
+    assert entry.snapshot_path.exists()
+
+
+@pytest.mark.parametrize("route", ["existing", "duplicate"])
+@pytest.mark.parametrize("change_timing", ["before_read", "while_pending"])
+def test_binding_open_file_preserves_external_change_protection(application, tmp_path, route, change_timing):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="original")
+    path = project.root / scene.path
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    editor = window.tabs.add_document(FileManager().open(path))
+    editor.setPlainText("unsaved")
+    if change_timing == "before_read":
+        path.write_text("external", encoding="utf-8")
+    raw = project.read_scene(scene.id)
+    if change_timing == "while_pending":
+        path.write_text("external", encoding="utf-8")
+    if route == "existing":
+        window._bind_existing_project_document(project, editor, "scene", scene.id, raw)
+    else:
+        window._project_document_opened(project, "scene", scene.id, path, raw)
+    if change_timing == "before_read":
+        assert editor not in window._project_documents
+        with pytest.raises(ExternalChangeError):
+            FileManager().save(editor.document_state)
+    else:
+        binding = window._project_documents[editor]
+        with pytest.raises(ProjectError, match="changed"):
+            window._save_project_document(binding, "unsaved", "LF")
+    assert path.read_text(encoding="utf-8") == "external"
+    editor.document_state.dirty = False
+    editor.document().setModified(False)
+    window.close()
+
+
+def test_binding_ignores_editor_moved_while_project_read_pending(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="original")
+    path = project.root / scene.path
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    editor = window.tabs.add_document(FileManager().open(path))
+    raw = project.read_scene(scene.id)
+    FileManager().save(editor.document_state, tmp_path / "saved-as.txt")
+    window._bind_existing_project_document(project, editor, "scene", scene.id, raw)
+    assert editor not in window._project_documents
+    window.close()
+
+
+def test_recovery_cleanup_waits_for_older_snapshot_and_preserves_newer_edits(application, tmp_path, monkeypatch):
+    store = RecoveryStore(tmp_path / "recovery")
+    entered, release = Event(), Event()
+    real_save = store.save
+
+    def delayed_save(*args, **kwargs):
+        entered.set()
+        assert release.wait(3)
+        return real_save(*args, **kwargs)
+
+    monkeypatch.setattr(store, "save", delayed_save)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow(recovery_store=store)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("old unsaved")
+    window._capture_recovery_snapshots()
+    wait_until(entered.is_set, application)
+    window._discard_recovery_for_editor(editor)
+    release.set()
+    wait_until(lambda: not window._recovery_pending, application)
+    # Queue a newer snapshot after the cleanup; it must not be deleted by it.
+    editor.setPlainText("new unsaved")
+    window._capture_recovery_snapshots()
+    wait_until(lambda: not window._recovery_pending, application)
+    entries = store.scan().entries
+    assert [entry.text for entry in entries] == ["new unsaved"]
+    editor.document_state.dirty = False
+    editor.document().setModified(False)
+    window.close()
+    wait_until(lambda: window._closing_confirmed, application)
+
+
+def test_shutdown_waits_for_queued_recovery_cleanup(application, tmp_path, monkeypatch):
+    store = RecoveryStore(tmp_path / "recovery")
+    entered, release = Event(), Event()
+    real_discard = store.discard_document
+
+    def delayed_discard(document_id):
+        entered.set()
+        assert release.wait(3)
+        real_discard(document_id)
+
+    monkeypatch.setattr(store, "discard_document", delayed_discard)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow(recovery_store=store)
+    editor = window.tabs.current_editor()
+    editor._recovery_document_id = "document"
+    store.save("document", "obsolete")
+    window._discard_recovery_for_editor(editor)
+    wait_until(entered.is_set, application)
+    window.close()
+    assert not window._closing_confirmed and window._shutdown_recovery_pending
+    release.set()
+    wait_until(lambda: window._closing_confirmed, application)
+    assert not store.scan().entries
 
 
 def test_activating_character_profile_opens_editor_instead_of_note_document(

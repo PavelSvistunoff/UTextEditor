@@ -15,7 +15,8 @@ from PySide6.QtWidgets import QApplication
 from app.i18n import format_qt, install_translation, resolve_ui_language
 from app.settings.settings import AppSettings
 from app.ui.settings_dialog import SettingsDialog
-from app.project import WordCount
+from app.project import Project, WordCount
+from app.document.writing_goals import WritingGoalStore
 from app.ui.project_view import ProjectView
 from app.ui.main_window import MainWindow
 from app.ui.revision_history_dialog import RevisionHistoryDialog
@@ -95,6 +96,43 @@ def test_english_catalog_provides_correct_numerus_forms(application):
     finally:
         if translator is not None:
             application.removeTranslator(translator)
+
+
+@pytest.mark.parametrize("language", ["en", "uk"])
+def test_character_filter_uses_identity_in_each_language(application, tmp_path, language):
+    _, translator = install_translation(application, language)
+    try:
+        project = Project.create(tmp_path / "novel", "Novel")
+        project.add_character("Mara")
+        project.add_character("Ivo")
+        view = ProjectView()
+        count = WordCount(0, True)
+        view.show_project(project, {}, {}, count)
+        group = view.topLevelItem(0).child(view.topLevelItem(0).childCount() - 1)
+        view.filter_characters("mara")
+        assert not group.child(0).isHidden() and group.child(1).isHidden()
+        view.filter_characters("missing")
+        assert group.isHidden()
+        view.show_project(project, {}, {}, count)
+        group = view.topLevelItem(0).child(view.topLevelItem(0).childCount() - 1)
+        assert group.isHidden()
+        view.filter_characters("")
+        assert not group.isHidden() and all(not group.child(i).isHidden() for i in range(2))
+        view.close()
+    finally:
+        if translator is not None:
+            application.removeTranslator(translator)
+
+
+def test_window_recovers_from_invalid_writing_goal_progress(application, tmp_path, monkeypatch):
+    path = tmp_path / "writing-goals.json"
+    path.write_text('{"progress": [1]}', encoding="utf-8")
+    monkeypatch.setattr(AppSettings, "load", classmethod(lambda cls: cls()))
+    window = MainWindow(writing_goal_store=WritingGoalStore(path))
+    assert window.writing_goals.target == 0
+    assert "progress" in window._writing_goal_load_error
+    assert path.read_text(encoding="utf-8") == '{"progress": [1]}'
+    window.close()
 
 
 def test_missing_translation_resource_falls_back_to_english(application, monkeypatch, tmp_path):

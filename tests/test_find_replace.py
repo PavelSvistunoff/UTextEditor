@@ -6,14 +6,20 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QTextCursor
 
+from app.i18n import install_translation
 from app.ui.editor_widget import EditorWidget
 from app.ui.find_replace import FindReplaceWidget
 
 
 @pytest.fixture(scope="module")
 def application():
-    return QApplication.instance() or QApplication([])
+    app = QApplication.instance() or QApplication([])
+    _, translator = install_translation(app, "en")
+    yield app
+    if translator is not None:
+        app.removeTranslator(translator)
 
 
 def make_find_bar(editor):
@@ -68,3 +74,19 @@ def test_replace_all_is_one_undoable_edit(application):
     assert editor.toPlainText() == "word word"
 
     find_bar.hide()
+
+
+@pytest.mark.parametrize("backwards", [False, True])
+@pytest.mark.parametrize("anchor,position", [(1, 5), (5, 1), (3, 3)])
+def test_failed_find_preserves_cursor_and_selection(application, backwards, anchor, position):
+    editor = EditorWidget()
+    editor.setPlainText("a😀bc def")
+    cursor = editor.textCursor()
+    cursor.setPosition(anchor)
+    cursor.setPosition(position, QTextCursor.MoveMode.KeepAnchor)
+    editor.setTextCursor(cursor)
+    bar = make_find_bar(editor)
+    bar.find_edit.setText("missing")
+
+    assert not bar._find(backwards=backwards)
+    assert (editor.textCursor().anchor(), editor.textCursor().position()) == (anchor, position)

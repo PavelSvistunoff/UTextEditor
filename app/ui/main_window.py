@@ -109,6 +109,8 @@ class _RecoveryPayload:
     project_path: str | None
     canonical_digest: str | None
     project_id: str | None
+    project_item_id: str | None
+    project_item_kind: str | None
 
 
 class MainWindow(QMainWindow):
@@ -198,6 +200,9 @@ class MainWindow(QMainWindow):
         self.tabs = DocumentTabWidget(self)
         self.setCentralWidget(self.tabs)
         self.thread_pool = QThreadPool.globalInstance()
+        # Recovery writes and cleanup must execute in the order requested by the UI.
+        self._recovery_pool = QThreadPool(self)
+        self._recovery_pool.setMaxThreadCount(1)
         self._workers: list[FunctionWorker] = []
         self._debug_events: list[tuple[str, str, dict]] = []
         self._debug_window: AIDebugWindow | None = None
@@ -3537,7 +3542,7 @@ class MainWindow(QMainWindow):
                 lambda error: self.statusBar().showMessage(f"Recovery data could not be discarded: {error}", 10000),
                 Qt.ConnectionType.QueuedConnection,
             )
-            self.thread_pool.start(worker)
+            self._recovery_pool.start(worker)
             return
         located_directory = None
         if choice == "locate":
@@ -3591,23 +3596,37 @@ class MainWindow(QMainWindow):
                 if (project_path is None or not project_path.is_dir()) and located_directory:
                     project_path = Path(located_directory)
                 if project_path is None or not project_path.is_dir():
-                    restored.append((entry, None, "Original project is unavailable; locate it before restoring."))
+                    restored.append((entry, Document(text=entry.text, dirty=True), "Original project is unavailable; recovered text was opened separately."))
                     continue
                 try:
                     project = Project.open(project_path)
                     if project.manifest.project_id != entry.project_id:
                         raise ProjectError("The selected directory is a different project.")
-                    try:
-                        item = project.get_scene(entry.document_id)
-                    except ProjectError:
-                        item = project.get_note(entry.document_id)
+                    if entry.project_item_id is not None:
+                        item = (project.get_scene(entry.project_item_id)
+                                if entry.project_item_kind == "scene"
+                                else project.get_note(entry.project_item_id))
+                    else:
+                        # Older snapshots stored an arbitrary recovery ID. Resolve
+                        # their original project-relative path, including after relocation.
+                        relative_path = None
+                        if entry.canonical_path and entry.project_path:
+                            try:
+                                relative_path = Path(entry.canonical_path).resolve().relative_to(Path(entry.project_path).resolve())
+                            except ValueError:
+                                pass
+                        candidates = [*project.iter_scenes(), *project.manifest.notes]
+                        matches = [candidate for candidate in candidates if relative_path is not None and Path(candidate.path) == relative_path]
+                        if len(matches) != 1:
+                            raise ProjectError("The original project item could not be identified.")
+                        item = matches[0]
                     entry = replace(
                         entry,
                         canonical_path=str(project.root / item.path),
                         project_path=str(project.root),
                     )
                 except (OSError, ProjectError) as exc:
-                    restored.append((entry, None, str(exc)))
+                    restored.append((entry, Document(text=entry.text, dirty=True), str(exc)))
                     continue
             try:
                 document = store.restore(entry)
@@ -3616,7 +3635,7 @@ class MainWindow(QMainWindow):
                 restored.append(
                     (entry, Document(text=entry.text, dirty=True), str(exc))
                 )
-            except OSError as exc:
+            except (OSError, UnicodeError) as exc:
                 restored.append(
                     (entry, Document(text=entry.text, dirty=True), str(exc))
                 )
@@ -3682,6 +3701,8 @@ class MainWindow(QMainWindow):
                     project_path=project_path,
                     canonical_digest=expected_digest,
                     project_id=project_id,
+                    project_item_id=binding.item_id if binding else None,
+                    project_item_kind=binding.kind if binding else None,
                 )
             )
         return tuple(payloads)
@@ -3700,6 +3721,8 @@ class MainWindow(QMainWindow):
                         project_path=payload.project_path,
                         canonical_digest=payload.canonical_digest,
                         project_id=payload.project_id,
+                        project_item_id=payload.project_item_id,
+                        project_item_kind=payload.project_item_kind,
                     )
                 )
             except (OSError, TypeError, ValueError) as exc:
@@ -3707,7 +3730,8 @@ class MainWindow(QMainWindow):
         return saved, failures
 
     def _capture_recovery_snapshots(self) -> None:
-        if self.recovery_store is None or self._recovery_pending or self._closing_confirmed:
+        if (self.recovery_store is None or self._recovery_pending
+                or self._closing_confirmed or self._quit_in_progress):
             return
         payloads = self._recovery_payloads()
         if not payloads:
@@ -3721,7 +3745,7 @@ class MainWindow(QMainWindow):
         worker.signals.failed.connect(
             self._recovery_snapshots_failed, Qt.ConnectionType.QueuedConnection
         )
-        self.thread_pool.start(worker)
+        self._recovery_pool.start(worker)
 
     def _recovery_snapshots_saved(self, result) -> None:
         self._recovery_pending = False
@@ -3982,12 +4006,7 @@ class MainWindow(QMainWindow):
                 continue
             self.tabs.setCurrentIndex(index)
             if editor not in self._project_documents:
-                self._project_documents[editor] = _ProjectDocumentBinding(
-                    project, kind, item_id, raw
-                )
-                self._attach_writing_goal_document(editor)
-                self._project_refresh_timer.start(150)
-                self._schedule_project_autosave(editor)
+                self._bind_existing_project_document(project, editor, kind, item_id, raw)
             return
         normalized = raw.replace("\r\n", "\n").replace("\r", "\n")
         document = Document.from_text(normalized, path)
@@ -4010,6 +4029,20 @@ class MainWindow(QMainWindow):
         if open_key is not None:
             self._pending_project_opens.discard(open_key)
         if project is self.project and self.tabs.indexOf(editor) >= 0:
+            try:
+                item = project.get_scene(item_id) if kind == "scene" else project.get_note(item_id)
+            except ProjectError:
+                return
+            path = editor.document_state.path
+            if path is None or path.resolve() != (project.root / item.path).resolve():
+                return
+            expected_digest = editor.document_state.disk_digest
+            if expected_digest is None or hashlib.sha256(raw.encode("utf-8")).hexdigest() != expected_digest:
+                self.statusBar().showMessage(
+                    "Project document changed on disk or cannot be verified; reload, compare, or use Save As.",
+                    10000,
+                )
+                return
             self._project_documents[editor] = _ProjectDocumentBinding(project, kind, item_id, raw)
             self._attach_writing_goal_document(editor)
             self._project_refresh_timer.start(150)
@@ -4215,7 +4248,7 @@ class MainWindow(QMainWindow):
                 ),
                 Qt.ConnectionType.QueuedConnection,
             )
-            self.thread_pool.start(worker)
+            self._recovery_pool.start(worker)
 
     def _save_failed(self, editor, error, callback=None, *, notify: bool = True) -> None:
         self._saving_editors.discard(editor)
@@ -5127,7 +5160,7 @@ class MainWindow(QMainWindow):
 
     def _close_after_confirmed_quit(self) -> None:
         payloads = self._recovery_payloads(exclude_discarded=True)
-        if self.recovery_store is not None and payloads:
+        if self.recovery_store is not None:
             self._shutdown_recovery_pending = True
             worker = FunctionWorker(self._save_recovery_batch, self.recovery_store, payloads)
             self._track_worker(worker)
@@ -5140,7 +5173,7 @@ class MainWindow(QMainWindow):
                 Qt.ConnectionType.QueuedConnection,
             )
             self.statusBar().showMessage("Saving shutdown recovery snapshots…")
-            self.thread_pool.start(worker)
+            self._recovery_pool.start(worker)
             return
         self._finish_shutdown_recovery()
 

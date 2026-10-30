@@ -27,6 +27,8 @@ class RecoveryEntry:
     canonical_existed: bool
     project_id: str | None
     snapshot_path: Path
+    project_item_id: str | None = None
+    project_item_kind: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,11 +77,18 @@ class RecoveryStore:
         project_path: str | Path | None = None,
         canonical_digest: str | None = None,
         project_id: str | None = None,
+        project_item_id: str | None = None,
+        project_item_kind: str | None = None,
     ) -> RecoveryEntry:
         if not document_id.strip():
             raise ValueError("A document ID is required for recovery.")
         if not isinstance(text, str):
             raise TypeError("Recovery text must be a string.")
+        if (project_item_id is None) != (project_item_kind is None) or (
+            project_item_id is not None
+            and (not isinstance(project_item_id, str) or not project_item_id or project_item_kind not in ("scene", "note"))
+        ):
+            raise ValueError("Recovery project item identity is invalid.")
         canonical_existed = False
         if canonical_path is not None:
             canonical = Path(canonical_path)
@@ -108,6 +117,8 @@ class RecoveryStore:
             "canonical_digest": canonical_digest,
             "canonical_existed": canonical_existed,
             "project_id": project_id,
+            "project_item_id": project_item_id,
+            "project_item_kind": project_item_kind,
         }
         self._atomic_write(target, json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
         self._prune(directory, keep=target)
@@ -122,6 +133,8 @@ class RecoveryStore:
             canonical_existed=canonical_existed,
             project_id=project_id,
             snapshot_path=target,
+            project_item_id=project_item_id,
+            project_item_kind=project_item_kind,
         )
 
     def scan(self) -> RecoveryScan:
@@ -247,6 +260,13 @@ class RecoveryStore:
                 raise ValueError(f"Recovery snapshot has an invalid {field}.")
         if payload.get("project_id") is not None and not isinstance(payload["project_id"], str):
             raise ValueError("Recovery snapshot has an invalid project ID.")
+        item_id = payload.get("project_item_id")
+        item_kind = payload.get("project_item_kind")
+        if (item_id is None) != (item_kind is None) or (
+            item_id is not None
+            and (not isinstance(item_id, str) or not item_id or item_kind not in ("scene", "note"))
+        ):
+            raise ValueError("Recovery snapshot has an invalid project item identity.")
         return RecoveryEntry(
             snapshot_id=payload["snapshot_id"],
             document_id=payload["document_id"],
@@ -258,6 +278,8 @@ class RecoveryStore:
             canonical_existed=payload["canonical_existed"],
             project_id=payload.get("project_id"),
             snapshot_path=path,
+            project_item_id=item_id,
+            project_item_kind=item_kind,
         )
 
     def _prune(self, directory: Path, *, keep: Path) -> None:

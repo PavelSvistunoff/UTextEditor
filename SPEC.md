@@ -20,6 +20,18 @@ The application targets people who need a straightforward multi-document text ed
 
 The current application includes the original editor MVP and the project, recovery, writing-goal, export, snapshot, and local project-AI features listed in `README.md`. This document retains detailed requirements for the original editor workflows and ongoing edge cases; it is not an exhaustive status checklist. Where requirements here conflict with current behavior or documented scope, `README.md` and `UNIMPLEMENTED_FEATURES.md` take precedence.
 
+Project recovery snapshots retain the scene or note identity independently of
+the recovery ID. Older snapshots can use their original project-relative path;
+if the item cannot be identified or its canonical file changed, recovered text
+opens as an unsaved standalone document. Binding an already-open file to a
+project must verify its captured disk version and retain conflict protection.
+Recovery snapshot writes and cleanup execute in request order off the GUI thread;
+orderly shutdown waits for queued recovery operations before closing.
+
+Invalid saved writing-goal data must not prevent startup: the application uses
+default goal settings and reports the loading problem without rewriting that
+data during startup.
+
 The specification describes intended behavior, not a claim that every requirement is implemented. Remaining gaps include richer `Auto` language detection for mixed and short text, editor appearance settings, and memory-efficient large-file handling. Keep `README.md`'s known-gaps section synchronized with observed behavior.
 
 ## 2.1 Interface localization
@@ -64,7 +76,8 @@ goals/status/priority, knowledge categories, and arc notes. Directed
 relationships can be added, edited, and removed from a character's
 project-tree context menu and viewed from either endpoint. Scene associations
 can be added, updated, or removed from a scene's context menu. The project-tree
-filter searches character names, aliases, roles, descriptions, and primary
+filter works independently of the interface language and searches character
+names, aliases, roles, descriptions, and primary
 motivations; another action searches manuscript scenes by profile names and
 aliases. Profiles can be imported and exported as versioned UTF-8 YAML;
 imports receive a new stable identity and do not include relationships or
@@ -343,7 +356,7 @@ This section makes the preceding requirements concrete for common user flows. It
 - Find Next searches from the active cursor to the document end, then wraps from the beginning up to the original position at most once. A match at the current cursor may be selected; repeated Find Next must advance.
 - Replace acts on a selection only if it exactly matches the search term under active matching rules. Otherwise it finds and selects the next match before replacing, avoiding accidental replacement of unrelated selected text.
 - Replace All uses a stable snapshot and replaces non-overlapping matches; newly inserted replacement text is not searched recursively in the same operation.
-- An empty query is rejected without changing text, cursor, selection, dirty state, or undo history. No-match feedback leaves the query available for editing.
+- An empty query is rejected without changing text, cursor, selection, dirty state, or undo history. No-match feedback leaves the query available for editing and preserves the original cursor and selection.
 
 ### 24.5 Background work lifecycle
 

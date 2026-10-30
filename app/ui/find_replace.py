@@ -90,6 +90,7 @@ class FindReplaceWidget(QWidget):
             return False
 
         cursor = editor.textCursor()
+        original_cursor = QTextCursor(cursor)
         start = cursor.selectionStart() if backwards and cursor.hasSelection() else (
             cursor.selectionEnd() if cursor.hasSelection() else cursor.position()
         )
@@ -112,6 +113,7 @@ class FindReplaceWidget(QWidget):
             self.message.setText(self.tr("Wrapped to the end.") if backwards else self.tr("Wrapped to the beginning."))
             self._update_match_count()
             return True
+        editor.setTextCursor(original_cursor)
         self.message.setText(self.tr("No match found."))
         self._update_match_count()
         return False

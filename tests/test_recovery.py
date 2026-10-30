@@ -128,3 +128,14 @@ def test_scan_rejects_unsupported_recovery_version_and_keeps_data(tmp_path: Path
     assert not scan.entries
     assert len(scan.issues) == 1
     assert entry.snapshot_path.exists()
+
+
+def test_scan_rejects_malformed_project_item_identity(tmp_path: Path) -> None:
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("document", "text")
+    payload = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+    payload.update(project_item_id="scene-id", project_item_kind=[])
+    entry.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+    scan = store.scan()
+    assert not scan.entries and len(scan.issues) == 1
+    assert entry.snapshot_path.exists()

@@ -31,7 +31,9 @@ class WritingGoalTracker:
         self.scope = scope
         self.paused = paused
         self.progress: dict[str, dict[str, int]] = {}
-        for day, counts in (progress or {}).items():
+        if progress is not None and not isinstance(progress, Mapping):
+            raise ValueError("Writing-goal progress must be a mapping.")
+        for day, counts in (progress if progress is not None else {}).items():
             date.fromisoformat(day)
             if not isinstance(counts, Mapping):
                 raise ValueError("Writing-goal progress must map dates to document counts.")
@@ -177,6 +179,8 @@ class WritingGoalTracker:
     def from_mapping(cls, value: object) -> "WritingGoalTracker":
         if not isinstance(value, dict):
             raise ValueError("Writing-goal settings must be a mapping.")
+        if "progress" in value and not isinstance(value["progress"], Mapping):
+            raise ValueError("Writing-goal progress must be a mapping.")
         return cls(
             target=value.get("target", 0),
             scope=value.get("scope", "active_scene"),

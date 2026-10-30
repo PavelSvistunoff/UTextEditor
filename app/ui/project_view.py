@@ -77,6 +77,7 @@ class ProjectView(QTreeWidget):
             notes.addChild(item)
         characters = QTreeWidgetItem([self.tr("Characters (%1)").replace("%1", str(len(project.manifest.characters)))])
         characters.setData(0, Qt.ItemDataRole.UserRole, "group")
+        characters.setData(0, Qt.ItemDataRole.UserRole + 1, "characters")
         root.addChild(characters)
         for character in project.manifest.characters:
             item = QTreeWidgetItem([character.display_name or character.full_name])
@@ -96,7 +97,7 @@ class ProjectView(QTreeWidget):
             return
         for index in range(root.childCount()):
             group = root.child(index)
-            if group.text(0).startswith("Characters ("):
+            if group.data(0, Qt.ItemDataRole.UserRole + 1) == "characters":
                 for child_index in range(group.childCount()):
                     item = group.child(child_index)
                     character = next((c for c in self._characters if c.id == item.data(0, Qt.ItemDataRole.UserRole + 1)), None)
