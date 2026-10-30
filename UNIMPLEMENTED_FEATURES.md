@@ -125,12 +125,6 @@ and effort are relative estimates.
    it cannot read. Searches are literal and case-sensitive, limited to 1,000
    matches and 4 MiB per document. Additional matching options and larger-file
    support remain future work.
-5. **Quickly open a project item** — high priority, medium effort. Add a
-   keyboard-invoked picker for scene, chapter, note, and character names and
-   aliases, with type and chapter context to disambiguate duplicate titles.
-   Use existing IDs to route selections and handle deleted or unavailable
-   items. A title picker complements full-text search and should not silently
-   close or replace an unsaved tab.
 7. **Navigate between related items** — medium priority, medium effort. Build
    on existing note links, scene associations, and character scene search with
    accessible lists that open a linked item or associated scene directly, and

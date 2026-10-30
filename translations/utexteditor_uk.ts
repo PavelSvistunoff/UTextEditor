@@ -1263,6 +1263,10 @@
         <translation type="vanished">Не вдалося з’єднатися або знайти модель «%1». Перевірте, чи запущено Ollama, і за потреби виконайте `ollama pull %1`.</translation>
     </message>
     <message><source>Search Project Text…</source><translation>Пошук у тексті проєкту…</translation></message>
+    <message><source>Quick Open…</source><translation>Швидке відкриття…</translation></message>
+    <message><source>Quick Open</source><translation>Швидке відкриття</translation></message>
+    <message><source>Open a project first.</source><translation>Спочатку відкрийте проєкт.</translation></message>
+    <message><source>Ungrouped</source><translation>Без розділу</translation></message>
     <message><source>Search Project Text</source><translation>Пошук у тексті проєкту</translation></message>
     <message><source>Open a project before searching.</source><translation>Відкрийте проєкт перед пошуком.</translation></message>
     <message><source>Wait for the current search to finish.</source><translation>Зачекайте завершення поточного пошуку.</translation></message>
@@ -1280,6 +1284,16 @@
     <message><source>The disk version changed during review. Please review it again.</source><translation>Версія на диску змінилася під час перегляду. Перегляньте її знову.</translation></message>
     <message><source>Version staged in the editor. Save to write it to disk.</source><translation>Версію підготовлено в редакторі. Збережіть документ, щоб записати її на диск.</translation></message>
     <message><source>Use File &gt; Review External Changes… to compare versions and choose how to proceed.</source><translation>Виберіть «Файл &gt; Переглянути зовнішні зміни…», щоб порівняти версії та вибрати подальшу дію.</translation></message>
+</context>
+<context>
+    <name>QuickOpenDialog</name>
+    <message><source>Quick Open</source><translation>Швидке відкриття</translation></message>
+    <message><source>Search project items</source><translation>Пошук елементів проєкту</translation></message>
+    <message><source>Matching project items</source><translation>Знайдені елементи проєкту</translation></message>
+    <message><source>Scene</source><translation>Сцена</translation></message>
+    <message><source>Chapter</source><translation>Розділ</translation></message>
+    <message><source>Reference note</source><translation>Довідкова нотатка</translation></message>
+    <message><source>Character</source><translation>Персонаж</translation></message>
 </context>
 <context>
     <name>ProjectSearchPanel</name>

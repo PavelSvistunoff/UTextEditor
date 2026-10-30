@@ -86,6 +86,7 @@ from .analysis_window import AnalysisWindow
 from .auto_writer_dialog import AutoWriterDialog, AutoWriterProgressDialog
 from .project_view import ProjectView
 from .project_search_panel import ProjectSearchPanel
+from .quick_open_dialog import QuickOpenDialog, QuickOpenItem
 from .portrait import load_portrait
 from .character_dialog import CharacterDialog
 from .character_relationship_dialog import CharacterRelationshipDialog
@@ -516,6 +517,10 @@ class MainWindow(QMainWindow):
         search_project_action = QAction(self.tr("Search Project Text…"), self)
         search_project_action.triggered.connect(self.show_project_search)
         search_menu.addAction(search_project_action)
+        quick_open_action = QAction(self.tr("Quick Open…"), self)
+        quick_open_action.setShortcut(QKeySequence("Ctrl+P"))
+        quick_open_action.triggered.connect(self.quick_open_project_item)
+        search_menu.addAction(quick_open_action)
 
         formatting_menu = edit_menu.addMenu(self.tr("Text Formatting"))
         formatting_actions = (
@@ -4764,6 +4769,35 @@ class MainWindow(QMainWindow):
             self._project_search_panel, self._project_search_dock = panel, dock
         self._project_search_dock.show()
         self._project_search_panel.query.setFocus()
+
+    def quick_open_project_item(self) -> None:
+        project = self.project
+        if project is None:
+            QMessageBox.information(self, self.tr("Quick Open"), self.tr("Open a project first."))
+            return
+        generation = self._project_generation
+        items = []
+        for chapter in project.manifest.chapters:
+            items.append(QuickOpenItem("chapter", chapter.id, chapter.title))
+            items.extend(QuickOpenItem("scene", scene.id, scene.title, chapter.title) for scene in chapter.scenes)
+        items.extend(QuickOpenItem("scene", scene.id, scene.title, self.tr("Ungrouped")) for scene in project.manifest.ungrouped_scenes)
+        items.extend(QuickOpenItem("note", note.id, note.title) for note in project.manifest.notes)
+        items.extend(QuickOpenItem("character", character.id, character.display_name or character.full_name,
+                                   aliases=(character.full_name, *character.aliases))
+                     for character in project.manifest.characters)
+        dialog = QuickOpenDialog(tuple(items), self)
+        if dialog.exec() != QDialog.DialogCode.Accepted or self.project is not project or self._project_generation != generation:
+            return
+        selected = dialog.selected()
+        if selected is None:
+            return
+        if selected.kind == "chapter":
+            if not any(chapter.id == selected.id for chapter in project.manifest.chapters):
+                self._project_item_no_longer_exists()
+            elif self.project_view is None or not self.project_view.reveal_item("chapter", selected.id):
+                self._project_item_no_longer_exists()
+            return
+        self._open_project_document(selected.kind, selected.id)
 
     def _cancel_project_text_search(self) -> None:
         if self._project_search_cancel is not None:

@@ -84,6 +84,15 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   path resolution now runs in the search worker. Do not mark complete until
   those issues and localization are verified. Full offline suite: 454 passed,
   2 skipped.
+- **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
+  picker for scene, chapter, note and character names and character aliases,
+  showing type, chapter context and stable IDs. It opens existing documents
+  without closing unsaved tabs; chapters are revealed in the tree. Offline Qt
+  tests cover filtering, duplicates, keyboard activation, unsaved tabs, deleted
+  items, chapter reveal, and shortcut uniqueness. The Ukrainian source catalog
+  needs compilation and the shortcut needs native-platform verification.
+  Do not mark complete until those checks are performed. Full offline suite:
+  459 passed, 2 skipped.
 - **TASK-014 — implemented:** Project > Reveal Current Document in Project
   locates a bound scene or note by stable ID, expands only its ancestors and
   preserves other expansion state. Standalone and unavailable items report

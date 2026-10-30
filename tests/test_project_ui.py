@@ -362,6 +362,114 @@ def test_project_search_cancel_keeps_gui_responsive(application, tmp_path, monke
     window.close()
 
 
+def test_quick_open_filters_aliases_and_distinguishes_duplicate_names(application):
+    from app.ui.quick_open_dialog import QuickOpenDialog, QuickOpenItem
+    items = (QuickOpenItem("scene", "scene-1", "Shared", "Chapter One"),
+             QuickOpenItem("scene", "scene-2", "Shared", "Chapter Two"),
+             QuickOpenItem("character", "character-1", "Mara", aliases=("Night Fox",)))
+    dialog = QuickOpenDialog(items)
+    assert dialog.results.count() == 3
+    assert "Chapter One" in dialog.results.item(0).text()
+    assert "scene-2" in dialog.results.item(1).text()
+    dialog.query.setText("night fox")
+    assert dialog.results.count() == 1
+    assert dialog.selected().id == "character-1"
+    dialog.query.setText("not found")
+    dialog._accept_selection()
+    assert dialog.result() != dialog.DialogCode.Accepted
+    dialog.close()
+
+
+def test_quick_open_keyboard_selects_filtered_result(application):
+    from PySide6.QtTest import QTest
+    from app.ui.quick_open_dialog import QuickOpenDialog, QuickOpenItem
+    dialog = QuickOpenDialog((QuickOpenItem("scene", "1", "First"), QuickOpenItem("note", "2", "Second")))
+    dialog.show()
+    dialog.query.setFocus()
+    QTest.keyClicks(dialog.query, "second")
+    QTest.keyClick(dialog.query, Qt.Key.Key_Return)
+    assert dialog.result() == dialog.DialogCode.Accepted
+    assert dialog.selected().id == "2"
+
+
+def test_quick_open_uses_stable_id_and_preserves_unsaved_tabs(application, tmp_path, monkeypatch):
+    from app.ui.quick_open_dialog import QuickOpenItem
+    from PySide6.QtWidgets import QDialog
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter")
+    scene = project.add_scene("Scene", chapter_id=chapter.id, content="disk")
+    note = project.add_note("Scene", content="note")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    original = window.tabs.current_editor()
+    original.setPlainText("unsaved")
+    class Picker:
+        def __init__(self, items, parent):
+            assert any(item.id == note.id and item.kind == "note" for item in items)
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+        def selected(self):
+            return QuickOpenItem("note", note.id, note.title)
+    monkeypatch.setattr("app.ui.main_window.QuickOpenDialog", Picker)
+    window.quick_open_project_item()
+    wait_until(lambda: window.tabs.count() == 3, application)
+    assert window.tabs.current_editor().toPlainText() == "note"
+    assert original.toPlainText() == "unsaved" and original.document_state.dirty
+    original.document_state.mark_saved()
+    window.close()
+
+
+def test_quick_open_handles_deleted_item_and_shortcut_is_unique(application, tmp_path, monkeypatch):
+    from app.ui.quick_open_dialog import QuickOpenItem
+    from PySide6.QtGui import QKeySequence
+    from PySide6.QtWidgets import QDialog
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    class Picker:
+        def __init__(self, items, parent):
+            pass
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+        def selected(self):
+            return QuickOpenItem("note", "deleted", "Deleted")
+    monkeypatch.setattr("app.ui.main_window.QuickOpenDialog", Picker)
+    missing = []
+    monkeypatch.setattr(window, "_project_item_no_longer_exists", lambda: missing.append(True))
+    window.quick_open_project_item()
+    assert missing == [True]
+    actions = [action for menu_action in window.menuBar().actions() if menu_action.menu()
+               for action in menu_action.menu().actions()]
+    assert sum(action.shortcut() == QKeySequence("Ctrl+P") for action in actions) == 1
+    window.close()
+
+
+def test_quick_open_reveals_chapter_in_tree(application, tmp_path, monkeypatch):
+    from app.ui.quick_open_dialog import QuickOpenItem
+    from PySide6.QtWidgets import QDialog
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    wait_until(lambda: window.project_view is not None and window.project_view.topLevelItemCount() > 0, application)
+    class Picker:
+        def __init__(self, items, parent):
+            pass
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+        def selected(self):
+            return QuickOpenItem("chapter", chapter.id, chapter.title)
+    monkeypatch.setattr("app.ui.main_window.QuickOpenDialog", Picker)
+    window.quick_open_project_item()
+    assert window.project_view._item_key(window.project_view.currentItem()) == ("chapter", chapter.id)
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
