@@ -1,0 +1,24 @@
+"""Small offline regression corpus; Auto denotes an intentionally uncertain case."""
+
+CASES = [
+    ("This is the draft and it is clear.", "English"),
+    ("We walked to the river and watched the birds.", "English"),
+    ("The door was open, but the house was quiet.", "English"),
+    ("They have a plan for the next chapter.", "English"),
+    ("Це український текст", "Ukrainian"),
+    ("Вона пішла до річки і повернулася додому.", "Ukrainian"),
+    ("На столі лежить старий лист, який він знайшов учора.", "Ukrainian"),
+    ("Вони шукали правду, але не знали всіх подробиць.", "Ukrainian"),
+    ("OK", "Auto"),
+    ("in", "Auto"),
+    ("це", "Auto"),
+    ("і", "Auto"),
+    ("This includes українські слова", "Auto"),
+    ("Le jardin est ouvert et les enfants jouent dans la rue.", "Auto"),
+    ("Das ist ein Haus und die Tür ist offen.", "Auto"),
+    ("La casa está abierta y los niños juegan en la calle.", "Auto"),
+    ("Это русский текст и он не на украинском языке.", "Auto"),
+    ("1234 — !", "Auto"),
+    ("日本語の文章です", "Auto"),
+    ("The місто was quiet.", "Auto"),
+]

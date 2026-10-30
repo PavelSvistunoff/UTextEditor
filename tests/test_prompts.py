@@ -1,4 +1,5 @@
 from app.ai.prompts import completion_prompt, detect_language, spellcheck_prompt
+from language_corpus import CASES
 import pytest
 
 
@@ -34,3 +35,13 @@ def test_auto_language_detects_clear_english_and_ukrainian_but_preserves_ambigui
     assert detect_language("OK") == "Auto"
     assert detect_language("   ") == "Auto"
     assert "Language: Auto." in completion_prompt("OK", "Auto")
+
+
+@pytest.mark.parametrize("text, expected", CASES)
+def test_multilingual_detection_corpus(text, expected):
+    assert detect_language(text) == expected
+
+
+def test_explicit_language_override_remains_authoritative():
+    assert "Language: Ukrainian." in completion_prompt("English text", "Ukrainian")
+    assert "Language: English." in spellcheck_prompt("Український текст", "English")

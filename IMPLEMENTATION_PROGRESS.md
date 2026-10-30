@@ -227,6 +227,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   navigation and a safe return path still depend on TASK-015, and native
   keyboard/accessibility verification remains outstanding. Do not mark
   complete. Full offline suite: 512 passed, 2 skipped.
+- **TASK-031 — in progress:** added a 20-case multilingual corpus and made
+  short, unsupported-script and Russian-specific text fall back to Auto,
+  requiring stronger common-word evidence for English or Ukrainian. The old
+  detector matched 16/20 corpus expectations; the updated detector matched
+  20/20, with explicit overrides covered. This is a small regression corpus,
+  not a representative accuracy estimate; broader multilingual evaluation
+  remains. Do not mark complete on that basis alone. Full offline suite: 533
+  passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

@@ -30,12 +30,20 @@ def detect_language(text: str) -> str:
         return "Auto"
 
     has_ukrainian = bool(re.search(r"[їієґЇІЄҐ]", value))
-    has_cyrillic = bool(re.search(r"[а-яёА-ЯЁ]", value))
+    has_cyrillic = bool(re.search(r"[а-яёіїєґА-ЯЁІЇЄҐ]", value))
     has_latin = bool(re.search(r"[A-Za-z]", value))
+    # Other alphabets or Russian-specific letters do not provide reliable
+    # evidence for either supported language, including mixed-script input.
+    if re.search(r"[ыэёъЫЭЁЪ]", value) or re.search(
+        r"[^\W\d_A-Za-zа-яёіїєґА-ЯЁІЇЄҐ]", value
+    ):
+        return "Auto"
+    if len(value) < 8:
+        return "Auto"
 
     if has_ukrainian and not has_latin:
         ukrainian_words = re.findall(r"\b[А-Яа-яЇїІіЄєҐґ']+\b", value)
-        if len(value) < 12 or len(ukrainian_words) >= 2:
+        if len(ukrainian_words) >= 2:
             return "Ukrainian"
         return "Auto"
 
@@ -48,10 +56,6 @@ def detect_language(text: str) -> str:
     if has_latin and len(value) >= 8 and len(english_words) >= 2 and not ukrainian_words:
         return "English"
     if has_cyrillic and len(value) >= 8 and len(ukrainian_words) >= 2 and not english_words:
-        return "Ukrainian"
-    if english_words and not ukrainian_words:
-        return "English"
-    if ukrainian_words and not english_words:
         return "Ukrainian"
     return "Auto"
 
