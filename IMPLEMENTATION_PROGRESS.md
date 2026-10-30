@@ -257,6 +257,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   extraction-context cleanup and compiled catalog remain outstanding. Do not
   mark complete. Temporary-catalog runtime translation tests passed; full
   offline suite: 539 passed, 2 skipped.
+- **TASK-034 — in progress:** the spelling and Auto-writer review lists now
+  expose keyboard-selection instructions through their accessibility
+  descriptions. Offscreen tests inspect the Qt accessible interface and use
+  arrow and Space keys to select and reject items. Native keyboard, screen
+  reader and system-palette audits across core workflows, as well as compiled
+  translations, remain outstanding. Do not mark complete. Full offline suite:
+  541 passed, 2 skipped.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

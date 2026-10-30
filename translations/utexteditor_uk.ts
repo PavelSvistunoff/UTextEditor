@@ -2068,4 +2068,12 @@
     <name>MainWindow</name>
     <message><source>Open failed</source><translation>Не вдалося відкрити</translation></message>
 </context>
+<context>
+    <name>AutoWriterReviewDialog</name>
+    <message><source>Use arrow keys to choose a draft and Space to include or exclude it.</source><translation>Виберіть чернетку клавішами зі стрілками та натисніть пробіл, щоб включити або виключити її.</translation></message>
+</context>
+<context>
+    <name>SpellcheckReviewDialog</name>
+    <message><source>Use arrow keys to choose a finding and Space to include or exclude it.</source><translation>Виберіть зауваження клавішами зі стрілками та натисніть пробіл, щоб включити або виключити його.</translation></message>
+</context>
 </TS>

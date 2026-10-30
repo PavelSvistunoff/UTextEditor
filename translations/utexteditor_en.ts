@@ -79,4 +79,12 @@
     <message><source>Navigation Forward</source><translation>Navigation Forward</translation></message>
     <message><source>No available navigation history.</source><translation>No available navigation history.</translation></message>
 </context>
+<context>
+    <name>AutoWriterReviewDialog</name>
+    <message><source>Use arrow keys to choose a draft and Space to include or exclude it.</source><translation>Use arrow keys to choose a draft and Space to include or exclude it.</translation></message>
+</context>
+<context>
+    <name>SpellcheckReviewDialog</name>
+    <message><source>Use arrow keys to choose a finding and Space to include or exclude it.</source><translation>Use arrow keys to choose a finding and Space to include or exclude it.</translation></message>
+</context>
 </TS>

@@ -16,6 +16,7 @@ class AutoWriterReviewDialog(QDialog):
         layout.addWidget(label)
         self.list = QListWidget(self)
         self.list.setAccessibleName(self.tr("Scene drafts"))
+        self.list.setAccessibleDescription(self.tr("Use arrow keys to choose a draft and Space to include or exclude it."))
         for scene_id, title, _text in self.scenes:
             item = QListWidgetItem(f"{title} [{scene_id}]")
             item.setData(Qt.ItemDataRole.UserRole, scene_id)

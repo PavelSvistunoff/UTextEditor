@@ -16,6 +16,7 @@ class SpellcheckReviewDialog(QDialog):
         layout.addWidget(instructions)
         self.findings = QListWidget(self)
         self.findings.setAccessibleName(self.tr("Spelling and grammar findings"))
+        self.findings.setAccessibleDescription(self.tr("Use arrow keys to choose a finding and Space to include or exclude it."))
         for index, suggestion in enumerate(self.suggestions):
             original = source[suggestion.start:suggestion.end]
             label = f"{original} → {suggestion.replacement} ({suggestion.type})"
