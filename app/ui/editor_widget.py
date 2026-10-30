@@ -97,6 +97,8 @@ class EditorWidget(QPlainTextEdit):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._update_line_number_area()
+        if self.has_completion and not self._completion_fits(self._ghost_text, self.textCursor()):
+            self.clear_completion()
 
     @property
     def revision(self) -> int:
@@ -137,14 +139,18 @@ class EditorWidget(QPlainTextEdit):
         # including text on a wrapped visual line.
         if suffix.partition("\n")[0]:
             return
-        available = max(1, self.viewport().width() - self.cursorRect().left())
-        if QFontMetrics(self.font()).horizontalAdvance(text) > available:
+        text = self._completion_text_for_cursor(text, cursor)
+        if not self._completion_fits(text, cursor):
             return
         self._ghost_text = text
         self._ghost_position = position
         self._ghost_revision = revision
         self._ghost_selection = (position, position)
         self.viewport().update()
+
+    def _completion_fits(self, text: str, cursor: QTextCursor) -> bool:
+        available = max(0, self.viewport().width() - self.cursorRect(cursor).left())
+        return QFontMetrics(self.font()).horizontalAdvance(text) <= available
 
     def clear_completion(self) -> None:
         if self._ghost_text:
@@ -158,7 +164,7 @@ class EditorWidget(QPlainTextEdit):
         if not self.has_completion:
             return False
         cursor = self.textCursor()
-        text = self._completion_text_for_cursor(self._ghost_text, cursor)
+        text = self._ghost_text
         cursor.beginEditBlock()
         cursor.insertText(text)
         cursor.endEditBlock()
@@ -189,7 +195,7 @@ class EditorWidget(QPlainTextEdit):
         painter.setFont(self.font())
         rect = self.cursorRect()
         metrics = QFontMetrics(self.font())
-        x, y = rect.left(), rect.top() + metrics.ascent()
+        x, y = rect.left(), rect.top()
         available = max(1, self.viewport().width() - x)
         # Ghost text is intentionally non-destructive: render only in the viewport and
         # never mutate the underlying document while the suggestion is visible.

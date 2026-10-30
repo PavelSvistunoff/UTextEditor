@@ -199,6 +199,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   outstanding. Do not mark complete until those checks are performed. Full
   offline suite: 500 passed, 2 skipped; the additional final-review rejection
   case passed in the focused streaming tests.
+- **TASK-026 — in progress:** inline completion rendering now shows any
+  separating space that acceptance would insert, and discards a suggestion
+  when resizing makes it too wide to display. An offscreen regression test
+  covers resizing without modifying the document. Long, multiline and mid-line
+  suggestions still need a safe, readable review affordance; native window
+  and accessibility verification are also outstanding. Do not mark complete.
+  Full offline suite: 502 passed, 2 skipped; focused completion tests also
+  passed after the final rendering adjustment.
 
 The initial worktree included staged `.DS_Store` files and Python bytecode.
 Preserve these unrelated changes. Earlier checkpoint implementation was

@@ -169,6 +169,22 @@ def test_accepting_a_word_completion_inserts_a_separating_space(application: QAp
     assert editor.toPlainText() == "Hello world"
 
 
+def test_completion_disappears_when_resizing_makes_it_unreadable(application: QApplication) -> None:
+    editor = EditorWidget()
+    editor.resize(700, 100)
+    editor.show()
+    application.processEvents()
+    editor.setPlainText("Hello")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    editor.show_completion(" a fairly long suggestion", editor.revision, editor.textCursor().position())
+    assert editor.has_completion
+    editor.resize(70, 100)
+    application.processEvents()
+    assert not editor.has_completion
+    assert editor.toPlainText() == "Hello"
+    editor.close()
+
+
 def test_spell_suggestions_apply_in_one_undoable_operation(application: QApplication) -> None:
     editor = EditorWidget()
     editor.setPlainText("A sentense and eror.")
