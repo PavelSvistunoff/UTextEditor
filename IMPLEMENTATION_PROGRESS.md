@@ -329,7 +329,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   An expanded 33-case corpus includes decomposed Ukrainian and accented or
   unsupported text: the previous detector matched 30 cases and the updated
   detector matched 33. This remains a small, nonrepresentative corpus; broader
-  evaluation is still needed. Full offline suite: 567 passed, 2 skipped.
+  evaluation is still needed. The detector now requires at least eight letters
+  and two distinct signal words, so digits and repeated words cannot turn a
+  short fragment into a confident classification. On the expanded 43-case
+  regression corpus the previous detector matched 35 expectations and the
+  revised detector matched 43. This corpus remains nonrepresentative; broader
+  multilingual evaluation is outstanding. Full offline suite: 628 passed,
+  2 skipped.
 - **TASK-033 — in progress:** added a command-line TS validator for missing,
   unfinished and malformed entries, Qt and named-format placeholder parity,
   and English/Ukrainian plural forms. It can compare against an independently

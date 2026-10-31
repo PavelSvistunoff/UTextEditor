@@ -40,12 +40,13 @@ def detect_language(text: str) -> str:
         or re.search(r"[^\W\d_A-Za-zа-яёіїєґА-ЯЁІЇЄҐ]", value)
     ):
         return "Auto"
-    if len(value) < 8:
+    # Digits and punctuation do not provide evidence of a writing language.
+    if sum(char.isalpha() for char in value) < 8:
         return "Auto"
 
     if has_ukrainian and not has_latin:
         ukrainian_words = re.findall(r"\b[А-Яа-яЇїІіЄєҐґ']+\b", value)
-        if len(ukrainian_words) >= 2:
+        if len({word.casefold() for word in ukrainian_words}) >= 2:
             return "Ukrainian"
         return "Auto"
 
@@ -58,7 +59,7 @@ def detect_language(text: str) -> str:
 
     english_words = re.findall(r"\b(?:the|and|is|are|you|that|this|with|for|to|of|in|it|was|have|has|from|on|at|as|be|by|not|we|they|their|there|here|which|would|should)\b", value.lower())
 
-    if has_latin and len(english_words) >= 2:
+    if has_latin and len(set(english_words)) >= 2:
         return "English"
     return "Auto"
 
