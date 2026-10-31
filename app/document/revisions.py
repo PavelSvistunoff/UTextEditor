@@ -226,6 +226,9 @@ class RevisionStore:
         path = snapshot.snapshot_path if isinstance(snapshot, RevisionSnapshot) else Path(snapshot)
         if path.parent.resolve() != self.root.resolve():
             raise ValueError("Revision snapshot is outside this revision store.")
+        if isinstance(snapshot, RevisionSnapshot):
+            if path.is_symlink() or self.read(path).digest != snapshot.digest:
+                raise ValueError("Revision snapshot changed since it was selected.")
         path.unlink()
 
     @classmethod

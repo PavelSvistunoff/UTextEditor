@@ -681,6 +681,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Could not delete revision snapshot: {error}</source><translation>Не вдалося видалити знімок редакції: {error}</translation></message>
     <message><source>Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available.</source><translation>Автоматичне написання скасовано. Змін до сцен не застосовано; може бути доступний знімок, створений перед запуском.</translation></message>
     <message><source>Auto-writer results were not applied because the project, settings, or an open document changed. Original snapshot: {path}</source><translation>Результати автоматичного написання не застосовано, оскільки проєкт, налаштування або відкритий документ змінилися. Початковий знімок: {path}</translation></message>
     <message><source>Auto-writer drafts are complete; applying snapshot-protected scene updates…</source><translation>Чернетки автоматичного написання готові; застосування змін сцен із захисним знімком…</translation></message>
@@ -2000,6 +2001,9 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>RevisionHistoryDialog</name>
+    <message><source>Delete Selected…</source><translation>Видалити вибране…</translation></message>
+    <message><source>Delete revision snapshot</source><translation>Видалити знімок редакції</translation></message>
+    <message><source>Delete snapshot ‘%1’ captured at %2? This cannot be undone.</source><translation>Видалити знімок «%1», створений %2? Цю дію неможливо скасувати.</translation></message>
     <message>
         <location filename="../app/ui/revision_history_dialog.py" line="24"/>
         <location filename="../app/ui/revision_history_dialog.py" line="29"/>

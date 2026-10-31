@@ -199,3 +199,14 @@ def test_delete_requires_confirmation_and_only_removes_snapshot(tmp_path) -> Non
     store.delete(snapshot, confirmed=True)
 
     assert not snapshot.snapshot_path.exists()
+
+
+def test_delete_rejects_snapshot_replaced_after_selection(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    selected = create_snapshot(store, order=["one"], titles={}, documents={"one": "first"})
+    replacement = create_snapshot(store, order=["one"], titles={}, documents={"one": "second"})
+    selected.snapshot_path.write_bytes(replacement.snapshot_path.read_bytes())
+
+    with pytest.raises(ValueError, match="changed since"):
+        store.delete(selected, confirmed=True)
+    assert store.read(selected.snapshot_path).documents["one"] == "second"

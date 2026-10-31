@@ -3,6 +3,18 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.02 — DONE:** the revision history dialog now offers confirmed
+  deletion of a single selected snapshot in a worker. The store revalidates
+  the captured digest and rejects symlinks before deletion; project text is
+  untouched. Modified `app/document/revisions.py`,
+  `app/ui/revision_history_dialog.py`, `app/ui/main_window.py`,
+  `tests/test_revisions.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, `README.md`, `UNIMPLEMENTED_FEATURES.md`,
+  and `TASKS.md`. Focused revision and project UI suites: 148 passed; full
+  offline suite: 650 passed, 2 skipped. Ukrainian source catalog validation
+  passed. A separate process could still
+  replace the file between the final integrity check and unlink; native
+  accessibility verification and release catalog compilation remain.
 - **TASK-008.02 — DONE:** recovery scans now report unfinished atomic-write
   temporary files as well as malformed snapshots. The report says a write may
   still be in progress; automatic retention and document cleanup preserve

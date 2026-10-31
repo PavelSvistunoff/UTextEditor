@@ -65,7 +65,7 @@ session was exercised, and this review does not prove other paths defect-free.
 - **Recovery diagnosis:** recovery supports restore, inspection/comparison,
   project relocation, discard, and defer. Repair and diagnosis for partial or
   corrupt recovery sets remain limited.
-- **Revision management:** scheduled snapshots, deletion, and restore with a
+- **Revision management:** scheduled snapshots and restore with a
   preview are not available. Comparisons cover scenes and reference notes,
   but not all chapter, link, and project-structure changes.
 - **Large documents and encodings:** files are read into memory as a whole;
@@ -194,8 +194,8 @@ network read may continue until data arrives or the connection times out.
    guarantee and cross-platform verification remain necessary before claiming
    that conflicts cannot be overwritten silently.
 3. **Make revision snapshots actionable** (high effort). Build on existing
-   snapshots and comparisons with previewed, selective restore and confirmed
-   deletion, followed by optional scheduling and retention settings. Acceptance:
+   snapshots, comparisons and confirmed deletion with previewed, selective
+   restore, followed by optional scheduling and retention settings. Acceptance:
    show affected files and dirty buffers before restore, create a safety
    snapshot, recheck disk and project state, and either apply transactionally or
    leave the original intact. This depends on the revision-management gap

@@ -4538,8 +4538,45 @@ class MainWindow(QMainWindow):
                 dialog, project, store, before, after
             )
         )
+        dialog.delete_requested.connect(
+            lambda snapshot: self._delete_revision_snapshot(dialog, project, store, snapshot)
+        )
         dialog.show()
 
+        worker = FunctionWorker(store.list_snapshots)
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda result: self._revision_snapshots_loaded(dialog, project, result),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._revision_snapshots_failed(dialog, project, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _delete_revision_snapshot(self, dialog, project, store, snapshot) -> None:
+        if project is not self.project or not dialog.isVisible():
+            return
+        worker = FunctionWorker(store.delete, snapshot, confirmed=True)
+        self._track_worker(worker)
+        worker.signals.finished.connect(
+            lambda _result: self._reload_revision_snapshots(dialog, project, store),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.signals.failed.connect(
+            lambda error: self._revision_snapshot_delete_failed(dialog, project, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.thread_pool.start(worker)
+
+    def _revision_snapshot_delete_failed(self, dialog, project, error) -> None:
+        if project is self.project and dialog.isVisible():
+            dialog.show_error(self.tr("Could not delete revision snapshot: {error}").format(error=error))
+
+    def _reload_revision_snapshots(self, dialog, project, store) -> None:
+        if project is not self.project or not dialog.isVisible():
+            return
         worker = FunctionWorker(store.list_snapshots)
         self._track_worker(worker)
         worker.signals.finished.connect(

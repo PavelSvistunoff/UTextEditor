@@ -2692,6 +2692,31 @@ def test_revision_history_dialog_loads_and_compares_snapshots(
     window.close()
 
 
+def test_revision_history_deletion_requires_confirmation(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="Manuscript")
+    store = RevisionStore(project.root / ".utexteditor" / "revisions")
+    snapshot = store.create("Draft", structure={}, scene_order=[scene.id],
+                            scene_titles={scene.id: "Opening"}, documents={scene.id: "Snapshot"})
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.review_revision_snapshots()
+    dialog = window._revision_history_dialog
+    wait_until(lambda: dialog.snapshots.count() == 1, application)
+    dialog.snapshots.item(0).setSelected(True)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_args: QMessageBox.StandardButton.Cancel)
+    dialog.delete_button.click()
+    assert snapshot.snapshot_path.exists()
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_args: QMessageBox.StandardButton.Yes)
+    dialog.delete_button.click()
+    wait_until(lambda: dialog.snapshots.count() == 0, application)
+    assert not snapshot.snapshot_path.exists()
+    assert (project.root / scene.path).read_text(encoding="utf-8") == "Manuscript"
+    dialog.close()
+    window.close()
+
+
 def test_revision_history_dialog_labels_reference_note_changes(application):
     dialog = RevisionHistoryDialog()
 

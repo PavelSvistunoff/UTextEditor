@@ -233,7 +233,7 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 
 - [ ] **TASK-009.01** — Add snapshot preview.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-009.02** — Add confirmed snapshot deletion.  
+- [x] **TASK-009.02** — Add confirmed snapshot deletion.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.03** — Add selective restore.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

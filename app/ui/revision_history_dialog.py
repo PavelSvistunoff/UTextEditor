@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMessageBox,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -19,6 +20,7 @@ from app.i18n import format_qt
 
 class RevisionHistoryDialog(QDialog):
     compare_requested = Signal(object, object)
+    delete_requested = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -33,6 +35,9 @@ class RevisionHistoryDialog(QDialog):
         self.compare_button = QPushButton(self.tr("Compare Selected"), self)
         self.compare_button.setEnabled(False)
         self.compare_button.clicked.connect(self._request_comparison)
+        self.delete_button = QPushButton(self.tr("Delete Selected…"), self)
+        self.delete_button.setEnabled(False)
+        self.delete_button.clicked.connect(self._request_deletion)
         self.details = QTextEdit(self)
         self.details.setAccessibleName(self.tr("Revision comparison"))
         self.details.setReadOnly(True)
@@ -43,6 +48,7 @@ class RevisionHistoryDialog(QDialog):
         controls = QHBoxLayout()
         controls.addWidget(self.status, 1)
         controls.addWidget(self.compare_button)
+        controls.addWidget(self.delete_button)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self.accept)
@@ -115,6 +121,23 @@ class RevisionHistoryDialog(QDialog):
 
     def _update_compare_enabled(self) -> None:
         self.compare_button.setEnabled(len(self.snapshots.selectedItems()) == 2)
+        self.delete_button.setEnabled(len(self.snapshots.selectedItems()) == 1)
+
+    def _request_deletion(self) -> None:
+        selected = self.snapshots.selectedItems()
+        if len(selected) != 1:
+            return
+        snapshot = selected[0].data(Qt.ItemDataRole.UserRole)
+        answer = QMessageBox.warning(
+            self, self.tr("Delete revision snapshot"),
+            format_qt(self.tr("Delete snapshot ‘%1’ captured at %2? This cannot be undone."),
+                      snapshot.name, snapshot.captured_at),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            self.delete_button.setEnabled(False)
+            self.delete_requested.emit(snapshot)
 
     def _request_comparison(self) -> None:
         selected = self.snapshots.selectedItems()
