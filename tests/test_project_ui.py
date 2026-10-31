@@ -1363,6 +1363,142 @@ def test_character_associated_scene_picker_uses_explicit_links_and_rechecks_them
     window.close()
 
 
+def test_profile_scene_navigation_preserves_staged_edits_and_returns(application, tmp_path, monkeypatch):
+    from app.project.model import SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Scene", content="original")
+    project.add_scene("Mention only", content="Mara")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window.show()
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    dialog.full_name.setText("Staged name")
+
+    def choose(*args):
+        assert args[3] == [f"Scene [{scene.id}]"]
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    dialog.scene_button.click()
+    assert not dialog.isVisible()
+    wait_until(lambda: any(binding.item_id == scene.id for binding in window._project_documents.values()), application)
+    assert window.tabs.current_editor().toPlainText() == "original"
+    assert project.get_character(character.id).full_name == "Mara"
+    window._return_to_character_button.click()
+    assert dialog.isVisible() and dialog.full_name.text() == "Staged name"
+    dialog.scene_button.click()
+    assert not dialog.isVisible()
+    # Closing the window returns to the still-staged profile instead of losing it.
+    window.close()
+    assert dialog.isVisible() and dialog.full_name.text() == "Staged name"
+    dialog._accept()
+    wait_until(lambda: not window._project_busy, application)
+    assert project.get_character(character.id).full_name == "Staged name"
+    window.close()
+
+
+def test_profile_save_refuses_changed_project_without_discarding_edits(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    dialog.full_name.setText("Staged")
+    changed = project.get_character(character.id)
+    changed.full_name = "Changed elsewhere"
+    project.update_character(character.id, changed)
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    dialog._accept()
+    assert warnings and dialog.full_name.text() == "Staged"
+    assert window._active_character_dialog is dialog
+    assert project.get_character(character.id).full_name == "Changed elsewhere"
+    dialog.reject()
+    window.close()
+
+
+def test_failed_profile_save_reopens_staged_edits(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    dialog.full_name.setText("Staged")
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+
+    def fail(*_args):
+        raise ProjectError("Cannot save")
+
+    monkeypatch.setattr(project, "update_character_with_relationships", fail)
+    dialog._accept()
+    wait_until(lambda: bool(warnings), application)
+    assert dialog.isVisible() and dialog.full_name.text() == "Staged"
+    assert project.get_character(character.id).full_name == "Mara"
+    dialog.reject()
+    window.close()
+
+
+def test_profile_save_refuses_changed_directed_relationships(application, tmp_path, monkeypatch):
+    from app.project.model import CharacterRelationship
+
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    other = project.add_character("Alex")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    dialog.full_name.setText("Staged")
+    project.add_character_relationship(CharacterRelationship(
+        "00000000-0000-4000-8000-000000000001", character.id, other.id,
+    ))
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    dialog._accept()
+    assert warnings and dialog.full_name.text() == "Staged"
+    assert len(project.manifest.character_relationships) == 1
+    dialog.reject()
+    window.close()
+
+
+def test_profile_scene_selection_rechecks_association(application, tmp_path, monkeypatch):
+    from app.project.model import SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Scene", content="text")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    dialog.full_name.setText("Staged")
+    opened = []
+    monkeypatch.setattr(window, "_open_project_document", lambda *args: opened.append(args))
+
+    def choose(*args):
+        project.unassociate_character(scene.id, character.id)
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    dialog.scene_button.click()
+    assert not opened and dialog.isVisible() and dialog.full_name.text() == "Staged"
+    dialog.reject()
+    window.close()
+
+
 @pytest.mark.parametrize("kind", ["", "project", "group", "character", "scene", "note", "chapter"])
 def test_project_context_menu_offers_new_character(kind):
     assert ("New Character…", "new_character") in ProjectView.context_actions(kind)

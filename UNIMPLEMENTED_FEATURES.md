@@ -124,12 +124,10 @@ and effort are relative estimates.
    matches and 4 MiB per document. Error details are limited to 100 files;
    the panel reports the number of additional errors. Additional matching
    options and larger-file support remain future work.
-7. **Navigate between related items** — medium priority, medium effort. Build
-   on existing note links, scene associations, and character scene search with
-   accessible lists that open a linked item or associated scene directly, and
-   provide a way back. Clearly distinguish an explicit scene association from
-   a text mention; do not infer new relationships or change project metadata.
-   Keep unsaved character-profile edits safe when navigating away.
+7. **Verify related-item navigation** — medium priority. Linked notes and
+   explicitly associated character scenes can be opened directly. Profiles
+   retain staged edits while viewing a scene and provide a return control;
+   native keyboard and accessibility verification remains outstanding.
 
 ### Reduce navigation friction
 
@@ -282,14 +280,10 @@ network read may continue until data arrives or the connection times out.
       destination, credential, data-handling, disclosure, configuration and
       compatibility decisions. No provider or cloud service is enabled by
       this evaluation; the existing local-first default is preserved.
-15. **Make character profiles easier to navigate** (small/medium effort).
-    The profile dialog groups many editable fields into Story and Background
-    tabs. Consider scrollable sections, clearer field grouping, and navigation
-    from a character's scene history to the related scene. Acceptance: all
-    fields remain reachable at small window sizes and by keyboard, existing
-    values and directed relationships round-trip unchanged, and opening a
-    scene never discards unsaved profile edits. Verify with manual accessibility
-    testing before treating layout concerns as confirmed defects.
+15. **Verify character-profile navigation** (small/medium effort). The Story
+    and Background tabs scroll, and associated scenes can be opened while
+    staged profile edits are retained. Verify field access and the return path
+    with native keyboard and accessibility testing, including small windows.
 
 These gaps are independent of basic standalone editing, which remains usable
 without a project or a running Ollama server.

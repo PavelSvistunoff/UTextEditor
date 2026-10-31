@@ -1,5 +1,6 @@
 """Main Qt window and application orchestration."""
 
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from datetime import datetime
 import hashlib
@@ -215,6 +216,9 @@ class MainWindow(QMainWindow):
         self._translation_activity = None
         self._analysis_windows: list[AnalysisWindow] = []
         self._project_busy = False
+        self._active_character_dialog: CharacterDialog | None = None
+        self._return_to_character_button: QPushButton | None = None
+        self._character_profile_saving = False
         self._project_refresh_timer = QTimer(self)
         self._project_refresh_timer.setSingleShot(True)
         self._project_refresh_timer.timeout.connect(self._refresh_project_view)
@@ -2749,8 +2753,15 @@ class MainWindow(QMainWindow):
     def _edit_character(self, character: Character) -> None:
         if self.project is None:
             return
-        current_state = self.project.character_current_state(character.id)
-        history = self.project.character_state_history(character.id)
+        if self._active_character_dialog is not None:
+            self._return_to_character_profile()
+            return
+        project = self.project
+        original_character = deepcopy(character)
+        original_relationships = deepcopy([r for r in project.manifest.character_relationships
+                                           if character.id in (r.source_id, r.target_id)])
+        current_state = project.character_current_state(character.id)
+        history = project.character_state_history(character.id)
         timeline = [CharacterDialog.tr("Current recorded state:")] if current_state else [CharacterDialog.tr("No character state changes recorded.")]
         timeline.extend(f"{field}: {value}" for field, value in current_state.items())
         if history:
@@ -2761,18 +2772,111 @@ class MainWindow(QMainWindow):
             timeline.append(f"{scene.title}: {change.field}: {before}{change.value}{evidence}")
         dialog = CharacterDialog(
             character, timeline=timeline, parent=self,
-            project_characters=self.project.manifest.characters,
-            project_relationships=[r for r in self.project.manifest.character_relationships
-                                   if character.id in (r.source_id, r.target_id)],
+            project_characters=project.manifest.characters,
+            project_relationships=original_relationships,
         )
-        dialog.fill_requested.connect(lambda: self._suggest_character_profile(dialog, self.project))
-        dialog.development_requested.connect(lambda: self._suggest_scene_development(dialog, self.project))
+        self._active_character_dialog = dialog
+
+        def can_save() -> bool:
+            try:
+                current = project.get_character(character.id) if self.project is project else None
+            except ProjectError:
+                current = None
+            relationships = [r for r in project.manifest.character_relationships
+                             if character.id in (r.source_id, r.target_id)]
+            if current != original_character or relationships != original_relationships:
+                QMessageBox.warning(dialog, CharacterDialog.tr("Profile changed"),
+                                    CharacterDialog.tr("The project or this profile changed. Your edits remain here so you can copy them before closing."))
+                return False
+            if self._project_busy:
+                QMessageBox.information(dialog, CharacterDialog.tr("Project busy"),
+                                        CharacterDialog.tr("Wait for the current project operation before saving this profile."))
+                return False
+            return True
+
+        dialog.save_guard = can_save
+        dialog.fill_requested.connect(lambda: self._suggest_character_profile(dialog, project))
+        dialog.development_requested.connect(lambda: self._suggest_scene_development(dialog, project))
         dialog.portrait_requested.connect(lambda path: self._load_character_portrait(dialog, path=path))
+        dialog.scene_requested.connect(lambda: self._open_scene_from_character_profile(dialog, project, character.id))
+        dialog.accepted.connect(lambda: self._save_character_profile(dialog, project, character.id))
+        dialog.finished.connect(lambda result: self._character_profile_closed(dialog)
+                                if result != QDialog.DialogCode.Accepted else None)
         if character.portrait:
             self._load_character_portrait(dialog, encoded=character.portrait)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            self._run_project_mutation(self.project.update_character_with_relationships,
-                                       character.id, dialog.character, dialog.relationships)
+        dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        dialog.show()
+
+    def _save_character_profile(self, dialog: CharacterDialog, project: Project, character_id: str) -> None:
+        self._character_profile_saving = True
+
+        def saved() -> None:
+            self._character_profile_saving = False
+            self._character_profile_closed(dialog)
+
+        def failed(error) -> None:
+            self._character_profile_saving = False
+            self._return_to_character_profile()
+            QMessageBox.warning(dialog, CharacterDialog.tr("Profile save failed"), str(error))
+
+        self._run_project_mutation(project.update_character_with_relationships, character_id,
+                                   dialog.character, dialog.relationships,
+                                   on_success=saved, on_failure=failed)
+
+    def _character_profile_closed(self, dialog: CharacterDialog) -> None:
+        if self._active_character_dialog is dialog:
+            self._active_character_dialog = None
+            if self._return_to_character_button is not None:
+                self.statusBar().removeWidget(self._return_to_character_button)
+                self._return_to_character_button.deleteLater()
+                self._return_to_character_button = None
+        dialog.deleteLater()
+
+    def _return_to_character_profile(self) -> None:
+        dialog = self._active_character_dialog
+        if dialog is None:
+            return
+        if self._character_profile_saving:
+            self.statusBar().showMessage(self.tr("Wait for the character profile to finish saving."), 5000)
+            return
+        if self._return_to_character_button is not None:
+            self._return_to_character_button.hide()
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _open_scene_from_character_profile(self, dialog: CharacterDialog, project: Project, character_id: str) -> None:
+        if project is not self.project:
+            return
+        generation = self._project_generation
+        scenes = [scene for scene in project.iter_scenes()
+                  if any(item.character_id == character_id for item in scene.character_associations)]
+        if not scenes:
+            QMessageBox.information(dialog, self.tr("Associated scenes"),
+                                    self.tr("This character has no explicitly associated scenes."))
+            return
+        labels = {f"{scene.title} [{scene.id}]": scene.id for scene in scenes}
+        label, accepted = QInputDialog.getItem(dialog, self.tr("Associated scenes"),
+                                               self.tr("Choose an explicitly associated scene:"),
+                                               list(labels), 0, False)
+        if not accepted or label not in labels or project is not self.project or generation != self._project_generation:
+            return
+        try:
+            scene = project.get_scene(labels[label])
+            project.get_character(character_id)
+        except ProjectError:
+            self._project_item_no_longer_exists()
+            return
+        if not any(item.character_id == character_id for item in scene.character_associations):
+            self.statusBar().showMessage(self.tr("The scene association is no longer available."), 5000)
+            return
+        dialog.hide()
+        if self._return_to_character_button is None:
+            self._return_to_character_button = QPushButton(self.tr("Return to Character Profile"), self)
+            self._return_to_character_button.clicked.connect(self._return_to_character_profile)
+            self.statusBar().addPermanentWidget(self._return_to_character_button)
+        self._return_to_character_button.show()
+        self._open_project_document("scene", scene.id)
 
     def _load_character_portrait(self, dialog: CharacterDialog, *, path: str | None = None, encoded: str | None = None) -> None:
         revision = dialog.portrait_revision
@@ -6434,6 +6538,10 @@ class MainWindow(QMainWindow):
             worker.cancel()
 
     def closeEvent(self, event) -> None:
+        if not self._closing_confirmed and self._active_character_dialog is not None:
+            event.ignore()
+            self._return_to_character_profile()
+            return
         if self._closing_confirmed:
             self._cancel_pending_ai()
             recovery_timer = getattr(self, "_recovery_timer", None)

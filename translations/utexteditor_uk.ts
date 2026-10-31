@@ -117,6 +117,11 @@
 </context>
 <context>
     <name>CharacterDialog</name>
+    <message><source>Profile save failed</source><translation>Не вдалося зберегти профіль</translation></message>
+    <message><source>Open Associated Scene…</source><translation>Відкрити пов’язану сцену…</translation></message>
+    <message><source>The project or this profile changed. Your edits remain here so you can copy them before closing.</source><translation>Проєкт або цей профіль змінився. Ваші зміни залишаються тут, щоб ви могли скопіювати їх перед закриттям.</translation></message>
+    <message><source>Project busy</source><translation>Проєкт зайнятий</translation></message>
+    <message><source>Wait for the current project operation before saving this profile.</source><translation>Дочекайтеся завершення поточної операції проєкту, перш ніж зберігати профіль.</translation></message>
     <message>
         <source>Current recorded state:</source>
         <translation>Поточний записаний стан:</translation>
@@ -675,6 +680,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Wait for the character profile to finish saving.</source><translation>Дочекайтеся завершення збереження профілю персонажа.</translation></message>
+    <message><source>Return to Character Profile</source><translation>Повернутися до профілю персонажа</translation></message>
     <message><source>No canonical file exists for this untitled document.</source><translation>Для цього документа без назви немає основного файлу.</translation></message>
     <message><source>Canonical file is missing: {path}</source><translation>Основний файл відсутній: {path}</translation></message>
     <message><source>{path} (disk)</source><translation>{path} (на диску)</translation></message>

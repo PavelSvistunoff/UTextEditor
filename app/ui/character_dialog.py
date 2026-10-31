@@ -24,6 +24,7 @@ class CharacterDialog(QDialog):
     fill_requested = Signal()
     development_requested = Signal()
     portrait_requested = Signal(str)
+    scene_requested = Signal()
 
     def __init__(
         self,
@@ -33,11 +34,13 @@ class CharacterDialog(QDialog):
         *,
         project_characters: list[Character] | None = None,
         project_relationships: list[CharacterRelationship] | None = None,
+        save_guard=None,
     ):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Character Profile"))
         self.setMinimumSize(360, 360)
         self.character = deepcopy(character)
+        self.save_guard = save_guard
         self.portrait_revision = 0
         tabs = QTabWidget(self)
         identity = QWidget(tabs)
@@ -170,6 +173,9 @@ class CharacterDialog(QDialog):
         self.development_button = QPushButton(self.tr("Suggest Scene Development with AI…"), self)
         self.development_button.clicked.connect(self.development_requested.emit)
         layout.addWidget(self.development_button)
+        self.scene_button = QPushButton(self.tr("Open Associated Scene…"), self)
+        self.scene_button.clicked.connect(self.scene_requested.emit)
+        layout.addWidget(self.scene_button)
         layout.addWidget(buttons)
 
     def profile_fields(self) -> dict[str, str]:
@@ -271,6 +277,8 @@ class CharacterDialog(QDialog):
             self._refresh_relationships()
 
     def _accept(self) -> None:
+        if self.save_guard is not None and not self.save_guard():
+            return
         name = self.full_name.text().strip()
         if not name:
             self.full_name.setFocus()

@@ -132,8 +132,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   picker for explicitly associated scenes, distinguished from mention search.
   It checks that the character and association still exist after the picker
   closes; a regression covers stale associations and duplicate scene titles.
-  Opening directly from an edited profile and returning to staged edits still
-  remain outstanding. Full offline suite: 568 passed, 2 skipped.
+  Profiles now open explicitly associated scenes and provide a status-bar
+  return control while retaining staged fields and relationships. Closing the
+  window returns to the profile, and stale profiles, changed relationships,
+  stale associations and failed saves are handled without silently losing
+  edits. Native keyboard/accessibility review and release catalog compilation
+  remain outstanding; do not mark complete until verified. Full offline suite:
+  592 passed, 2 skipped.
 - **TASK-016 — in progress:** Qt's existing Ctrl+Tab and Ctrl+Shift+Tab
   behavior was verified with offscreen keyboard tests, and View > Open Tabs
   provides a searchable picker with modified markers, file/project context,
@@ -293,9 +298,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene
-  navigation and a safe return path still depend on TASK-015, and native
-  keyboard/accessibility verification remains outstanding. Do not mark
-  complete. Full offline suite: 512 passed, 2 skipped.
+  navigation and a safe return path are now available as described under
+  TASK-015. Native keyboard/accessibility verification and release catalog
+  compilation remain outstanding. Do not mark complete. Full offline suite:
+  592 passed, 2 skipped.
 - **TASK-031 — in progress:** added a 20-case multilingual corpus and made
   short, unsupported-script and Russian-specific text fall back to Auto,
   requiring stronger common-word evidence for English or Ukrainian. The old
