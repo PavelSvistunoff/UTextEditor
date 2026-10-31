@@ -300,7 +300,7 @@ class MainWindow(QMainWindow):
         self.project_autopilot_progress.connect(self._show_autopilot_activity, Qt.ConnectionType.QueuedConnection)
         if self._writing_goal_load_error:
             self.statusBar().showMessage(
-                f"Writing-goal progress could not be loaded: {self._writing_goal_load_error}", 10000
+                self.tr("Writing-goal progress could not be loaded: {error}").format(error=self._writing_goal_load_error), 10000
             )
         self.tabs.editor_created.connect(self._wire_editor)
         self.tabs.document_changed.connect(self._update_status)
@@ -663,7 +663,7 @@ class MainWindow(QMainWindow):
         try:
             self.settings.save()
         except OSError as exc:
-            self.statusBar().showMessage(f"Could not save AI preference: {exc}")
+            self.statusBar().showMessage(self.tr("Could not save AI preference: {error}").format(error=exc))
 
     def _cancel_pending_ai_requests(self) -> None:
         self._completion_timer.stop()
@@ -951,7 +951,7 @@ class MainWindow(QMainWindow):
     def _writing_goal_save_failed(self, worker, error) -> None:
         if self._writing_goal_save_worker is worker:
             self._writing_goal_save_worker = None
-        self.statusBar().showMessage(f"Writing-goal progress could not be saved: {error}", 10000)
+        self.statusBar().showMessage(self.tr("Writing-goal progress could not be saved: {error}").format(error=error), 10000)
 
     def _autosave_project_document(self, editor) -> None:
         binding = self._project_documents.get(editor)
@@ -2422,7 +2422,7 @@ class MainWindow(QMainWindow):
         try:
             self.settings.save()
         except OSError as exc:
-            self.statusBar().showMessage(f"Could not save recent projects: {exc}", 8000)
+            self.statusBar().showMessage(self.tr("Could not save recent projects: {error}").format(error=exc), 8000)
         self._populate_recent_projects_menu()
 
     def _remember_recent_project(self, directory: Path) -> None:
@@ -2440,7 +2440,7 @@ class MainWindow(QMainWindow):
         try:
             self.settings.save()
         except OSError as exc:
-            self.statusBar().showMessage(f"Could not save recent projects: {exc}", 8000)
+            self.statusBar().showMessage(self.tr("Could not save recent projects: {error}").format(error=exc), 8000)
 
     def _open_project_worker(self, operation, *args) -> None:
         if self._project_busy:
@@ -2517,7 +2517,7 @@ class MainWindow(QMainWindow):
         self._scene_word_counts = {}
         self._project_count_complete = True
         self._update_project_actions()
-        self.statusBar().showMessage("Project closed; its open documents remain available in tabs.", 5000)
+        self.statusBar().showMessage(self.tr("Project closed; its open documents remain available in tabs."), 5000)
 
     def _set_project_busy(self, busy: bool) -> None:
         self._project_busy = busy
@@ -2657,7 +2657,7 @@ class MainWindow(QMainWindow):
 
     def _project_summary_failed(self, error, generation: int, refresh_generation: int) -> None:
         if generation == self._project_generation and refresh_generation == self._project_refresh_generation:
-            self.statusBar().showMessage(f"Project word counts could not be refreshed: {error}", 8000)
+            self.statusBar().showMessage(self.tr("Project word counts could not be refreshed: {error}").format(error=error), 8000)
 
     def _run_project_mutation(
         self, operation, *args, on_success=None, on_failure=None, **kwargs
@@ -4418,24 +4418,24 @@ class MainWindow(QMainWindow):
         saved, failures = result
         if failures:
             self.statusBar().showMessage(
-                "Some recovery snapshots could not be saved: " + "; ".join(failures), 12000
+                self.tr("Some recovery snapshots could not be saved: {errors}").format(errors="; ".join(failures)), 12000
             )
         elif saved:
-            self.statusBar().showMessage("Local recovery snapshot saved.", 4000)
+            self.statusBar().showMessage(self.tr("Local recovery snapshot saved."), 4000)
 
     def _recovery_snapshots_failed(self, error) -> None:
         self._recovery_pending = False
-        self.statusBar().showMessage(f"Recovery snapshot failed: {error}", 10000)
+        self.statusBar().showMessage(self.tr("Recovery snapshot failed: {error}").format(error=error), 10000)
 
     def _finish_shutdown_recovery(self, result=None, error=None) -> None:
         self._shutdown_recovery_pending = False
         if error is not None:
-            self.statusBar().showMessage(f"Shutdown recovery failed: {error}", 10000)
+            self.statusBar().showMessage(self.tr("Shutdown recovery failed: {error}").format(error=error), 10000)
         elif result is not None:
             _saved, failures = result
             if failures:
                 self.statusBar().showMessage(
-                    "Some shutdown recovery snapshots failed: " + "; ".join(failures), 12000
+                    self.tr("Some shutdown recovery snapshots failed: {errors}").format(errors="; ".join(failures)), 12000
                 )
         self._closing_confirmed = True
         self._quit_in_progress = False
@@ -4476,7 +4476,7 @@ class MainWindow(QMainWindow):
             lambda error, project=project: self._revision_snapshot_failed(project, error),
             Qt.ConnectionType.QueuedConnection,
         )
-        self.statusBar().showMessage("Creating revision snapshot…")
+        self.statusBar().showMessage(self.tr("Creating revision snapshot…"))
         self.thread_pool.start(worker)
 
     def review_revision_snapshots(self) -> None:
@@ -4825,20 +4825,20 @@ class MainWindow(QMainWindow):
         try:
             self.settings.save()
         except OSError as exc:
-            self.statusBar().showMessage(f"Could not save recent files: {exc}", 8000)
+            self.statusBar().showMessage(self.tr("Could not save recent files: {error}").format(error=exc), 8000)
         self._populate_recent_files_menu()
 
     def _remember_recent_file(self, path: Path) -> None:
         try:
             current = str(path.resolve())
         except (OSError, RuntimeError) as exc:
-            self.statusBar().showMessage(f"Could not record recent file: {exc}", 8000)
+            self.statusBar().showMessage(self.tr("Could not record recent file: {error}").format(error=exc), 8000)
             return
         self.settings.recent_files = [current, *(p for p in self.settings.recent_files if p != current)][:10]
         try:
             self.settings.save()
         except OSError as exc:
-            self.statusBar().showMessage(f"Could not save recent files: {exc}", 8000)
+            self.statusBar().showMessage(self.tr("Could not save recent files: {error}").format(error=exc), 8000)
 
     def save_document(self) -> None:
         editor = self.tabs.current_editor()
@@ -6579,7 +6579,7 @@ class MainWindow(QMainWindow):
             return
         if self._saving_editors:
             event.ignore()
-            self.statusBar().showMessage("Wait for the current save to finish before closing.")
+            self.statusBar().showMessage(self.tr("Wait for the current save to finish before closing."))
             return
         if self._quit_in_progress:
             event.ignore()
@@ -6640,7 +6640,7 @@ class MainWindow(QMainWindow):
                 lambda error: self._finish_shutdown_recovery(error=error),
                 Qt.ConnectionType.QueuedConnection,
             )
-            self.statusBar().showMessage("Saving shutdown recovery snapshots…")
+            self.statusBar().showMessage(self.tr("Saving shutdown recovery snapshots…"))
             self._recovery_pool.start(worker)
             return
         self._finish_shutdown_recovery()

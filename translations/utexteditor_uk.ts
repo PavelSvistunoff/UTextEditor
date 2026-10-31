@@ -681,6 +681,22 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Writing-goal progress could not be loaded: {error}</source><translation>Не вдалося завантажити поступ до цілі письма: {error}</translation></message>
+    <message><source>Could not save AI preference: {error}</source><translation>Не вдалося зберегти налаштування ШІ: {error}</translation></message>
+    <message><source>Writing-goal progress could not be saved: {error}</source><translation>Не вдалося зберегти поступ до цілі письма: {error}</translation></message>
+    <message><source>Could not save recent projects: {error}</source><translation>Не вдалося зберегти список нещодавніх проєктів: {error}</translation></message>
+    <message><source>Project closed; its open documents remain available in tabs.</source><translation>Проєкт закрито; його відкриті документи залишаються доступними у вкладках.</translation></message>
+    <message><source>Project word counts could not be refreshed: {error}</source><translation>Не вдалося оновити кількість слів у проєкті: {error}</translation></message>
+    <message><source>Some recovery snapshots could not be saved: {errors}</source><translation>Не вдалося зберегти деякі копії для відновлення: {errors}</translation></message>
+    <message><source>Local recovery snapshot saved.</source><translation>Локальну копію для відновлення збережено.</translation></message>
+    <message><source>Recovery snapshot failed: {error}</source><translation>Не вдалося створити копію для відновлення: {error}</translation></message>
+    <message><source>Shutdown recovery failed: {error}</source><translation>Не вдалося зберегти дані відновлення під час завершення: {error}</translation></message>
+    <message><source>Some shutdown recovery snapshots failed: {errors}</source><translation>Не вдалося створити деякі копії для відновлення під час завершення: {errors}</translation></message>
+    <message><source>Creating revision snapshot…</source><translation>Створення знімка редакції…</translation></message>
+    <message><source>Could not save recent files: {error}</source><translation>Не вдалося зберегти список нещодавніх файлів: {error}</translation></message>
+    <message><source>Could not record recent file: {error}</source><translation>Не вдалося додати нещодавній файл: {error}</translation></message>
+    <message><source>Wait for the current save to finish before closing.</source><translation>Дочекайтеся завершення поточного збереження перед закриттям.</translation></message>
+    <message><source>Saving shutdown recovery snapshots…</source><translation>Збереження копій для відновлення перед завершенням…</translation></message>
     <message><source>Like in the book</source><translation>Як у книзі</translation></message>
     <message><source>Format Whole Document</source><translation>Форматувати весь документ</translation></message>
     <message><source>Choose a formatting operation for the entire document:</source><translation>Виберіть дію форматування для всього документа:</translation></message>

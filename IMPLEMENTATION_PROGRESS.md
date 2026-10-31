@@ -412,8 +412,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   formatting choices, outline validation, project navigation accessibility,
   AI setup and analysis errors, and connection-test feedback now use catalog
   strings. A Qt test checks that a translated formatting choice still performs
-  the intended undoable operation. Further workflows still need auditing.
-  Full offline suite: 613 passed, 2 skipped.
+  the intended undoable operation. Recent-file and project persistence errors,
+  writing-goal, recovery and shutdown status messages now use Ukrainian
+  strings, with dynamic error details retained. Further workflows still need
+  auditing. Full offline suite: 614 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use
