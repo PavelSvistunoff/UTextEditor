@@ -1100,6 +1100,34 @@ def test_translated_spellcheck_feedback(application, tmp_path):
         window.close()
 
 
+def test_translated_project_translation_cancellation_progress(application, tmp_path):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+    from PySide6.QtWidgets import QProgressDialog
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_translation_worker = object()
+    window._project_translation_progress_dialog = QProgressDialog(window)
+    application.installTranslator(translator)
+    try:
+        window.cancel_project_translation()
+        assert window._project_translation_progress_dialog.labelText() == "Скасування після поточного запиту до моделі…"
+    finally:
+        window._project_translation_worker = None
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

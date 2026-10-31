@@ -364,8 +364,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   596 passed, 2 skipped. After reviewing that initial set, three candidates
   remain: the product name and two labels built from project or path data.
   The audit now also checks status messages, dialog buttons and file-dialog
-  labels; the expanded scan reports 45 candidates for review. Full offline
-  suite: 613 passed, 2 skipped.
+  labels; the expanded scan reports 45 candidates for review. The scan now
+  also covers tab, item, progress and dialog-detail labels. It found two
+  untranslated project translation progress messages, now added to the
+  Ukrainian catalog; other new candidates are language names. Runtime and
+  audit tests pass. The heuristic still does not cover every UI API. Full
+  offline suite: 631 passed, 2 skipped.
 - **TASK-032 — in progress:** the Ukrainian source catalog now covers the
   previously missing character portrait and scene-development workflow labels,
   prompts and errors, plus the main-window open-error title. A full UI audit,

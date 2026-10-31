@@ -681,6 +681,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Applying all translated project files…</source><translation>Застосування перекладу до всіх файлів проєкту…</translation></message>
+    <message><source>Cancelling after the current model request…</source><translation>Скасування після поточного запиту до моделі…</translation></message>
     <message><source>AI: Connected</source><translation>ШІ: підключено</translation></message>
     <message><source>AI: Connecting...</source><translation>ШІ: підключення...</translation></message>
     <message><source>AI: Disabled</source><translation>ШІ: вимкнено</translation></message>

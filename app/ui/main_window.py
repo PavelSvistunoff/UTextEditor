@@ -1483,7 +1483,7 @@ class MainWindow(QMainWindow):
         if self._project_translation_progress_dialog is not None:
             self._project_translation_progress_dialog.show()
             self._project_translation_progress_dialog.setLabelText(
-                "Applying all translated project files…"
+                self.tr("Applying all translated project files…")
             )
             self._project_translation_progress_dialog.setCancelButton(None)
         self._project_translation_committing = True
@@ -1661,7 +1661,7 @@ class MainWindow(QMainWindow):
             self._project_translation_cancel_action.setEnabled(False)
         if self._project_translation_progress_dialog is not None:
             self._project_translation_progress_dialog.setLabelText(
-                "Cancelling after the current model request…"
+                self.tr("Cancelling after the current model request…")
             )
             self._project_translation_progress_dialog.setCancelButton(None)
         self.statusBar().showMessage(
