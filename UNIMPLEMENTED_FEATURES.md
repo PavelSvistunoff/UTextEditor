@@ -104,9 +104,10 @@ session was exercised, and this review does not prove other paths defect-free.
   find/replace, and selected character, analysis, generation, writing-goal,
   and Auto-writer dialogs. Many MainWindow prompts, error paths, and less-used
   dialogs still fall back to English and need migration and translation.
-- **Catalog audit tooling:** extraction and compilation are documented, but a
-  dedicated automated check for missing translations and placeholder parity
-  across all UI catalogs is not yet part of the developer workflow.
+- **Catalog audit tooling:** a validator checks catalog completeness against
+  extracted marked strings, placeholder parity and plural forms. A separate
+  heuristic reports likely unmarked literals in selected Qt calls. These do
+  not replace the remaining full UI audit or release catalog compilation.
 
 ## Navigation assessment and suggestions
 

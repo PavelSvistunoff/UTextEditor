@@ -339,6 +339,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   entries now fail validation instead of masking an earlier entry; one
   identical duplicate was removed from the Ukrainian source catalog. Focused
   validator tests and the full offline suite passed: 570 passed, 2 skipped.
+- **TASK-033 audit extension:** `tools/audit_ui_strings.py` reports likely
+  unmarked literals and f-strings in selected Qt UI calls, with an optional
+  nonzero exit for findings and explicit parse-error handling. A current scan
+  reports 148 candidates requiring human review; this heuristic neither
+  covers every API nor proves each candidate is user-visible. Catalog
+  compilation and the broader audit remain outstanding. Full offline suite:
+  596 passed, 2 skipped.
 - **TASK-032 — in progress:** the Ukrainian source catalog now covers the
   previously missing character portrait and scene-development workflow labels,
   prompts and errors, plus the main-window open-error title. A full UI audit,
