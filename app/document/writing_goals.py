@@ -281,7 +281,9 @@ class WritingGoalTracker:
         changed_end = len(after) - suffix
         return sum(
             1
-            for token in _WORD.finditer(after)
+            # Two surrounding characters retain internal apostrophe/dash
+            # boundaries without scanning the unchanged document.
+            for token in _WORD.finditer(after, max(0, prefix - 2), min(len(after), changed_end + 2))
             if token.start() >= prefix and token.end() <= changed_end
         )
 

@@ -1,6 +1,23 @@
 
 # Implementation progress
 
+- **TASK-006.05 — PARTIAL (2026-10-31):** writing-goal token scanning
+  now visits the changed span plus two surrounding characters, preserving
+  internal apostrophe/dash boundaries. Added exhaustive small-edit comparison
+  against the prior whole-document token scan over Unicode and punctuation
+  examples. Goal tests: 31 passed; full suite: 694 passed, 2 skipped;
+  diff reviewed and whitespace check passed. Microbenchmark on one million
+  characters: 100 complete bounded credit calculations 0.0079 seconds versus
+  2.1373 seconds for 100 whole-document token scans (different workloads;
+  this isolates scan cost and is not GUI latency). README/TASKS updated.
+  Long run completed: 10,000 commands retained 10,001 states and
+  3,723,520 current traced bytes; insertion phase took 142.514 seconds versus
+  the previous single run of 156.520 seconds. Counts 10,000 → 9,000 → 10,000
+  and branch 9,001 passed. These single runs do not establish a stable GUI
+  speedup. Memory remains unbounded and other GUI counting work
+  still scans whole buffers. Prior benchmark committed as 981deb7; new work
+  uncommitted.
+
 - **TASK-001.05 — PARTIAL (2026-10-31 checkpoint):** configurable
   --commands/--undo history benchmark now checks a branch edit after undo
   as well as redo. Smoke run (100 commands/10 undo) passed: 101 states,

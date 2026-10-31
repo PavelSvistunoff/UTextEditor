@@ -166,6 +166,8 @@ The small English catalog supplies Qt numerus forms; ordinary English text remai
 
 Recurring glossary: project — проєкт; chapter — розділ; scene — сцена; character — персонаж; reference note — довідкова нотатка; revision snapshot — знімок редакції; recovery — відновлення; inline completion — продовження тексту; continuity check — перевірка узгодженості; Auto-writer — автоматичне написання; writing goal — ціль письма.
 
+Writing-goal insertion counting scans tokens within the changed text span plus boundary context; unchanged text is compared in chunks to locate that span.
+
 For performance investigation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/completion_context.py` for the completion-context microbenchmark, `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/editor_responsiveness.py` for editor operation timings and peak process memory, or `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/writing_goal_history.py` for a synthetic editing, undo/redo and branch session. Pass `--commands 10000 --undo 1000` to increase the history length; allocation tracing can make long runs slow. These measurements are diagnostic, not portable pass/fail thresholds.
 
 ## Product direction

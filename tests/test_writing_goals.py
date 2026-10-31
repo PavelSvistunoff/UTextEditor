@@ -273,3 +273,24 @@ def test_rekey_existing_progress_preserves_source_undo_above_destination_floor()
     assert tracker.count_new_words({"saved"}, local_date="2026-10-18") == 1
     tracker.record_text("saved", "one two", redo=True, local_date="2026-10-18")
     assert tracker.count_new_words({"saved"}, local_date="2026-10-18") == 2
+
+
+def test_bounded_token_scan_matches_full_scan_for_boundary_edits():
+    from app.document.writing_goals import _WORD
+
+    samples = ["", "a", "longword", "can't", "one-two", "слово", "a b", "a--b", "a’b", "123", "a_b"]
+    replacements = ["", "x", " word ", "'", "-", "’", "_", "я"]
+    for before in samples:
+        for start in range(len(before) + 1):
+            for end in range(start, len(before) + 1):
+                for replacement in replacements:
+                    after = before[:start] + replacement + before[end:]
+                    prefix = 0
+                    while prefix < min(len(before), len(after)) and before[prefix] == after[prefix]:
+                        prefix += 1
+                    suffix = 0
+                    while suffix < min(len(before), len(after)) - prefix and before[-suffix - 1] == after[-suffix - 1]:
+                        suffix += 1
+                    expected = sum(token.start() >= prefix and token.end() <= len(after) - suffix
+                                   for token in _WORD.finditer(after))
+                    assert WritingGoalTracker._new_tokens_added(before, after) == expected, (before, after)

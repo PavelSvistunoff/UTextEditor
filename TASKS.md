@@ -181,7 +181,10 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [?] **TASK-006.04** — Establish representative document sizes and repeatable benchmarks.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-006.05** — Optimize confirmed bottlenecks without weakening correctness.  
+- [~] **TASK-006.05** — Optimize confirmed bottlenecks without weakening correctness.
+  Writing-goal token scanning is limited to the changed span plus boundary
+  context; exhaustive small-edit equivalence regression passes. Overall GUI
+  latency and bounded history remain outstanding.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
