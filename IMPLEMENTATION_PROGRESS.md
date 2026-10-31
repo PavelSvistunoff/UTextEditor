@@ -3,6 +3,17 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-001.05 — PARTIAL:** added `benchmarks/writing_goal_history.py`, an
+  offline Qt session with 1,000 separate synthetic word-insertion commands and
+  100 undo/redo operations. On this machine it recorded 101/501/1,001 tracker
+  states and 56,701/222,675/416,017 current Python-traced bytes after
+  100/500/1,000 commands; counts were 1,000 → 900 → 1,000 across undo/redo.
+  Modified the benchmark, `README.md`, and `TASKS.md`. Writing-goal tests:
+  22 passed; full offline suite: 666 passed, 2 skipped. The measurement includes
+  Python allocations beyond the tracker, excludes Qt native allocations, and
+  is a single synthetic append-heavy run. Mixed edits, longer sessions and
+  native memory measurements remain outstanding; this does not establish a
+  bound or solve TASK-001.02.
 - **TASK-009.04 — PARTIAL:** revision comparisons identify changed manifest
   fields for character profiles, directed relationships and scene-character
   associations, without displaying their values or portrait data. Modified
