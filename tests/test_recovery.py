@@ -224,3 +224,23 @@ def test_scan_rejects_malformed_project_item_identity(tmp_path: Path) -> None:
     scan = store.scan()
     assert not scan.entries and len(scan.issues) == 1
     assert entry.snapshot_path.exists()
+
+
+def test_unreadable_directory_does_not_hide_other_recovery_snapshots(tmp_path, monkeypatch):
+    store = RecoveryStore(tmp_path / "recovery")
+    inaccessible = store.save("unreadable", "preserve me")
+    readable = store.save("readable", "recover me")
+    original_iterdir = Path.iterdir
+
+    def denied_iterdir(path):
+        if path == inaccessible.snapshot_path.parent:
+            raise PermissionError("Cannot list recovery directory")
+        return original_iterdir(path)
+
+    monkeypatch.setattr(Path, "iterdir", denied_iterdir)
+    scan = store.scan()
+    assert scan.entries == (readable,)
+    assert len(scan.issues) == 1
+    assert scan.issues[0].snapshot_path == inaccessible.snapshot_path.parent
+    assert "Cannot list" in scan.issues[0].message
+    assert inaccessible.snapshot_path.read_bytes()

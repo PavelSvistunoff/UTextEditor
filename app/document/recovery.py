@@ -10,6 +10,7 @@ import tempfile
 from typing import Iterable
 from uuid import uuid4
 import difflib
+import fnmatch
 
 from .document import Document
 from .encoding import detect_line_ending
@@ -161,12 +162,19 @@ class RecoveryStore:
             except ValueError:
                 issues.append(RecoveryIssue(directory, "Recovery directory resolves outside the configured location."))
                 continue
-            for path in sorted(directory.glob("*.json")):
+            try:
+                children = sorted(directory.iterdir())
+                snapshots = [path for path in children if fnmatch.fnmatchcase(path.name, "*.json")]
+                unfinished = [path for path in children if fnmatch.fnmatchcase(path.name, ".*.json.*.tmp")]
+            except OSError as exc:
+                issues.append(RecoveryIssue(directory, str(exc)))
+                continue
+            for path in snapshots:
                 try:
                     entries.append(self._read_entry(path))
                 except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
                     issues.append(RecoveryIssue(path, str(exc)))
-            for path in sorted(directory.glob(".*.json.*.tmp")):
+            for path in unfinished:
                 if path.is_file():
                     issues.append(RecoveryIssue(
                         path, "Unfinished recovery write; it may still be in progress.", True

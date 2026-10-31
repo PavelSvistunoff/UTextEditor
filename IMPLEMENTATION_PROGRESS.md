@@ -1,6 +1,16 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** recovery scanning reports a
+  directory-listing failure and continues with other snapshot directories.
+  Uses explicit directory enumeration because glob can suppress filesystem
+  errors. Added test_unreadable_directory_does_not_hide_other_recovery_snapshots;
+  recovery tests: 19 passed; full offline suite: 674 passed, 2 skipped.
+  README and TASKS updated; diff whitespace check passed. Existing UI displays
+  the diagnostic through its translated wrapper; OS error text remains as
+  supplied by the filesystem. Broader diagnosis/native checks remain open.
+  Prior conflict-resolution audit committed as b337586.
+
 - **TASK-007.V1 — DONE (2026-10-31 audit):** reviewed FileManager.save,
   MainWindow.review_external_changes and merge_text. TASK-007.01–.04 are
   verified by test_conflict_dialog_displays_versions_and_proposal,
