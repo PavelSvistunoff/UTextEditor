@@ -788,17 +788,6 @@ class MainWindow(QMainWindow):
 
     def _record_writing_goal_text(self, editor) -> None:
         document_id = self._goal_document_id(editor)
-        if (
-            self.writing_goals.target == 0
-            or self.writing_goals.scope != "new_words"
-        ):
-            self.writing_goals.attach(document_id, editor.toPlainText())
-            editor._writing_goal_document_id = document_id
-            editor._goal_undo_merge_active = False
-            editor._goal_undo_command_added = False
-            editor._goal_undo_steps = editor.document().availableUndoSteps()
-            editor._goal_redo_available = editor.document().isRedoAvailable()
-            return
         if getattr(editor, "_writing_goal_document_id", None) != document_id:
             self._attach_writing_goal_document(editor)
         history_action = editor._history_action
@@ -823,6 +812,7 @@ class MainWindow(QMainWindow):
             undo=history_action == "undo",
             redo=history_action == "redo",
             merge_with_previous=can_merge,
+            count_new=self.writing_goals.target > 0 and self.writing_goals.scope == "new_words",
         )
         if not document.isUndoAvailable() and not document.isRedoAvailable():
             self.writing_goals.discard_unreachable_history(document_id)
@@ -891,12 +881,8 @@ class MainWindow(QMainWindow):
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             target, scope = dialog.values()
-            preserve_history = (
-                self.writing_goals.scope == scope == "new_words"
-                and self.writing_goals.target > 0 and target > 0
-            )
             self.writing_goals.configure(target, scope)
-            self._attach_open_writing_goal_documents(reset_history=not preserve_history)
+            self._attach_open_writing_goal_documents()
             self._schedule_writing_goal_persist()
             self._refresh_writing_goal()
 

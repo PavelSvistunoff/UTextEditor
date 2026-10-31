@@ -958,3 +958,41 @@ def test_writing_goal_many_independent_commands_undo_and_redo(application: QAppl
     editor.document_state.mark_saved()
     window._writing_goal_persist_timer.stop()
     window.close()
+
+
+@pytest.mark.parametrize("inactive", [(0, "new_words"), (10, "active_scene"), (10, "project_manuscript")])
+def test_goal_reconfiguration_preserves_counts_through_inactive_edits(application, inactive):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(10, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+
+    def append(text):
+        cursor = editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText(text)
+        cursor.endEditBlock()
+
+    def configure(values):
+        with patch("app.ui.main_window.WritingGoalDialog") as dialog:
+            dialog.return_value.exec.return_value = QDialog.DialogCode.Accepted
+            dialog.return_value.values.return_value = values
+            window.configure_writing_goal()
+
+    append("first")
+    configure(inactive)
+    append(" inactive")
+    configure((20, "new_words"))
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.redo()
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()

@@ -82,15 +82,26 @@ class WritingGoalTracker:
 
     def rekey_document(self, old_id: str, new_id: str, text: str) -> None:
         if old_id == new_id:
-            self.attach(new_id, text)
+            if self._current_text.get(old_id) != text:
+                self.attach(new_id, text)
             return
+        preserve_history = (
+            old_id in self._histories
+            and self._current_text.get(old_id) == text
+            and new_id not in self._histories
+            and all(new_id not in values for values in self.progress.values())
+        )
         for values in self.progress.values():
             old_count = values.pop(old_id, None)
             if old_count is not None:
                 values[new_id] = max(values.get(new_id, 0), old_count)
-        self._histories.pop(old_id, None)
+        history = self._histories.pop(old_id, None)
         self._current_text.pop(old_id, None)
-        self.attach(new_id, text)
+        if preserve_history:
+            self._histories[new_id] = history
+            self._current_text[new_id] = text
+        else:
+            self.attach(new_id, text)
 
     def detach(self, document_id: str) -> None:
         """Release transient undo history while retaining saved progress."""
@@ -106,6 +117,7 @@ class WritingGoalTracker:
         undo: bool = False,
         redo: bool = False,
         merge_with_previous: bool = False,
+        count_new: bool = True,
     ) -> int:
         if not isinstance(text, str):
             raise TypeError("Writing-goal text must be a string.")
@@ -138,7 +150,7 @@ class WritingGoalTracker:
         # A Qt undo/redo may reach a state that predates our attached history
         # (for example after tracking was reconfigured). Its text is
         # restored, not newly written, even when the old checkpoint is absent.
-        added = 0 if undo or redo or self.paused else self._new_tokens_added(before, text)
+        added = 0 if undo or redo or self.paused or not count_new else self._new_tokens_added(before, text)
         counts = states[index][1]
         if added:
             # Progress snapshots are immutable after being stored. Reuse the

@@ -1,6 +1,29 @@
 
 # Implementation progress
 
+- **TASK-001.03 — PARTIAL (2026-10-31 resumed checkpoint):** verified the
+  uncommitted identity-transfer change and continued with goal scope/enable
+  transitions. Configuration no longer reattaches histories; inactive edits
+  retain checkpoints but receive no new-word credit. Added three Qt regressions
+  for disabling, active-scene scope and project scope, with edits and undo/redo
+  across reconfiguration. Focused goal/editor suites: 85 passed; full offline
+  suite: 692 passed, 2 skipped. README/TASKS updated and diff reviewed;
+  whitespace check passed. Transient metadata is still unbounded, including
+  inactive edits retained for undo correctness. Existing-destination identity
+  collisions still reattach. No commits or pushes; unrelated generated-file
+  worktree changes preserved. Next: address bounded metadata design and
+  existing-destination accounting before marking TASK-001 complete.
+
+- **TASK-001.03 — PARTIAL (2026-10-31):** rekeying a writing-goal document
+  to an unused identity now transfers undo/redo checkpoints when text matches;
+  rekeying to the same identity also preserves matching history. Regression
+  tests cover daily counts over two dates through undo/redo, existing destination
+  progress, and mismatched text. Existing destinations retain conservative
+  reattachment rather than importing incompatible checkpoints. Writing-goal
+  suite: 29 passed; full offline suite: 689 passed, 2 skipped; diff check passed.
+  README/TASKS updated. Scope/enable transitions and bounded history remain
+  outstanding. Changes are uncommitted; no push attempted.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** recovery inspection now includes
   captured text for untitled snapshots and snapshots without a canonical file,
   using existing localized labels and the existing UI truncation notice.

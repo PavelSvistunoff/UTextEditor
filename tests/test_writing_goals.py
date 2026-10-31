@@ -224,3 +224,37 @@ def test_detach_releases_history_but_preserves_daily_progress() -> None:
 def test_invalid_goal_configuration_is_rejected(target, scope) -> None:
     with pytest.raises((TypeError, ValueError)):
         WritingGoalTracker(target, scope)
+
+
+@pytest.mark.parametrize("new_id", ["untitled", "file:/saved.txt"])
+def test_rekey_preserves_undo_redo_checkpoints_for_unused_destination(new_id):
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("untitled", "")
+    tracker.record_text("untitled", "first ", local_date="2026-10-17")
+    tracker.record_text("untitled", "first second", local_date="2026-10-18")
+    tracker.rekey_document("untitled", new_id, "first second")
+    tracker.record_text(new_id, "first ", undo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({new_id}, local_date="2026-10-17") == 1
+    assert tracker.count_new_words({new_id}, local_date="2026-10-18") == 0
+    tracker.record_text(new_id, "first second", redo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({new_id}, local_date="2026-10-18") == 1
+
+
+def test_rekey_existing_destination_keeps_larger_progress_without_reusing_source_history():
+    tracker = WritingGoalTracker(100, "new_words", progress={"2026-10-18": {"file:/saved.txt": 10}})
+    tracker.attach("untitled", "")
+    tracker.record_text("untitled", "new words", local_date="2026-10-18")
+    tracker.rekey_document("untitled", "file:/saved.txt", "new words")
+    tracker.record_text("file:/saved.txt", "", undo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({"file:/saved.txt"}, local_date="2026-10-18") == 10
+    assert "untitled" not in tracker._histories
+
+
+def test_rekey_changed_text_attaches_fresh_checkpoint_without_counting_it():
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("untitled", "")
+    tracker.record_text("untitled", "new words", local_date="2026-10-18")
+    tracker.rekey_document("untitled", "file:/saved.txt", "different buffer")
+    assert len(tracker._histories["file:/saved.txt"][0]) == 1
+    assert tracker._current_text["file:/saved.txt"] == "different buffer"
+    assert tracker.count_new_words({"file:/saved.txt"}, local_date="2026-10-18") == 2

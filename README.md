@@ -76,7 +76,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - `Auto` uses local script and common-word signals, and ambiguous or short text remains `Auto` for the model to infer.
 - Files are currently read into memory as a whole; very large files may still use substantial memory even though reads and writes run off the GUI thread.
 - Writing-goal undo metadata can still grow with the number of separate undo commands in a long editing session; it is not yet bounded.
-- Changing writing-goal scope or disabling/re-enabling a goal reattaches tracking and discards its earlier checkpoints. Undo or redo to an unknown checkpoint does not count restored text as new writing, but cannot reconstruct its earlier contribution to the daily count.
+- Changing writing-goal scope or disabling/re-enabling a goal preserves its undo checkpoints; intervening edits add no new-word credit. Undo or redo to an unknown checkpoint does not count restored text as new writing, but cannot reconstruct its earlier contribution to the daily count.
 - The app currently supports UTF-8 files only. It rejects embedded NULs as likely binary input; broader binary detection is not implemented.
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
 - The UI is minimal and has no toolbar. Recent standalone files and projects are listed separately.
@@ -96,7 +96,7 @@ Save conflict checks run both before and after staging standalone files, project
 
 Exports use UTF-8 without a byte-order mark and normalize line endings to LF. Export and snapshot creation do not save source documents or clear their dirty state.
 
-Writing-goal configuration and per-document daily progress are stored locally in `writing-goals.json` beside the application settings. The local system date defines the daily boundary; changing the timezone does not delete progress recorded under other dates.
+Saving to a new writing-goal document identity preserves undo/redo checkpoints when that identity has no existing progress. Writing-goal configuration and per-document daily progress are stored locally in `writing-goals.json` beside the application settings. The local system date defines the daily boundary; changing the timezone does not delete progress recorded under other dates.
 
 ## Install and run
 
