@@ -49,14 +49,15 @@ def detect_language(text: str) -> str:
 
     if has_cyrillic and has_latin:
         return "Auto"
+    # Shared Cyrillic words such as «на» and «а» also occur in Russian and
+    # other languages, so they are not enough to identify Ukrainian.
+    if has_cyrillic:
+        return "Auto"
 
     english_words = re.findall(r"\b(?:the|and|is|are|you|that|this|with|for|to|of|in|it|was|have|has|from|on|at|as|be|by|not|we|they|their|there|here|which|would|should)\b", value.lower())
-    ukrainian_words = re.findall(r"\b(?:це|цей|я|ти|ми|ви|що|як|де|але|тому|сво|коли|все|так|для|з|на|у|і|а)\b", value.lower())
 
-    if has_latin and len(value) >= 8 and len(english_words) >= 2 and not ukrainian_words:
+    if has_latin and len(english_words) >= 2:
         return "English"
-    if has_cyrillic and len(value) >= 8 and len(ukrainian_words) >= 2 and not english_words:
-        return "Ukrainian"
     return "Auto"
 
 

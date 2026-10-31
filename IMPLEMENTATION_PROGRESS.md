@@ -257,7 +257,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   20/20, with explicit overrides covered. This is a small regression corpus,
   not a representative accuracy estimate; broader multilingual evaluation
   remains. Do not mark complete on that basis alone. Full offline suite: 533
-  passed, 2 skipped.
+  passed, 2 skipped. Shared Cyrillic words alone no longer classify text as
+  Ukrainian: two Russian examples and an ambiguous Ukrainian example now fall
+  back to Auto. The corpus contains 23 cases; broader evaluation remains.
+  Full offline suite: 550 passed, 2 skipped.
 - **TASK-033 — in progress:** added a command-line TS validator for missing,
   unfinished and malformed entries, Qt and named-format placeholder parity,
   and English/Ukrainian plural forms. It can compare against an independently
