@@ -681,6 +681,12 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>AI: Connected</source><translation>ШІ: підключено</translation></message>
+    <message><source>AI: Connecting...</source><translation>ШІ: підключення...</translation></message>
+    <message><source>AI: Disabled</source><translation>ШІ: вимкнено</translation></message>
+    <message><source>AI: Error</source><translation>ШІ: помилка</translation></message>
+    <message><source>AI: Generating...</source><translation>ШІ: генерування...</translation></message>
+    <message><source>AI: Offline</source><translation>ШІ: не підключено</translation></message>
     <message><source>Ln {line}, Col {column}</source><translation>Рядок {line}, стовпець {column}</translation></message>
     <message><source>AI generation failed: {error}</source><translation>Не вдалося згенерувати текст за допомогою ШІ: {error}</translation></message>
     <message><source>AI completion failed: {error}</source><translation>Не вдалося отримати продовження від ШІ: {error}</translation></message>

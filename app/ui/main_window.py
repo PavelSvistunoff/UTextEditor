@@ -694,10 +694,19 @@ class MainWindow(QMainWindow):
             return
         document = editor.document_state
         cursor = editor.textCursor()
+        ai_status_labels = {
+            "AI: Connected": self.tr("AI: Connected"),
+            "AI: Connecting...": self.tr("AI: Connecting..."),
+            "AI: Disabled": self.tr("AI: Disabled"),
+            "AI: Error": self.tr("AI: Error"),
+            "AI: Generating...": self.tr("AI: Generating..."),
+            "AI: Offline": self.tr("AI: Offline"),
+        }
+        ai_status = ai_status_labels.get(self.ai_status, self.ai_status)
         self.status.showMessage(
             f"{document.display_name}{' *' if document.dirty else ''}    "
             f"{document.encoding.upper()}    {document.line_ending}    "
-            f"{self.tr('Ln {line}, Col {column}').format(line=cursor.blockNumber() + 1, column=cursor.columnNumber() + 1)}    {self.ai_status}"
+            f"{self.tr('Ln {line}, Col {column}').format(line=cursor.blockNumber() + 1, column=cursor.columnNumber() + 1)}    {ai_status}"
         )
         self._refresh_writing_goal()
 

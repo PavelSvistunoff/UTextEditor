@@ -1056,6 +1056,10 @@ def test_translated_spellcheck_feedback(application, tmp_path):
                                   window._settings_generation, window._active_document_generation,
                                   window._spellcheck_generation)
         assert window.status.currentMessage() == "Не вдалося перевірити правопис: network detail"
+        window.ai_status = "AI: Connected"
+        window._update_status()
+        assert "ШІ: підключено" in window.status.currentMessage()
+        assert window.ai_status == "AI: Connected"
         source = "Found %n spelling suggestions. Right-click an underline to review."
         for count, form in ((1, "пропозицію"), (2, "пропозиції"), (5, "пропозицій")):
             assert form in QCoreApplication.translate("MainWindow", source, None, count)
