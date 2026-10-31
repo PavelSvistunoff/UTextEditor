@@ -237,7 +237,7 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.03** — Add selective restore.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-009.04** — Extend comparison to chapter, link, and project-structure changes.  
+- [~] **TASK-009.04** — Extend comparison to chapter, link, and project-structure changes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.05** — Add optional scheduled snapshots and retention policies.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

@@ -66,8 +66,8 @@ session was exercised, and this review does not prove other paths defect-free.
   project relocation, discard, and defer. Repair and diagnosis for partial or
   corrupt recovery sets remain limited.
 - **Revision management:** scheduled snapshots and restore with a
-  preview are not available. Comparisons cover scenes and reference notes,
-  but not all chapter, link, and project-structure changes.
+  preview are not available. Comparisons cover chapters, scenes and reference
+  notes and directed link additions/removals, but not all project-structure changes.
 - **Large documents and encodings:** files are read into memory as a whole;
   the editor supports UTF-8 only, and encoding and line-ending choices are not
   selectable in the status bar. Detection of binary files beyond embedded NULs

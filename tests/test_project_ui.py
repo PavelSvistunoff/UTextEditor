@@ -2779,6 +2779,15 @@ def test_revision_history_dialog_labels_reference_note_changes(application):
     dialog.close()
 
 
+def test_revision_history_dialog_labels_chapter_changes(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("chapter-id", "title-changed", "Old", "New", item_type="chapter"),
+    )))
+    assert "Chapter Title Changed: New" in dialog.details.toPlainText()
+    dialog.close()
+
+
 def test_project_translation_actions_translate_and_refresh_open_documents(
     application, tmp_path, monkeypatch
 ):

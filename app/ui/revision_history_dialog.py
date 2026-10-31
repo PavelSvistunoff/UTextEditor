@@ -101,7 +101,7 @@ class RevisionHistoryDialog(QDialog):
     def show_comparison(self, comparison: RevisionComparison) -> None:
         self._update_compare_enabled()
         if not comparison.changes:
-            self.details.setPlainText(self.tr("No scene or reference-note changes between these snapshots."))
+            self.details.setPlainText(self.tr("No chapter, scene, reference-note or link changes between these snapshots."))
             self.status.setText(self.tr("Snapshots compared; no changes found."))
             return
 
@@ -114,6 +114,10 @@ class RevisionHistoryDialog(QDialog):
             change_label = labels.get(change.kind, change.kind)
             if change.item_type == "note":
                 change_label = format_qt(self.tr("Reference Note %1"), change_label)
+            elif change.item_type == "chapter":
+                change_label = format_qt(self.tr("Chapter %1"), change_label)
+            elif change.item_type == "link":
+                change_label = format_qt(self.tr("Link %1"), change_label)
             sections.append(f"{change_label}: {title}")
             if change.kind == "type-changed":
                 sections.append(

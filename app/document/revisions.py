@@ -156,6 +156,27 @@ class RevisionStore:
         old_positions = {scene_id: index for index, scene_id in enumerate(old_common_order)}
         new_positions = {scene_id: index for index, scene_id in enumerate(new_common_order)}
         changes: list[SceneChange] = []
+        old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
+        old_chapter_ids, new_chapter_ids = set(old_chapters), set(new_chapters)
+        common_chapters = old_chapter_ids & new_chapter_ids
+        old_chapter_order = [key for key in old_chapters if key in common_chapters]
+        new_chapter_order = [key for key in new_chapters if key in common_chapters]
+        old_chapter_positions = {key: index for index, key in enumerate(old_chapter_order)}
+        new_chapter_positions = {key: index for index, key in enumerate(new_chapter_order)}
+        for chapter_id, title in old_chapters.items():
+            if chapter_id not in new_chapter_ids:
+                changes.append(SceneChange(chapter_id, "removed", title, item_type="chapter"))
+        for chapter_id, title in new_chapters.items():
+            if chapter_id not in old_chapter_ids:
+                changes.append(SceneChange(chapter_id, "added", new_title=title, item_type="chapter"))
+        for chapter_id in old_chapters:
+            if chapter_id not in common_chapters:
+                continue
+            old_title, new_title = old_chapters[chapter_id], new_chapters[chapter_id]
+            if old_chapter_positions[chapter_id] != new_chapter_positions[chapter_id]:
+                changes.append(SceneChange(chapter_id, "moved", old_title, new_title, item_type="chapter"))
+            if old_title != new_title:
+                changes.append(SceneChange(chapter_id, "title-changed", old_title, new_title, item_type="chapter"))
         for scene_id in left.scene_order:
             if scene_id not in new_ids:
                 changes.append(SceneChange(scene_id, "removed", left.scene_titles.get(scene_id)))
@@ -218,6 +239,11 @@ class RevisionStore:
                 changes.append(SceneChange(
                     note_id, "text-changed", old_title, new_title, diff, item_type="note"
                 ))
+        old_links, new_links = _link_records(left.structure), _link_records(right.structure)
+        for source_id, target_id in sorted(old_links - new_links):
+            changes.append(SceneChange(f"{source_id} → {target_id}", "removed", item_type="link"))
+        for source_id, target_id in sorted(new_links - old_links):
+            changes.append(SceneChange(f"{source_id} → {target_id}", "added", item_type="link"))
         return RevisionComparison(tuple(changes))
 
     def delete(self, snapshot: str | Path | RevisionSnapshot, *, confirmed: bool = False) -> None:
@@ -269,6 +295,29 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _link_records(structure: object) -> set[tuple[str, str]]:
+    if not isinstance(structure, dict) or not isinstance(structure.get("links"), list):
+        return set()
+    return {
+        (link["source_id"], link["target_id"])
+        for link in structure["links"]
+        if isinstance(link, dict) and isinstance(link.get("source_id"), str)
+        and isinstance(link.get("target_id"), str) and link["source_id"] and link["target_id"]
+    }
+
+
+def _chapter_records(structure: object) -> dict[str, str | None]:
+    """Read ordered chapter identities and titles from a captured manifest."""
+    if not isinstance(structure, dict) or not isinstance(structure.get("chapters"), list):
+        return {}
+    result: dict[str, str | None] = {}
+    for chapter in structure["chapters"]:
+        if isinstance(chapter, dict) and isinstance(chapter.get("id"), str) and chapter["id"]:
+            title = chapter.get("title")
+            result[chapter["id"]] = title if isinstance(title, str) else None
+    return result
 
 
 def _note_records(structure: object) -> dict[str, tuple[str | None, str | None]]:

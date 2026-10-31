@@ -3,6 +3,18 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** revision comparisons now report chapter
+  additions, removals, title changes and reordering, avoiding false moves from
+  insertions or removals. The review dialog labels chapter changes. Modified
+  `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
+  `tests/test_revisions.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, `README.md`, `UNIMPLEMENTED_FEATURES.md`,
+  and `TASKS.md`. Focused revision and project UI suites: 153 passed; full
+  offline suite: 655 passed, 2 skipped. Ukrainian source catalog validation
+  passed. Directed link additions and
+  removals are also reported by stable IDs. Scene-parent and other
+  structure comparisons, native accessibility checks and release catalog
+  compilation remain outstanding.
 - **TASK-009.01 — DONE:** snapshot previews now provide previous/next pages
   over all captured scene and note text, retaining a 32,768-character display
   bound per page. Selecting a different snapshot resets the page. Modified

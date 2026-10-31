@@ -87,6 +87,38 @@ def test_reordered_scenes_are_reported_as_moved(tmp_path) -> None:
     }
 
 
+def test_comparison_reports_chapter_changes_without_false_moves_for_additions(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(chapters):
+        return store.create("Draft", structure={"chapters": chapters}, scene_order=[],
+                            scene_titles={}, documents={})
+    before = snapshot([{"id": "a", "title": "Alpha"}, {"id": "b", "title": "Beta"},
+                       {"id": "removed", "title": "Old"}])
+    after = snapshot([{"id": "new", "title": "New"}, {"id": "b", "title": "Beta"},
+                      {"id": "a", "title": "Renamed"}])
+    changes = store.compare(before, after).changes
+    assert {(c.item_id, c.kind, c.item_type) for c in changes} == {
+        ("removed", "removed", "chapter"), ("new", "added", "chapter"),
+        ("a", "moved", "chapter"), ("b", "moved", "chapter"),
+        ("a", "title-changed", "chapter"),
+    }
+    assert next(c for c in changes if c.kind == "title-changed").old_title == "Alpha"
+    unchanged_order = snapshot([{"id": "new", "title": "New"},
+                                {"id": "a", "title": "Alpha"}, {"id": "b", "title": "Beta"}])
+    assert not any(c.kind == "moved" for c in store.compare(before, unchanged_order).changes)
+
+
+def test_comparison_reports_added_and_removed_directed_links(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(links):
+        return store.create("Draft", structure={"links": links}, scene_order=[], scene_titles={}, documents={})
+    before = snapshot([{"source_id": "note", "target_id": "scene"}])
+    after = snapshot([{"source_id": "scene", "target_id": "note"}])
+    assert [(c.item_id, c.kind, c.item_type) for c in store.compare(before, after).changes] == [
+        ("note → scene", "removed", "link"), ("scene → note", "added", "link")
+    ]
+
+
 def test_removing_scene_does_not_mark_later_scenes_as_moved(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
     before = create_snapshot(
