@@ -4,7 +4,12 @@ Run with QT_QPA_PLATFORM=offscreen .venv/bin/python benchmarks/editor_responsive
 Results are descriptive, not portable pass/fail thresholds.
 """
 
-import resource
+import argparse
+import statistics
+try:
+    import resource
+except ImportError:
+    resource = None
 import sys
 import tempfile
 import time
@@ -28,10 +33,16 @@ def elapsed_ms(operation, repetitions=1):
         start = time.perf_counter()
         operation()
         samples.append((time.perf_counter() - start) * 1000)
-    return max(samples)
+    return f"median {statistics.median(samples):.2f}/max {max(samples):.2f}"
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--sizes", nargs="+", type=int, default=[100_000, 1_000_000])
+    parser.add_argument("--repetitions", type=int, default=5)
+    args = parser.parse_args()
+    if args.repetitions < 1 or any(size < 1 for size in args.sizes):
+        parser.error("sizes and repetitions must be positive")
     app = QApplication.instance() or QApplication([])
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
@@ -40,7 +51,7 @@ def main():
             window = MainWindow()
         window.settings.ai_enabled = False
         window.writing_goals.configure(1000, "new_words")
-        for size in (100_000, 1_000_000):
+        for size in args.sizes:
             paragraph = "The archivist examined the papers and searched for a forgotten name.\n\n"
             text = (paragraph * (size // len(paragraph) + 1))[:size]
             path = root / f"{size}.txt"
@@ -50,16 +61,18 @@ def main():
             ui_open_ms = elapsed_ms(lambda: window._opened_document(opened[0]))
             editor = window.tabs.current_editor()
             editor.moveCursor(QTextCursor.MoveOperation.End)
-            typing_ms = elapsed_ms(lambda: editor.insertPlainText(" word"), 5)
-            cursor_ms = elapsed_ms(lambda: editor.moveCursor(QTextCursor.MoveOperation.Left), 5)
-            search_ms = elapsed_ms(lambda: editor.document().find("forgotten"), 5)
-            words_ms = elapsed_ms(lambda: count_words(editor.toPlainText()), 5)
-            context_ms = elapsed_ms(lambda: build_context(editor.toPlainText(), size // 2), 5)
-            print(f"{size:,} characters: file read {read_ms:.2f} ms, GUI open {ui_open_ms:.2f} ms, "
-                  f"typing {typing_ms:.2f} ms, cursor {cursor_ms:.2f} ms, search {search_ms:.2f} ms, "
-                  f"word count {words_ms:.2f} ms, context {context_ms:.2f} ms; "
-                  f"process peak RSS {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss} "
-                  f"({'bytes' if sys.platform == 'darwin' else 'KiB'})")
+            typing_ms = elapsed_ms(lambda: editor.insertPlainText(" word"), args.repetitions)
+            cursor_ms = elapsed_ms(lambda: editor.moveCursor(QTextCursor.MoveOperation.Left), args.repetitions)
+            search_ms = elapsed_ms(lambda: editor.document().find("forgotten"), args.repetitions)
+            words_ms = elapsed_ms(lambda: count_words(editor.toPlainText()), args.repetitions)
+            context_ms = elapsed_ms(lambda: build_context(editor.toPlainText(), size // 2), args.repetitions)
+            memory = (f"{resource.getrusage(resource.RUSAGE_SELF).ru_maxrss} "
+                      f"({'bytes' if sys.platform == 'darwin' else 'KiB'})"
+                      if resource is not None else "unavailable on this platform")
+            print(f"{size:,} characters ({args.repetitions} samples for repeated operations): file read {read_ms} ms, GUI open {ui_open_ms} ms, "
+                  f"typing {typing_ms} ms, cursor {cursor_ms} ms, search {search_ms} ms, "
+                  f"word count {words_ms} ms, context {context_ms} ms; "
+                  f"process peak RSS {memory}")
             editor.document_state.mark_saved()
         window.close()
         app.processEvents()

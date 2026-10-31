@@ -171,19 +171,25 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-006 — Benchmark large-document responsiveness
+Evidence: editor_responsiveness.py covers reads, GUI open, typing, cursor,
+search, word counts and completion context with new-word tracking enabled.
+Sizes and repetition counts are configurable; repeated operations report
+median/max. Read/open samples remain single; RSS is a cumulative process peak
+where supported. Native event-loop latency and representative project workloads
+remain unverified.
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-006.01** — Benchmark opening, typing, cursor movement, searching, and word counts.  
+- [x] **TASK-006.01** — Benchmark opening, typing, cursor movement, searching, and word counts.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-006.02** — Include writing-goal tracking and AI context construction.  
+- [x] **TASK-006.02** — Include writing-goal tracking and AI context construction.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-006.03** — Measure GUI-thread latency and memory usage.  
+- [~] **TASK-006.03** — Measure GUI-thread latency and memory usage.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-006.04** — Establish representative document sizes and repeatable benchmarks.  
+- [~] **TASK-006.04** — Establish representative document sizes and repeatable benchmarks.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-006.05** — Optimize confirmed bottlenecks without weakening correctness.
   Writing-goal token scanning is limited to the changed span plus boundary
-  context; exhaustive small-edit equivalence regression passes. Overall GUI
+  context; exhaustive small-edit equivalence regression passes.
   Goal refresh also skips buffer word scans for paused/disabled and new-word
   goals. Overall GUI latency and bounded history remain outstanding.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

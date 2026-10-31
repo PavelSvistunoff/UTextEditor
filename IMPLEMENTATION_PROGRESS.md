@@ -1,6 +1,19 @@
 
 # Implementation progress
 
+- **TASK-006.01/.02 — DONE; .03/.04 — PARTIAL (2026-10-31):** editor
+  benchmark accepts --sizes and --repetitions, reports median/max per repeated
+  operation and handles missing Unix resource support. Ten samples at
+  100,000/1,000,000 characters: typing median 2.13/3.56 ms (max 2.22/3.63),
+  cursor median 0.48/0.48 ms, word count median 1.38/14.27 ms, context
+  median 0.06/0.62 ms. Single GUI opens 4.39/29.78 ms; cumulative peak RSS
+  129,794,048/151,715,840 bytes. Offline synthetic measurements on this
+  machine; no portable threshold or native event-loop guarantee. Read/open
+  remain single samples; Windows fallback is implemented but not natively
+  verified. Benchmark run and full suite passed: 697 passed, 2 skipped;
+  diff check passed. README/TASKS updated. Prior refresh change committed
+  as f6e38f4; benchmark changes uncommitted.
+
 - **TASK-006.05 — PARTIAL (2026-10-31):** goal status refresh no longer
   recounts active/open scene buffers for new-word goals or paused/disabled
   goals. Other scopes count only their required buffers. Three regressions
