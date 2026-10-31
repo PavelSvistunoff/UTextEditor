@@ -324,6 +324,38 @@ def test_project_search_finds_open_unsaved_text_and_navigates_only_current_match
     window.close()
 
 
+def test_navigation_history_restores_project_search_selections(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.settings.autosave_enabled = False
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("😀 word and word")
+    window.show_project_search()
+    panel = window._project_search_panel
+    panel.search_requested.emit("word")
+    wait_until(lambda: window._project_search_cancel is None, application)
+    assert panel.results.count() == 2
+    for index in (0, 1):
+        panel.result_requested.emit(panel.results.item(index).data(Qt.ItemDataRole.UserRole))
+        assert editor.textCursor().selectedText() == "word"
+    second_position = editor.textCursor().selectionStart()
+    window._navigate_history(-1)
+    assert editor.textCursor().selectedText() == "word"
+    assert editor.textCursor().selectionStart() < second_position
+    window._navigate_history(1)
+    assert editor.textCursor().selectionStart() == second_position
+    assert editor.toPlainText() == "😀 word and word"
+    assert editor.document_state.dirty
+    assert project.read_scene(scene.id) == "original"
+    editor.document_state.mark_saved()
+    window.close()
+
+
 @pytest.mark.parametrize("changed", [False, True])
 def test_project_search_opens_closed_note_and_checks_disk_snapshot(application, tmp_path, changed):
     project = Project.create(tmp_path / "novel", "Novel")

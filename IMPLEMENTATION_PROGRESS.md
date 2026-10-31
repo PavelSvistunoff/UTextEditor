@@ -172,7 +172,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   removed destinations; tests cover branching, limits and unsaved buffers.
   Reopening closed destinations, broader search/navigation coverage, compiled
   translations and native keyboard verification remain outstanding. Do not
-  mark complete. Full offline suite: 535 passed, 2 skipped.
+  mark complete. A further offscreen regression covers Back and Forward across
+  two Unicode search-result selections in an unsaved scene and verifies that
+  neither the buffer nor the disk is changed. Reopening closed destinations
+  and native verification remain outstanding. Full offline suite: 617 passed,
+  2 skipped.
 - **TASK-020 — in progress:** Find and Replace now offer case and whole-word
   controls while retaining case-sensitive literal defaults. Navigation,
   counts and replacement use the same Qt matching rules, replace-all remains a
