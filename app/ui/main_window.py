@@ -1462,13 +1462,13 @@ class MainWindow(QMainWindow):
 
         rows = [(self.tr("Project title"), project.manifest.title, translation.project_title)]
         for chapter in project.manifest.chapters:
-            rows.append((self.tr("Chapter title") + ": " + chapter.title, chapter.title, translation.item_titles[chapter.id]))
+            rows.append((self.tr("Chapter title") + f": {chapter.title} [{chapter.id}]", chapter.title, translation.item_titles[chapter.id]))
         for scene in project.iter_scenes():
-            rows.append((self.tr("Scene title") + ": " + scene.title, scene.title, translation.item_titles[scene.id]))
-            rows.append((self.tr("Scene text") + ": " + scene.title, translation.source_contents[scene.id], translation.contents[scene.id]))
+            rows.append((self.tr("Scene title") + f": {scene.title} [{scene.id}]", scene.title, translation.item_titles[scene.id]))
+            rows.append((self.tr("Scene text") + f": {scene.title} [{scene.id}]", translation.source_contents[scene.id], translation.contents[scene.id]))
         for note in project.manifest.notes:
-            rows.append((self.tr("Reference note title") + ": " + note.title, note.title, translation.item_titles[note.id]))
-            rows.append((self.tr("Reference note text") + ": " + note.title, translation.source_contents[note.id], translation.contents[note.id]))
+            rows.append((self.tr("Reference note title") + f": {note.title} [{note.id}]", note.title, translation.item_titles[note.id]))
+            rows.append((self.tr("Reference note text") + f": {note.title} [{note.id}]", translation.source_contents[note.id], translation.contents[note.id]))
         if self._project_translation_progress_dialog is not None:
             self._project_translation_progress_dialog.hide()
         review = ProjectTranslationReviewDialog(rows, self)

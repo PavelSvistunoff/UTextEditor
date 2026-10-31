@@ -232,7 +232,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   review, then uses the existing transactional commit. Tests cover navigation,
   unsaved source, cancellation, changed buffers and the full apply path.
   Ukrainian catalog compilation and native accessibility review remain
-  outstanding. Full offline suite: 489 passed, 2 skipped.
+  outstanding. Review labels now include stable chapter, scene and note IDs
+  so duplicate titles are distinguishable. Tests cover duplicate scenes,
+  unsaved source and cancellation or edits during review. Full offline suite:
+  635 passed, 2 skipped.
 - **TASK-024 — in progress:** after generation, Auto-writer presents a
   navigable, read-only per-scene review with individual selection. It warns
   that later drafts can depend on rejected drafts, rechecks open project

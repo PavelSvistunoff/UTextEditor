@@ -2685,6 +2685,7 @@ def test_project_translation_actions_translate_and_refresh_open_documents(
 def test_project_translation_review_cancels_or_discards_changed_buffer(application, tmp_path, monkeypatch, decision):
     project = Project.create(tmp_path / "review-project", "Novel")
     scene = project.add_scene("Opening", content="Original scene")
+    duplicate = project.add_scene("Opening", content="Another scene")
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()
     window._project_opened(project)
@@ -2709,7 +2710,10 @@ def test_project_translation_review_cancels_or_discards_changed_buffer(applicati
     window.translate_project_to_ukrainian()
     wait_until(lambda: bool(seen) and not window._project_busy, application)
     assert any(original == "Unsaved source" and translated == "Translated" for _, original, translated in seen)
+    assert any(scene.id in label and original == "Unsaved source" for label, original, _ in seen)
+    assert any(duplicate.id in label and original == "Another scene" for label, original, _ in seen)
     assert project.read_scene(scene.id) == "Original scene"
+    assert project.read_scene(duplicate.id) == "Another scene"
     assert project.manifest.title == "Novel"
     editor.document_state.mark_saved()
     window.close()
