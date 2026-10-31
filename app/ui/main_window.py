@@ -3620,8 +3620,8 @@ class MainWindow(QMainWindow):
             if chapter.scenes:
                 answer = QMessageBox.question(
                     self,
-                    "Remove chapter",
-                    "Move its scenes to the ungrouped manuscript list and remove the empty chapter?",
+                    self.tr("Remove chapter"),
+                    self.tr("Move its scenes to the ungrouped manuscript list and remove the empty chapter?"),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
                 )
                 if answer == QMessageBox.StandardButton.Yes:
@@ -3631,8 +3631,8 @@ class MainWindow(QMainWindow):
             else:
                 answer = QMessageBox.question(
                     self,
-                    "Remove chapter",
-                    f"Remove the empty chapter “{chapter.title}”?",
+                    self.tr("Remove chapter"),
+                    self.tr("Remove the empty chapter “{title}”?").format(title=chapter.title),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
                 )
                 if answer == QMessageBox.StandardButton.Yes:
@@ -3640,7 +3640,9 @@ class MainWindow(QMainWindow):
             return
         if kind == "character":
             character = project.get_character(item_id)
-            answer = QMessageBox.question(self, "Remove character", f"Remove {character.full_name} and its scene associations and relationships? This cannot be undone.", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
+            answer = QMessageBox.question(self, self.tr("Remove character"),
+                                          self.tr("Remove {name} and its scene associations and relationships? This cannot be undone.").format(name=character.full_name),
+                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
             if answer == QMessageBox.StandardButton.Yes:
                 self._run_project_mutation(project.remove_character, item_id)
             return
@@ -3648,10 +3650,10 @@ class MainWindow(QMainWindow):
             return
         item = project.get_scene(item_id) if kind == "scene" else project.get_note(item_id)
         prompt = QMessageBox(self)
-        prompt.setWindowTitle("Remove project item")
-        prompt.setText(f"Remove “{item.title}” from this project?")
-        keep_file = prompt.addButton("Remove entry, keep text file", QMessageBox.ButtonRole.AcceptRole)
-        delete_file = prompt.addButton("Delete text file", QMessageBox.ButtonRole.DestructiveRole)
+        prompt.setWindowTitle(self.tr("Remove project item"))
+        prompt.setText(self.tr("Remove “{title}” from this project?").format(title=item.title))
+        keep_file = prompt.addButton(self.tr("Remove entry, keep text file"), QMessageBox.ButtonRole.AcceptRole)
+        delete_file = prompt.addButton(self.tr("Delete text file"), QMessageBox.ButtonRole.DestructiveRole)
         prompt.addButton(QMessageBox.StandardButton.Cancel)
         prompt.exec()
         chosen = prompt.clickedButton()
@@ -3660,8 +3662,8 @@ class MainWindow(QMainWindow):
         delete = chosen is delete_file
         if delete and QMessageBox.warning(
             self,
-            "Delete project text",
-            f"Permanently delete {item.path}? This cannot be undone.",
+            self.tr("Delete project text"),
+            self.tr("Permanently delete {path}? This cannot be undone.").format(path=item.path),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
@@ -3672,10 +3674,10 @@ class MainWindow(QMainWindow):
         )
         if affected:
             links_dialog = QMessageBox(self)
-            links_dialog.setWindowTitle("Linked project item")
-            links_dialog.setText("This item has links. Choose how to handle them.")
-            remove_links = links_dialog.addButton("Remove affected links", QMessageBox.ButtonRole.AcceptRole)
-            preserve_links = links_dialog.addButton("Keep orphaned links", QMessageBox.ButtonRole.DestructiveRole)
+            links_dialog.setWindowTitle(self.tr("Linked project item"))
+            links_dialog.setText(self.tr("This item has links. Choose how to handle them."))
+            remove_links = links_dialog.addButton(self.tr("Remove affected links"), QMessageBox.ButtonRole.AcceptRole)
+            preserve_links = links_dialog.addButton(self.tr("Keep orphaned links"), QMessageBox.ButtonRole.DestructiveRole)
             links_dialog.addButton(QMessageBox.StandardButton.Cancel)
             links_dialog.exec()
             if links_dialog.clickedButton() not in {remove_links, preserve_links}:

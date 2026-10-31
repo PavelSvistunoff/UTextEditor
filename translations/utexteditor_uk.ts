@@ -681,6 +681,21 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Remove chapter</source><translation>Видалити розділ</translation></message>
+    <message><source>Move its scenes to the ungrouped manuscript list and remove the empty chapter?</source><translation>Перемістити його сцени до списку сцен поза розділами та видалити порожній розділ?</translation></message>
+    <message><source>Remove the empty chapter “{title}”?</source><translation>Видалити порожній розділ «{title}»?</translation></message>
+    <message><source>Remove character</source><translation>Видалити персонажа</translation></message>
+    <message><source>Remove {name} and its scene associations and relationships? This cannot be undone.</source><translation>Видалити персонажа {name}, його зв’язки зі сценами та стосунки? Цю дію неможливо скасувати.</translation></message>
+    <message><source>Remove project item</source><translation>Видалити елемент проєкту</translation></message>
+    <message><source>Remove “{title}” from this project?</source><translation>Видалити «{title}» з цього проєкту?</translation></message>
+    <message><source>Remove entry, keep text file</source><translation>Видалити запис, залишити текстовий файл</translation></message>
+    <message><source>Delete text file</source><translation>Видалити текстовий файл</translation></message>
+    <message><source>Delete project text</source><translation>Видалити текст проєкту</translation></message>
+    <message><source>Permanently delete {path}? This cannot be undone.</source><translation>Остаточно видалити {path}? Цю дію неможливо скасувати.</translation></message>
+    <message><source>Linked project item</source><translation>Пов’язаний елемент проєкту</translation></message>
+    <message><source>This item has links. Choose how to handle them.</source><translation>Цей елемент має зв’язки. Виберіть, що з ними зробити.</translation></message>
+    <message><source>Remove affected links</source><translation>Видалити пов’язані зв’язки</translation></message>
+    <message><source>Keep orphaned links</source><translation>Залишити посилання без цілі</translation></message>
     <message><source>Choose an empty project directory</source><translation>Виберіть порожню теку проєкту</translation></message>
     <message><source>Create project</source><translation>Створити проєкт</translation></message>
     <message><source>Project title:</source><translation>Назва проєкту:</translation></message>

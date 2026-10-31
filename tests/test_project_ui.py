@@ -650,6 +650,38 @@ def test_translated_note_type_choice_preserves_manifest_type(application, tmp_pa
         window.close()
 
 
+def test_translated_character_removal_cancel_keeps_profile(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("character", character.id))
+    questions = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: questions.append(args) or QMessageBox.StandardButton.Cancel)
+    application.installTranslator(translator)
+    try:
+        window.remove_project_item()
+        assert questions[0][1] == "Видалити персонажа"
+        assert "Mara" in questions[0][2] and "неможливо скасувати" in questions[0][2]
+        assert project.get_character(character.id).full_name == "Mara"
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
