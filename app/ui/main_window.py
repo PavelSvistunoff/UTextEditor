@@ -50,7 +50,7 @@ from app.document.file_manager import ExternalChangeError, FileManager
 from app.document.merge import merge_text
 from app.document.recovery import RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, WordCount, count_words
-from app.project.search import SearchDocument, search_project
+from app.project.search import MAX_DOCUMENT_BYTES, SearchDocument, search_project
 from app.project.autopilot import (
     MAX_AUTOPILOT_CHARACTERS,
     MAX_AUTOPILOT_CHAPTERS,
@@ -5058,7 +5058,10 @@ class MainWindow(QMainWindow):
             editor = self.tabs.widget(index)
             path = editor.document_state.path
             if path is not None:
-                buffers[path] = editor.toPlainText()
+                # UTF-8 needs at least as many bytes as there are UTF-16 code
+                # units in valid text, so this buffer is certainly too large.
+                buffers[path] = (None if editor.document().characterCount() - 1 > MAX_DOCUMENT_BYTES
+                                 else editor.toPlainText())
         documents = tuple(
             SearchDocument(kind, item.id, item.title, item.path)
             for kind, items in (("scene", tuple(project.iter_scenes())), ("note", project.manifest.notes))

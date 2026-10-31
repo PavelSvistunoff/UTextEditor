@@ -99,7 +99,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   responsiveness and compiled localization remain outstanding. Project-open
   callbacks now discard a read if its item was removed or relinked while the
   read was pending, including opens initiated by search. Project UI regression
-  tests cover both cases; full offline suite: 546 passed, 2 skipped.
+  tests cover both cases; full offline suite: 546 passed, 2 skipped. Capture
+  now avoids copying open buffers whose Qt length proves they exceed the search
+  size limit, and reports them without falling back to stale disk text. Result
+  excerpts are also bounded for long search queries. Focused service and Qt
+  tests and the full offline suite passed: 574 passed, 2 skipped. Native
+  responsiveness and compiled localization remain outstanding.
 - **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
   picker for scene, chapter, note and character names and character aliases,
   showing type, chapter context and stable IDs. It opens existing documents

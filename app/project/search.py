@@ -45,8 +45,8 @@ class SearchResult:
 
 
 def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str,
-                   cancel: Event | None = None, open_buffers: dict[Path, str] | None = None) -> SearchResult:
-    """Search literal, case-sensitive text without modifying any project data."""
+                   cancel: Event | None = None, open_buffers: dict[Path, str | None] | None = None) -> SearchResult:
+    """Search literal text; a None buffer marks an oversized open document."""
     if not query:
         raise ValueError("Search text cannot be empty.")
     buffers = {path.resolve(): text for path, text in (open_buffers or {}).items()}
@@ -61,6 +61,8 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
             break
         try:
             path = validate_project_path(root, item.path) if item.text is None else None
+            if item.text is None and path in buffers and buffers[path] is None:
+                raise ValueError("Document exceeds the search size limit")
             open_text = item.text if item.text is not None else buffers.get(path)
             if open_text is not None:
                 text = open_text
@@ -101,7 +103,7 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
             if line_end < 0:
                 line_end = len(text)
             excerpt_start = max(line_start, index - 80)
-            excerpt = text[excerpt_start:min(line_end, index + len(query) + 80)]
+            excerpt = text[excerpt_start:min(line_end, index + min(len(query), 160) + 80)]
             matches.append(SearchMatch(item.kind, item.id, item.title, index, line,
                                        index - line_start + 1, excerpt, digest))
             if len(matches) >= MAX_MATCHES:

@@ -93,3 +93,21 @@ def test_search_bounds_error_details_and_counts_omitted_files(tmp_path):
     assert all(len(error) <= MAX_ERROR_LENGTH for error in result.errors)
     assert result.omitted_errors == 3
     assert not result.cancelled
+
+
+def test_oversized_open_buffer_does_not_fall_back_to_disk(tmp_path):
+    path = tmp_path / "scene.txt"
+    path.write_text("disk match", encoding="utf-8")
+    doc = SearchDocument("scene", "s", "Scene", "scene.txt")
+    result = search_project(tmp_path, (doc,), "match", open_buffers={path: None})
+    assert not result.matches
+    assert len(result.errors) == 1 and "size limit" in result.errors[0]
+
+
+def test_search_bounds_long_query_excerpt(tmp_path):
+    query = "x" * 10000
+    doc = SearchDocument("scene", "s", "Scene", "scene.txt", "before " + query + " after")
+    result = search_project(tmp_path, (doc,), query)
+    assert len(result.matches) == 1
+    assert result.matches[0].offset == len("before ")
+    assert len(result.matches[0].excerpt) <= 320

@@ -373,6 +373,29 @@ def test_project_search_panel_reports_omitted_errors(application):
     panel.close()
 
 
+def test_project_search_does_not_copy_certainly_oversized_buffer(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="disk word")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    window.settings.autosave_enabled = False
+    editor.setPlainText("unsaved " + "x" * 50)
+    monkeypatch.setattr("app.ui.main_window.MAX_DOCUMENT_BYTES", 10)
+    monkeypatch.setattr(editor, "toPlainText", lambda: pytest.fail("oversized buffer copied"))
+    window.show_project_search()
+    panel = window._project_search_panel
+    panel.search_requested.emit("word")
+    wait_until(lambda: window._project_search_cancel is None, application)
+    assert panel.results.count() == 0
+    assert "size limit" in panel.status.text()
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_quick_open_filters_aliases_and_distinguishes_duplicate_names(application):
     from app.ui.quick_open_dialog import QuickOpenDialog, QuickOpenItem
     items = (QuickOpenItem("scene", "scene-1", "Shared", "Chapter One"),
