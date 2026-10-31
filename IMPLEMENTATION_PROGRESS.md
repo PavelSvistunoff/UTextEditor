@@ -1,6 +1,19 @@
 
 # Implementation progress
 
+- **TASK-005.03 — DONE (2026-10-31):** evaluated process-local locking,
+  POSIX advisory locking, cooperative sidecars, Windows byte-range locking,
+  repeat fingerprints and atomic replacement. Added subprocess regression
+  test_posix_advisory_lock_does_not_exclude_uncooperative_writer: a separate
+  interpreter writes successfully while LOCK_EX is held; skips without fcntl.
+  docs/save-coordination.md records evidence, primary Python/Microsoft API
+  references, the decision not to misrepresent advisory locking as a race fix,
+  and native/cross-process follow-up requirements. Focused document suite:
+  32 passed; full suite: 811 passed, 2 skipped; diff reviewed and whitespace
+  check passed. README/TASKS updated. This completes evaluation only;
+  TASK-005.04 and parent independent-writer acceptance remain incomplete.
+  No product behavior or UI changed. Changes uncommitted; no push attempted.
+
 - **TASK-011.05 — DONE (2026-10-31):** evaluated 1M/5M/10M-character
   sessions with ten samples per repeated operation, new-word tracking and AI
   disabled. Extended benchmark to time saves and verify exact saved buffer

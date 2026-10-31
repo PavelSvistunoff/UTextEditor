@@ -338,3 +338,20 @@ def test_unicode_and_text_whitespace_remain_readable(tmp_path):
     text = "Український café 😀\t\v\f\u0085\n"
     path.write_text(text, encoding="utf-8")
     assert FileManager().open(path).text == text
+
+
+def test_posix_advisory_lock_does_not_exclude_uncooperative_writer(tmp_path):
+    fcntl = pytest.importorskip("fcntl", reason="POSIX advisory-lock evaluation")
+    path = tmp_path / "draft.txt"
+    path.write_bytes(b"original")
+    with path.open("rb") as locked:
+        fcntl.flock(locked.fileno(), fcntl.LOCK_EX)
+        try:
+            subprocess.run(
+                [sys.executable, "-c",
+                 "from pathlib import Path; import sys; Path(sys.argv[1]).write_bytes(b'external edit')", str(path)],
+                check=True, timeout=5,
+            )
+            assert path.read_bytes() == b"external edit"
+        finally:
+            fcntl.flock(locked.fileno(), fcntl.LOCK_UN)

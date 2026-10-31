@@ -150,7 +150,10 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-005.02** — Reproduce the check-before-replace race using separate processes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-005.03** — Evaluate platform-appropriate coordination.  
+- [x] **TASK-005.03** — Evaluate platform-appropriate coordination.
+  Evaluation and platform verification boundaries: docs/save-coordination.md.
+  Executable POSIX experiment confirms an advisory exclusive lock does not
+  exclude an uncooperative subprocess writer; independent-writer race remains.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-005.04** — Implement a safe mitigation where practical.
   Shared reentrant in-process coordination now covers standalone, project text,
