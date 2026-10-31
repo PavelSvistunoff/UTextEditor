@@ -133,6 +133,26 @@ def test_comparison_reports_scene_chapter_changes_even_if_flat_order_is_unchange
     assert (reverse.old_chapter_id, reverse.new_chapter_id) == (None, "a")
 
 
+def test_comparison_reports_project_title_and_scene_and_note_path_changes(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(title, scene_path, note_path):
+        return store.create("Draft", structure={
+            "title": title, "chapters": [],
+            "ungrouped_scenes": [{"id": "scene", "path": scene_path}],
+            "notes": [{"id": "note", "title": "Reference", "type": "general", "path": note_path}],
+        }, scene_order=["scene"], scene_titles={"scene": "Opening"},
+            documents={"scene": "text", "note": "reference"})
+    before = snapshot("Old project", "manuscript/old.txt", "notes/old.txt")
+    after = snapshot("New project", "manuscript/new.txt", "notes/new.txt")
+    changes = store.compare(before, after).changes
+    assert [(c.item_id, c.kind, c.item_type) for c in changes] == [
+        ("project", "title-changed", "project"), ("scene", "path-changed", "scene"),
+        ("note", "path-changed", "note"),
+    ]
+    assert (changes[1].old_path, changes[1].new_path) == ("manuscript/old.txt", "manuscript/new.txt")
+    assert (changes[2].old_path, changes[2].new_path) == ("notes/old.txt", "notes/new.txt")
+
+
 def test_removing_scene_does_not_mark_later_scenes_as_moved(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
     before = create_snapshot(

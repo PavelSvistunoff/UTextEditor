@@ -43,6 +43,8 @@ class SceneChange:
     new_note_type: str | None = None
     old_chapter_id: str | None = None
     new_chapter_id: str | None = None
+    old_path: str | None = None
+    new_path: str | None = None
 
     @property
     def item_id(self) -> str:
@@ -158,8 +160,16 @@ class RevisionStore:
         old_positions = {scene_id: index for index, scene_id in enumerate(old_common_order)}
         new_positions = {scene_id: index for index, scene_id in enumerate(new_common_order)}
         changes: list[SceneChange] = []
+        if isinstance(left.structure, dict) and isinstance(right.structure, dict):
+            old_project_title = left.structure.get("title")
+            new_project_title = right.structure.get("title")
+            if (isinstance(old_project_title, str) and isinstance(new_project_title, str)
+                    and old_project_title != new_project_title):
+                changes.append(SceneChange("project", "title-changed", old_project_title,
+                                           new_project_title, item_type="project"))
         old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
         old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
+        old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
         old_chapter_ids, new_chapter_ids = set(old_chapters), set(new_chapters)
         common_chapters = old_chapter_ids & new_chapter_ids
         old_chapter_order = [key for key in old_chapters if key in common_chapters]
@@ -200,6 +210,9 @@ class RevisionStore:
                 ))
             if old_title != new_title:
                 changes.append(SceneChange(scene_id, "title-changed", old_title, new_title))
+            if scene_id in old_paths and scene_id in new_paths and old_paths[scene_id] != new_paths[scene_id]:
+                changes.append(SceneChange(scene_id, "path-changed", old_title, new_title,
+                                           old_path=old_paths[scene_id], new_path=new_paths[scene_id]))
             if left.documents[scene_id] != right.documents[scene_id]:
                 diff = "".join(difflib.unified_diff(
                     left.documents[scene_id].splitlines(keepends=True),
@@ -237,6 +250,9 @@ class RevisionStore:
                     note_id, "type-changed", old_title, new_title, item_type="note",
                     old_note_type=old_type, new_note_type=new_type,
                 ))
+            if note_id in old_paths and note_id in new_paths and old_paths[note_id] != new_paths[note_id]:
+                changes.append(SceneChange(note_id, "path-changed", old_title, new_title, item_type="note",
+                                           old_path=old_paths[note_id], new_path=new_paths[note_id]))
             if left.documents.get(note_id) != right.documents.get(note_id):
                 old_text, new_text = left.documents.get(note_id), right.documents.get(note_id)
                 diff = "".join(difflib.unified_diff(
@@ -304,6 +320,26 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _document_paths(structure: object) -> dict[str, str]:
+    if not isinstance(structure, dict):
+        return {}
+    result: dict[str, str] = {}
+    def collect(items: object) -> None:
+        if isinstance(items, list):
+            for item in items:
+                if (isinstance(item, dict) and isinstance(item.get("id"), str)
+                        and isinstance(item.get("path"), str)):
+                    result[item["id"]] = item["path"]
+    collect(structure.get("notes"))
+    collect(structure.get("ungrouped_scenes"))
+    chapters = structure.get("chapters")
+    if isinstance(chapters, list):
+        for chapter in chapters:
+            if isinstance(chapter, dict):
+                collect(chapter.get("scenes"))
+    return result
 
 
 def _scene_parents(structure: object) -> dict[str, str | None]:

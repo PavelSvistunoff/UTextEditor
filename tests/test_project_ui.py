@@ -2799,6 +2799,18 @@ def test_revision_history_dialog_shows_scene_chapter_destination(application):
     dialog.close()
 
 
+def test_revision_history_dialog_displays_path_and_project_title_changes(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("project", "title-changed", "Old", "New", item_type="project"),
+        SceneChange("scene", "path-changed", "Opening", "Opening", old_path="old.txt", new_path="new.txt"),
+    )))
+    text = dialog.details.toPlainText()
+    assert "Project Title Changed: New" in text and "Title: Old → New" in text
+    assert "Path Changed: Opening" in text and "Path: old.txt → new.txt" in text
+    dialog.close()
+
+
 def test_project_translation_actions_translate_and_refresh_open_documents(
     application, tmp_path, monkeypatch
 ):

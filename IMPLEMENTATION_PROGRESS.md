@@ -3,6 +3,16 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** comparisons now report project title changes
+  and scene/reference-note path changes with before/after values. Missing path
+  or title metadata in legacy structures does not produce inferred changes.
+  Modified `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
+  `tests/test_revisions.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
+  suites: 157 passed; full offline suite: 659 passed, 2 skipped; Ukrainian
+  source catalog validation passed. Other metadata and structure comparisons,
+  native accessibility checks, and release catalog
+  compilation remain outstanding.
 - **TASK-009.04 — PARTIAL:** comparisons now identify a scene's chapter change,
   including moves to or from ungrouped, even when its flattened ordering does
   not change. Stable chapter IDs distinguish duplicate titles; legacy snapshot
