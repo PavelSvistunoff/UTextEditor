@@ -675,6 +675,22 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Recovery data could not be inspected: {error}</source><translation>Не вдалося перевірити дані відновлення: {error}</translation></message>
+    <message><source>No recovery data found.</source><translation>Даних відновлення не знайдено.</translation></message>
+    <message><source>Unreadable recovery entry: {path} ({message})</source><translation>Не вдалося прочитати запис відновлення: {path} ({message})</translation></message>
+    <message><source>Recovery snapshots are captured every 30 seconds while documents are dirty; changes after the latest snapshot and hardware failures may not be recoverable.</source><translation>Копії для відновлення створюються кожні 30 секунд, поки документи мають незбережені зміни; зміни після останньої копії та дані після збою обладнання можуть бути втрачені.</translation></message>
+    <message><source>Recover unsaved work</source><translation>Відновити незбережену роботу</translation></message>
+    <message><source>Recovery data is available. Choose how to proceed.</source><translation>Доступні дані відновлення. Виберіть подальшу дію.</translation></message>
+    <message><source>Restore latest</source><translation>Відновити останню копію</translation></message>
+    <message><source>Inspect / compare</source><translation>Переглянути / порівняти</translation></message>
+    <message><source>Locate project…</source><translation>Знайти проєкт…</translation></message>
+    <message><source>Discard recovery data</source><translation>Видалити дані відновлення</translation></message>
+    <message><source>Defer</source><translation>Відкласти</translation></message>
+    <message><source>Recovery comparison failed: {error}</source><translation>Не вдалося порівняти копії відновлення: {error}</translation></message>
+    <message><source>Delete local recovery snapshots? Canonical project and document files will not be changed.</source><translation>Видалити локальні копії для відновлення? Основні файли проєкту та документів не зміняться.</translation></message>
+    <message><source>Recovery data discarded; canonical files were not changed.</source><translation>Дані відновлення видалено; основні файли не змінено.</translation></message>
+    <message><source>Recovery data could not be discarded: {error}</source><translation>Не вдалося видалити дані відновлення: {error}</translation></message>
+    <message><source>Locate the original project</source><translation>Знайти початковий проєкт</translation></message>
     <message><source>Export manuscript</source><translation>Експортувати рукопис</translation></message>
     <message><source>Markdown (*.md)</source><translation>Markdown (*.md)</translation></message>
     <message><source>Plain text (*.txt)</source><translation>Звичайний текст (*.txt)</translation></message>

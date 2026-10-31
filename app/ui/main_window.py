@@ -3994,36 +3994,36 @@ class MainWindow(QMainWindow):
         self._track_worker(worker)
         worker.signals.finished.connect(self._recovery_scan_finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(
-            lambda error: self.statusBar().showMessage(f"Recovery data could not be inspected: {error}", 10000),
+            lambda error: self.statusBar().showMessage(self.tr("Recovery data could not be inspected: {error}").format(error=error), 10000),
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
 
     def _recovery_scan_finished(self, scan: RecoveryScan) -> None:
         if not scan.entries and not scan.issues:
-            self.statusBar().showMessage("No recovery data found.", 4000)
+            self.statusBar().showMessage(self.tr("No recovery data found."), 4000)
             return
         details = [
-            f"{entry.document_id} — {entry.canonical_path or 'Untitled'} — {entry.captured_at}"
+            f"{entry.document_id} — {entry.canonical_path or self.tr('Untitled')} — {entry.captured_at}"
             for entry in scan.entries
         ]
         details.extend(
-            f"Unreadable recovery entry: {issue.snapshot_path} ({issue.message})"
+            self.tr("Unreadable recovery entry: {path} ({message})").format(path=issue.snapshot_path, message=issue.message)
             for issue in scan.issues
         )
         details.append(
-            "Recovery snapshots are captured every 30 seconds while documents are dirty; "
-            "changes after the latest snapshot and hardware failures may not be recoverable."
+            self.tr("Recovery snapshots are captured every 30 seconds while documents are dirty; "
+                    "changes after the latest snapshot and hardware failures may not be recoverable.")
         )
         dialog = QMessageBox(self)
-        dialog.setWindowTitle("Recover unsaved work")
-        dialog.setText("Recovery data is available. Choose how to proceed.")
+        dialog.setWindowTitle(self.tr("Recover unsaved work"))
+        dialog.setText(self.tr("Recovery data is available. Choose how to proceed."))
         dialog.setDetailedText("\n".join(details))
-        restore = dialog.addButton("Restore latest", QMessageBox.ButtonRole.AcceptRole)
-        inspect = dialog.addButton("Inspect / compare", QMessageBox.ButtonRole.ActionRole)
-        locate = dialog.addButton("Locate project…", QMessageBox.ButtonRole.ActionRole)
-        discard = dialog.addButton("Discard recovery data", QMessageBox.ButtonRole.DestructiveRole)
-        defer = dialog.addButton("Defer", QMessageBox.ButtonRole.RejectRole)
+        restore = dialog.addButton(self.tr("Restore latest"), QMessageBox.ButtonRole.AcceptRole)
+        inspect = dialog.addButton(self.tr("Inspect / compare"), QMessageBox.ButtonRole.ActionRole)
+        locate = dialog.addButton(self.tr("Locate project…"), QMessageBox.ButtonRole.ActionRole)
+        discard = dialog.addButton(self.tr("Discard recovery data"), QMessageBox.ButtonRole.DestructiveRole)
+        defer = dialog.addButton(self.tr("Defer"), QMessageBox.ButtonRole.RejectRole)
         dialog.setDefaultButton(defer)
         dialog.open()
         self._recovery_dialog = dialog
@@ -4045,7 +4045,7 @@ class MainWindow(QMainWindow):
                 self._recovery_comparison_ready, Qt.ConnectionType.QueuedConnection
             )
             worker.signals.failed.connect(
-                lambda error: self.statusBar().showMessage(f"Recovery comparison failed: {error}", 10000),
+                lambda error: self.statusBar().showMessage(self.tr("Recovery comparison failed: {error}").format(error=error), 10000),
                 Qt.ConnectionType.QueuedConnection,
             )
             self.thread_pool.start(worker)
@@ -4055,8 +4055,8 @@ class MainWindow(QMainWindow):
                 return
             if QMessageBox.warning(
                 self,
-                "Discard recovery data",
-                "Delete local recovery snapshots? Canonical project and document files will not be changed.",
+                self.tr("Discard recovery data"),
+                self.tr("Delete local recovery snapshots? Canonical project and document files will not be changed."),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             ) != QMessageBox.StandardButton.Yes:
                 self._recovery_scan_finished(scan)
@@ -4065,19 +4065,19 @@ class MainWindow(QMainWindow):
             self._track_worker(worker)
             worker.signals.finished.connect(
                 lambda _result: self.statusBar().showMessage(
-                    "Recovery data discarded; canonical files were not changed.", 6000
+                    self.tr("Recovery data discarded; canonical files were not changed."), 6000
                 ),
                 Qt.ConnectionType.QueuedConnection,
             )
             worker.signals.failed.connect(
-                lambda error: self.statusBar().showMessage(f"Recovery data could not be discarded: {error}", 10000),
+                lambda error: self.statusBar().showMessage(self.tr("Recovery data could not be discarded: {error}").format(error=error), 10000),
                 Qt.ConnectionType.QueuedConnection,
             )
             self._recovery_pool.start(worker)
             return
         located_directory = None
         if choice == "locate":
-            located_directory = QFileDialog.getExistingDirectory(self, "Locate the original project")
+            located_directory = QFileDialog.getExistingDirectory(self, self.tr("Locate the original project"))
             if not located_directory:
                 self._recovery_scan_finished(scan)
                 return
