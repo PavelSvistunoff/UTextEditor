@@ -110,7 +110,8 @@ class RevisionHistoryDialog(QDialog):
             title = change.new_title or change.old_title or change.scene_id
             labels = {"added": self.tr("Added"), "removed": self.tr("Removed"),
                       "moved": self.tr("Moved"), "title-changed": self.tr("Title Changed"),
-                      "text-changed": self.tr("Text Changed"), "type-changed": self.tr("Type Changed")}
+                      "text-changed": self.tr("Text Changed"), "type-changed": self.tr("Type Changed"),
+                      "chapter-changed": self.tr("Chapter Changed")}
             change_label = labels.get(change.kind, change.kind)
             if change.item_type == "note":
                 change_label = format_qt(self.tr("Reference Note %1"), change_label)
@@ -125,6 +126,10 @@ class RevisionHistoryDialog(QDialog):
                               change.old_note_type or self.tr("unknown"),
                               change.new_note_type or self.tr("unknown"))
                 )
+            if change.kind == "chapter-changed":
+                sections.append(format_qt(self.tr("Chapter: %1 → %2"),
+                                          change.old_chapter_id or self.tr("Ungrouped"),
+                                          change.new_chapter_id or self.tr("Ungrouped")))
             if change.diff:
                 sections.append(change.diff.rstrip())
         self.details.setPlainText("\n\n".join(sections))

@@ -41,6 +41,8 @@ class SceneChange:
     item_type: str = "scene"
     old_note_type: str | None = None
     new_note_type: str | None = None
+    old_chapter_id: str | None = None
+    new_chapter_id: str | None = None
 
     @property
     def item_id(self) -> str:
@@ -157,6 +159,7 @@ class RevisionStore:
         new_positions = {scene_id: index for index, scene_id in enumerate(new_common_order)}
         changes: list[SceneChange] = []
         old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
+        old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
         old_chapter_ids, new_chapter_ids = set(old_chapters), set(new_chapters)
         common_chapters = old_chapter_ids & new_chapter_ids
         old_chapter_order = [key for key in old_chapters if key in common_chapters]
@@ -189,6 +192,12 @@ class RevisionStore:
             old_title, new_title = left.scene_titles.get(scene_id), right.scene_titles.get(scene_id)
             if old_positions[scene_id] != new_positions[scene_id]:
                 changes.append(SceneChange(scene_id, "moved", old_title, new_title))
+            if (scene_id in old_parents and scene_id in new_parents
+                    and old_parents[scene_id] != new_parents[scene_id]):
+                changes.append(SceneChange(
+                    scene_id, "chapter-changed", old_title, new_title,
+                    old_chapter_id=old_parents[scene_id], new_chapter_id=new_parents[scene_id],
+                ))
             if old_title != new_title:
                 changes.append(SceneChange(scene_id, "title-changed", old_title, new_title))
             if left.documents[scene_id] != right.documents[scene_id]:
@@ -295,6 +304,26 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _scene_parents(structure: object) -> dict[str, str | None]:
+    if (not isinstance(structure, dict) or not isinstance(structure.get("chapters"), list)
+            or not isinstance(structure.get("ungrouped_scenes"), list)):
+        return {}
+    result: dict[str, str | None] = {}
+    for chapter in structure["chapters"]:
+        if not isinstance(chapter, dict) or not isinstance(chapter.get("id"), str):
+            continue
+        scenes = chapter.get("scenes")
+        if not isinstance(scenes, list):
+            continue
+        for scene in scenes:
+            if isinstance(scene, dict) and isinstance(scene.get("id"), str) and scene["id"]:
+                result[scene["id"]] = chapter["id"]
+    for scene in structure["ungrouped_scenes"]:
+        if isinstance(scene, dict) and isinstance(scene.get("id"), str) and scene["id"]:
+            result[scene["id"]] = None
+    return result
 
 
 def _link_records(structure: object) -> set[tuple[str, str]]:

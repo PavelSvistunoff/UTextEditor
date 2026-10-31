@@ -2788,6 +2788,17 @@ def test_revision_history_dialog_labels_chapter_changes(application):
     dialog.close()
 
 
+def test_revision_history_dialog_shows_scene_chapter_destination(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("scene-id", "chapter-changed", "Opening", "Opening",
+                    old_chapter_id="chapter-id", new_chapter_id=None),
+    )))
+    assert "Chapter Changed: Opening" in dialog.details.toPlainText()
+    assert "Chapter: chapter-id → Ungrouped" in dialog.details.toPlainText()
+    dialog.close()
+
+
 def test_project_translation_actions_translate_and_refresh_open_documents(
     application, tmp_path, monkeypatch
 ):

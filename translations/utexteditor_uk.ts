@@ -2001,6 +2001,9 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>RevisionHistoryDialog</name>
+    <message><source>Chapter Changed</source><translation>Розділ змінено</translation></message>
+    <message><source>Chapter: %1 → %2</source><translation>Розділ: %1 → %2</translation></message>
+    <message><source>Ungrouped</source><translation>Поза розділами</translation></message>
     <message><source>Chapter %1</source><translation>Розділ: %1</translation></message>
     <message><source>Link %1</source><translation>Зв’язок: %1</translation></message>
     <message><source>No chapter, scene, reference-note or link changes between these snapshots.</source><translation>Між цими знімками немає змін розділів, сцен, довідкових нотаток або зв’язків.</translation></message>

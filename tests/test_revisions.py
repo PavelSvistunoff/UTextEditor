@@ -119,6 +119,20 @@ def test_comparison_reports_added_and_removed_directed_links(tmp_path) -> None:
     ]
 
 
+def test_comparison_reports_scene_chapter_changes_even_if_flat_order_is_unchanged(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(chapters, ungrouped):
+        return store.create("Draft", structure={"chapters": chapters, "ungrouped_scenes": ungrouped},
+                            scene_order=["scene"], scene_titles={"scene": "Opening"}, documents={"scene": "text"})
+    before = snapshot([{"id": "a", "title": "Chapter", "scenes": [{"id": "scene"}]}], [])
+    after = snapshot([{"id": "a", "title": "Chapter", "scenes": []}], [{"id": "scene"}])
+    change, = store.compare(before, after).changes
+    assert change.kind == "chapter-changed" and change.item_id == "scene"
+    assert (change.old_chapter_id, change.new_chapter_id) == ("a", None)
+    reverse, = store.compare(after, before).changes
+    assert (reverse.old_chapter_id, reverse.new_chapter_id) == (None, "a")
+
+
 def test_removing_scene_does_not_mark_later_scenes_as_moved(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
     before = create_snapshot(

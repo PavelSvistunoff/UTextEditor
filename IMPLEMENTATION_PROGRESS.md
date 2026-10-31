@@ -3,6 +3,17 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** comparisons now identify a scene's chapter change,
+  including moves to or from ungrouped, even when its flattened ordering does
+  not change. Stable chapter IDs distinguish duplicate titles; legacy snapshot
+  structures without scene-parent data do not generate inferred moves. Modified
+  `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
+  `tests/test_revisions.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
+  suites: 155 passed; full offline suite: 657 passed, 2 skipped; Ukrainian
+  source catalog validation passed. Other structure and metadata comparisons,
+  native accessibility checks, and release catalog
+  compilation remain outstanding.
 - **TASK-009.04 — PARTIAL:** revision comparisons now report chapter
   additions, removals, title changes and reordering, avoiding false moves from
   insertions or removals. The review dialog labels chapter changes. Modified
