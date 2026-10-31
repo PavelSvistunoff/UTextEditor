@@ -121,8 +121,9 @@ and effort are relative estimates.
 4. **Extend project text search** — medium priority. The persistent search
    panel searches scenes and notes including unsaved buffers and reports files
    it cannot read. Searches are literal and case-sensitive, limited to 1,000
-   matches and 4 MiB per document. Additional matching options and larger-file
-   support remain future work.
+   matches and 4 MiB per document. Error details are limited to 100 files;
+   the panel reports the number of additional errors. Additional matching
+   options and larger-file support remain future work.
 7. **Navigate between related items** — medium priority, medium effort. Build
    on existing note links, scene associations, and character scene search with
    accessible lists that open a linked item or associated scene directly, and

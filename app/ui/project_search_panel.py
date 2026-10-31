@@ -55,4 +55,6 @@ class ProjectSearchPanel(QWidget):
             message = self.tr("Search finished.")
         if result.errors:
             message += "\n" + "\n".join(result.errors)
+        if result.omitted_errors:
+            message += "\n" + self.tr("Additional unreadable files omitted: %1").replace("%1", str(result.omitted_errors))
         self.status.setText(message)

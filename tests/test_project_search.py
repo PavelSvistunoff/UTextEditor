@@ -2,7 +2,7 @@ from threading import Event
 
 import pytest
 
-from app.project.search import SearchDocument, search_project
+from app.project.search import MAX_ERRORS, MAX_ERROR_LENGTH, SearchDocument, search_project
 
 
 def test_search_prefers_open_buffer_and_reports_locations(tmp_path):
@@ -80,5 +80,16 @@ def test_large_project_can_cancel_before_reading_remaining_files(tmp_path):
     documents = tuple(SearchDocument("note", str(i), str(i), f"{i}.txt") for i in range(5000))
     result = search_project(tmp_path, documents, "absent", CancelAfterDocuments())
     assert result.cancelled
-    assert len(result.errors) == 1000
+    assert len(result.errors) == MAX_ERRORS
+    assert result.omitted_errors == 1000 - MAX_ERRORS
     assert not result.matches and not result.limited
+
+
+def test_search_bounds_error_details_and_counts_omitted_files(tmp_path):
+    documents = tuple(SearchDocument("note", str(i), "x" * 2000, f"{i}.txt")
+                      for i in range(MAX_ERRORS + 3))
+    result = search_project(tmp_path, documents, "absent")
+    assert len(result.errors) == MAX_ERRORS
+    assert all(len(error) <= MAX_ERROR_LENGTH for error in result.errors)
+    assert result.omitted_errors == 3
+    assert not result.cancelled

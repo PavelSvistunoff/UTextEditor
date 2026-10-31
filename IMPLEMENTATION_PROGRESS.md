@@ -86,7 +86,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   2 skipped. A further 5,000-document regression verifies cancellation while
   reporting unreadable files and confirms that remaining files are not visited.
   Full offline suite: 542 passed, 2 skipped. GUI responsiveness measurements
-  and compiled localization remain outstanding.
+  and compiled localization remain outstanding. Error reporting now retains
+  at most 100 bounded details and counts additional unreadable files, avoiding
+  an unbounded results label. Focused service and panel tests and Ukrainian
+  catalog validation passed; full offline suite: 544 passed, 2 skipped.
 - **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
   picker for scene, chapter, note and character names and character aliases,
   showing type, chapter context and stable IDs. It opens existing documents

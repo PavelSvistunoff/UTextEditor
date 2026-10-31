@@ -362,6 +362,17 @@ def test_project_search_cancel_keeps_gui_responsive(application, tmp_path, monke
     window.close()
 
 
+def test_project_search_panel_reports_omitted_errors(application):
+    from app.project.search import SearchResult
+    from app.ui.project_search_panel import ProjectSearchPanel
+
+    panel = ProjectSearchPanel()
+    panel.set_results(SearchResult((), ("Unreadable note",), False, False, 23))
+    assert "Unreadable note" in panel.status.text()
+    assert "Additional unreadable files omitted: 23" in panel.status.text()
+    panel.close()
+
+
 def test_quick_open_filters_aliases_and_distinguishes_duplicate_names(application):
     from app.ui.quick_open_dialog import QuickOpenDialog, QuickOpenItem
     items = (QuickOpenItem("scene", "scene-1", "Shared", "Chapter One"),

@@ -1353,6 +1353,7 @@
     <message><source>Search cancelled.</source><translation>Пошук скасовано.</translation></message>
     <message><source>Result limit reached.</source><translation>Досягнуто обмеження кількості результатів.</translation></message>
     <message><source>Search finished.</source><translation>Пошук завершено.</translation></message>
+    <message><source>Additional unreadable files omitted: %1</source><translation>Додаткових нечитабельних файлів не показано: %1</translation></message>
 </context>
 <context>
     <name>ConflictDialog</name>

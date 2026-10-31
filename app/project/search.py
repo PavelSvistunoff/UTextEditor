@@ -10,6 +10,8 @@ from .paths import validate_project_path
 
 MAX_DOCUMENT_BYTES = 4 * 1024 * 1024
 MAX_MATCHES = 1000
+MAX_ERRORS = 100
+MAX_ERROR_LENGTH = 1024
 
 
 @dataclass(frozen=True)
@@ -39,6 +41,7 @@ class SearchResult:
     errors: tuple[str, ...]
     cancelled: bool
     limited: bool
+    omitted_errors: int = 0
 
 
 def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str,
@@ -49,6 +52,7 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
     buffers = {path.resolve(): text for path, text in (open_buffers or {}).items()}
     matches: list[SearchMatch] = []
     errors: list[str] = []
+    omitted_errors = 0
     cancelled = False
     limited = False
     for item in documents:
@@ -72,7 +76,10 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
                     raise ValueError("Document contains binary data")
                 text = text.replace("\r\n", "\n").replace("\r", "\n")
         except (OSError, UnicodeError, ValueError, ProjectError) as exc:
-            errors.append(f"{item.title} ({item.path}): {exc}")
+            if len(errors) < MAX_ERRORS:
+                errors.append(f"{item.title} ({item.path}): {exc}"[:MAX_ERROR_LENGTH])
+            else:
+                omitted_errors += 1
             continue
         digest = hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).hexdigest()
         position = 0
@@ -104,4 +111,4 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
             counted_through = index
         if cancelled or limited:
             break
-    return SearchResult(tuple(matches), tuple(errors), cancelled, limited)
+    return SearchResult(tuple(matches), tuple(errors), cancelled, limited, omitted_errors)
