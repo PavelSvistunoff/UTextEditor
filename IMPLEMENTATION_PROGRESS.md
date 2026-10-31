@@ -355,6 +355,9 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   entries now fail validation instead of masking an earlier entry; one
   identical duplicate was removed from the Ukrainian source catalog. Focused
   validator tests and the full offline suite passed: 570 passed, 2 skipped.
+  The validator now also checks plural flags against extracted source entries
+  and rejects plural forms in non-plural messages; focused tests cover both
+  mismatch directions. Full offline suite: 633 passed, 2 skipped.
 - **TASK-033 audit extension:** `tools/audit_ui_strings.py` reports likely
   unmarked literals and f-strings in selected Qt UI calls, with an optional
   nonzero exit for findings and explicit parse-error handling. A current scan

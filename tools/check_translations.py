@@ -52,8 +52,13 @@ def validate(path: Path, reference: Path | None = None) -> list[str]:
         return [f"{path}: invalid catalog: {exc}"]
     for context, source, comment in sorted(reference_messages.keys() - messages.keys()):
         errors.append(f"{path}: {context}: missing translation for {source!r}")
-    for (context, source, _comment), (message, translation) in messages.items():
+    for (context, source, comment), (message, translation) in messages.items():
         label = f"{path}: {context}: {source!r}"
+        reference_entry = reference_messages.get((context, source, comment))
+        if reference_entry is not None and (
+            (message.get("numerus") == "yes") != (reference_entry[0].get("numerus") == "yes")
+        ):
+            errors.append(f"{label}: plural flag differs from extracted source")
         if translation is None or translation.get("type") == "unfinished":
             errors.append(f"{label}: missing or unfinished translation")
             continue
@@ -64,6 +69,8 @@ def validate(path: Path, reference: Path | None = None) -> list[str]:
                 errors.append(f"{label}: expected at least {required} plural forms")
             texts = ["".join(form.itertext()) for form in forms]
         else:
+            if forms:
+                errors.append(f"{label}: plural forms in a non-plural message")
             texts = ["".join(translation.itertext())]
         braces = bool(BRACE_FIELD.search(source))
         try:

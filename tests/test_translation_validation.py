@@ -63,6 +63,26 @@ def test_duplicate_messages_are_reported_instead_of_masking_errors(tmp_path):
     assert any("duplicate message" in error and "Hello %1" in error for error in errors)
 
 
+def test_plural_flag_must_match_extracted_source(tmp_path):
+    reference = tmp_path / "reference.ts"
+    target = tmp_path / "uk.ts"
+    catalog(reference, [("%n entries", ["%n entries"], True)])
+    catalog(target, [("%n entries", "%n записів", False)])
+    assert any("plural flag differs" in error for error in validate(target, reference))
+    catalog(reference, [("%n entries", "%n entries", False)])
+    catalog(target, [("%n entries", ["%n запис", "%n записи", "%n записів"], True)])
+    assert any("plural flag differs" in error for error in validate(target, reference))
+
+
+def test_plural_forms_in_nonplural_message_are_rejected(tmp_path):
+    target = tmp_path / "uk.ts"
+    catalog(target, [("Entry", ["Запис"], True)])
+    tree = ET.parse(target)
+    tree.find(".//message").attrib.pop("numerus")
+    tree.write(target, encoding="utf-8", xml_declaration=True)
+    assert any("plural forms in a non-plural" in error for error in validate(target))
+
+
 def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     lrelease = Path(sys.executable).parent / "pyside6-lrelease"
     if not lrelease.exists():
