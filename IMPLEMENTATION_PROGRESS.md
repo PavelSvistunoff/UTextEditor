@@ -96,7 +96,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   result-limited search measured 0.7 ms startup, 20.5 ms total and a 20.5 ms
   maximum timer gap for 1,000 matches. These are single-run measurements on
   this machine, not native rendering or portable guarantees. Broader native
-  responsiveness and compiled localization remain outstanding.
+  responsiveness and compiled localization remain outstanding. Project-open
+  callbacks now discard a read if its item was removed or relinked while the
+  read was pending, including opens initiated by search. Project UI regression
+  tests cover both cases; full offline suite: 546 passed, 2 skipped.
 - **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
   picker for scene, chapter, note and character names and character aliases,
   showing type, chapter context and stable IDs. It opens existing documents

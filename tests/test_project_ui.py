@@ -726,6 +726,29 @@ def test_project_recovery_failures_preserve_text_as_untitled(tmp_path, failure):
     assert entry.snapshot_path.exists()
 
 
+@pytest.mark.parametrize("change", ["removed", "relinked"])
+def test_project_open_discards_result_for_changed_item(application, tmp_path, change):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="original")
+    path = project.root / scene.path
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    try:
+        if change == "removed":
+            project.remove_scene(scene.id)
+        else:
+            replacement = project.root / "replacement.md"
+            replacement.write_text("replacement", encoding="utf-8")
+            project.relink_scene(scene.id, "replacement.md")
+        count = window.tabs.count()
+        window._project_document_opened(project, "scene", scene.id, path, "original")
+        assert window.tabs.count() == count
+        assert not window._project_documents
+    finally:
+        window.close()
+
+
 @pytest.mark.parametrize("route", ["existing", "duplicate"])
 @pytest.mark.parametrize("change_timing", ["before_read", "while_pending"])
 def test_binding_open_file_preserves_external_change_protection(application, tmp_path, route, change_timing):

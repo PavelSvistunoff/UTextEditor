@@ -4455,6 +4455,12 @@ class MainWindow(QMainWindow):
         if project is not self.project:
             return
         resolved = path.resolve()
+        try:
+            item = project.get_scene(item_id) if kind == "scene" else project.get_note(item_id)
+        except ProjectError:
+            return
+        if (project.root / item.path).resolve() != resolved:
+            return
         for index in range(self.tabs.count()):
             editor = self.tabs.widget(index)
             existing = editor.document_state.path if editor is not None else None
