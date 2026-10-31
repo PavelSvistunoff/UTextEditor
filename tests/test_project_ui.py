@@ -1557,6 +1557,33 @@ def test_selected_scene_export_does_not_read_unselected_scene(application, tmp_p
     )
 
 
+def test_export_workers_use_captured_scene_list(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Captured", content="saved text")
+    captured = [ExportScene(scene.id, scene.title)]
+    later = project.add_scene("Added later", content="not in snapshot")
+    (project.root / later.path).unlink()
+    unsaved = {scene.id: "unsaved text"}
+
+    text_path = MainWindow._export_project_snapshot(
+        project, [], captured, unsaved, tmp_path / "book.md", "markdown",
+        False, None, True, True, "\n\n",
+    )
+    assert "unsaved text" in text_path.read_text(encoding="utf-8")
+    assert "Added later" not in text_path.read_text(encoding="utf-8")
+
+    pdf_path = MainWindow._compile_project_book_snapshot(
+        project, "Book", [], captured, unsaved, tmp_path / "book.pdf", False,
+    )
+    pdf = QPdfDocument(application)
+    pdf.load(str(pdf_path))
+    text = " ".join(pdf.getAllText(page).text() for page in range(pdf.pageCount()))
+    assert "unsaved text" in text
+    assert "Added later" not in text
+    assert project.read_scene(scene.id) == "saved text"
+    pdf.close()
+
+
 def test_revision_history_dialog_loads_and_compares_snapshots(
     application, tmp_path
 ):

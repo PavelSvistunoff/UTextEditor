@@ -3830,13 +3830,15 @@ class MainWindow(QMainWindow):
         page_size="A5",
         author="",
     ):
+        captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
+        captured_scenes.extend(ungrouped)
         texts = {
-            scene.id: (
-                open_text[scene.id]
-                if scene.id in open_text
-                else project.read_scene(scene.id)
+            scene.scene_id: (
+                open_text[scene.scene_id]
+                if scene.scene_id in open_text
+                else project.read_scene(scene.scene_id)
             )
-            for scene in project.iter_scenes()
+            for scene in captured_scenes
         }
         return compile_book_pdf(
             target,
@@ -3904,19 +3906,21 @@ class MainWindow(QMainWindow):
         include_scene_headings,
         separator,
     ):
+        captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
+        captured_scenes.extend(ungrouped)
         included_scene_ids = (
             selected_scene_ids
             if selected_scene_ids is not None
-            else {scene.id for scene in project.iter_scenes()}
+            else {scene.scene_id for scene in captured_scenes}
         )
         texts = {
-            scene.id: (
-                scene_text[scene.id]
-                if scene.id in scene_text
-                else project.read_scene(scene.id)
+            scene.scene_id: (
+                scene_text[scene.scene_id]
+                if scene.scene_id in scene_text
+                else project.read_scene(scene.scene_id)
             )
-            for scene in project.iter_scenes()
-            if scene.id in included_scene_ids
+            for scene in captured_scenes
+            if scene.scene_id in included_scene_ids
         }
         return export_manuscript(
             target,
