@@ -89,6 +89,8 @@ def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     assert translator.translate("MainWindow", "The link is no longer available.") == "Посилання більше недоступне."
     assert translator.translate("MainWindow", "Save changes to {name}?").format(name="розділ.txt") == "Зберегти зміни в документі розділ.txt?"
     assert translator.translate("MainWindow", "Permanently delete {path}? This cannot be undone.").format(path="сцена.txt") == "Остаточно видалити сцена.txt? Цю дію неможливо скасувати."
+    assert translator.translate("SettingsDialog", "The context template must include {context}.") == "Шаблон контексту має містити {context}."
+    assert translator.translate("AIDebugWindow", "Requests can contain document text. This debug history is kept only in memory.") == "Запити можуть містити текст документа. Ця історія діагностики зберігається лише в пам’яті."
     assert translator.translate("MainWindow", "{document_id}: an editor for the canonical path is already open; recovered content was opened separately.").format(document_id="abc") == "abc: редактор для основного файлу вже відкрито; відновлений вміст відкрито окремо."
     assert translator.translate("MainWindow", "Unreadable recovery entry: {path} ({message})").format(path="файл", message="помилка") == "Не вдалося прочитати запис відновлення: файл (помилка)"
     assert translator.translate("MainWindow", "Manuscript exported to {path}").format(path="роман.txt") == "Рукопис експортовано до роман.txt"

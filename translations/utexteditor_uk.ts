@@ -681,6 +681,19 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Daily writing goal progress</source><translation>Поступ до щоденної цілі письма</translation></message>
+    <message><source>No daily goal</source><translation>Немає щоденної цілі</translation></message>
+    <message><source>Set a daily goal before pausing it.</source><translation>Установіть щоденну ціль перед призупиненням.</translation></message>
+    <message><source>Reset today's writing progress</source><translation>Скинути сьогоднішній поступ письма</translation></message>
+    <message><source>Reset goal tracking for today? Manuscript text will not be changed.</source><translation>Скинути відстеження цілі за сьогодні? Текст рукопису не зміниться.</translation></message>
+    <message><source>Character scene search</source><translation>Пошук персонажа в сценах</translation></message>
+    <message><source>No scene mentions this character's name or aliases.</source><translation>У жодній сцені не згадується ім’я або псевдоніми цього персонажа.</translation></message>
+    <message><source>Matching scenes:</source><translation>Знайдені сцени:</translation></message>
+    <message><source>Character scene search failed</source><translation>Не вдалося знайти персонажа в сценах</translation></message>
+    <message><source>Create revision snapshot</source><translation>Створити знімок редакції</translation></message>
+    <message><source>Snapshot name:</source><translation>Назва знімка:</translation></message>
+    <message><source>Revision “{name}” saved locally at {path}</source><translation>Редакцію «{name}» збережено локально: {path}</translation></message>
+    <message><source>Revision snapshot failed</source><translation>Не вдалося створити знімок редакції</translation></message>
     <message><source>AI is disabled</source><translation>ШІ вимкнено</translation></message>
     <message><source>Enable AI in the AI menu before requesting project analysis.</source><translation>Увімкніть ШІ в меню ШІ перед запитом аналізу проєкту.</translation></message>
     <message><source>No project open</source><translation>Проєкт не відкрито</translation></message>
@@ -1990,6 +2003,10 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>SettingsDialog</name>
+    <message><source>Invalid Ollama host</source><translation>Некоректна адреса Ollama</translation></message>
+    <message><source>Enter an HTTP or HTTPS host URL without credentials or a path.</source><translation>Введіть адресу HTTP або HTTPS без облікових даних і шляху.</translation></message>
+    <message><source>Invalid context template</source><translation>Некоректний шаблон контексту</translation></message>
+    <message><source>The context template must include {context}.</source><translation>Шаблон контексту має містити {context}.</translation></message>
     <message><source>Include project context in automatic completions</source><translation>Додавати контекст проєкту до автоматичних продовжень</translation></message>
     <message>
         <location filename="../app/ui/settings_dialog.py" line="35"/>
@@ -2397,5 +2414,12 @@ Text is sent to the configured Ollama destination:
 <context>
     <name>SpellcheckReviewDialog</name>
     <message><source>Use arrow keys to choose a finding and Space to include or exclude it.</source><translation>Виберіть зауваження клавішами зі стрілками та натисніть пробіл, щоб включити або виключити його.</translation></message>
+</context>
+<context>
+    <name>AIDebugWindow</name>
+    <message><source>Ollama Debug</source><translation>Діагностика Ollama</translation></message>
+    <message><source>Requests can contain document text. This debug history is kept only in memory.</source><translation>Запити можуть містити текст документа. Ця історія діагностики зберігається лише в пам’яті.</translation></message>
+    <message><source>Copy</source><translation>Копіювати</translation></message>
+    <message><source>Clear</source><translation>Очистити</translation></message>
 </context>
 </TS>

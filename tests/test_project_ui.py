@@ -914,6 +914,35 @@ def test_translated_project_analysis_confirmation_lists_captured_context(applica
         window.close()
 
 
+def test_translated_debug_warning_and_status_accessibility(application, tmp_path):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+    from PySide6.QtWidgets import QLabel
+    from app.ui.ai_debug_window import AIDebugWindow
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    application.installTranslator(translator)
+    try:
+        with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+            window = MainWindow()
+        debug = AIDebugWindow(window)
+        assert window._writing_goal_label.accessibleName() == "Поступ до щоденної цілі письма"
+        assert window._exit_focus_button.accessibleName() == "Вийти з режиму без відволікань"
+        assert "лише в пам’яті" in debug.findChild(QLabel).text()
+        debug.close()
+        window.close()
+    finally:
+        application.removeTranslator(translator)
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

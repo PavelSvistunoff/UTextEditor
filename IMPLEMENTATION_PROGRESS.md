@@ -402,8 +402,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   automatic-application behavior in Ukrainian; a cancellation test checks that
   disclosure. Project-analysis confirmations now translate the selected scene,
   reference-note and associated-character labels, context limit and destination
-  without changing the model prompt. Further AI workflows still need auditing.
-  Full offline suite: 611 passed, 2 skipped.
+  without changing the model prompt. Writing-goal feedback and accessibility
+  names, character mention search, revision snapshots, settings validation and
+  the AI diagnostics privacy warning are also translated. Further workflows
+  still need auditing. Full offline suite: 612 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

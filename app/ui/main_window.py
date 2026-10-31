@@ -611,15 +611,15 @@ class MainWindow(QMainWindow):
         self.status = QStatusBar(self)
         self.setStatusBar(self.status)
         self._writing_goal_label = QLabel(self)
-        self._writing_goal_label.setAccessibleName("Daily writing goal progress")
+        self._writing_goal_label.setAccessibleName(self.tr("Daily writing goal progress"))
         self.status.addPermanentWidget(self._writing_goal_label)
         self.ai_activity = AIActivityPanel(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.ai_activity)
         self.ai_activity.hide()
         self.status.addPermanentWidget(self.ai_activity.busy)
         self.status.addPermanentWidget(self.ai_activity.status_button)
-        self._exit_focus_button = QPushButton("Exit distraction-free mode", self)
-        self._exit_focus_button.setAccessibleName("Exit distraction-free mode")
+        self._exit_focus_button = QPushButton(self.tr("Exit distraction-free mode"), self)
+        self._exit_focus_button.setAccessibleName(self.tr("Exit distraction-free mode"))
         self._exit_focus_button.clicked.connect(lambda: self._set_focus_mode(False))
         self._exit_focus_button.hide()
         self.status.addPermanentWidget(self._exit_focus_button)
@@ -890,7 +890,7 @@ class MainWindow(QMainWindow):
 
     def toggle_writing_goal_pause(self) -> None:
         if self.writing_goals.target == 0:
-            QMessageBox.information(self, "No daily goal", "Set a daily goal before pausing it.")
+            QMessageBox.information(self, self.tr("No daily goal"), self.tr("Set a daily goal before pausing it."))
             return
         self.writing_goals.set_paused(not self.writing_goals.paused)
         self._attach_open_writing_goal_documents(reset_history=True)
@@ -900,8 +900,8 @@ class MainWindow(QMainWindow):
     def reset_writing_goal(self) -> None:
         if QMessageBox.question(
             self,
-            "Reset today's writing progress",
-            "Reset goal tracking for today? Manuscript text will not be changed.",
+            self.tr("Reset today's writing progress"),
+            self.tr("Reset goal tracking for today? Manuscript text will not be changed."),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
@@ -3362,16 +3362,16 @@ class MainWindow(QMainWindow):
         ):
             return
         if not matches:
-            QMessageBox.information(self, "Character scene search", "No scene mentions this character's name or aliases.")
+            QMessageBox.information(self, self.tr("Character scene search"), self.tr("No scene mentions this character's name or aliases."))
             return
         labels = {f"{scene.title} [{scene.id}] — {excerpt}": scene for scene, excerpt in matches}
-        label, accepted = QInputDialog.getItem(self, "Character scene search", "Matching scenes:", list(labels), 0, False)
+        label, accepted = QInputDialog.getItem(self, self.tr("Character scene search"), self.tr("Matching scenes:"), list(labels), 0, False)
         if accepted:
             self._open_project_document("scene", labels[label].id)
 
     def _character_scene_search_failed(self, project, generation: int, error) -> None:
         if project is self.project and generation == self._project_generation:
-            QMessageBox.warning(self, "Character scene search failed", str(error))
+            QMessageBox.warning(self, self.tr("Character scene search failed"), str(error))
 
     def move_project_scene(self, offset: int) -> None:
         if self.project is None or self.project_view is None:
@@ -4447,7 +4447,7 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
-        name, accepted = QInputDialog.getText(self, "Create revision snapshot", "Snapshot name:")
+        name, accepted = QInputDialog.getText(self, self.tr("Create revision snapshot"), self.tr("Snapshot name:"))
         if not accepted:
             return
         open_text: dict[str, str] = {}
@@ -4563,12 +4563,12 @@ class MainWindow(QMainWindow):
     def _revision_snapshot_created(self, project: Project, snapshot: RevisionSnapshot) -> None:
         self._set_project_busy(False)
         self.statusBar().showMessage(
-            f"Revision “{snapshot.name}” saved locally at {snapshot.snapshot_path}", 10000
+            self.tr("Revision “{name}” saved locally at {path}").format(name=snapshot.name, path=snapshot.snapshot_path), 10000
         )
 
     def _revision_snapshot_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)
-        QMessageBox.warning(self, "Revision snapshot failed", str(error))
+        QMessageBox.warning(self, self.tr("Revision snapshot failed"), str(error))
 
     def _open_project_document(self, kind: str, item_id: str) -> None:
         project = self.project

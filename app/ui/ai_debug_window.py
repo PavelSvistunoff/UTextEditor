@@ -29,15 +29,15 @@ class AIDebugWindow(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Ollama Debug")
+        self.setWindowTitle(self.tr("Ollama Debug"))
         self.resize(760, 520)
         self._entries: list[str] = []
         self.output = QPlainTextEdit(readOnly=True)
-        warning = QLabel("Requests can contain document text. This debug history is kept only in memory.")
+        warning = QLabel(self.tr("Requests can contain document text. This debug history is kept only in memory."))
         warning.setWordWrap(True)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        copy = buttons.addButton("Copy", QDialogButtonBox.ButtonRole.ActionRole)
-        clear = buttons.addButton("Clear", QDialogButtonBox.ButtonRole.ResetRole)
+        copy = buttons.addButton(self.tr("Copy"), QDialogButtonBox.ButtonRole.ActionRole)
+        clear = buttons.addButton(self.tr("Clear"), QDialogButtonBox.ButtonRole.ResetRole)
         copy.clicked.connect(self.copy_to_clipboard)
         clear.clicked.connect(self.clear)
         buttons.rejected.connect(self.close)

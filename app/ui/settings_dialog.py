@@ -235,15 +235,15 @@ class SettingsDialog(QDialog):
         except ValueError:
             valid_host = False
         if not valid_host:
-            QMessageBox.warning(self, "Invalid Ollama host", "Enter an HTTP or HTTPS host URL without credentials or a path.")
+            QMessageBox.warning(self, self.tr("Invalid Ollama host"), self.tr("Enter an HTTP or HTTPS host URL without credentials or a path."))
             return
         if "{context}" not in template:
-            QMessageBox.warning(self, "Invalid context template", "The context template must include {context}.")
+            QMessageBox.warning(self, self.tr("Invalid context template"), self.tr("The context template must include {context}."))
             return
         try:
             completion_prompt("", "", template)
         except ValueError as exc:
-            QMessageBox.warning(self, "Invalid context template", str(exc))
+            QMessageBox.warning(self, self.tr("Invalid context template"), str(exc))
             return
         # Save settings back to the AppSettings instance
         self.settings.ollama_host = self.host.text().strip() or self.settings.ollama_host
