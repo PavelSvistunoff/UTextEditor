@@ -1,6 +1,20 @@
 
 # Implementation progress
 
+- **TASK-011.05 — DONE (2026-10-31):** evaluated 1M/5M/10M-character
+  sessions with ten samples per repeated operation, new-word tracking and AI
+  disabled. Extended benchmark to time saves and verify exact saved buffer
+  bytes. At 10M: GUI open 399.06 ms; typing median/max 17.98/19.08 ms;
+  word count median 144.89 ms; save 19.37 ms; cumulative RSS 601,669,632
+  bytes. docs/large-file-evaluation.md records all sizes, workload limitations,
+  whole-buffer allocation review and follow-up safety requirements. README
+  and TASKS updated. Document tests: 31 passed; full suite: 810 passed,
+  2 skipped; diff reviewed and whitespace check passed. Evaluation complete;
+  no safe maximum or native responsiveness guarantee claimed. Parent remains
+  open: size policy/failure safety, encoding and line-ending selectors remain.
+  No product change or new UI strings; benchmark save assertions supply direct
+  validation without redundant implementation-mirroring tests. Uncommitted.
+
 - **TASK-011.04 — DONE (2026-10-31):** added shared has_binary_controls
   detection for NUL, non-whitespace ASCII controls and DEL. Standalone reads,
   project reads/import/relink/save verification and conflict-version reads use

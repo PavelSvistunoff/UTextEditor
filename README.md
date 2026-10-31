@@ -74,7 +74,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 
 - Automatic spellcheck now only presents validated underlines. Corrections require an explicit context-menu action and are undoable.
 - `Auto` uses local script and common-word signals, and ambiguous or short text remains `Auto` for the model to infer.
-- Files are currently read into memory as a whole; very large files may still use substantial memory even though reads and writes run off the GUI thread.
+- The [large-file evaluation](docs/large-file-evaluation.md) records measured costs and the absence of an enforced safe size limit. Files are currently read into memory as a whole; very large files may still use substantial memory even though reads and writes run off the GUI thread.
 - Writing-goal undo metadata can still grow with the number of separate undo commands in a long editing session; it is not yet bounded.
 - Changing writing-goal scope or disabling/re-enabling a goal preserves its undo checkpoints; intervening edits add no new-word credit. Undo or redo to an unknown checkpoint does not count restored text as new writing, but cannot reconstruct its earlier contribution to the daily count.
 - The app currently supports UTF-8 files only. Standalone and project text reads reject NUL, non-whitespace ASCII controls and DEL as likely binary input. Tabs, line breaks, vertical tabs, form feeds and Unicode prose remain accepted. This heuristic does not detect every binary format.
@@ -172,7 +172,7 @@ Writing-goal status refresh counts buffer words only for the active goal scope a
 
 For an offline language-detection evaluation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/language_detection.py`. It compares the curated regression corpus with an always-Auto baseline and reports unsupported confident guesses; these results are not real-world accuracy estimates.
 
-For performance investigation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/completion_context.py` for the completion-context microbenchmark, `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/editor_responsiveness.py` for editor operation median/maximum timings and peak process memory (where supported; `--sizes 100000 1000000 --repetitions 10` controls the workload; reads and opens remain single samples), or `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/writing_goal_history.py` for a synthetic editing, undo/redo and branch session. Pass `--commands 10000 --undo 1000` to increase the history length; allocation tracing can make long runs slow. These measurements are diagnostic, not portable pass/fail thresholds.
+For performance investigation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/completion_context.py` for the completion-context microbenchmark, `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/editor_responsiveness.py` for editor operation median/maximum timings and peak process memory (where supported; `--sizes 100000 1000000 --repetitions 10` controls the workload; reads, opens and saves remain single samples; saves verify buffer bytes), or `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/writing_goal_history.py` for a synthetic editing, undo/redo and branch session. Pass `--commands 10000 --undo 1000` to increase the history length; allocation tracing can make long runs slow. These measurements are diagnostic, not portable pass/fail thresholds.
 
 ## Product direction
 

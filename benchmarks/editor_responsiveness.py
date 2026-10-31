@@ -66,12 +66,15 @@ def main():
             search_ms = elapsed_ms(lambda: editor.document().find("forgotten"), args.repetitions)
             words_ms = elapsed_ms(lambda: count_words(editor.toPlainText()), args.repetitions)
             context_ms = elapsed_ms(lambda: build_context(editor.toPlainText(), size // 2), args.repetitions)
+            save_ms = elapsed_ms(lambda: window.file_manager.save(editor.document_state))
+            if path.read_bytes() != editor.toPlainText().encode("utf-8"):
+                raise AssertionError("Saved benchmark text differs from the editor buffer.")
             memory = (f"{resource.getrusage(resource.RUSAGE_SELF).ru_maxrss} "
                       f"({'bytes' if sys.platform == 'darwin' else 'KiB'})"
                       if resource is not None else "unavailable on this platform")
             print(f"{size:,} characters ({args.repetitions} samples for repeated operations): file read {read_ms} ms, GUI open {ui_open_ms} ms, "
                   f"typing {typing_ms} ms, cursor {cursor_ms} ms, search {search_ms} ms, "
-                  f"word count {words_ms} ms, context {context_ms} ms; "
+                  f"word count {words_ms} ms, context {context_ms} ms, file save {save_ms} ms; "
                   f"process peak RSS {memory}")
             editor.document_state.mark_saved()
         window.close()

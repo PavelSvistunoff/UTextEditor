@@ -326,7 +326,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
   Unicode and text whitespace are retained; universal binary detection is not
   claimed. Focused regressions and full offline suite pass.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-011.05** — Evaluate memory and responsiveness for large files.  
+- [x] **TASK-011.05** — Evaluate memory and responsiveness for large files.
+  Evaluated 1M/5M/10M-character sessions and byte-verified saves; results and
+  implementation review in docs/large-file-evaluation.md. No enforced safe
+  file-size limit exists; the parent safe-large-file gate remains unsatisfied.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
