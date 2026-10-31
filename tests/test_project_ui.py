@@ -2785,6 +2785,20 @@ def test_revision_history_dialog_labels_chapter_changes(application):
         SceneChange("chapter-id", "title-changed", "Old", "New", item_type="chapter"),
     )))
     assert "Chapter Title Changed: New" in dialog.details.toPlainText()
+    assert "Title: Old → New" in dialog.details.toPlainText()
+    assert "Item ID: chapter-id" in dialog.details.toPlainText()
+    dialog.close()
+
+
+def test_revision_history_dialog_shows_before_and_after_titles_for_scenes_and_notes(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("scene-id", "title-changed", "Old scene", "Shared"),
+        SceneChange("note-id", "title-changed", "Old note", "Shared", item_type="note"),
+    )))
+    text = dialog.details.toPlainText()
+    assert "Title: Old scene → Shared" in text and "Item ID: scene-id" in text
+    assert "Title: Old note → Shared" in text and "Item ID: note-id" in text
     dialog.close()
 
 

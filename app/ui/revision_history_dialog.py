@@ -144,8 +144,12 @@ class RevisionHistoryDialog(QDialog):
                 sections.append(format_qt(self.tr("Path: %1 → %2"), change.old_path, change.new_path))
             if change.character_id is not None:
                 sections.append(format_qt(self.tr("Character ID: %1"), change.character_id))
-            if change.kind == "title-changed" and change.item_type == "project":
-                sections.append(format_qt(self.tr("Title: %1 → %2"), change.old_title, change.new_title))
+            if change.kind == "title-changed":
+                sections.append(format_qt(self.tr("Title: %1 → %2"),
+                                          change.old_title or self.tr("unknown"),
+                                          change.new_title or self.tr("unknown")))
+                if change.item_type != "project":
+                    sections.append(format_qt(self.tr("Item ID: %1"), change.item_id))
             if change.diff:
                 sections.append(change.diff.rstrip())
         self.details.setPlainText("\n\n".join(sections))

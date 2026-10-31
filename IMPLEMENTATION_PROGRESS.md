@@ -3,6 +3,14 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** the revision comparison now displays both old
+  and new titles and stable IDs for renamed chapters, scenes and notes. Modified
+  `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
+  suites: 162 passed; full offline suite: 666 passed, 2 skipped; Ukrainian
+  source catalog validation passed. Metadata field-level differences, native
+  accessibility checks and release catalog compilation
+  remain outstanding.
 - **TASK-005.04 — PARTIAL:** standalone saves and project text writes now
   share an in-process lock over fingerprint checks and replacement, including
   project bulk text updates. Threaded regressions cover two standalone saves

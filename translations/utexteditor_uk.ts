@@ -2001,6 +2001,7 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>RevisionHistoryDialog</name>
+    <message><source>Item ID: %1</source><translation>Ідентифікатор елемента: %1</translation></message>
     <message><source>Character Association Added</source><translation>Зв’язок із персонажем додано</translation></message>
     <message><source>Character Association Removed</source><translation>Зв’язок із персонажем видалено</translation></message>
     <message><source>Character Association Changed</source><translation>Зв’язок із персонажем змінено</translation></message>
