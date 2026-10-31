@@ -2750,10 +2750,10 @@ class MainWindow(QMainWindow):
             return
         current_state = self.project.character_current_state(character.id)
         history = self.project.character_state_history(character.id)
-        timeline = ["Current recorded state:"] if current_state else ["No character state changes recorded."]
+        timeline = [CharacterDialog.tr("Current recorded state:")] if current_state else [CharacterDialog.tr("No character state changes recorded.")]
         timeline.extend(f"{field}: {value}" for field, value in current_state.items())
         if history:
-            timeline.append("\nScene history:")
+            timeline.append("\n" + CharacterDialog.tr("Scene history:"))
         for scene, change in history:
             before = f"{change.previous_value} → " if change.previous_value else ""
             evidence = f" — {change.evidence}" if change.evidence else ""

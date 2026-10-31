@@ -113,6 +113,18 @@
 <context>
     <name>CharacterDialog</name>
     <message>
+        <source>Current recorded state:</source>
+        <translation>Поточний записаний стан:</translation>
+    </message>
+    <message>
+        <source>No character state changes recorded.</source>
+        <translation>Змін стану персонажа не записано.</translation>
+    </message>
+    <message>
+        <source>Scene history:</source>
+        <translation>Історія сцен:</translation>
+    </message>
+    <message>
         <source>Generating suggestions…</source>
         <translation>Створення пропозицій…</translation>
     </message>

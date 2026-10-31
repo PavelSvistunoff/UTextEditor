@@ -66,6 +66,9 @@ def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     assert translator.load(str(target))
     assert translator.translate("CharacterDialog", "Choose Portrait…") == "Вибрати портрет…"
     assert translator.translate("CharacterDialog", "No open associated scene") == "Немає відкритої пов’язаної сцени"
+    assert translator.translate("CharacterDialog", "Current recorded state:") == "Поточний записаний стан:"
+    assert translator.translate("CharacterDialog", "No character state changes recorded.") == "Змін стану персонажа не записано."
+    assert translator.translate("CharacterDialog", "Scene history:") == "Історія сцен:"
     assert translator.translate("MainWindow", "Open failed") == "Не вдалося відкрити"
 
 
