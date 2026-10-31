@@ -38,6 +38,7 @@ from .model import (
 )
 from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
+from app.document.encoding import has_binary_controls
 from app.document.write_lock import TEXT_WRITE_LOCK
 
 _WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
@@ -377,8 +378,8 @@ class Project:
             raise ProjectError("Imported scene is not valid UTF-8 text") from exc
         except OSError as exc:
             raise ProjectError(f"Cannot read imported scene: {exc}") from exc
-        if "\x00" in content:
-            raise ProjectError("Imported file appears to be binary (contains NUL bytes)")
+        if has_binary_controls(content):
+            raise ProjectError("Imported file appears to be binary (contains binary control characters)")
         scene = Scene(
             id=str(uuid4()),
             title=title if title is not None else source.stem,
@@ -414,8 +415,8 @@ class Project:
             raise ProjectError("Imported scene is not valid UTF-8 text") from exc
         except OSError as exc:
             raise ProjectError(f"Cannot read imported scene: {exc}") from exc
-        if "\x00" in content:
-            raise ProjectError("Imported file appears to be binary (contains NUL bytes)")
+        if has_binary_controls(content):
+            raise ProjectError("Imported file appears to be binary (contains binary control characters)")
         scene_title = title if title is not None else source.stem
         scene = Scene(
             id=str(uuid4()),
@@ -1161,7 +1162,7 @@ class Project:
                 current_text = original_bytes.decode("utf-8")
             except (OSError, UnicodeError) as exc:
                 raise ProjectError(f"Cannot verify scene file {current_scene.path}: {exc}") from exc
-            if "\x00" in current_text:
+            if has_binary_controls(current_text):
                 raise ProjectError(f"Scene file appears to be binary: {current_scene.path}")
             expected_text = expected_contents[scene_id]
             if current_text != expected_text:
@@ -1292,7 +1293,7 @@ class Project:
             raise ProjectError(f"Referenced file is not valid UTF-8 text: {relative_path}") from exc
         except OSError as exc:
             raise ProjectError(f"Cannot read referenced file {relative_path!r}: {exc}") from exc
-        if "\x00" in content:
+        if has_binary_controls(content):
             raise ProjectError(f"Referenced file appears to be binary: {relative_path}")
         return content
 
@@ -1321,7 +1322,7 @@ class Project:
             original_mode = target.stat().st_mode
         except (OSError, UnicodeError) as exc:
             raise ProjectError(f"Cannot verify the current file before saving: {exc}") from exc
-        if "\x00" in current:
+        if has_binary_controls(current):
             raise ProjectError("Referenced file appears to be binary")
         if current != expected_content:
             raise ProjectError(
@@ -1365,8 +1366,8 @@ class Project:
             raise ProjectError("Relink target is not valid UTF-8 text") from exc
         except OSError as exc:
             raise ProjectError(f"Cannot read relink target: {exc}") from exc
-        if "\x00" in content:
-            raise ProjectError("Relink target appears to be binary (contains NUL bytes)")
+        if has_binary_controls(content):
+            raise ProjectError("Relink target appears to be binary (contains binary control characters)")
         old_path = entry.path
         self._update(lambda: setattr(entry, "path", relative_path))
         if entry.path == old_path:

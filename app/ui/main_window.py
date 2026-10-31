@@ -49,6 +49,7 @@ from app.document.encoding import detect_line_ending, normalize_line_endings, py
 from app.document.export import ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source, export_manuscript
 from app.document.file_manager import ExternalChangeError, FileManager
 from app.document.merge import merge_text
+from app.document.encoding import has_binary_controls
 from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, WordCount, count_words
 from app.project.search import MAX_DOCUMENT_BYTES, SearchDocument, search_project
@@ -4935,7 +4936,7 @@ class MainWindow(QMainWindow):
     def _read_conflict_version(path: Path, base: str, buffer: str, project_file: bool):
         raw = path.read_bytes()
         text = raw.decode("utf-8" if project_file else "utf-8-sig")
-        if "\x00" in text:
+        if has_binary_controls(text):
             raise ValueError("The disk version contains binary data.")
         normalized = text.replace("\r\n", "\n").replace("\r", "\n")
         return text, normalized, hashlib.sha256(raw).hexdigest(), merge_text(base, buffer, normalized)

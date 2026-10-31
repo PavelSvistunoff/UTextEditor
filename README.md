@@ -77,7 +77,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Files are currently read into memory as a whole; very large files may still use substantial memory even though reads and writes run off the GUI thread.
 - Writing-goal undo metadata can still grow with the number of separate undo commands in a long editing session; it is not yet bounded.
 - Changing writing-goal scope or disabling/re-enabling a goal preserves its undo checkpoints; intervening edits add no new-word credit. Undo or redo to an unknown checkpoint does not count restored text as new writing, but cannot reconstruct its earlier contribution to the daily count.
-- The app currently supports UTF-8 files only. It rejects embedded NULs as likely binary input; broader binary detection is not implemented.
+- The app currently supports UTF-8 files only. Standalone and project text reads reject NUL, non-whitespace ASCII controls and DEL as likely binary input. Tabs, line breaks, vertical tabs, form feeds and Unicode prose remain accepted. This heuristic does not detect every binary format.
 - The status bar reports encoding and line ending, but these are not currently user-selectable. The [encoding-support investigation](docs/encoding-support.md) records the proposed standalone-file approach and compatibility requirements; it does not add legacy encoding support.
 - The UI is minimal and has no toolbar. Recent standalone files and projects are listed separately.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.

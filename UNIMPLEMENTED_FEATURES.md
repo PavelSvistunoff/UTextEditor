@@ -70,8 +70,8 @@ session was exercised, and this review does not prove other paths defect-free.
   notes and directed link additions/removals, but not all project-structure changes.
 - **Large documents and encodings:** files are read into memory as a whole;
   the editor supports UTF-8 only, and encoding and line-ending choices are not
-  selectable in the status bar. Detection of binary files beyond embedded NULs
-  is also not implemented.
+  selectable in the status bar. NUL, non-whitespace ASCII controls and DEL are rejected as likely binary
+  input; broader format-aware binary detection remains unimplemented.
 
 ## Writing and language tools
 

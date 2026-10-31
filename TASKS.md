@@ -320,7 +320,11 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-011.03** — Add line-ending detection and selection.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-011.04** — Improve binary-file detection.  
+- [x] **TASK-011.04** — Improve binary-file detection.
+  Shared control-character heuristic rejects NUL/non-whitespace ASCII controls
+  and DEL at standalone/project reads, import/relink and conflict review.
+  Unicode and text whitespace are retained; universal binary detection is not
+  claimed. Focused regressions and full offline suite pass.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-011.05** — Evaluate memory and responsiveness for large files.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

@@ -6,7 +6,7 @@ import os
 import tempfile
 
 from .document import Document
-from .encoding import detect_line_ending, normalize_line_endings
+from .encoding import detect_line_ending, normalize_line_endings, has_binary_controls
 from .write_lock import TEXT_WRITE_LOCK
 
 
@@ -19,7 +19,7 @@ class FileManager:
         file_path = Path(path)
         raw = file_path.read_bytes()
         text = raw.decode("utf-8-sig")
-        if "\x00" in text:
+        if has_binary_controls(text):
             raise ValueError("This file contains binary data and cannot be opened as UTF-8 text.")
         document = Document.from_text(text.replace("\r\n", "\n").replace("\r", "\n"), file_path)
         document.line_ending = detect_line_ending(text)

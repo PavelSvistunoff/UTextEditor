@@ -1,5 +1,9 @@
 """Encoding and line-ending helpers."""
 
+import re
+
+_BINARY_CONTROLS = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")
+
 
 def detect_line_ending(text: str) -> str:
     counts = {"CRLF": text.count("\r\n"), "CR": text.count("\r") - text.count("\r\n")}
@@ -44,3 +48,12 @@ def qt_position_to_python_index(text: str, position: int) -> int:
 def python_index_to_qt_position(text: str, index: int) -> int:
     """Translate a Python code-point index into Qt's UTF-16 cursor position."""
     return sum(2 if ord(character) > 0xFFFF else 1 for character in text[: max(0, min(index, len(text)))])
+
+
+def has_binary_controls(text: str) -> bool:
+    """Reject NUL/non-whitespace ASCII controls, retaining Unicode prose.
+
+    This conservative heuristic allows tab, LF, vertical tab, form feed and CR;
+    it does not claim to identify every binary format or guess an encoding.
+    """
+    return _BINARY_CONTROLS.search(text) is not None

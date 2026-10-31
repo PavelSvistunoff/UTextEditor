@@ -800,3 +800,18 @@ def test_existing_symlink_manifest_is_rejected(tmp_path):
     (root / "utexteditor.yaml").symlink_to(other.manifest_path)
     with pytest.raises(ProjectPathError):
         Project.open(root)
+
+
+def test_project_binary_controls_are_rejected_on_read_and_import(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="prose")
+    target = project.root / scene.path
+    raw = b"text\x1bbytes"
+    target.write_bytes(raw)
+    with pytest.raises(ProjectError, match="binary"):
+        project.read_scene(scene.id)
+    imported = project.root / "legacy.txt"
+    imported.write_bytes(raw)
+    with pytest.raises(ProjectError, match="binary"):
+        project.import_scene("legacy.txt")
+    assert target.read_bytes() == imported.read_bytes() == raw

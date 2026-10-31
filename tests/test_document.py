@@ -321,3 +321,20 @@ def test_unrepresentable_save_preserves_disk_and_dirty_buffer(tmp_path, encoding
     assert document.text == "draft 😀" and document.dirty
     assert document.disk_digest == digest
     assert not list(tmp_path.glob(".*.tmp"))
+
+
+@pytest.mark.parametrize("control", ["\x01", "\x08", "\x1b", "\x1f", "\x7f"])
+def test_binary_control_input_is_rejected_without_modifying_file(tmp_path, control):
+    path = tmp_path / "binary.txt"
+    raw = ("text" + control + "bytes").encode("utf-8")
+    path.write_bytes(raw)
+    with pytest.raises(ValueError, match="binary data"):
+        FileManager().open(path)
+    assert path.read_bytes() == raw
+
+
+def test_unicode_and_text_whitespace_remain_readable(tmp_path):
+    path = tmp_path / "prose.txt"
+    text = "Український café 😀\t\v\f\u0085\n"
+    path.write_text(text, encoding="utf-8")
+    assert FileManager().open(path).text == text

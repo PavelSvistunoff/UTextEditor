@@ -1,6 +1,19 @@
 
 # Implementation progress
 
+- **TASK-011.04 — DONE (2026-10-31):** added shared has_binary_controls
+  detection for NUL, non-whitespace ASCII controls and DEL. Standalone reads,
+  project reads/import/relink/save verification and conflict-version reads use
+  it. Tab/LF/CR/vertical-tab/form-feed and Unicode prose/NEL remain allowed.
+  Regex search avoids Python per-character scanning. Added five control-input
+  cases, Unicode/whitespace acceptance and project read/import preservation
+  regression. Focused document/project suites: 78 passed; full suite:
+  810 passed, 2 skipped. Diff reviewed and whitespace check passed. README,
+  UNIMPLEMENTED_FEATURES and TASKS updated. No new controls or UI strings;
+  existing errors handle rejection. This conservative heuristic deliberately
+  does not identify every binary format; encoding selection/large-file limits
+  remain separate tickets. Changes uncommitted; no push attempted.
+
 - **TASK-011.01 — DONE (2026-10-31):** inspected FileManager, Document,
   line-ending helpers and dependent conflict/recovery/project workflows.
   Added docs/encoding-support.md with standard-library codec experiment,
