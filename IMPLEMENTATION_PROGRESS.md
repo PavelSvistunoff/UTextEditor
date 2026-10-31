@@ -285,7 +285,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   offline suite: 539 passed, 2 skipped. Character profile state and scene
   history headings are now translated in the dialog's runtime context; a
   compiled temporary catalog test checks all three headings. The wider audit
-  and release catalog compilation remain outstanding.
+  and release catalog compilation remain outstanding. Project-document opening
+  and verification status/error messages now use translated strings with
+  preserved dynamic details. Translation extraction and temporary-catalog
+  tests pass; the full offline suite passed: 557 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

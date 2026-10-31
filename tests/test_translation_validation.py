@@ -70,6 +70,8 @@ def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     assert translator.translate("CharacterDialog", "No character state changes recorded.") == "Змін стану персонажа не записано."
     assert translator.translate("CharacterDialog", "Scene history:") == "Історія сцен:"
     assert translator.translate("MainWindow", "Open failed") == "Не вдалося відкрити"
+    assert translator.translate("MainWindow", "Opening {title}…").format(title="Сцена") == "Відкриття: Сцена…"
+    assert translator.translate("MainWindow", "Document could not be opened") == "Не вдалося відкрити документ"
 
 
 def test_extracted_sources_match_ukrainian_catalog(tmp_path):

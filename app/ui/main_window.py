@@ -4431,7 +4431,7 @@ class MainWindow(QMainWindow):
                 self._project_document_open_failed(open_key, error),
             Qt.ConnectionType.QueuedConnection,
         )
-        self.statusBar().showMessage(f"Opening {item.title}…")
+        self.statusBar().showMessage(self.tr("Opening {title}…").format(title=item.title))
         self.thread_pool.start(worker)
 
     def _project_item_no_longer_exists(self) -> None:
@@ -4504,7 +4504,7 @@ class MainWindow(QMainWindow):
             expected_digest = editor.document_state.disk_digest
             if expected_digest is None or hashlib.sha256(raw.encode("utf-8")).hexdigest() != expected_digest:
                 self.statusBar().showMessage(
-                    "Project document changed on disk or cannot be verified; reload, compare, or use Save As.",
+                    self.tr("Project document changed on disk or cannot be verified; reload, compare, or use Save As."),
                     10000,
                 )
                 return
@@ -4520,10 +4520,10 @@ class MainWindow(QMainWindow):
     ) -> None:
         self._pending_project_opens.discard(open_key)
         if notify:
-            QMessageBox.warning(self, "Document could not be opened", str(error))
+            QMessageBox.warning(self, self.tr("Document could not be opened"), str(error))
         else:
             self.statusBar().showMessage(
-                f"Project document could not be verified for safe saving: {error}",
+                self.tr("Project document could not be verified for safe saving: {error}").format(error=error),
                 8000,
             )
 

@@ -670,6 +670,10 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Opening {title}…</source><translation>Відкриття: {title}…</translation></message>
+    <message><source>Document could not be opened</source><translation>Не вдалося відкрити документ</translation></message>
+    <message><source>Project document changed on disk or cannot be verified; reload, compare, or use Save As.</source><translation>Документ проєкту змінився на диску або його неможливо перевірити; перезавантажте, порівняйте або скористайтеся командою «Зберегти як».</translation></message>
+    <message><source>Project document could not be verified for safe saving: {error}</source><translation>Не вдалося перевірити документ проєкту для безпечного збереження: {error}</translation></message>
     <message><source>Auto-writer drafts were not applied because the project or an open document changed.</source><translation>Чернетки автопису не застосовано, оскільки проєкт або відкритий документ змінилися.</translation></message>
     <message><source>No Auto-writer drafts were applied.</source><translation>Жодну чернетку автопису не застосовано.</translation></message>
     <message><source>Project translation cancelled. No project files were changed.</source><translation>Переклад проєкту скасовано. Файли проєкту не змінено.</translation></message>
