@@ -3,6 +3,16 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-005.04 — PARTIAL:** standalone saves and project text writes now
+  share an in-process lock over fingerprint checks and replacement, including
+  project bulk text updates. Threaded regressions cover two standalone saves
+  and a project save racing a standalone save. Modified
+  `app/document/file_manager.py`, `app/document/write_lock.py`,
+  `app/project/service.py`, `tests/test_document.py`,
+  `tests/test_project_domain.py`, and `README.md`. Focused document, project
+  and translation suites: 71 passed; full offline suite: 665 passed, 2 skipped.
+  Independent-process coordination remains outstanding, as does coordination
+  with separate project manifest writes.
 - **TASK-009.04 — PARTIAL:** revision comparisons now report added, removed
   and changed scene-character associations by stable character ID, ignoring
   association-list reordering. Modified `app/document/revisions.py`,

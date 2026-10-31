@@ -7,6 +7,7 @@ import tempfile
 
 from .document import Document
 from .encoding import detect_line_ending, normalize_line_endings
+from .write_lock import TEXT_WRITE_LOCK
 
 
 class ExternalChangeError(ValueError):
@@ -26,6 +27,12 @@ class FileManager:
         return document
 
     def save(self, document: Document, path: str | Path | None = None) -> Path:
+        # Coordinate with other manuscript writes in this process. Independent
+        # applications are not locked.
+        with TEXT_WRITE_LOCK:
+            return self._save_locked(document, path)
+
+    def _save_locked(self, document: Document, path: str | Path | None) -> Path:
         target = Path(path) if path is not None else document.path
         if target is None:
             raise ValueError("A path is required to save an untitled document")

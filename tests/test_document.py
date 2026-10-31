@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import subprocess
 import sys
+from threading import Event, Thread, current_thread
 
 import pytest
 
@@ -172,6 +173,61 @@ def test_save_detects_separate_process_edit_during_staging(tmp_path: Path, monke
     assert path.read_text(encoding="utf-8") == "external edit"
     assert document.dirty
     assert not list(tmp_path.glob(".draft.txt.*.tmp"))
+
+
+def test_standalone_saves_serialize_check_and_replace_in_process(tmp_path: Path, monkeypatch) -> None:
+    path = tmp_path / "draft.txt"
+    path.write_text("original", encoding="utf-8")
+    first_manager, second_manager = FileManager(), FileManager()
+    first_doc, second_doc = first_manager.open(path), second_manager.open(path)
+    first_doc.update_text("first edit")
+    second_doc.update_text("second edit")
+    first_replacing, release_first, second_started, second_read = (Event() for _ in range(4))
+    outcomes = {}
+    original_replace, original_read = os.replace, Path.read_bytes
+
+    def pause_replace(source, destination):
+        if current_thread().name == "first-save" and Path(destination) == path:
+            first_replacing.set()
+            if not release_first.wait(3):
+                raise TimeoutError("First save was not released.")
+        return original_replace(source, destination)
+
+    def observe_read(target):
+        result = original_read(target)
+        if current_thread().name == "second-save" and target == path:
+            second_read.set()
+        return result
+
+    def save(label, manager, document):
+        if label == "second":
+            second_started.set()
+        try:
+            manager.save(document)
+        except ExternalChangeError:
+            outcomes[label] = "conflict"
+        else:
+            outcomes[label] = "saved"
+
+    monkeypatch.setattr("app.document.file_manager.os.replace", pause_replace)
+    monkeypatch.setattr(Path, "read_bytes", observe_read)
+    first = Thread(target=save, args=("first", first_manager, first_doc), name="first-save")
+    second = Thread(target=save, args=("second", second_manager, second_doc), name="second-save")
+    first.start()
+    try:
+        assert first_replacing.wait(2)
+        second.start()
+        assert second_started.wait(2)
+        assert not second_read.wait(0.5)
+    finally:
+        release_first.set()
+        first.join(3)
+        if second.ident is not None:
+            second.join(3)
+    assert not first.is_alive() and not second.is_alive()
+    assert outcomes == {"first": "saved", "second": "conflict"}
+    assert path.read_text(encoding="utf-8") == "first edit"
+    assert second_doc.dirty
 
 
 def test_separate_process_edit_after_final_check_exposes_save_race(tmp_path: Path, monkeypatch) -> None:

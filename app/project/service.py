@@ -9,7 +9,6 @@ import tempfile
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from threading import Lock
 from uuid import uuid4
 
 import yaml
@@ -39,9 +38,10 @@ from .model import (
 )
 from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
+from app.document.write_lock import TEXT_WRITE_LOCK
 
 _WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
-_PROJECT_TEXT_WRITE_LOCK = Lock()
+_PROJECT_TEXT_WRITE_LOCK = TEXT_WRITE_LOCK
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
