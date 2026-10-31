@@ -153,8 +153,12 @@ class RecoveryStore:
             return RecoveryScan((), ())
         entries: list[RecoveryEntry] = []
         issues: list[RecoveryIssue] = []
-        root = self.root.resolve()
-        for directory in sorted(self.root.iterdir()):
+        try:
+            root = self.root.resolve()
+            directories = sorted(self.root.iterdir())
+        except OSError as exc:
+            return RecoveryScan((), (RecoveryIssue(self.root, str(exc)),))
+        for directory in directories:
             if not directory.is_dir():
                 continue
             try:

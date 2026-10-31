@@ -1,6 +1,15 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** failure to enumerate the recovery
+  root now returns a root-level diagnostic instead of aborting the scan.
+  Added test_unreadable_recovery_root_is_reported_without_deleting_data.
+  Focused recovery suite: 20 passed; full offline suite: 675 passed, 2 skipped.
+  README and TASKS updated; diff check passed. Broader recovery diagnosis and
+  native verification remain outstanding. Previous directory scan fix committed
+  as aaae439; push to origin/main failed because GitHub HTTPS credentials are
+  unavailable.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** recovery scanning reports a
   directory-listing failure and continues with other snapshot directories.
   Uses explicit directory enumeration because glob can suppress filesystem

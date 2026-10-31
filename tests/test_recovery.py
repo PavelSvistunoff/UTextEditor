@@ -244,3 +244,22 @@ def test_unreadable_directory_does_not_hide_other_recovery_snapshots(tmp_path, m
     assert scan.issues[0].snapshot_path == inaccessible.snapshot_path.parent
     assert "Cannot list" in scan.issues[0].message
     assert inaccessible.snapshot_path.read_bytes()
+
+
+def test_unreadable_recovery_root_is_reported_without_deleting_data(tmp_path, monkeypatch):
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "preserved")
+    original_iterdir = Path.iterdir
+
+    def denied_iterdir(path):
+        if path == store.root:
+            raise PermissionError("Cannot list recovery root")
+        return original_iterdir(path)
+
+    monkeypatch.setattr(Path, "iterdir", denied_iterdir)
+    scan = store.scan()
+    assert not scan.entries
+    assert len(scan.issues) == 1
+    assert scan.issues[0].snapshot_path == store.root
+    assert "Cannot list recovery root" in scan.issues[0].message
+    assert entry.snapshot_path.exists()
