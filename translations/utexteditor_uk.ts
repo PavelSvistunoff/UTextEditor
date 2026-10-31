@@ -681,6 +681,28 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Choose an empty project directory</source><translation>Виберіть порожню теку проєкту</translation></message>
+    <message><source>Create project</source><translation>Створити проєкт</translation></message>
+    <message><source>Project title:</source><translation>Назва проєкту:</translation></message>
+    <message><source>Project could not be opened</source><translation>Не вдалося відкрити проєкт</translation></message>
+    <message><source>Filter characters by name, role, or motivation</source><translation>Фільтрувати персонажів за ім’ям, роллю або мотивацією</translation></message>
+    <message><source>Filter project characters</source><translation>Фільтрувати персонажів проєкту</translation></message>
+    <message><source>Project change failed</source><translation>Не вдалося змінити проєкт</translation></message>
+    <message><source>New chapter</source><translation>Новий розділ</translation></message>
+    <message><source>Chapter title:</source><translation>Назва розділу:</translation></message>
+    <message><source>New scene</source><translation>Нова сцена</translation></message>
+    <message><source>Scene title:</source><translation>Назва сцени:</translation></message>
+    <message><source>New reference note</source><translation>Нова довідкова нотатка</translation></message>
+    <message><source>Note title:</source><translation>Назва нотатки:</translation></message>
+    <message><source>Reference note type</source><translation>Тип довідкової нотатки</translation></message>
+    <message><source>Type:</source><translation>Тип:</translation></message>
+    <message><source>Character</source><translation>Персонаж</translation></message>
+    <message><source>Setting</source><translation>Місце дії</translation></message>
+    <message><source>Timeline</source><translation>Хронологія</translation></message>
+    <message><source>Research</source><translation>Дослідження</translation></message>
+    <message><source>General</source><translation>Загальне</translation></message>
+    <message><source>New character</source><translation>Новий персонаж</translation></message>
+    <message><source>Full name:</source><translation>Повне ім’я:</translation></message>
     <message><source>Unsaved changes</source><translation>Незбережені зміни</translation></message>
     <message><source>Save changes to {name}?</source><translation>Зберегти зміни в документі {name}?</translation></message>
     <message><source>Orphaned link ({item_id})</source><translation>Посилання без цілі ({item_id})</translation></message>

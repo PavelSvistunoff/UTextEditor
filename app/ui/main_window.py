@@ -1098,10 +1098,10 @@ class MainWindow(QMainWindow):
         self.tabs.new_document()
 
     def create_project(self) -> None:
-        directory = QFileDialog.getExistingDirectory(self, "Choose an empty project directory")
+        directory = QFileDialog.getExistingDirectory(self, self.tr("Choose an empty project directory"))
         if not directory:
             return
-        title, accepted = QInputDialog.getText(self, "Create project", "Project title:")
+        title, accepted = QInputDialog.getText(self, self.tr("Create project"), self.tr("Project title:"))
         if not accepted:
             return
         self._open_project_worker(Project.create, directory, title)
@@ -2463,7 +2463,7 @@ class MainWindow(QMainWindow):
 
     def _project_open_failed(self, error) -> None:
         self._set_project_busy(False)
-        QMessageBox.warning(self, "Project could not be opened", str(error))
+        QMessageBox.warning(self, self.tr("Project could not be opened"), str(error))
 
     def _show_project_dock(self) -> None:
         if self.project is None:
@@ -2478,8 +2478,8 @@ class MainWindow(QMainWindow):
             project_layout = QVBoxLayout(project_panel)
             project_layout.setContentsMargins(0, 0, 0, 0)
             self._character_search = QLineEdit(project_panel)
-            self._character_search.setPlaceholderText("Filter characters by name, role, or motivation")
-            self._character_search.setAccessibleName("Filter project characters")
+            self._character_search.setPlaceholderText(self.tr("Filter characters by name, role, or motivation"))
+            self._character_search.setAccessibleName(self.tr("Filter project characters"))
             self._character_search.textChanged.connect(self.project_view.filter_characters)
             project_layout.addWidget(self._character_search)
             project_layout.addWidget(self.project_view)
@@ -2692,19 +2692,19 @@ class MainWindow(QMainWindow):
             on_failure(error)
         if project is self.project:
             if on_failure is None:
-                QMessageBox.warning(self, "Project change failed", str(error))
+                QMessageBox.warning(self, self.tr("Project change failed"), str(error))
 
     def add_project_chapter(self) -> None:
         if self.project is None:
             return
-        title, accepted = QInputDialog.getText(self, "New chapter", "Chapter title:")
+        title, accepted = QInputDialog.getText(self, self.tr("New chapter"), self.tr("Chapter title:"))
         if accepted:
             self._run_project_mutation(self.project.add_chapter, title)
 
     def add_project_scene(self) -> None:
         if self.project is None or self.project_view is None:
             return
-        title, accepted = QInputDialog.getText(self, "New scene", "Scene title:")
+        title, accepted = QInputDialog.getText(self, self.tr("New scene"), self.tr("Scene title:"))
         if not accepted:
             return
         chapter_id = None
@@ -2721,24 +2721,29 @@ class MainWindow(QMainWindow):
     def add_project_note(self) -> None:
         if self.project is None:
             return
-        title, accepted = QInputDialog.getText(self, "New reference note", "Note title:")
+        title, accepted = QInputDialog.getText(self, self.tr("New reference note"), self.tr("Note title:"))
         if not accepted:
             return
+        note_types = {
+            self.tr("Character"): "character", self.tr("Setting"): "setting",
+            self.tr("Timeline"): "timeline", self.tr("Research"): "research",
+            self.tr("General"): "general",
+        }
         note_type, accepted = QInputDialog.getItem(
             self,
-            "Reference note type",
-            "Type:",
-            ["character", "setting", "timeline", "research", "general"],
+            self.tr("Reference note type"),
+            self.tr("Type:"),
+            list(note_types),
             4,
             False,
         )
-        if accepted:
-            self._run_project_mutation(self.project.add_note, title, note_type)
+        if accepted and note_type in note_types:
+            self._run_project_mutation(self.project.add_note, title, note_types[note_type])
 
     def add_project_character(self) -> None:
         if self.project is None:
             return
-        name, accepted = QInputDialog.getText(self, "New character", "Full name:")
+        name, accepted = QInputDialog.getText(self, self.tr("New character"), self.tr("Full name:"))
         if not accepted or not name.strip():
             return
         self._run_project_mutation(self.project.add_character, name.strip())

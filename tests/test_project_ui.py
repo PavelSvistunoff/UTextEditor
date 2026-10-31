@@ -610,6 +610,46 @@ def test_close_and_quit_use_translated_unsaved_prompt(application, tmp_path, mon
         window.close()
 
 
+@pytest.mark.parametrize("label, expected", [
+    ("Персонаж", "character"), ("Місце дії", "setting"), ("Хронологія", "timeline"),
+    ("Дослідження", "research"), ("Загальне", "general"),
+])
+def test_translated_note_type_choice_preserves_manifest_type(application, tmp_path, monkeypatch, label, expected):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    called = []
+    monkeypatch.setattr(QInputDialog, "getText", lambda *args: ("My notes", True))
+
+    def choose(*args):
+        assert args[1] == "Тип довідкової нотатки"
+        assert args[3] == ["Персонаж", "Місце дії", "Хронологія", "Дослідження", "Загальне"]
+        return label, True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    monkeypatch.setattr(window, "_run_project_mutation", lambda operation, *args: called.append((operation, args)))
+    application.installTranslator(translator)
+    try:
+        window.add_project_note()
+        assert len(called) == 1 and called[0][1] == ("My notes", expected)
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
