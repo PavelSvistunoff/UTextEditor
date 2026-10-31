@@ -89,7 +89,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   and compiled localization remain outstanding. Error reporting now retains
   at most 100 bounded details and counts additional unreadable files, avoiding
   an unbounded results label. Focused service and panel tests and Ukrainian
-  catalog validation passed; full offline suite: 544 passed, 2 skipped.
+  catalog validation passed; full offline suite: 544 passed, 2 skipped. The
+  new `benchmarks/project_search_responsiveness.py` measures a synthetic
+  2,000-file project through the offscreen window. One run measured 0.7 ms
+  startup, 100.8 ms total and a 5.7 ms maximum timer gap for no matches; a
+  result-limited search measured 0.7 ms startup, 20.5 ms total and a 20.5 ms
+  maximum timer gap for 1,000 matches. These are single-run measurements on
+  this machine, not native rendering or portable guarantees. Broader native
+  responsiveness and compiled localization remain outstanding.
 - **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
   picker for scene, chapter, note and character names and character aliases,
   showing type, chapter context and stable IDs. It opens existing documents
