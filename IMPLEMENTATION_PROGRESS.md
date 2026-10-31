@@ -1,6 +1,62 @@
 
 # Implementation progress
 
+## Atomic-plan audit and recovery preservation (2026-10-31)
+
+- **TASK-005.02 — DONE:** added
+  `test_separate_process_edit_after_final_check_exposes_save_race` in
+  `tests/test_document.py`. A subprocess writes between the final check and
+  replacement, demonstrating that its edit is currently overwritten. This
+  assertion records a known defect and must change when coordination is fixed.
+  Focused document and project-domain suites: 63 passed; full offline suite:
+  646 passed, 2 skipped. Independent-process coordination remains outstanding.
+- **TASK-008.04 — DONE:** the recovery dialog can restore one selected
+  readable snapshot, including an older version, via the existing conflict-safe
+  background restore. Updated `app/ui/main_window.py`,
+  `translations/utexteditor_uk.ts`, `tests/test_project_ui.py`, `README.md`,
+  `TASKS.md`, and `UNIMPLEMENTED_FEATURES.md`. Focused recovery and project UI
+  suites: 154 passed; full offline suite: 647 passed, 2 skipped. Ukrainian
+  source catalog validation passed. Invalid snapshots remain
+  diagnostic only; release catalog compilation and native accessibility
+  verification remain outstanding.
+- **TASK-005.01 and TASK-005.05 — DONE (audit):** inspected
+  `app/document/file_manager.py` and `app/project/service.py`. Both recheck
+  after staging; project text writes also use a process-local lock. Separate
+  process staging tests in `tests/test_document.py` and
+  `tests/test_project_domain.py` cover conflicts. README documents the final
+  check-to-replace race with independent writers. TASK-005.04 remains partial:
+  those checks cannot prevent a change after the last check. No native
+  cross-platform coordination verification was performed.
+- **TASK-008.02 — PARTIAL:** recovery scan now reports malformed or
+  timezone-free capture timestamps and orders valid timestamps by instant,
+  preventing a damaged timestamp from selecting the wrong latest snapshot.
+  The invalid file remains available for diagnosis, but its text cannot yet
+  be selectively recovered in the UI. Modified `app/document/recovery.py`,
+  `tests/test_recovery.py`, `README.md`, `TASKS.md`, and this file. Focused
+  recovery and project UI suites: 153 passed. Full offline suite: 645 passed,
+  2 skipped. Further incomplete-set diagnosis and selective recovery remain.
+- **TASK-001.01 — DONE:** reviewed `WritingGoalTracker.record_text` and the
+  Qt undo integration in `MainWindow._record_writing_goal_text` against
+  `test_history_keeps_one_text_copy_and_tracks_undo_branch_across_days` and
+  `test_compacted_command_preserves_daily_counts_through_reset_undo_and_redo`.
+  Merged commands share an endpoint and cleared undo stacks are pruned, but
+  separately reachable commands still each retain metadata. TASK-001.02 and
+  .04 remain partial; bounding them safely needs a design that preserves Qt
+  undo and redo semantics.
+- **TASK-008.05 — DONE:** automatic retention and saved-document cleanup now
+  preserve unreadable, invalid, and unsupported-version recovery snapshots;
+  confirmed explicit discard can still remove them. Modified
+  `app/document/recovery.py`, `tests/test_recovery.py`, `README.md`, and
+  `TASKS.md`. `tests/test_recovery.py`: 14 passed; full offline suite: 642
+  passed, 2 skipped. Damaged snapshots can
+  accumulate until explicitly discarded; recovery diagnosis and selective
+  recovery remain incomplete.
+- **Audit queue:** complete the remaining atomic status audit; prioritize
+  TASK-005 save coordination, TASK-007 conflict protection, TASK-008 recovery
+  diagnosis, and TASK-009 safe revision management before performance and UX.
+  Other inherited statuses remain unverified. Native screen-reader and
+  platform checks require a suitable GUI environment.
+
 This file was created because no earlier progress checkpoint was present in
 the repository. The task statuses in `TASKS.md` remain authoritative.
 

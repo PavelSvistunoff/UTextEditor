@@ -1009,6 +1009,9 @@ Text is sent to the configured Ollama destination:
     <message><source>Recover unsaved work</source><translation>Відновити незбережену роботу</translation></message>
     <message><source>Recovery data is available. Choose how to proceed.</source><translation>Доступні дані відновлення. Виберіть подальшу дію.</translation></message>
     <message><source>Restore latest</source><translation>Відновити останню копію</translation></message>
+    <message><source>Restore selected snapshot…</source><translation>Відновити вибрану копію…</translation></message>
+    <message><source>Restore selected snapshot</source><translation>Відновити вибрану копію</translation></message>
+    <message><source>Recovery snapshot:</source><translation>Копія відновлення:</translation></message>
     <message><source>Inspect / compare</source><translation>Переглянути / порівняти</translation></message>
     <message><source>Locate project…</source><translation>Знайти проєкт…</translation></message>
     <message><source>Discard recovery data</source><translation>Видалити дані відновлення</translation></message>

@@ -174,6 +174,32 @@ def test_save_detects_separate_process_edit_during_staging(tmp_path: Path, monke
     assert not list(tmp_path.glob(".draft.txt.*.tmp"))
 
 
+def test_separate_process_edit_after_final_check_exposes_save_race(tmp_path: Path, monkeypatch) -> None:
+    path = tmp_path / "draft.txt"
+    path.write_text("original", encoding="utf-8")
+    manager = FileManager()
+    document = manager.open(path)
+    document.update_text("my edit")
+    original_replace = os.replace
+    external_observed = []
+
+    def edit_before_replace(source, destination):
+        subprocess.run(
+            [sys.executable, "-c", "from pathlib import Path; import sys; Path(sys.argv[1]).write_text('external edit', encoding='utf-8')", str(path)],
+            check=True,
+        )
+        external_observed.append(path.read_text(encoding="utf-8"))
+        original_replace(source, destination)
+
+    monkeypatch.setattr("app.document.file_manager.os.replace", edit_before_replace)
+    manager.save(document)
+
+    # This documents the current limitation, not a desired conflict policy.
+    # Change this assertion when supported coordination closes the race.
+    assert external_observed == ["external edit"]
+    assert path.read_text(encoding="utf-8") == "my edit"
+
+
 def test_file_manager_updates_disk_digest_for_repeated_saves(tmp_path: Path) -> None:
     path = tmp_path / "draft.txt"
     path.write_text("original", encoding="utf-8")

@@ -1,7 +1,7 @@
 # UTextEditor — TASKS.md (atomic revision 2)
 
 > Planning baseline: `TASKS.md`, `IMPLEMENTATION_PROGRESS.md`, `README.md`, `SPEC.md`, `UNIMPLEMENTED_FEATURES.md`, `AGENTS.md` (2026-10-31).
-> Status is based on documented progress, **not** a fresh repository/code audit. `partial` does not mean acceptance criteria are satisfied.
+> Atomic status synchronization is in progress. Updated checkboxes are backed by code and test review; other inherited statuses still require verification. `partial` does not mean acceptance criteria are satisfied.
 
 ## Working agreement
 
@@ -60,13 +60,13 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 ### TASK-001 — Fix writing-goal history memory growth
 **Priority:** High · **Parent status:** open
 
-- [ ] **TASK-001.01** — Investigate state-record growth during long editing sessions.  
+- [x] **TASK-001.01** — Investigate state-record growth during long editing sessions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-001.02** — Implement bounded history metadata without breaking word counts.  
+- [~] **TASK-001.02** — Implement bounded history metadata without breaking word counts.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-001.03** — Preserve correct behavior across undo, redo, pause, and reset.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-001.04** — Coordinate pruning with Qt undo history.  
+- [~] **TASK-001.04** — Coordinate pruning with Qt undo history.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-001.05** — Benchmark realistic long editing sessions.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
@@ -137,15 +137,15 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 ### TASK-005 — Investigate and mitigate save race conditions
 **Priority:** High · **Parent status:** partial
 
-- [?] **TASK-005.01** — Inspect `app/document/file_manager.py` and `app/project/service.py`.  
+- [x] **TASK-005.01** — Inspect `app/document/file_manager.py` and `app/project/service.py`.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-005.02** — Reproduce the check-before-replace race using separate processes.  
+- [x] **TASK-005.02** — Reproduce the check-before-replace race using separate processes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [?] **TASK-005.03** — Evaluate platform-appropriate coordination.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-005.04** — Implement a safe mitigation where practical.  
+- [~] **TASK-005.04** — Implement a safe mitigation where practical.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-005.05** — Document residual risks.  
+- [x] **TASK-005.05** — Document residual risks.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -211,15 +211,15 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 ### TASK-008 — Improve recovery diagnosis
 **Priority:** High · **Parent status:** open
 
-- [ ] **TASK-008.01** — Show per-document recovery status and timestamps.  
+- [~] **TASK-008.01** — Show per-document recovery status and timestamps.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-008.02** — Identify incomplete or corrupt recovery entries.  
+- [~] **TASK-008.02** — Identify incomplete or corrupt recovery entries.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-008.03** — Display readable diagnostic information.  
+- [~] **TASK-008.03** — Display readable diagnostic information.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-008.04** — Support selective recovery or export of valid content.  
+- [x] **TASK-008.04** — Support selective recovery or export of valid content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-008.05** — Preserve damaged recovery data until explicitly discarded.  
+- [x] **TASK-008.05** — Preserve damaged recovery data until explicitly discarded.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**

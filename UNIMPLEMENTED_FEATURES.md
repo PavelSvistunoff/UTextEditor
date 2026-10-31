@@ -201,9 +201,10 @@ network read may continue until data arrives or the connection times out.
    leave the original intact. This depends on the revision-management gap
    above and requires especially careful failure and rollback tests.
 4. **Improve recovery triage** (medium/high effort). Extend the existing scan,
-   comparison, relocation, and restore choices with per-document status,
-   timestamps, readable corruption details, and selective recovery/export of
-   valid content. Acceptance: damaged entries remain available for diagnosis;
+   comparison, relocation, and restore choices with clearer per-document status,
+   timestamps and readable corruption details. A readable snapshot can now be
+   selected for recovery; export and recovery of content from damaged entries
+   need further work. Acceptance: damaged entries remain available for diagnosis;
    no repair or discard occurs without explicit action, and canonical files
    changed on disk are never overwritten silently. Partial or corrupt snapshots
    may not contain enough data to recover; the UI must say so.

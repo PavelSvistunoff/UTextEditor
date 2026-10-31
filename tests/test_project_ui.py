@@ -74,6 +74,30 @@ def wait_until(predicate, application):
     assert predicate()
 
 
+def test_recovery_can_restore_one_selected_older_snapshot(application, tmp_path, monkeypatch):
+    store = RecoveryStore(tmp_path / "recovery")
+    old = store.save("doc", "older draft")
+    store.save("doc", "newer draft")
+    store.save("another", "other draft")
+    scan = store.scan()
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.recovery_store = store
+    restored = []
+    monkeypatch.setattr(window, "_recovery_restore_finished", restored.extend)
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _prompt, labels, *_args:
+                        (next(label for label in labels if old.snapshot_id in label), True))
+    dialog = QMessageBox(window)
+    window._handle_recovery_choice("select", scan, dialog)
+    wait_until(lambda: bool(restored), application)
+    assert len(restored) == 1
+    assert restored[0][0].snapshot_id == old.snapshot_id
+    assert restored[0][1].text == "older draft" and restored[0][1].dirty
+    assert len(store.scan().entries) == 3
+    window.recovery_store = None
+    window.close()
+
+
 def test_standalone_repeated_saves_update_disk_fingerprint_and_detect_external_edits(application, tmp_path, monkeypatch):
     path = tmp_path / "draft.txt"
     path.write_text("base", encoding="utf-8")

@@ -165,7 +165,7 @@ class RecoveryStore:
                     entries.append(self._read_entry(path))
                 except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
                     issues.append(RecoveryIssue(path, str(exc)))
-        entries.sort(key=lambda entry: entry.captured_at, reverse=True)
+        entries.sort(key=lambda entry: datetime.fromisoformat(entry.captured_at), reverse=True)
         return RecoveryScan(tuple(entries), tuple(issues))
 
     def discard(self, entries: Iterable[RecoveryEntry] | None = None) -> None:
@@ -190,7 +190,8 @@ class RecoveryStore:
         except ValueError as exc:
             raise OSError("Recovery directory resolves outside the configured location.") from exc
         for path in directory.glob("*.json"):
-            path.unlink()
+            if self._is_readable_snapshot(path):
+                path.unlink()
         try:
             directory.rmdir()
         except OSError:
@@ -259,6 +260,12 @@ class RecoveryStore:
         required = ("snapshot_id", "document_id", "captured_at")
         if any(not isinstance(payload.get(key), str) or not payload[key] for key in required):
             raise ValueError("Recovery snapshot is missing required fields.")
+        try:
+            captured_at = datetime.fromisoformat(payload["captured_at"])
+            if captured_at.utcoffset() is None:
+                raise ValueError("Missing timezone")
+        except (ValueError, OverflowError) as exc:
+            raise ValueError("Recovery snapshot has an invalid or timezone-free capture timestamp.") from exc
         if not isinstance(payload.get("text"), str):
             raise ValueError("Recovery snapshot has invalid text.")
         if payload.get("canonical_digest") is not None and not isinstance(payload["canonical_digest"], str):
@@ -294,12 +301,22 @@ class RecoveryStore:
 
     def _prune(self, directory: Path, *, keep: Path) -> None:
         snapshots = sorted(
-            (path for path in directory.glob("*.json") if path != keep),
+            (path for path in directory.glob("*.json") if path != keep and self._is_readable_snapshot(path)),
             key=lambda path: path.stat().st_mtime_ns,
             reverse=True,
         )
         for path in snapshots[max(0, self.retention - 1):]:
             path.unlink()
+
+    @classmethod
+    def _is_readable_snapshot(cls, path: Path) -> bool:
+        # Automatic cleanup must not destroy data that needs diagnosis, even
+        # when it is unreadable, malformed, or from a newer format version.
+        try:
+            cls._read_entry(path)
+        except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+            return False
+        return True
 
     @staticmethod
     def _atomic_write(target: Path, payload: bytes) -> None:

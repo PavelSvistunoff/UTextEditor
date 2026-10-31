@@ -92,6 +92,35 @@ def test_scan_reports_corrupt_snapshot_and_preserves_it_for_diagnosis(tmp_path: 
     assert corrupt.exists()
 
 
+@pytest.mark.parametrize("timestamp", ["not a timestamp", "2026-01-01T12:00:00"])
+def test_scan_reports_invalid_timestamp_without_hiding_valid_snapshot(tmp_path: Path, timestamp: str) -> None:
+    store = RecoveryStore(tmp_path / "recovery")
+    good = store.save("doc", "valid")
+    damaged = store.save("other", "recoverable text")
+    payload = json.loads(damaged.snapshot_path.read_text(encoding="utf-8"))
+    payload["captured_at"] = timestamp
+    damaged.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    scan = store.scan()
+    assert scan.entries == (good,)
+    assert len(scan.issues) == 1 and "timestamp" in scan.issues[0].message
+    assert damaged.snapshot_path.exists()
+    assert store.restore(scan.entries[0]).text == "valid"
+
+
+def test_scan_orders_timestamps_by_instant_across_timezones(tmp_path: Path) -> None:
+    store = RecoveryStore(tmp_path / "recovery")
+    first = store.save("doc", "earlier")
+    second = store.save("doc", "later")
+    for entry, timestamp in ((first, "2026-01-01T12:00:00+02:00"),
+                             (second, "2026-01-01T11:00:00+00:00")):
+        payload = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+        payload["captured_at"] = timestamp
+        entry.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert [entry.text for entry in store.scan().entries] == ["later", "earlier"]
+
+
 def test_empty_recovery_snapshot_can_be_scanned_and_restored(tmp_path: Path) -> None:
     store = RecoveryStore(tmp_path / "recovery")
     store.save("scene", "")
@@ -123,6 +152,24 @@ def test_recovery_retention_keeps_latest_snapshots_for_document(tmp_path: Path) 
     scan = store.scan()
     assert len(scan.entries) == 2
     assert {entry.text for entry in scan.entries} == {entries[-1].text, entries[-2].text}
+
+
+def test_automatic_cleanup_preserves_damaged_snapshots(tmp_path: Path) -> None:
+    store = RecoveryStore(tmp_path / "recovery", retention=1)
+    damaged = store.save("scene-1", "original").snapshot_path
+    damaged.write_text("{broken", encoding="utf-8")
+
+    latest = store.save("scene-1", "new content")
+    assert damaged.read_text(encoding="utf-8") == "{broken"
+    assert latest.snapshot_path.exists()
+
+    store.discard_document("scene-1")
+    assert not latest.snapshot_path.exists()
+    assert damaged.read_text(encoding="utf-8") == "{broken"
+    assert store.scan().issues[0].snapshot_path == damaged
+
+    store.discard()  # Explicit discard can remove damaged data.
+    assert not damaged.exists()
 
 
 def test_discard_only_removes_recovery_data_not_canonical_files(tmp_path: Path) -> None:

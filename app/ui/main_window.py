@@ -4168,6 +4168,8 @@ class MainWindow(QMainWindow):
         dialog.setText(self.tr("Recovery data is available. Choose how to proceed."))
         dialog.setDetailedText("\n".join(details))
         restore = dialog.addButton(self.tr("Restore latest"), QMessageBox.ButtonRole.AcceptRole)
+        restore_selected = dialog.addButton(self.tr("Restore selected snapshot…"), QMessageBox.ButtonRole.ActionRole)
+        restore_selected.setEnabled(bool(scan.entries))
         inspect = dialog.addButton(self.tr("Inspect / compare"), QMessageBox.ButtonRole.ActionRole)
         locate = dialog.addButton(self.tr("Locate project…"), QMessageBox.ButtonRole.ActionRole)
         discard = dialog.addButton(self.tr("Discard recovery data"), QMessageBox.ButtonRole.DestructiveRole)
@@ -4177,6 +4179,7 @@ class MainWindow(QMainWindow):
         self._recovery_dialog = dialog
         self._recovery_scan = scan
         restore.clicked.connect(lambda: self._handle_recovery_choice("restore", scan, dialog))
+        restore_selected.clicked.connect(lambda: self._handle_recovery_choice("select", scan, dialog))
         inspect.clicked.connect(lambda: self._handle_recovery_choice("inspect", scan, dialog))
         locate.clicked.connect(lambda: self._handle_recovery_choice("locate", scan, dialog))
         discard.clicked.connect(lambda: self._handle_recovery_choice("discard", scan, dialog))
@@ -4240,15 +4243,30 @@ class MainWindow(QMainWindow):
             if not located_directory:
                 self._recovery_scan_finished(scan)
                 return
-        latest: dict[str, RecoveryEntry] = {}
-        for entry in scan.entries:
-            latest.setdefault(entry.document_id, entry)
+        if choice == "select":
+            labels = [f"{entry.canonical_path or entry.document_id} — {entry.captured_at} [{entry.snapshot_id}]"
+                      for entry in scan.entries]
+            if not labels:
+                self._recovery_scan_finished(scan)
+                return
+            label, accepted = QInputDialog.getItem(
+                self, self.tr("Restore selected snapshot"), self.tr("Recovery snapshot:"), labels, 0, False
+            )
+            if not accepted or label not in labels:
+                self._recovery_scan_finished(scan)
+                return
+            selected = (scan.entries[labels.index(label)],)
+        else:
+            latest: dict[str, RecoveryEntry] = {}
+            for entry in scan.entries:
+                latest.setdefault(entry.document_id, entry)
+            selected = tuple(latest.values())
         if self.recovery_store is None:
             return
         worker = FunctionWorker(
             self._prepare_recovery_restore,
             self.recovery_store,
-            tuple(latest.values()),
+            selected,
             located_directory,
         )
         self._track_worker(worker)
