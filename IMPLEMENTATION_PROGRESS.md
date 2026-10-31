@@ -123,7 +123,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   change links. Character-to-scene navigation, a return path that preserves
   staged character-profile edits, broader navigation tests, and compiled
   Ukrainian strings remain outstanding. Do not mark complete. Full offline
-  suite: 460 passed, 2 skipped.
+  suite: 460 passed, 2 skipped. The character tree menu now offers a separate
+  picker for explicitly associated scenes, distinguished from mention search.
+  It checks that the character and association still exist after the picker
+  closes; a regression covers stale associations and duplicate scene titles.
+  Opening directly from an edited profile and returning to staged edits still
+  remain outstanding. Full offline suite: 568 passed, 2 skipped.
 - **TASK-016 — in progress:** Qt's existing Ctrl+Tab and Ctrl+Shift+Tab
   behavior was verified with offscreen keyboard tests, and View > Open Tabs
   provides a searchable picker with modified markers, file/project context,

@@ -209,6 +209,7 @@ class ProjectView(QTreeWidget):
         if kind == "character":
             actions.extend((
                 ("Open", "open"),
+                ("Open Associated Scene…", "open_associated_scene"),
                 ("Find Scenes Mentioning Character…", "find_character_scenes"),
                 ("Import Character Profile…", "import_character"),
                 ("Export Character Profile…", "export_character"),
@@ -265,6 +266,7 @@ class ProjectView(QTreeWidget):
             "New Character…": self.tr("New Character…"),
             "Open": self.tr("Open"),
             "Find Scenes Mentioning Character…": self.tr("Find Scenes Mentioning Character…"),
+            "Open Associated Scene…": self.tr("Open Associated Scene…"),
             "Import Character Profile…": self.tr("Import Character Profile…"),
             "Export Character Profile…": self.tr("Export Character Profile…"),
             "Add Relationship…": self.tr("Add Relationship…"),

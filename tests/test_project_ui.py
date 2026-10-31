@@ -1287,9 +1287,45 @@ def test_character_context_menu_exposes_relationship_io_and_scene_search():
     assert {
         "manage_relationships",
         "find_character_scenes",
+        "open_associated_scene",
         "import_character",
         "export_character",
     } <= action_ids
+
+
+def test_character_associated_scene_picker_uses_explicit_links_and_rechecks_them(application, tmp_path, monkeypatch):
+    from app.project.model import SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    associated = project.add_scene("Scene", content="No mention")
+    project.add_scene("Scene", content="Mara appears here")
+    project.associate_character(associated.id, SceneCharacterAssociation(character.id))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("character", character.id))
+    opened = []
+    monkeypatch.setattr(window, "_open_project_document", lambda *args: opened.append(args))
+
+    def choose(*args):
+        labels = args[3]
+        assert labels == [f"Scene [{associated.id}]"]
+        return labels[0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    window.open_character_associated_scene()
+    assert opened == [("scene", associated.id)]
+    assert project.get_scene(associated.id).character_associations
+
+    def remove_then_choose(*args):
+        project.unassociate_character(associated.id, character.id)
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", remove_then_choose)
+    window.open_character_associated_scene()
+    assert opened == [("scene", associated.id)]
+    window.close()
 
 
 @pytest.mark.parametrize("kind", ["", "project", "group", "character", "scene", "note", "chapter"])

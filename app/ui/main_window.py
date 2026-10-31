@@ -2569,6 +2569,7 @@ class MainWindow(QMainWindow):
             "add_relationship": self.add_project_character_relationship,
             "manage_relationships": self.manage_project_character_relationships,
             "find_character_scenes": self.find_project_character_scenes,
+            "open_associated_scene": self.open_character_associated_scene,
             "import_character": self.import_project_character,
             "export_character": self.export_project_character,
             "summarize": self.summarize_project_scene,
@@ -3164,6 +3165,36 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Character export failed", str(exc))
             return
         self.statusBar().showMessage(f"Character profile exported to {target}", 5000)
+
+    def open_character_associated_scene(self) -> None:
+        project = self.project
+        kind, character_id = self._selected_project_item()
+        if project is None or kind != "character" or not character_id:
+            return
+        generation = self._project_generation
+        scenes = [scene for scene in project.iter_scenes()
+                  if any(item.character_id == character_id for item in scene.character_associations)]
+        if not scenes:
+            QMessageBox.information(self, self.tr("Associated scenes"),
+                                    self.tr("This character has no explicitly associated scenes."))
+            return
+        labels = {f"{scene.title} [{scene.id}]": scene.id for scene in scenes}
+        label, accepted = QInputDialog.getItem(
+            self, self.tr("Associated scenes"), self.tr("Choose an explicitly associated scene:"),
+            list(labels), 0, False,
+        )
+        if not accepted or label not in labels or self.project is not project or self._project_generation != generation:
+            return
+        try:
+            scene = project.get_scene(labels[label])
+            project.get_character(character_id)
+        except ProjectError:
+            self._project_item_no_longer_exists()
+            return
+        if not any(item.character_id == character_id for item in scene.character_associations):
+            self.statusBar().showMessage(self.tr("The scene association is no longer available."), 5000)
+            return
+        self._open_project_document("scene", scene.id)
 
     def find_project_character_scenes(self) -> None:
         if self.project is None:

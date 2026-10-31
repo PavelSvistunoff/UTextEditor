@@ -675,6 +675,22 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>Associated scenes</source>
+        <translation>Пов’язані сцени</translation>
+    </message>
+    <message>
+        <source>This character has no explicitly associated scenes.</source>
+        <translation>Цей персонаж не має явно пов’язаних сцен.</translation>
+    </message>
+    <message>
+        <source>Choose an explicitly associated scene:</source>
+        <translation>Оберіть явно пов’язану сцену:</translation>
+    </message>
+    <message>
+        <source>The scene association is no longer available.</source>
+        <translation>Зв’язок зі сценою більше недоступний.</translation>
+    </message>
     <message><source>Opening {title}…</source><translation>Відкриття: {title}…</translation></message>
     <message><source>Document could not be opened</source><translation>Не вдалося відкрити документ</translation></message>
     <message><source>Project document changed on disk or cannot be verified; reload, compare, or use Save As.</source><translation>Документ проєкту змінився на диску або його неможливо перевірити; перезавантажте, порівняйте або скористайтеся командою «Зберегти як».</translation></message>
@@ -1451,6 +1467,10 @@
 </context>
 <context>
     <name>ProjectView</name>
+    <message>
+        <source>Open Associated Scene…</source>
+        <translation>Відкрити пов’язану сцену…</translation>
+    </message>
     <message>
         <source>New Character…</source>
         <translation>Новий персонаж…</translation>
