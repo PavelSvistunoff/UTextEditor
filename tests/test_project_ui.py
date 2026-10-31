@@ -2823,6 +2823,17 @@ def test_revision_history_dialog_displays_character_metadata_changes(application
     dialog.close()
 
 
+def test_revision_history_dialog_displays_scene_character_association(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("scene-id", "association-added", new_title="Opening", character_id="character-id"),
+    )))
+    text = dialog.details.toPlainText()
+    assert "Character Association Added: Opening" in text
+    assert "Character ID: character-id" in text
+    dialog.close()
+
+
 def test_project_translation_actions_translate_and_refresh_open_documents(
     application, tmp_path, monkeypatch
 ):

@@ -112,7 +112,10 @@ class RevisionHistoryDialog(QDialog):
                       "moved": self.tr("Moved"), "title-changed": self.tr("Title Changed"),
                       "text-changed": self.tr("Text Changed"), "type-changed": self.tr("Type Changed"),
                       "chapter-changed": self.tr("Chapter Changed"), "path-changed": self.tr("Path Changed"),
-                      "metadata-changed": self.tr("Details Changed")}
+                      "metadata-changed": self.tr("Details Changed"),
+                      "association-added": self.tr("Character Association Added"),
+                      "association-removed": self.tr("Character Association Removed"),
+                      "association-changed": self.tr("Character Association Changed")}
             change_label = labels.get(change.kind, change.kind)
             if change.item_type == "note":
                 change_label = format_qt(self.tr("Reference Note %1"), change_label)
@@ -139,6 +142,8 @@ class RevisionHistoryDialog(QDialog):
                                           change.new_chapter_id or self.tr("Ungrouped")))
             if change.kind == "path-changed":
                 sections.append(format_qt(self.tr("Path: %1 → %2"), change.old_path, change.new_path))
+            if change.character_id is not None:
+                sections.append(format_qt(self.tr("Character ID: %1"), change.character_id))
             if change.kind == "title-changed" and change.item_type == "project":
                 sections.append(format_qt(self.tr("Title: %1 → %2"), change.old_title, change.new_title))
             if change.diff:

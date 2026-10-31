@@ -3,6 +3,15 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** revision comparisons now report added, removed
+  and changed scene-character associations by stable character ID, ignoring
+  association-list reordering. Modified `app/document/revisions.py`,
+  `app/ui/revision_history_dialog.py`, `tests/test_revisions.py`,
+  `tests/test_project_ui.py`, `translations/utexteditor_uk.ts`, and `README.md`.
+  Focused revision and UI suites: 161 passed; full offline suite: 663 passed,
+  2 skipped; Ukrainian source catalog validation passed. Field-level metadata
+  differences and broader structure comparisons remain,
+  as do native accessibility verification and release catalog compilation.
 - **TASK-009.04 — PARTIAL:** revision comparisons now flag added, removed and
   changed character profiles and directed relationships by stable ID, without
   rendering profile data or portraits. Modified `app/document/revisions.py`,

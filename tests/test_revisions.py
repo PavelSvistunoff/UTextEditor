@@ -172,6 +172,25 @@ def test_comparison_reports_character_and_directed_relationship_metadata(tmp_pat
     assert not store.compare(after, after).changes
 
 
+def test_comparison_reports_scene_character_associations_by_stable_id(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(associations):
+        scene = {"id": "scene", "character_associations": associations}
+        return store.create("Draft", structure={"chapters": [], "ungrouped_scenes": [scene]},
+                            scene_order=["scene"], scene_titles={"scene": "Opening"}, documents={"scene": "text"})
+    before = snapshot([{"character_id": "removed", "presence": "present"},
+                       {"character_id": "same", "presence": "present"}])
+    after = snapshot([{"character_id": "same", "presence": "mentioned"},
+                      {"character_id": "added", "presence": "present"}])
+    changes = store.compare(before, after).changes
+    assert [(c.item_id, c.kind, c.character_id) for c in changes] == [
+        ("scene", "association-removed", "removed"), ("scene", "association-added", "added"),
+        ("scene", "association-changed", "same"),
+    ]
+    reordered = snapshot(list(reversed(before.structure["ungrouped_scenes"][0]["character_associations"])))
+    assert not store.compare(before, reordered).changes
+
+
 def test_removing_scene_does_not_mark_later_scenes_as_moved(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
     before = create_snapshot(

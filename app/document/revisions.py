@@ -45,6 +45,7 @@ class SceneChange:
     new_chapter_id: str | None = None
     old_path: str | None = None
     new_path: str | None = None
+    character_id: str | None = None
 
     @property
     def item_id(self) -> str:
@@ -170,6 +171,8 @@ class RevisionStore:
         old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
         old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
         old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
+        old_associations = _scene_associations(left.structure)
+        new_associations = _scene_associations(right.structure)
         old_chapter_ids, new_chapter_ids = set(old_chapters), set(new_chapters)
         common_chapters = old_chapter_ids & new_chapter_ids
         old_chapter_order = [key for key in old_chapters if key in common_chapters]
@@ -213,6 +216,18 @@ class RevisionStore:
             if scene_id in old_paths and scene_id in new_paths and old_paths[scene_id] != new_paths[scene_id]:
                 changes.append(SceneChange(scene_id, "path-changed", old_title, new_title,
                                            old_path=old_paths[scene_id], new_path=new_paths[scene_id]))
+            if scene_id in old_associations and scene_id in new_associations:
+                old_scene_chars, new_scene_chars = old_associations[scene_id], new_associations[scene_id]
+                for character_id in sorted(old_scene_chars.keys() - new_scene_chars.keys()):
+                    changes.append(SceneChange(scene_id, "association-removed", old_title, new_title,
+                                               character_id=character_id))
+                for character_id in sorted(new_scene_chars.keys() - old_scene_chars.keys()):
+                    changes.append(SceneChange(scene_id, "association-added", old_title, new_title,
+                                               character_id=character_id))
+                for character_id in sorted(old_scene_chars.keys() & new_scene_chars.keys()):
+                    if old_scene_chars[character_id] != new_scene_chars[character_id]:
+                        changes.append(SceneChange(scene_id, "association-changed", old_title, new_title,
+                                                   character_id=character_id))
             if left.documents[scene_id] != right.documents[scene_id]:
                 diff = "".join(difflib.unified_diff(
                     left.documents[scene_id].splitlines(keepends=True),
@@ -330,6 +345,32 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _scene_associations(structure: object) -> dict[str, dict[str, dict]]:
+    if not isinstance(structure, dict):
+        return {}
+    result: dict[str, dict[str, dict]] = {}
+    def collect(scenes: object) -> None:
+        if not isinstance(scenes, list):
+            return
+        for scene in scenes:
+            if not isinstance(scene, dict) or not isinstance(scene.get("id"), str):
+                continue
+            associations = scene.get("character_associations", [])
+            if isinstance(associations, list):
+                result[scene["id"]] = {
+                    entry["character_id"]: entry for entry in associations
+                    if isinstance(entry, dict) and isinstance(entry.get("character_id"), str)
+                    and entry["character_id"]
+                }
+    collect(structure.get("ungrouped_scenes"))
+    chapters = structure.get("chapters")
+    if isinstance(chapters, list):
+        for chapter in chapters:
+            if isinstance(chapter, dict):
+                collect(chapter.get("scenes"))
+    return result
 
 
 def _metadata_records(structure: object, field: str) -> dict[str, dict]:
