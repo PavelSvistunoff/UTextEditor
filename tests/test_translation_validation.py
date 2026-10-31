@@ -46,6 +46,19 @@ def test_plural_and_named_placeholders_are_checked(tmp_path):
     assert any("3 plural forms" in error for error in validate(target))
 
 
+@pytest.mark.parametrize("source, good, bad", [
+    ("Author: {person.name}", "Автор: {person.name}", "Автор: {person}"),
+    ("First: {items[0]}", "Перший: {items[0]}", "Перший: {items[1]}"),
+    ("Name: {0.name!s}", "Ім’я: {0.name!s}", "Ім’я: {0.name!r}"),
+])
+def test_attribute_and_index_format_fields_are_checked(tmp_path, source, good, bad):
+    target = tmp_path / "uk.ts"
+    catalog(target, [(source, good, False)])
+    assert validate(target) == []
+    catalog(target, [(source, bad, False)])
+    assert any("placeholder mismatch" in error for error in validate(target))
+
+
 def test_empty_malformed_and_valid_catalogs(tmp_path):
     target = tmp_path / "uk.ts"
     catalog(target, [("Save", "", False)])

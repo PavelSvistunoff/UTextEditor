@@ -363,7 +363,9 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   validator tests and the full offline suite passed: 570 passed, 2 skipped.
   The validator now also checks plural flags against extracted source entries
   and rejects plural forms in non-plural messages; focused tests cover both
-  mismatch directions. Full offline suite: 633 passed, 2 skipped.
+  mismatch directions. Python format-field detection now includes attribute
+  and index lookups, with regression tests for changed fields and conversions.
+  Full offline suite: 639 passed, 2 skipped.
 - **TASK-033 audit extension:** `tools/audit_ui_strings.py` reports likely
   unmarked literals and f-strings in selected Qt UI calls, with an optional
   nonzero exit for findings and explicit parse-error handling. A current scan

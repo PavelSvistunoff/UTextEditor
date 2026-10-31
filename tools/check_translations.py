@@ -10,7 +10,10 @@ import xml.etree.ElementTree as ET
 
 
 QT_PLACEHOLDER = re.compile(r"(?<!%)%(?:L?\d+|n|(?:\([^)]+\))?[sdif])")
-BRACE_FIELD = re.compile(r"(?<!\{)\{(?:[A-Za-z_][A-Za-z_0-9]*|\d+)?(?:[!:}])")
+BRACE_FIELD = re.compile(
+    r"(?<!\{)\{(?:[A-Za-z_][A-Za-z_0-9]*|\d+)?"
+    r"(?:\.[A-Za-z_][A-Za-z_0-9]*|\[[^\[\]\n]+\])*(?:[!:}])"
+)
 
 
 def placeholders(text: str, *, braces: bool) -> Counter:
