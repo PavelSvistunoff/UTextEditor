@@ -2811,6 +2811,18 @@ def test_revision_history_dialog_displays_path_and_project_title_changes(applica
     dialog.close()
 
 
+def test_revision_history_dialog_displays_character_metadata_changes(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("character-id", "metadata-changed", item_type="character"),
+        SceneChange("relationship-id", "removed", item_type="relationship"),
+    )))
+    text = dialog.details.toPlainText()
+    assert "Character Details Changed: character-id" in text
+    assert "Relationship Removed: relationship-id" in text
+    dialog.close()
+
+
 def test_project_translation_actions_translate_and_refresh_open_documents(
     application, tmp_path, monkeypatch
 ):

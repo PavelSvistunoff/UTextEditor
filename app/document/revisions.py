@@ -269,6 +269,16 @@ class RevisionStore:
             changes.append(SceneChange(f"{source_id} → {target_id}", "removed", item_type="link"))
         for source_id, target_id in sorted(new_links - old_links):
             changes.append(SceneChange(f"{source_id} → {target_id}", "added", item_type="link"))
+        for field, item_type in (("characters", "character"), ("character_relationships", "relationship")):
+            old_records = _metadata_records(left.structure, field)
+            new_records = _metadata_records(right.structure, field)
+            for item_id in sorted(old_records.keys() - new_records.keys()):
+                changes.append(SceneChange(item_id, "removed", item_type=item_type))
+            for item_id in sorted(new_records.keys() - old_records.keys()):
+                changes.append(SceneChange(item_id, "added", item_type=item_type))
+            for item_id in sorted(old_records.keys() & new_records.keys()):
+                if old_records[item_id] != new_records[item_id]:
+                    changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type))
         return RevisionComparison(tuple(changes))
 
     def delete(self, snapshot: str | Path | RevisionSnapshot, *, confirmed: bool = False) -> None:
@@ -320,6 +330,13 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _metadata_records(structure: object, field: str) -> dict[str, dict]:
+    if not isinstance(structure, dict) or not isinstance(structure.get(field, []), list):
+        return {}
+    return {item["id"]: item for item in structure.get(field, [])
+            if isinstance(item, dict) and isinstance(item.get("id"), str) and item["id"]}
 
 
 def _document_paths(structure: object) -> dict[str, str]:

@@ -153,6 +153,25 @@ def test_comparison_reports_project_title_and_scene_and_note_path_changes(tmp_pa
     assert (changes[2].old_path, changes[2].new_path) == ("notes/old.txt", "notes/new.txt")
 
 
+def test_comparison_reports_character_and_directed_relationship_metadata(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(characters, relationships):
+        return store.create("Draft", structure={"characters": characters, "character_relationships": relationships},
+                            scene_order=[], scene_titles={}, documents={})
+    before = snapshot([{"id": "same", "full_name": "Mira", "goals": ["leave"]},
+                       {"id": "removed", "full_name": "Mira"}],
+                      [{"id": "rel", "source_id": "same", "target_id": "removed", "trust": 1}])
+    after = snapshot([{"id": "same", "full_name": "Mira", "goals": ["stay"]},
+                      {"id": "added", "full_name": "Mira"}],
+                     [{"id": "rel", "source_id": "same", "target_id": "removed", "trust": 2}])
+    changes = store.compare(before, after).changes
+    assert [(c.item_id, c.kind, c.item_type) for c in changes] == [
+        ("removed", "removed", "character"), ("added", "added", "character"),
+        ("same", "metadata-changed", "character"), ("rel", "metadata-changed", "relationship"),
+    ]
+    assert not store.compare(after, after).changes
+
+
 def test_removing_scene_does_not_mark_later_scenes_as_moved(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
     before = create_snapshot(

@@ -80,7 +80,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
 - The UI is minimal and has no toolbar. Recent standalone files and projects are listed separately.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
-- Scheduled revision snapshots and revision-history restore controls are not yet available. Revision comparisons cover directed link additions and removals but do not yet cover all project-structure changes.
+- Scheduled revision snapshots and revision-history restore controls are not yet available. Revision comparisons also flag added, removed or changed character profiles and directed relationships by stable ID, but do not show their field-level differences or cover all project-structure changes.
 - Localization is an initial rollout, not yet a complete translation of every dialog and error/status path. Untranslated strings remain usable in English; the current catalogs cover common workflows listed above.
 
 ### Project format and local data

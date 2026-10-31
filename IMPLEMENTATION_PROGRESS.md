@@ -3,6 +3,15 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** revision comparisons now flag added, removed and
+  changed character profiles and directed relationships by stable ID, without
+  rendering profile data or portraits. Modified `app/document/revisions.py`,
+  `app/ui/revision_history_dialog.py`, `tests/test_revisions.py`,
+  `tests/test_project_ui.py`, `translations/utexteditor_uk.ts`, and `README.md`.
+  Focused revision and UI suites: 159 passed; full offline suite: 661 passed,
+  2 skipped; Ukrainian source catalog validation passed. Field-level
+  differences, scene-character association changes, native
+  accessibility checks and release catalog compilation remain outstanding.
 - **TASK-009.04 — PARTIAL:** comparisons now report project title changes
   and scene/reference-note path changes with before/after values. Missing path
   or title metadata in legacy structures does not produce inferred changes.

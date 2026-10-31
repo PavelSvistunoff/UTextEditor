@@ -2001,6 +2001,9 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>RevisionHistoryDialog</name>
+    <message><source>Details Changed</source><translation>Деталі змінено</translation></message>
+    <message><source>Character %1</source><translation>Персонаж: %1</translation></message>
+    <message><source>Relationship %1</source><translation>Стосунки: %1</translation></message>
     <message><source>Path Changed</source><translation>Шлях змінено</translation></message>
     <message><source>Project %1</source><translation>Проєкт: %1</translation></message>
     <message><source>Path: %1 → %2</source><translation>Шлях: %1 → %2</translation></message>
