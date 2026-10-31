@@ -3645,6 +3645,7 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
+        generation = self._project_generation
         markdown_filter = self.tr("Markdown (*.md)")
         text_filter = self.tr("Plain text (*.txt)")
         destination, selected_filter = QFileDialog.getSaveFileName(
@@ -3653,7 +3654,7 @@ class MainWindow(QMainWindow):
             str(project.root / f"{project.manifest.title}.md"),
             f"{markdown_filter};;{text_filter}",
         )
-        if not destination:
+        if not destination or self.project is not project or self._project_generation != generation:
             return
         target = Path(destination)
         replace_existing = target.exists()
@@ -3664,8 +3665,10 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
+        if self.project is not project or self._project_generation != generation:
+            return
         options = self._ask_export_options()
-        if options is None:
+        if options is None or self.project is not project or self._project_generation != generation:
             return
         include_chapter_headings, include_scene_headings, separator = options
         open_text: dict[str, str] = {}
@@ -3680,6 +3683,8 @@ class MainWindow(QMainWindow):
             self.tr("This export includes unsaved edits currently shown in project tabs. Continue?"),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
+            return
+        if self.project is not project or self._project_generation != generation:
             return
         format_name = "text" if selected_filter == text_filter else "markdown"
         chapters = [

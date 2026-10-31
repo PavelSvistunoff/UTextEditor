@@ -1670,6 +1670,51 @@ def test_export_uses_translated_plain_text_filter(application, tmp_path, monkeyp
     window.close()
 
 
+@pytest.mark.parametrize("changed_dialog", ["destination", "overwrite", "options", "unsaved"])
+def test_export_discards_selection_if_project_changes_during_dialog(
+    application, tmp_path, monkeypatch, changed_dialog
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="saved")
+    target = tmp_path / "export.md"
+    if changed_dialog == "overwrite":
+        target.write_text("original", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.ai_enabled = False
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    if changed_dialog == "unsaved":
+        window._open_project_document("scene", scene.id)
+        wait_until(lambda: window.tabs.count() == 2, application)
+        editor = window.tabs.current_editor()
+        editor.setPlainText("unsaved")
+    def change_generation(stage):
+        if changed_dialog == stage:
+            window._project_generation += 1
+    def choose_file(*_args):
+        change_generation("destination")
+        return str(target), "Markdown (*.md)"
+    def confirm(*_args):
+        change_generation("overwrite" if target.exists() else "unsaved")
+        return QMessageBox.StandardButton.Yes
+    def options():
+        change_generation("options")
+        return True, True, "\n\n"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", choose_file)
+    monkeypatch.setattr(QMessageBox, "question", confirm)
+    monkeypatch.setattr(window, "_ask_export_options", options)
+    monkeypatch.setattr(window.thread_pool, "start", lambda *_args: pytest.fail("stale export started"))
+    window.export_project()
+    if changed_dialog == "overwrite":
+        assert target.read_text(encoding="utf-8") == "original"
+    else:
+        assert not target.exists()
+    if changed_dialog == "unsaved":
+        editor.document_state.mark_saved()
+    window.close()
+
+
 def test_revision_history_dialog_loads_and_compares_snapshots(
     application, tmp_path
 ):

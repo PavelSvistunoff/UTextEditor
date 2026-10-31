@@ -283,7 +283,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   section page breaks remain. Preview, captured closed-scene contents, compiled
   translations and native review remain outstanding. Do not mark complete.
   Full offline suite: 579 passed, 2 skipped; focused PDF tests also cover
-  showing scene headings while chapter headings are hidden.
+  showing scene headings while chapter headings are hidden. Markdown/text
+  export now also abandons a selection when the project generation changes
+  during its destination, overwrite, options or unsaved-content dialogs; Qt
+  regressions cover each dialog. Full offline suite: 584 passed, 2 skipped.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene
