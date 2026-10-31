@@ -342,7 +342,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   dialogs, overwrite and unsaved-content prompts, and status/error headings
   now use Ukrainian catalog entries with tested path placeholders. The wider
   audit, including PDF document labels, and release catalog compilation
-  remain outstanding. Full offline suite: 571 passed, 2 skipped.
+  remain outstanding. Markdown/plain-text export dialogs, options, prompts and
+  status messages are now translated as well; a Qt regression verifies that a
+  translated plain-text filter still selects plain-text output. The broader
+  audit and release catalog compilation remain outstanding. Full offline
+  suite: 580 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

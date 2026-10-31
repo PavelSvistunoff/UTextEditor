@@ -1648,6 +1648,28 @@ def test_export_does_not_replace_file_created_after_confirmation_check(applicati
     window.close()
 
 
+def test_export_uses_translated_plain_text_filter(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    project.add_scene("Scene", content="manuscript")
+    target = tmp_path / "export.txt"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    monkeypatch.setattr(window, "tr", lambda source: "Звичайний текст (*.txt)" if source == "Plain text (*.txt)" else source)
+    def choose_file(_parent, _title, _path, filters):
+        assert "Звичайний текст (*.txt)" in filters
+        return str(target), "Звичайний текст (*.txt)"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", choose_file)
+    monkeypatch.setattr(window, "_ask_export_options", lambda: (True, True, "\n\n"))
+    window.export_project()
+    wait_until(target.exists, application)
+    wait_until(lambda: not window._project_busy, application)
+    text = target.read_text(encoding="utf-8")
+    assert "Scene" in text and "manuscript" in text
+    assert "# Scene" not in text
+    window.close()
+
+
 def test_revision_history_dialog_loads_and_compares_snapshots(
     application, tmp_path
 ):

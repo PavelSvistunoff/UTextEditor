@@ -3645,11 +3645,13 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
+        markdown_filter = self.tr("Markdown (*.md)")
+        text_filter = self.tr("Plain text (*.txt)")
         destination, selected_filter = QFileDialog.getSaveFileName(
             self,
-            "Export manuscript",
+            self.tr("Export manuscript"),
             str(project.root / f"{project.manifest.title}.md"),
-            "Markdown (*.md);;Plain text (*.txt)",
+            f"{markdown_filter};;{text_filter}",
         )
         if not destination:
             return
@@ -3657,8 +3659,8 @@ class MainWindow(QMainWindow):
         replace_existing = target.exists()
         if replace_existing and QMessageBox.question(
             self,
-            "Replace export",
-            f"Replace the existing file {target}?",
+            self.tr("Replace export"),
+            self.tr("Replace the existing file {path}?").format(path=target),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
@@ -3674,12 +3676,12 @@ class MainWindow(QMainWindow):
                 unsaved = unsaved or editor.document_state.dirty
         if unsaved and QMessageBox.question(
             self,
-            "Export unsaved content",
-            "This export includes unsaved edits currently shown in project tabs. Continue?",
+            self.tr("Export unsaved content"),
+            self.tr("This export includes unsaved edits currently shown in project tabs. Continue?"),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
-        format_name = "text" if "Plain text" in selected_filter else "markdown"
+        format_name = "text" if selected_filter == text_filter else "markdown"
         chapters = [
             ExportChapter(
                 chapter.title,
@@ -3736,7 +3738,7 @@ class MainWindow(QMainWindow):
             lambda error, project=project: self._project_export_failed(project, error),
             Qt.ConnectionType.QueuedConnection,
         )
-        self.statusBar().showMessage("Exporting manuscript…")
+        self.statusBar().showMessage(self.tr("Exporting manuscript…"))
         self.thread_pool.start(worker)
 
     def compile_project_book(self) -> None:
@@ -3894,13 +3896,13 @@ class MainWindow(QMainWindow):
 
     def _ask_export_options(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Manuscript export options")
+        dialog.setWindowTitle(self.tr("Manuscript export options"))
         layout = QVBoxLayout(dialog)
-        chapter_headings = QCheckBox("Include chapter headings", dialog)
+        chapter_headings = QCheckBox(self.tr("Include chapter headings"), dialog)
         chapter_headings.setChecked(True)
-        scene_headings = QCheckBox("Include scene headings", dialog)
+        scene_headings = QCheckBox(self.tr("Include scene headings"), dialog)
         scene_headings.setChecked(True)
-        separator = QCheckBox("Use scene-break separators (---)", dialog)
+        separator = QCheckBox(self.tr("Use scene-break separators (---)"), dialog)
         layout.addWidget(chapter_headings)
         layout.addWidget(scene_headings)
         layout.addWidget(separator)
@@ -3971,7 +3973,7 @@ class MainWindow(QMainWindow):
 
     def _project_export_finished(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)
-        self.statusBar().showMessage(f"Manuscript exported to {path}", 8000)
+        self.statusBar().showMessage(self.tr("Manuscript exported to {path}").format(path=path), 8000)
 
     def _project_export_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)

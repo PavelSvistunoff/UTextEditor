@@ -675,6 +675,18 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Export manuscript</source><translation>Експортувати рукопис</translation></message>
+    <message><source>Markdown (*.md)</source><translation>Markdown (*.md)</translation></message>
+    <message><source>Plain text (*.txt)</source><translation>Звичайний текст (*.txt)</translation></message>
+    <message><source>Replace export</source><translation>Замінити експортований файл</translation></message>
+    <message><source>Export unsaved content</source><translation>Експортувати незбережений вміст</translation></message>
+    <message><source>This export includes unsaved edits currently shown in project tabs. Continue?</source><translation>Експорт міститиме незбережені зміни у вкладках проєкту. Продовжити?</translation></message>
+    <message><source>Exporting manuscript…</source><translation>Експортування рукопису…</translation></message>
+    <message><source>Manuscript export options</source><translation>Параметри експорту рукопису</translation></message>
+    <message><source>Include chapter headings</source><translation>Додавати заголовки розділів</translation></message>
+    <message><source>Include scene headings</source><translation>Додавати заголовки сцен</translation></message>
+    <message><source>Use scene-break separators (---)</source><translation>Використовувати роздільники сцен (---)</translation></message>
+    <message><source>Manuscript exported to {path}</source><translation>Рукопис експортовано до {path}</translation></message>
     <message><source>Export destination is a project source file.</source><translation>Файл призначення експорту є вихідним файлом проєкту.</translation></message>
     <message><source>Export failed</source><translation>Не вдалося експортувати</translation></message>
     <message><source>Compile book as PDF</source><translation>Створити книгу PDF</translation></message>
