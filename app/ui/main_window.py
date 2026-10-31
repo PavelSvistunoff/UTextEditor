@@ -4208,6 +4208,7 @@ class MainWindow(QMainWindow):
                 self._compare_recovery_entries, scan.entries, labels,
                 self.tr("Untitled"), self.tr("Cannot compare with the canonical file: {error}"),
                 self.tr("No readable recovery snapshots are available."),
+                self.tr("Comparison truncated; additional differences are not shown."),
             )
             self._track_worker(worker)
             worker.signals.finished.connect(
@@ -4286,16 +4287,20 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def _compare_recovery_entries(entries: tuple[RecoveryEntry, ...], labels: RecoveryComparisonLabels,
-                                  untitled: str, error_message: str, empty_message: str) -> str:
+                                  untitled: str, error_message: str, empty_message: str,
+                                  truncated_message: str = "Comparison truncated; additional differences are not shown.") -> str:
         lines: list[str] = []
         for entry in entries:
             try:
                 comparison = RecoveryStore.compare(entry, labels)
             except (OSError, UnicodeError) as exc:
                 comparison = error_message.format(error=exc)
+            preview = comparison[:6000]
+            if len(comparison) > 6000:
+                preview += "\n" + truncated_message
             lines.append(
                 f"{entry.canonical_path or untitled} — {entry.captured_at}\n"
-                f"{comparison[:6000]}"
+                f"{preview}"
             )
         return "\n\n".join(lines) if lines else empty_message
 

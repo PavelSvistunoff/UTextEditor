@@ -997,6 +997,7 @@ Text is sent to the configured Ollama destination:
     <message><source>Recovery snapshot</source><translation>Копія для відновлення</translation></message>
     <message><source>The recovery snapshot matches the current canonical file.</source><translation>Копія для відновлення збігається з поточним основним файлом.</translation></message>
     <message><source>Cannot compare with the canonical file: {error}</source><translation>Не вдалося порівняти з основним файлом: {error}</translation></message>
+    <message><source>Comparison truncated; additional differences are not shown.</source><translation>Порівняння скорочено; додаткові відмінності не показано.</translation></message>
     <message><source>No readable recovery snapshots are available.</source><translation>Немає доступних копій для відновлення, які можна прочитати.</translation></message>
     <message><source>Recovery restore failed: {error}</source><translation>Не вдалося відновити дані: {error}</translation></message>
     <message><source>Recovery comparison</source><translation>Порівняння копій відновлення</translation></message>

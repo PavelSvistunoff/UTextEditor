@@ -1,6 +1,16 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** recovery comparisons now label
+  the existing 6,000-character per-entry truncation, with Ukrainian translation.
+  Added test_recovery_comparison_labels_truncated_diff_without_changing_snapshot
+  covering long and short comparisons and preservation of snapshot/source text.
+  Focused recovery UI tests: 13 passed; full suite: 679 passed, 2 skipped.
+  Ukrainian catalog validation and diff check passed. README/TASKS updated.
+  Full comparison pagination, release catalog compilation and native checks
+  remain outstanding. Prior fix committed as b75a4c4; push failed because
+  GitHub HTTPS credentials are unavailable.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** document-directory resolution
   errors now produce diagnostics without hiding other readable snapshots.
   Regression test_directory_resolution_failure_does_not_hide_valid_snapshots

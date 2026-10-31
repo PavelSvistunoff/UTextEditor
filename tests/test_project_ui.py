@@ -3238,3 +3238,22 @@ def test_scene_summary_requires_confirmation_and_never_modifies_source(applicati
     assert window._analysis_windows[0].output.toPlainText() == "A review summary."
     assert project.read_scene(scene.id) == "original manuscript"
     window.close()
+
+
+def test_recovery_comparison_labels_truncated_diff_without_changing_snapshot(tmp_path):
+    store = RecoveryStore(tmp_path / "recovery")
+    path = tmp_path / "draft.txt"
+    path.write_text("base", encoding="utf-8")
+    entry = store.save("doc", "x" * 7000, canonical_path=path)
+    result = MainWindow._compare_recovery_entries(
+        (entry,), RecoveryComparisonLabels(), "Untitled", "Error: {error}", "Empty", "Скорочено"
+    )
+    assert result.endswith("\nСкорочено")
+    assert len(result) < 6500
+    assert store.scan().entries[0].text == "x" * 7000
+    assert path.read_text(encoding="utf-8") == "base"
+    short = store.save("short", "short", canonical_path=path)
+    result = MainWindow._compare_recovery_entries(
+        (short,), RecoveryComparisonLabels(), "Untitled", "Error: {error}", "Empty", "Скорочено"
+    )
+    assert "Скорочено" not in result
