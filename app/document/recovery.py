@@ -272,6 +272,8 @@ class RecoveryStore:
 
     @classmethod
     def _read_entry(cls, path: Path) -> RecoveryEntry:
+        if path.is_symlink():
+            raise ValueError("Recovery snapshot must not be a symbolic link.")
         with path.open("r", encoding="utf-8") as stream:
             payload = json.load(stream)
         if not isinstance(payload, dict) or payload.get("format_version") != cls.FORMAT_VERSION:

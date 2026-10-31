@@ -263,3 +263,25 @@ def test_unreadable_recovery_root_is_reported_without_deleting_data(tmp_path, mo
     assert scan.issues[0].snapshot_path == store.root
     assert "Cannot list recovery root" in scan.issues[0].message
     assert entry.snapshot_path.exists()
+
+
+def test_symbolic_link_snapshot_is_reported_and_preserved_by_automatic_cleanup(tmp_path):
+    store = RecoveryStore(tmp_path / "recovery", retention=1)
+    entry = store.save("doc", "original")
+    external = tmp_path / "external.json"
+    external.write_bytes(entry.snapshot_path.read_bytes())
+    entry.snapshot_path.unlink()
+    entry.snapshot_path.symlink_to(external)
+    original = external.read_bytes()
+
+    scan = store.scan()
+    assert not scan.entries
+    assert len(scan.issues) == 1
+    assert "symbolic link" in scan.issues[0].message
+    store.save("doc", "new snapshot")
+    store.discard_document("doc")
+    assert entry.snapshot_path.is_symlink()
+    assert external.read_bytes() == original
+    store.discard()
+    assert not entry.snapshot_path.is_symlink()
+    assert external.read_bytes() == original

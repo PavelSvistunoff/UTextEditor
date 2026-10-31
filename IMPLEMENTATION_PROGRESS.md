@@ -1,6 +1,17 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** symbolic-link snapshot files
+  are now reported as invalid instead of being read as recovery entries.
+  The shared validation also preserves them during retention and automatic
+  saved-document cleanup. A regression verifies that explicit discard removes
+  the link while leaving its external target intact. Recovery suite: 21 passed;
+  full offline suite: 676 passed, 2 skipped; diff check passed. README and
+  TASKS updated. This is a pre-read check, not protection against concurrent
+  symlink replacement; native platform checks remain outstanding. Previous
+  root diagnostic fix committed as feaed34; push failed due to unavailable
+  GitHub HTTPS credentials.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** failure to enumerate the recovery
   root now returns a root-level diagnostic instead of aborting the scan.
   Added test_unreadable_recovery_root_is_reported_without_deleting_data.
