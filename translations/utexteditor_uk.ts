@@ -681,6 +681,26 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Auto-writer is creating a revision snapshot and drafting scene text…</source><translation>Автоматичне написання створює знімок редакції та чернетки сцен…</translation></message>
+    <message><source>Cancelling project translation after the current model request…</source><translation>Переклад проєкту буде скасовано після поточного запиту до моделі…</translation></message>
+    <message><source>Generating a project outline with the configured model…</source><translation>Створення плану проєкту за допомогою налаштованої моделі…</translation></message>
+    <message><source>Auto-pilot added a new plan, scene drafts, and character notes. Existing content was untouched.</source><translation>Автопілот додав новий план, чернетки сцен і нотатки про персонажів. Наявний вміст не змінено.</translation></message>
+    <message><source>Auto-pilot did not change the project.</source><translation>Автопілот не змінив проєкт.</translation></message>
+    <message><source>Template suggestions are ready for review.</source><translation>Пропозиції шаблону готові до перегляду.</translation></message>
+    <message><source>Could not generate template suggestions.</source><translation>Не вдалося створити пропозиції шаблону.</translation></message>
+    <message><source>Discarded stale AI project outline.</source><translation>Застарілий план проєкту від ШІ відхилено.</translation></message>
+    <message><source>AI outline discarded; project files were not changed.</source><translation>План ШІ відхилено; файли проєкту не змінено.</translation></message>
+    <message><source>Project changed; the outline was not applied.</source><translation>Проєкт змінився; план не застосовано.</translation></message>
+    <message><source>Approved outline added. Scene documents are empty and ready to write.</source><translation>Затверджений план додано. Документи сцен порожні та готові до написання.</translation></message>
+    <message><source>AI project setup cancelled; any in-flight response will be ignored.</source><translation>Створення проєкту за допомогою ШІ скасовано; поточну відповідь буде проігноровано.</translation></message>
+    <message><source>Open project</source><translation>Відкрити проєкт</translation></message>
+    <message><source>Text generation cancelled; any in-flight local request will be ignored.</source><translation>Генерування тексту скасовано; поточний локальний запит буде проігноровано.</translation></message>
+    <message><source>Sending selected project context to the configured Ollama model…</source><translation>Надсилання вибраного контексту проєкту до налаштованої моделі Ollama…</translation></message>
+    <message><source>Discarded stale project-analysis result.</source><translation>Застарілий результат аналізу проєкту відхилено.</translation></message>
+    <message><source>Project analysis is ready for review; no files were changed.</source><translation>Аналіз проєкту готовий до перегляду; файли не змінено.</translation></message>
+    <message><source>Project analysis cancelled; any in-flight local request will be ignored.</source><translation>Аналіз проєкту скасовано; поточний локальний запит буде проігноровано.</translation></message>
+    <message><source>Generated text discarded; the document was not changed.</source><translation>Згенерований текст відхилено; документ не змінено.</translation></message>
+    <message><source>Generated text was discarded because the document changed.</source><translation>Згенерований текст відхилено, оскільки документ змінився.</translation></message>
     <message><source>Writing-goal progress could not be loaded: {error}</source><translation>Не вдалося завантажити поступ до цілі письма: {error}</translation></message>
     <message><source>Could not save AI preference: {error}</source><translation>Не вдалося зберегти налаштування ШІ: {error}</translation></message>
     <message><source>Writing-goal progress could not be saved: {error}</source><translation>Не вдалося зберегти поступ до цілі письма: {error}</translation></message>

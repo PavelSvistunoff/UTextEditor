@@ -1229,7 +1229,7 @@ class MainWindow(QMainWindow):
         )
         self._auto_writer_progress_dialog.show()
         self.statusBar().showMessage(
-            "Auto-writer is creating a revision snapshot and drafting scene text…"
+            self.tr("Auto-writer is creating a revision snapshot and drafting scene text…")
         )
         snapshot_name = (
             "Auto-writer before "
@@ -1656,7 +1656,7 @@ class MainWindow(QMainWindow):
             )
             self._project_translation_progress_dialog.setCancelButton(None)
         self.statusBar().showMessage(
-            "Cancelling project translation after the current model request…"
+            self.tr("Cancelling project translation after the current model request…")
         )
 
     def _auto_writer_generated(
@@ -1896,7 +1896,7 @@ class MainWindow(QMainWindow):
         self._set_project_busy(True)
         if self._project_setup_cancel_action is not None:
             self._project_setup_cancel_action.setEnabled(True)
-        self.statusBar().showMessage("Generating a project outline with the configured model…")
+        self.statusBar().showMessage(self.tr("Generating a project outline with the configured model…"))
         self._track_worker(worker)
         worker.signals.finished.connect(
             lambda outline: self._project_setup_finished(
@@ -2150,7 +2150,7 @@ class MainWindow(QMainWindow):
         )
         dialog.accept()
         self.statusBar().showMessage(
-            "Auto-pilot added a new plan, scene drafts, and character notes. Existing content was untouched.",
+            self.tr("Auto-pilot added a new plan, scene drafts, and character notes. Existing content was untouched."),
             10000,
         )
 
@@ -2167,7 +2167,7 @@ class MainWindow(QMainWindow):
         if dialog is self._project_setup_brief_dialog:
             dialog.set_autopilot_running(False, f"Auto-pilot failed; no generated changes were added: {error}")
         if settings_generation == self._settings_generation:
-            self.statusBar().showMessage("Auto-pilot did not change the project.", 8000)
+            self.statusBar().showMessage(self.tr("Auto-pilot did not change the project."), 8000)
 
     @staticmethod
     def _suggest_project_brief_text(
@@ -2232,7 +2232,7 @@ class MainWindow(QMainWindow):
             )
             return
         dialog.apply_suggestion(suggestion)
-        self.statusBar().showMessage("Template suggestions are ready for review.", 5000)
+        self.statusBar().showMessage(self.tr("Template suggestions are ready for review."), 5000)
 
     def _project_brief_suggestion_failed(
         self, generation, settings_generation, dialog, error
@@ -2250,7 +2250,7 @@ class MainWindow(QMainWindow):
                 f"and model {self.provider.model} is available.",
             )
         if settings_generation == self._settings_generation and self.settings.ai_enabled:
-            self.statusBar().showMessage("Could not generate template suggestions.", 8000)
+            self.statusBar().showMessage(self.tr("Could not generate template suggestions."), 8000)
 
     def _project_brief_dialog_closed(self, dialog: ProjectBriefDialog) -> None:
         if self._project_setup_brief_dialog is not dialog:
@@ -2304,12 +2304,12 @@ class MainWindow(QMainWindow):
             or settings_generation != self._settings_generation
             or not self.settings.ai_enabled
         ):
-            self.statusBar().showMessage("Discarded stale AI project outline.", 6000)
+            self.statusBar().showMessage(self.tr("Discarded stale AI project outline."), 6000)
             return
 
         dialog = ProjectSetupDialog(draft, self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
-            self.statusBar().showMessage("AI outline discarded; project files were not changed.", 5000)
+            self.statusBar().showMessage(self.tr("AI outline discarded; project files were not changed."), 5000)
             return
         try:
             outline = dialog.outline()
@@ -2317,13 +2317,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, self.tr("Invalid project outline"), str(exc))
             return
         if project is not self.project or project_generation != self._project_generation:
-            self.statusBar().showMessage("Project changed; the outline was not applied.", 6000)
+            self.statusBar().showMessage(self.tr("Project changed; the outline was not applied."), 6000)
             return
         self._run_project_mutation(
             project.add_outline,
             outline,
             on_success=lambda: self.statusBar().showMessage(
-                "Approved outline added. Scene documents are empty and ready to write.", 8000
+                self.tr("Approved outline added. Scene documents are empty and ready to write."), 8000
             ),
         )
 
@@ -2368,11 +2368,11 @@ class MainWindow(QMainWindow):
             self._project_setup_cancel_action.setEnabled(False)
         self._set_project_busy(False)
         self.statusBar().showMessage(
-            "AI project setup cancelled; any in-flight response will be ignored.", 6000
+            self.tr("AI project setup cancelled; any in-flight response will be ignored."), 6000
         )
 
     def open_project(self) -> None:
-        directory = QFileDialog.getExistingDirectory(self, "Open project")
+        directory = QFileDialog.getExistingDirectory(self, self.tr("Open project"))
         if not directory:
             return
         if self.project is not None and self.project.root == Path(directory).resolve():
@@ -5496,7 +5496,7 @@ class MainWindow(QMainWindow):
         if self._generate_cancel_action is not None:
             self._generate_cancel_action.setEnabled(False)
         self.statusBar().showMessage(
-            "Text generation cancelled; any in-flight local request will be ignored.",
+            self.tr("Text generation cancelled; any in-flight local request will be ignored."),
             6000,
         )
 
@@ -5624,7 +5624,7 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self._set_project_analysis_active(True)
-        self.statusBar().showMessage("Sending selected project context to the configured Ollama model…")
+        self.statusBar().showMessage(self.tr("Sending selected project context to the configured Ollama model…"))
         self.thread_pool.start(worker)
 
     @staticmethod
@@ -5740,7 +5740,7 @@ class MainWindow(QMainWindow):
             )
         )
         if stale:
-            self.statusBar().showMessage("Discarded stale project-analysis result.", 6000)
+            self.statusBar().showMessage(self.tr("Discarded stale project-analysis result."), 6000)
             return
         title = self.tr("Scene summary") if task == "summary" else self.tr("Continuity review")
         window = AnalysisWindow(
@@ -5755,7 +5755,7 @@ class MainWindow(QMainWindow):
         self._analysis_windows.append(window)
         window.finished.connect(lambda _result, window=window: self._drop_analysis_window(window))
         window.show()
-        self.statusBar().showMessage("Project analysis is ready for review; no files were changed.", 8000)
+        self.statusBar().showMessage(self.tr("Project analysis is ready for review; no files were changed."), 8000)
 
     def _drop_analysis_window(self, window: AnalysisWindow) -> None:
         if window in self._analysis_windows:
@@ -5784,7 +5784,7 @@ class MainWindow(QMainWindow):
         self._project_ai_worker = None
         self._set_project_analysis_active(False)
         self.statusBar().showMessage(
-            "Project analysis cancelled; any in-flight local request will be ignored.", 6000
+            self.tr("Project analysis cancelled; any in-flight local request will be ignored."), 6000
         )
 
     def _apply_generated_text(self, generation: int, editor, text: str, revision=None, position=None, selection=None, settings_generation=None) -> None:
@@ -5816,7 +5816,7 @@ class MainWindow(QMainWindow):
         self._update_status()
         review = GeneratedTextDialog(text, self)
         if review.exec() != QDialog.DialogCode.Accepted:
-            self.statusBar().showMessage("Generated text discarded; the document was not changed.", 6000)
+            self.statusBar().showMessage(self.tr("Generated text discarded; the document was not changed."), 6000)
             return
         cursor = editor.textCursor()
         current_selection = (
@@ -5838,7 +5838,7 @@ class MainWindow(QMainWindow):
             )
         ):
             self.statusBar().showMessage(
-                "Generated text was discarded because the document changed.", 8000
+                self.tr("Generated text was discarded because the document changed."), 8000
             )
             return
         if revision is not None:

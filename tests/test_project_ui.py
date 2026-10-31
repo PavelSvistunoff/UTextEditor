@@ -1007,6 +1007,33 @@ def test_translated_recent_file_save_error_preserves_detail(application, tmp_pat
         window.close()
 
 
+def test_translated_open_project_dialog_title(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    titles = []
+    monkeypatch.setattr("app.ui.main_window.QFileDialog.getExistingDirectory",
+                        lambda _parent, title: titles.append(title) or "")
+    application.installTranslator(translator)
+    try:
+        window.open_project()
+        assert titles == ["Відкрити проєкт"]
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
