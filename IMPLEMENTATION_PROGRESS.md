@@ -1,6 +1,19 @@
 
 # Implementation progress
 
+- **TASK-020.05 — DONE; .01–.04/V1 — verified (2026-10-31):** audited
+  shared Qt matching flags, batched/stale-safe counting, current-match checks,
+  replace-all edit blocks, focus shortcuts and MainWindow refresh connections.
+  Added four Unicode case-insensitive replace-all regressions covering whole
+  words/substrings, deletion/emoji replacement, counts and undo/redo. Existing
+  tests cover navigation, default semantics, zero matches, focus and small
+  windows. Focused suite: 21 passed; full offline suite: 798 passed, 2 skipped;
+  diff reviewed and whitespace check passed. README already describes verified
+  behavior; no product change or new strings. All numbered TASK-020 tickets
+  complete. Parent deliberately remains partial: V2 native keyboard/screen-
+  reader review and release-catalog verification remain outstanding and cannot
+  be established by offscreen tests. No commits or pushes.
+
 - **TASK-031 — COMPLETE (2026-10-31):** reviewed existing NFC normalization,
   script/common-word evidence, minimum alphabetic signal, distinct-word and
   ambiguous-language fallbacks. Existing tests/language_corpus.py has 43 cases:

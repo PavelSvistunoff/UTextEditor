@@ -526,16 +526,23 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-020 — Improve Find and Replace
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-020.01** — Add optional case-insensitive matching.  
+- [x] **TASK-020.01** — Add optional case-insensitive matching.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-020.02** — Add optional whole-word matching.  
+- [x] **TASK-020.02** — Add optional whole-word matching.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-020.03** — Improve Find and Replace focus behavior.  
+- [x] **TASK-020.03** — Improve Find and Replace focus behavior.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-020.04** — Preserve existing default matching semantics.  
+- [x] **TASK-020.04** — Preserve existing default matching semantics.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-020.05** — Keep match counts, navigation, and replacement consistent.  
+- [x] **TASK-020.05** — Keep match counts, navigation, and replacement consistent.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Automated verification: tests/test_find_replace.py (21 passed) covers default
+case-sensitive semantics, case/whole-word options, Unicode offsets, batched
+counts, stale queries/editor switches, zero matches, small windows, focus
+return and undo/redo replacement consistency. Numbered tickets are complete;
+parent remains partial pending V2 native keyboard/accessibility review and
+release catalog verification. Offscreen Qt tests do not replace that review.
 
 **Parent acceptance gate (all must pass):**
 - Unicode search behaves correctly.
@@ -543,9 +550,9 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Replacements preserve undo behavior.
 - Keyboard focus returns predictably.
 
-- [ ] **TASK-020.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-020.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-020.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-020.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-021 — Implement batch spelling and grammar review

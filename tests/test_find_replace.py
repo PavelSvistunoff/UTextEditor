@@ -224,3 +224,31 @@ def test_failed_find_preserves_cursor_and_selection(application, backwards, anch
 
     assert not bar._find(backwards=backwards)
     assert (editor.textCursor().anchor(), editor.textCursor().position()) == (anchor, position)
+
+
+@pytest.mark.parametrize("replacement", ["", "😀 нове"])
+@pytest.mark.parametrize("whole_word,expected_count", [(False, 3), (True, 2)])
+def test_unicode_replace_all_counts_remain_consistent_through_undo_redo(application, replacement, whole_word, expected_count):
+    editor = EditorWidget()
+    original = "😀 СЛОВО слово словом"
+    editor.setPlainText(original)
+    bar = make_find_bar(editor)
+    bar.find_edit.setText("слово")
+    bar.case_sensitive.setChecked(False)
+    bar.whole_word.setChecked(whole_word)
+    assert bar.match_count.text() == f"{expected_count} matches"
+    bar.replace_edit.setText(replacement)
+    bar.replace_all()
+    changed = editor.toPlainText()
+    assert changed == (f"😀 {replacement} {replacement} словом" if whole_word
+                       else f"😀 {replacement} {replacement} {replacement}м")
+    assert bar.match_count.text() == "0 matches"
+    editor.undo()
+    bar.refresh()
+    assert editor.toPlainText() == original
+    assert bar.match_count.text() == f"{expected_count} matches"
+    editor.redo()
+    bar.refresh()
+    assert editor.toPlainText() == changed
+    assert bar.match_count.text() == "0 matches"
+    bar.close()
