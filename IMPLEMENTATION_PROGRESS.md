@@ -394,8 +394,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   that both localized presence choices preserve their stored values and that
   existing development details round-trip. Directed-relationship management
   and character-profile import/export messages are also translated; a Qt test
-  checks the localized remove action targets the correct relationship. Full
-  offline suite: 608 passed, 2 skipped.
+  checks the localized remove action targets the correct relationship. The
+  AI project setup, Auto-writer and project translation confirmation messages
+  now disclose their content and destination in Ukrainian; a cancellation test
+  checks the translated destination and language labels. Further AI workflows
+  still need auditing. Full offline suite: 609 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

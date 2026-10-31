@@ -1132,26 +1132,26 @@ class MainWindow(QMainWindow):
             return
         brief = dialog.brief()
         if not brief.strip():
-            QMessageBox.information(self, "AI project setup", "Enter a short writing brief first.")
+            QMessageBox.information(self, self.tr("AI project setup"), self.tr("Enter a short writing brief first."))
             return
         if len(brief) > 6000:
             QMessageBox.information(
                 self,
-                "AI project setup",
-                "The writing brief must be no longer than 6,000 characters.",
+                self.tr("AI project setup"),
+                self.tr("The writing brief must be no longer than 6,000 characters."),
             )
             return
         character_context = project_planning_context(project)
-        confirmation = (
-            f"Send your {len(brief)}-character writing brief and these compact character profiles to the configured model?\n\n"
-            f"{character_context or '[No profiles with motivations, active goals, or internal conflicts.]'}\n\n"
-            f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
+        confirmation = self.tr(
+            "Send your {length}-character writing brief and these compact character profiles to the configured model?\n\n"
+            "{profiles}\n\nDestination: {host} — model {model}\n\n"
             "No manuscript or reference-note contents will be sent. The model will "
             "suggest an outline only; it will not write manuscript prose."
-        )
+        ).format(length=len(brief), profiles=character_context or self.tr("[No profiles with motivations, active goals, or internal conflicts.]"),
+                 host=self.provider.host, model=self.provider.model)
         if QMessageBox.question(
             self,
-            "Confirm AI project setup",
+            self.tr("Confirm AI project setup"),
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
@@ -1170,22 +1170,22 @@ class MainWindow(QMainWindow):
             return
         mode, instructions = dialog.values()
         operation = (
-            "write into empty scenes only, leaving non-empty scenes unchanged"
+            self.tr("write into empty scenes only, leaving non-empty scenes unchanged")
             if mode == "write_empty"
-            else f"refine all {scene_count} scenes, replacing their existing text"
+            else self.tr("refine all {count} scenes, replacing their existing text").format(count=scene_count)
         )
-        confirmation = (
-            f"Auto-writer will {operation} using the project outline, scene text, reference "
+        confirmation = self.tr(
+            "Auto-writer will {operation} using the project outline, scene text, reference "
             "notes, characters associated with each scene, your optional instructions, and current AI settings.\n\n"
-            f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
+            "Destination: {host} — model {model}\n\n"
             "Project text and reference notes are sent only to this configured model. "
             "A complete local revision snapshot is created before generation. All scene "
             "changes are applied together only after every scene succeeds and you "
             "review the drafts. Refine mode may replace existing text."
-        )
+        ).format(operation=operation, host=self.provider.host, model=self.provider.model)
         if QMessageBox.question(
             self,
-            "Confirm Auto-writer",
+            self.tr("Confirm Auto-writer"),
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
@@ -1197,7 +1197,7 @@ class MainWindow(QMainWindow):
             for editor, binding in tuple(self._project_documents.items())
         ):
             QMessageBox.information(
-                self, "Auto-writer", "Wait for project document saves to finish first."
+                self, self.tr("Auto-writer"), self.tr("Wait for project document saves to finish first.")
             )
             return
 
@@ -1294,8 +1294,8 @@ class MainWindow(QMainWindow):
         if not self.settings.ai_enabled:
             QMessageBox.information(
                 self,
-                "Project translation",
-                "Enable AI before translating a project.",
+                self.tr("Project translation"),
+                self.tr("Enable AI before translating a project."),
             )
             return
         if not self._ensure_ai_context_consent():
@@ -1306,25 +1306,26 @@ class MainWindow(QMainWindow):
         ):
             QMessageBox.information(
                 self,
-                "Project translation",
-                "Wait for project document saves to finish before translating.",
+                self.tr("Project translation"),
+                self.tr("Wait for project document saves to finish before translating."),
             )
             return
 
-        confirmation = (
-            f"Translate the complete project from {source_language} to "
-            f"{target_language}?\n\n"
+        display_languages = {"English": self.tr("English"), "Ukrainian": self.tr("Ukrainian")}
+        confirmation = self.tr(
+            "Translate the complete project from {source} to {target}?\n\n"
             "This includes the project title, chapter/scene/reference-note titles, "
             "and every scene and reference note. Stable IDs, file paths, ordering, "
             "links, and note types will be preserved. A local revision snapshot is "
             "created first, and no project files are changed unless every translation "
             "succeeds.\n\n"
-            f"Text is sent to the configured Ollama destination:\n"
-            f"{self.provider.host} — {self.provider.model}"
-        )
+            "Text is sent to the configured Ollama destination:\n{host} — {model}"
+        ).format(source=display_languages.get(source_language, source_language),
+                 target=display_languages.get(target_language, target_language),
+                 host=self.provider.host, model=self.provider.model)
         if QMessageBox.question(
             self,
-            "Translate Project",
+            self.tr("Translate Project"),
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
@@ -1355,13 +1356,13 @@ class MainWindow(QMainWindow):
             self._project_translation_cancel_action.setEnabled(True)
 
         progress = QProgressDialog(
-            "Preparing a complete project snapshot…",
-            "Cancel translation",
+            self.tr("Preparing a complete project snapshot…"),
+            self.tr("Cancel translation"),
             0,
             0,
             self,
         )
-        progress.setWindowTitle("Translating Project")
+        progress.setWindowTitle(self.tr("Translating Project"))
         progress.setWindowModality(Qt.WindowModality.NonModal)
         progress.setMinimumDuration(0)
         progress.canceled.connect(self.cancel_project_translation)

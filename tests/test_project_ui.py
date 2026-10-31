@@ -809,6 +809,39 @@ def test_translated_relationship_action_removes_only_selected_direction(applicat
         window.close()
 
 
+def test_translated_project_translation_confirmation_discloses_destination(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window.settings.ai_enabled = True
+    monkeypatch.setattr(window, "_ensure_ai_context_consent", lambda **kwargs: True)
+    questions = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: questions.append(args) or QMessageBox.StandardButton.Cancel)
+    application.installTranslator(translator)
+    try:
+        window.translate_project_to_ukrainian()
+        assert questions[0][1] == "Перекласти проєкт"
+        assert "англійська → українська" in questions[0][2]
+        assert window.provider.host in questions[0][2] and window.provider.model in questions[0][2]
+        assert not window._project_busy
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

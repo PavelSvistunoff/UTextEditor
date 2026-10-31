@@ -681,6 +681,58 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>AI project setup</source><translation>Налаштування проєкту із ШІ</translation></message>
+    <message><source>Enter a short writing brief first.</source><translation>Спочатку введіть короткий творчий задум.</translation></message>
+    <message><source>The writing brief must be no longer than 6,000 characters.</source><translation>Творчий задум має містити не більше 6000 символів.</translation></message>
+    <message><source>[No profiles with motivations, active goals, or internal conflicts.]</source><translation>[Немає профілів із мотиваціями, активними цілями або внутрішніми конфліктами.]</translation></message>
+    <message><source>Send your {length}-character writing brief and these compact character profiles to the configured model?
+
+{profiles}
+
+Destination: {host} — model {model}
+
+No manuscript or reference-note contents will be sent. The model will suggest an outline only; it will not write manuscript prose.</source><translation>Надіслати ваш творчий задум із {length} символів і ці стислі профілі персонажів налаштованій моделі?
+
+{profiles}
+
+Призначення: {host} — модель {model}
+
+Вміст рукопису та довідкових нотаток не надсилатиметься. Модель лише запропонує план і не писатиме текст рукопису.</translation></message>
+    <message><source>Confirm AI project setup</source><translation>Підтвердити налаштування проєкту із ШІ</translation></message>
+    <message><source>write into empty scenes only, leaving non-empty scenes unchanged</source><translation>писати лише в порожніх сценах, залишаючи непорожні без змін</translation></message>
+    <message><source>refine all {count} scenes, replacing their existing text</source><translation>переробити всі сцени ({count}), замінивши наявний текст</translation></message>
+    <message><source>Auto-writer will {operation} using the project outline, scene text, reference notes, characters associated with each scene, your optional instructions, and current AI settings.
+
+Destination: {host} — model {model}
+
+Project text and reference notes are sent only to this configured model. A complete local revision snapshot is created before generation. All scene changes are applied together only after every scene succeeds and you review the drafts. Refine mode may replace existing text.</source><translation>Автоматичне написання буде {operation}, використовуючи план проєкту, текст сцен, довідкові нотатки, пов’язаних із кожною сценою персонажів, ваші необов’язкові вказівки та поточні налаштування ШІ.
+
+Призначення: {host} — модель {model}
+
+Текст проєкту та довідкові нотатки надсилаються лише цій налаштованій моделі. Перед генеруванням створюється повний локальний знімок редакції. Усі зміни сцен застосовуються разом лише після успішного створення всіх сцен і перегляду чернеток. Режим перероблення може замінити наявний текст.</translation></message>
+    <message><source>Confirm Auto-writer</source><translation>Підтвердити автоматичне написання</translation></message>
+    <message><source>Auto-writer</source><translation>Автоматичне написання</translation></message>
+    <message><source>Wait for project document saves to finish first.</source><translation>Спочатку дочекайтеся завершення збереження документів проєкту.</translation></message>
+    <message><source>Project translation</source><translation>Переклад проєкту</translation></message>
+    <message><source>Enable AI before translating a project.</source><translation>Увімкніть ШІ перед перекладом проєкту.</translation></message>
+    <message><source>Wait for project document saves to finish before translating.</source><translation>Перед перекладом дочекайтеся завершення збереження документів проєкту.</translation></message>
+    <message><source>English</source><translation>англійська</translation></message>
+    <message><source>Ukrainian</source><translation>українська</translation></message>
+    <message><source>Translate the complete project from {source} to {target}?
+
+This includes the project title, chapter/scene/reference-note titles, and every scene and reference note. Stable IDs, file paths, ordering, links, and note types will be preserved. A local revision snapshot is created first, and no project files are changed unless every translation succeeds.
+
+Text is sent to the configured Ollama destination:
+{host} — {model}</source><translation>Перекласти весь проєкт: {source} → {target}?
+
+Це охоплює назву проєкту, назви розділів, сцен і довідкових нотаток, а також усі сцени й довідкові нотатки. Стабільні ідентифікатори, шляхи файлів, порядок, зв’язки та типи нотаток буде збережено. Спочатку створюється локальний знімок редакції, а файли проєкту не змінюються, якщо будь-яка частина перекладу не вдалася.
+
+Текст надсилається за налаштованою адресою Ollama:
+{host} — {model}</translation></message>
+    <message><source>Translate Project</source><translation>Перекласти проєкт</translation></message>
+    <message><source>Preparing a complete project snapshot…</source><translation>Підготовка повного знімка проєкту…</translation></message>
+    <message><source>Cancel translation</source><translation>Скасувати переклад</translation></message>
+    <message><source>Translating Project</source><translation>Переклад проєкту</translation></message>
     <message><source>Character relationship</source><translation>Стосунки персонажа</translation></message>
     <message><source>Create another character first.</source><translation>Спочатку створіть іншого персонажа.</translation></message>
     <message><source>Related character:</source><translation>Пов’язаний персонаж:</translation></message>
