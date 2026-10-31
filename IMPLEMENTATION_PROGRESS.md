@@ -188,9 +188,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   remain outstanding. Case-insensitive and whole-word match counts now run in
   bounded event-loop batches; changing the query or active editor discards an
   unfinished count. Tests cover yielding and stale counts. Default literal
-  counting and replace-all can still process large texts on the GUI thread;
-  broader performance work remains. Do not mark complete until verified. Full
-  offline suite: 594 passed, 2 skipped.
+  counting now also uses Qt's batched matching path without copying the full
+  buffer. An offscreen regression checks yielding, Unicode and no full-text
+  copy. A single Qt search can still scan a large unmatched span on the GUI
+  thread, and replace-all remains synchronous; broader performance and native
+  verification remain outstanding. Full offline suite: 629 passed, 2 skipped.
 - **TASK-021 — in progress:** AI > Review Spelling and Grammar presents
   current validated findings with explanations and selection controls. It
   rejects changed or overlapping selections, and applies selected corrections

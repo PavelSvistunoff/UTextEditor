@@ -226,8 +226,6 @@ class FindReplaceWidget(QWidget):
         term = self.find_edit.text()
         if editor is None or not term:
             count = 0
-        elif self.case_sensitive.isChecked() and not self.whole_word.isChecked():
-            count = editor.toPlainText().count(term)
         else:
             self._count_state = (editor, editor.revision, term, self._flags(), 0, 0)
             self._count_batch()

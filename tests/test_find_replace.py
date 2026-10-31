@@ -118,6 +118,23 @@ def test_large_case_insensitive_count_yields_and_discards_old_query(application)
     assert editor.toPlainText() == "Word " * 3000
 
 
+def test_large_default_count_yields_without_copying_document(application, monkeypatch):
+    editor = EditorWidget()
+    editor.setPlainText("😀 word " * 3000)
+    monkeypatch.setattr(editor, "toPlainText", lambda: pytest.fail("copied the full document"))
+    bar = make_find_bar(editor)
+    assert bar.match_count.text() == "Counting matches…"
+    events = []
+    QTimer.singleShot(0, lambda: events.append(True))
+    for _ in range(100):
+        application.processEvents()
+        if bar.match_count.text() == "3000 matches":
+            break
+    assert events and bar.match_count.text() == "3000 matches"
+    bar.find_edit.setText("missing")
+    assert bar.match_count.text() == "0 matches"
+
+
 def test_large_count_is_replaced_when_active_editor_changes(application):
     first, second = EditorWidget(), EditorWidget()
     first.setPlainText("Word " * 3000)
