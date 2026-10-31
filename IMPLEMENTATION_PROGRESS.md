@@ -83,7 +83,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   projects still need GUI responsiveness measurements and more stress tests;
   path resolution now runs in the search worker. Do not mark complete until
   those issues and localization are verified. Full offline suite: 454 passed,
-  2 skipped.
+  2 skipped. A further 5,000-document regression verifies cancellation while
+  reporting unreadable files and confirms that remaining files are not visited.
+  Full offline suite: 542 passed, 2 skipped. GUI responsiveness measurements
+  and compiled localization remain outstanding.
 - **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
   picker for scene, chapter, note and character names and character aliases,
   showing type, chapter context and stable IDs. It opens existing documents

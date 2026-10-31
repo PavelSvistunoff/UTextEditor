@@ -66,3 +66,19 @@ def test_large_project_stops_at_result_limit(tmp_path):
     result = search_project(tmp_path, documents, "word")
     assert result.limited and len(result.matches) == 1000
     assert result.matches[-1].id == "999"
+
+
+def test_large_project_can_cancel_before_reading_remaining_files(tmp_path):
+    class CancelAfterDocuments:
+        checks = 0
+
+        def is_set(self):
+            self.checks += 1
+            return self.checks > 1000
+
+    # Missing files make each visited document observable in the error list.
+    documents = tuple(SearchDocument("note", str(i), str(i), f"{i}.txt") for i in range(5000))
+    result = search_project(tmp_path, documents, "absent", CancelAfterDocuments())
+    assert result.cancelled
+    assert len(result.errors) == 1000
+    assert not result.matches and not result.limited
