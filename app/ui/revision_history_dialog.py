@@ -189,9 +189,10 @@ class RevisionHistoryDialog(QDialog):
         skip = self._preview_page * self.PREVIEW_LIMIT
         remaining = self.PREVIEW_LIMIT + 1
         scene_ids = set(snapshot.scene_order)
+        document_titles = snapshot.document_titles
         def sections():
             for item_id in snapshot.scene_order:
-                yield snapshot.scene_titles.get(item_id, item_id)
+                yield document_titles.get(item_id, item_id)
                 yield " ["
                 yield item_id
                 yield "]\n"
@@ -199,7 +200,7 @@ class RevisionHistoryDialog(QDialog):
                 yield "\n\n"
             for item_id, text in snapshot.documents.items():
                 if item_id not in scene_ids:
-                    yield item_id
+                    yield document_titles.get(item_id, item_id)
                     yield " ["
                     yield item_id
                     yield "]\n"

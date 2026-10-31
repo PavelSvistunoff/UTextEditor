@@ -24,6 +24,16 @@ class RevisionSnapshot:
     digest: str
     snapshot_path: Path
 
+    @property
+    def document_titles(self) -> Mapping[str, str]:
+        """Captured document labels, including reference notes and legacy IDs."""
+        titles = {item_id: item_id for item_id in self.documents}
+        titles.update(self.scene_titles)
+        for item_id, (title, _) in _note_records(self.structure).items():
+            if title is not None:
+                titles[item_id] = title
+        return titles
+
 
 @dataclass(frozen=True)
 class RevisionIssue:

@@ -3280,3 +3280,19 @@ def test_revision_comparison_labels_moved_reference_note_with_stable_id(applicat
     assert "Reference Note Moved" in dialog.details.toPlainText()
     assert "Item ID: note-identity" in dialog.details.toPlainText()
     dialog.close()
+
+
+def test_revision_preview_uses_captured_note_titles_and_stable_ids(application, tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+    snapshot = store.create("Draft", structure={"notes": [
+        {"id": "note-one", "title": "Same title", "type": "general"},
+        {"id": "note-two", "title": "Same title", "type": "general"}
+    ]}, scene_order=[], scene_titles={}, documents={"note-one": "first", "note-two": "second", "legacy": "old"})
+    dialog = RevisionHistoryDialog()
+    dialog.set_snapshots((snapshot,), ())
+    dialog.snapshots.item(0).setSelected(True)
+    preview = dialog.details.toPlainText()
+    assert "Same title [note-one]\nfirst" in preview
+    assert "Same title [note-two]\nsecond" in preview
+    assert "legacy [legacy]\nold" in preview
+    dialog.close()

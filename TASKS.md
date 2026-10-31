@@ -267,7 +267,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - [x] **TASK-009.01** — Add snapshot preview.
   History chronology now uses timezone-aware instants; malformed/timezone-free
   capture timestamps are diagnosed without hiding valid snapshots. Directory
-  enumeration failures and symbolic-link snapshots are also diagnosed.
+  enumeration failures and symbolic-link snapshots are also diagnosed. Note
+  previews use captured titles plus stable IDs, with legacy ID fallback.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-009.02** — Add confirmed snapshot deletion.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

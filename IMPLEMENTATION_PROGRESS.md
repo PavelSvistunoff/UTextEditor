@@ -1,6 +1,16 @@
 
 # Implementation progress
 
+- **TASK-009.01 — preview labels (2026-10-31):** revision snapshots expose
+  captured document titles through the domain model; note previews now use
+  captured titles alongside stable IDs. Legacy documents without title
+  metadata fall back to IDs. Added Qt regression covering duplicate titles,
+  distinct note identities and legacy metadata. Focused revision/UI suites:
+  173 passed; full offline suite: 705 passed, 2 skipped; diff reviewed and
+  whitespace check passed. README/TASKS updated; no new translated strings.
+  Native verification and revision restore/scheduling remain open. Previous
+  ordering comparison committed as e1bfe84; new work uncommitted.
+
 - **TASK-009.04 — PARTIAL (2026-10-31):** revision comparison reports
   reference-note reordering among IDs present in both snapshots. Additions
   and removals do not generate false moves. Moved-item labels expose stable
