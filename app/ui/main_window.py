@@ -140,7 +140,7 @@ class _RecoveryPayload:
 
 class MainWindow(QMainWindow):
     ai_interaction = Signal(str, str, object)
-    auto_writer_progress = Signal(str)
+    auto_writer_progress = Signal(int, str)
     auto_writer_scene_completed = Signal(int, str, str, int, int)
     project_translation_progress = Signal(int, str)
     project_autopilot_progress = Signal(int, int, int, str)
@@ -1255,7 +1255,7 @@ class MainWindow(QMainWindow):
             temperature=self.settings.temperature,
             snapshot_name=snapshot_name,
             is_cancelled=cancel_event.is_set,
-            progress=lambda message: self.auto_writer_progress.emit(message),
+            progress=lambda message: self.auto_writer_progress.emit(generation, message),
             scene_completed=lambda title, text, completed, total: (
                 self.auto_writer_scene_completed.emit(
                     generation, title, text, completed, total
@@ -1828,8 +1828,8 @@ class MainWindow(QMainWindow):
             outcome="failed",
         )
 
-    def _show_auto_writer_progress(self, message: str) -> None:
-        if self._auto_writer_worker is not None:
+    def _show_auto_writer_progress(self, generation: int, message: str) -> None:
+        if generation == self._auto_writer_generation and self._auto_writer_worker is not None:
             if self._auto_writer_activity is not None:
                 match = re.fullmatch(r"Auto-writer generating scene (\d+) of (\d+): (.*)", message)
                 if match:

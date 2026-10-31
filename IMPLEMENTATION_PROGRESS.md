@@ -245,7 +245,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   buffers and applies selected scenes through the existing transaction.
   Tests cover selection, cancellation, stale edits and preview navigation.
   Compiled Ukrainian strings and native accessibility review remain
-  outstanding. Full offline suite: 492 passed, 2 skipped.
+  outstanding. Auto-writer progress signals now carry the request generation,
+  preventing delayed messages from an older request updating a newer progress
+  window; a queued-signal regression covers both stale and current messages.
+  Full offline suite: 640 passed, 2 skipped.
 - **TASK-025 — in progress:** the provider protocol and Ollama client now
   support bounded NDJSON streaming with chunk callbacks, cooperative
   cancellation and explicit malformed/oversized response errors. Tests cover

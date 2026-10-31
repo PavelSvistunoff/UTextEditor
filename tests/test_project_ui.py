@@ -294,6 +294,28 @@ def test_conflict_review_save_elsewhere_or_reject_unresolved_markers(application
     window.close()
 
 
+def test_auto_writer_progress_ignores_older_request(application):
+    from app.ui.auto_writer_dialog import AutoWriterProgressDialog
+
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._auto_writer_progress_dialog = AutoWriterProgressDialog(window)
+    window._auto_writer_worker = object()
+    window._auto_writer_generation = 2
+    try:
+        window.auto_writer_progress.emit(1, "Old request")
+        window.auto_writer_progress.emit(2, "Current request")
+        application.processEvents()
+        assert window._auto_writer_progress_dialog.status.text() == "Current request"
+        window.auto_writer_progress.emit(1, "Late old request")
+        application.processEvents()
+        assert window._auto_writer_progress_dialog.status.text() == "Current request"
+    finally:
+        window._auto_writer_worker = None
+        window._auto_writer_progress_dialog.finish("Finished")
+        window.close()
+
+
 def test_project_search_results_are_keyboard_accessible(application):
     from PySide6.QtGui import QAccessible
     from PySide6.QtTest import QTest
