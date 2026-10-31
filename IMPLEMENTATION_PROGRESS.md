@@ -348,7 +348,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   reports 148 candidates requiring human review; this heuristic neither
   covers every API nor proves each candidate is user-visible. Catalog
   compilation and the broader audit remain outstanding. Full offline suite:
-  596 passed, 2 skipped.
+  596 passed, 2 skipped. After reviewing that initial set, three candidates
+  remain: the product name and two labels built from project or path data.
+  The audit now also checks status messages, dialog buttons and file-dialog
+  labels; the expanded scan reports 45 candidates for review. Full offline
+  suite: 613 passed, 2 skipped.
 - **TASK-032 — in progress:** the Ukrainian source catalog now covers the
   previously missing character portrait and scene-development workflow labels,
   prompts and errors, plus the main-window open-error title. A full UI audit,

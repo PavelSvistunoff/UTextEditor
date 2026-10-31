@@ -8,16 +8,20 @@ def test_audit_reports_unmarked_ui_literals_and_fstrings():
 QMessageBox.warning(self, "Save failed", f"Could not save {path}")
 QInputDialog.getText(self, "New scene", "Title:")
 button = QPushButton("Open")
+status.showMessage(f"Saved to {path}")
+QFileDialog.getOpenFileName(self, "Open file", "", "Text (*.txt)")
 label.setText(self.tr("Translated"))
 label.setText(value)
 other("Not a recognized UI call")
 '''
     findings = audit_source(source, Path("example.py"))
-    assert len(findings) == 5
+    assert len(findings) == 8
     assert any("Save failed" in item for item in findings)
     assert any("Could not save" in item for item in findings)
     assert any("New scene" in item for item in findings)
     assert any("Open" in item for item in findings)
+    assert any("Saved to" in item for item in findings)
+    assert any("Text (*.txt)" in item for item in findings)
     assert all("Translated" not in item and "Not a recognized" not in item for item in findings)
 
 

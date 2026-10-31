@@ -11,10 +11,11 @@ import sys
 
 
 WIDGET_CONSTRUCTORS = {"QAction", "QCheckBox", "QLabel", "QMenu", "QPushButton", "QRadioButton"}
-TEXT_METHODS = {"addAction", "setAccessibleDescription", "setAccessibleName", "setPlaceholderText",
-                "setStatusTip", "setText", "setToolTip", "setWindowTitle"}
+TEXT_METHODS = {"addAction", "addButton", "setAccessibleDescription", "setAccessibleName", "setPlaceholderText",
+                "setStatusTip", "setText", "setToolTip", "setWindowTitle", "showMessage"}
 MESSAGE_METHODS = {"critical", "information", "question", "warning"}
 INPUT_METHODS = {"getItem", "getMultiLineText", "getText"}
+FILE_METHODS = {"getExistingDirectory", "getOpenFileName", "getSaveFileName"}
 
 
 def _literal(node: ast.AST) -> str | None:
@@ -43,6 +44,8 @@ def audit_source(source: str, path: Path) -> list[str]:
                 positions = (1, 2)
             elif owner == "QInputDialog" and target.attr in INPUT_METHODS:
                 positions = (1, 2)
+            elif owner == "QFileDialog" and target.attr in FILE_METHODS:
+                positions = (1, 3) if target.attr != "getExistingDirectory" else (1,)
             elif target.attr in TEXT_METHODS:
                 positions = (0,)
         for index in positions:
