@@ -418,7 +418,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   and additional AI setup, generation and analysis status messages are now
   translated; an offscreen test checks the dialog title using a temporary
   compiled catalog. Further workflows still need auditing and release catalog
-  compilation remains outstanding. Full offline suite: 615 passed, 2 skipped.
+  compilation remains outstanding. Line and column labels, AI error details,
+  and spellcheck feedback now use translated templates, including Ukrainian
+  plural forms. Runtime tests cover error details and plural selection. Full
+  offline suite: 616 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

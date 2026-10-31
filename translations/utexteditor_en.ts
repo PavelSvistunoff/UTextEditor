@@ -53,6 +53,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message numerus="yes"><source>Found %n spelling suggestions. Right-click an underline to review.</source><translation><numerusform>Found %n spelling suggestion. Right-click an underline to review.</numerusform><numerusform>Found %n spelling suggestions. Right-click an underline to review.</numerusform></translation></message>
     <message><source>Markdown Preview</source><translation>Markdown Preview</translation></message>
 </context>
 <context>

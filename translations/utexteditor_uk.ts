@@ -681,6 +681,12 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Ln {line}, Col {column}</source><translation>Рядок {line}, стовпець {column}</translation></message>
+    <message><source>AI generation failed: {error}</source><translation>Не вдалося згенерувати текст за допомогою ШІ: {error}</translation></message>
+    <message><source>AI completion failed: {error}</source><translation>Не вдалося отримати продовження від ШІ: {error}</translation></message>
+    <message><source>Spellcheck failed: {error}</source><translation>Не вдалося перевірити правопис: {error}</translation></message>
+    <message><source>Found 1 spelling suggestion. Right-click an underline to review.</source><translation>Знайдено 1 пропозицію правопису. Клацніть підкреслення правою кнопкою для перегляду.</translation></message>
+    <message numerus="yes"><source>Found %n spelling suggestions. Right-click an underline to review.</source><translation><numerusform>Знайдено %n пропозицію правопису. Клацніть підкреслення правою кнопкою для перегляду.</numerusform><numerusform>Знайдено %n пропозиції правопису. Клацніть підкреслення правою кнопкою для перегляду.</numerusform><numerusform>Знайдено %n пропозицій правопису. Клацніть підкреслення правою кнопкою для перегляду.</numerusform></translation></message>
     <message><source>Auto-writer is creating a revision snapshot and drafting scene text…</source><translation>Автоматичне написання створює знімок редакції та чернетки сцен…</translation></message>
     <message><source>Cancelling project translation after the current model request…</source><translation>Переклад проєкту буде скасовано після поточного запиту до моделі…</translation></message>
     <message><source>Generating a project outline with the configured model…</source><translation>Створення плану проєкту за допомогою налаштованої моделі…</translation></message>

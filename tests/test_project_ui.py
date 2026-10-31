@@ -1034,6 +1034,36 @@ def test_translated_open_project_dialog_title(application, tmp_path, monkeypatch
         window.close()
 
 
+def test_translated_spellcheck_feedback(application, tmp_path):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QCoreApplication, QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    application.installTranslator(translator)
+    try:
+        window._spellcheck_failed("network detail", editor, editor.revision,
+                                  window._settings_generation, window._active_document_generation,
+                                  window._spellcheck_generation)
+        assert window.status.currentMessage() == "Не вдалося перевірити правопис: network detail"
+        source = "Found %n spelling suggestions. Right-click an underline to review."
+        for count, form in ((1, "пропозицію"), (2, "пропозиції"), (5, "пропозицій")):
+            assert form in QCoreApplication.translate("MainWindow", source, None, count)
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

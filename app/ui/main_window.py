@@ -697,7 +697,7 @@ class MainWindow(QMainWindow):
         self.status.showMessage(
             f"{document.display_name}{' *' if document.dirty else ''}    "
             f"{document.encoding.upper()}    {document.line_ending}    "
-            f"Ln {cursor.blockNumber() + 1}, Col {cursor.columnNumber() + 1}    {self.ai_status}"
+            f"{self.tr('Ln {line}, Col {column}').format(line=cursor.blockNumber() + 1, column=cursor.columnNumber() + 1)}    {self.ai_status}"
         )
         self._refresh_writing_goal()
 
@@ -5860,7 +5860,7 @@ class MainWindow(QMainWindow):
         if settings_generation is not None and settings_generation != self._settings_generation:
             return
         self.ai_status = "AI: Error"
-        self.status.showMessage(f"AI generation failed: {error}")
+        self.status.showMessage(self.tr("AI generation failed: {error}").format(error=error))
 
     def show_settings(self) -> None:
         previous_ui_language = self.settings.ui_language
@@ -6432,7 +6432,7 @@ class MainWindow(QMainWindow):
         if settings_generation is not None and settings_generation != self._settings_generation:
             return
         self.ai_status = "AI: Error"
-        self.status.showMessage(f"AI completion failed: {error}")
+        self.status.showMessage(self.tr("AI completion failed: {error}").format(error=error))
 
     def check_spelling(self, *, automatic: bool = False) -> None:
         editor = self.tabs.current_editor()
@@ -6502,7 +6502,7 @@ class MainWindow(QMainWindow):
                 or active_generation != self._active_document_generation
                 or spellcheck_generation != self._spellcheck_generation):
             return
-        self.status.showMessage(f"Spellcheck failed: {error}")
+        self.status.showMessage(self.tr("Spellcheck failed: {error}").format(error=error))
 
     def review_spellcheck(self) -> None:
         editor = self.tabs.current_editor()
@@ -6534,7 +6534,14 @@ class MainWindow(QMainWindow):
         self._connected = True
         self.ai_status = "AI: Connected"
         self._update_status()
-        self.status.showMessage(f"Found {len(editor.spell_suggestions)} spelling suggestion{'s' if len(editor.spell_suggestions) != 1 else ''}. Right-click an underline to review.")
+        count = len(editor.spell_suggestions)
+        if count == 1:
+            message = self.tr("Found 1 spelling suggestion. Right-click an underline to review.")
+        else:
+            message = self.tr(
+                "Found %n spelling suggestions. Right-click an underline to review.", None, count
+            )
+        self.status.showMessage(message)
 
     def _cancel_pending_ai(self) -> None:
         self._completion_timer.stop()
