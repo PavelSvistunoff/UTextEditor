@@ -1670,6 +1670,38 @@ def test_export_uses_translated_plain_text_filter(application, tmp_path, monkeyp
     window.close()
 
 
+def test_export_ignores_unsaved_notes_and_unselected_scenes(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter")
+    selected = project.add_scene("Selected", chapter_id=chapter.id, content="included")
+    omitted = project.add_scene("Omitted", chapter_id=chapter.id, content="omitted")
+    note = project.add_note("Note", content="reference")
+    target = tmp_path / "export.md"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.ai_enabled = False
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    for kind, item in (("scene", omitted), ("note", note)):
+        count = window.tabs.count()
+        window._open_project_document(kind, item.id)
+        wait_until(lambda: window.tabs.count() == count + 1, application)
+        window.tabs.current_editor().setPlainText("unsaved excluded content")
+    item = window.project_view.topLevelItem(0).child(0).child(0)
+    assert item.data(0, Qt.ItemDataRole.UserRole + 1) == selected.id
+    window.project_view.setCurrentItem(item)
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_args: (str(target), "Markdown (*.md)"))
+    monkeypatch.setattr(window, "_ask_export_options", lambda: (True, True, "\n\n"))
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: pytest.fail("excluded edits prompted for export"))
+    window.export_project()
+    wait_until(lambda: not window._project_busy, application)
+    text = target.read_text(encoding="utf-8")
+    assert "included" in text and "omitted" not in text and "unsaved excluded" not in text
+    for editor in window._project_documents:
+        editor.document_state.mark_saved()
+    window.close()
+
+
 @pytest.mark.parametrize("changed_dialog", ["destination", "overwrite", "options", "unsaved"])
 def test_export_discards_selection_if_project_changes_during_dialog(
     application, tmp_path, monkeypatch, changed_dialog

@@ -3671,10 +3671,27 @@ class MainWindow(QMainWindow):
         if options is None or self.project is not project or self._project_generation != generation:
             return
         include_chapter_headings, include_scene_headings, separator = options
+        selected_ids: set[str] = set()
+        if self.project_view is not None:
+            for item in self.project_view.selectedItems():
+                kind = item.data(0, Qt.ItemDataRole.UserRole)
+                item_id = item.data(0, Qt.ItemDataRole.UserRole + 1)
+                if kind == "scene" and isinstance(item_id, str):
+                    selected_ids.add(item_id)
+                elif kind == "chapter" and isinstance(item_id, str):
+                    chapter = next(
+                        (chapter for chapter in project.manifest.chapters if chapter.id == item_id),
+                        None,
+                    )
+                    if chapter is not None:
+                        selected_ids.update(scene.id for scene in chapter.scenes)
+        selected_scene_ids = selected_ids or None
         open_text: dict[str, str] = {}
         unsaved = False
         for editor, binding in tuple(self._project_documents.items()):
-            if binding.project is project and self.tabs.indexOf(editor) >= 0:
+            if (binding.project is project and binding.kind == "scene"
+                    and (selected_scene_ids is None or binding.item_id in selected_scene_ids)
+                    and self.tabs.indexOf(editor) >= 0):
                 open_text[binding.item_id] = editor.toPlainText()
                 unsaved = unsaved or editor.document_state.dirty
         if unsaved and QMessageBox.question(
@@ -3702,21 +3719,6 @@ class MainWindow(QMainWindow):
             for scene in project.iter_scenes()
             if scene.id in open_text
         }
-        selected_ids: set[str] = set()
-        if self.project_view is not None:
-            for item in self.project_view.selectedItems():
-                kind = item.data(0, Qt.ItemDataRole.UserRole)
-                item_id = item.data(0, Qt.ItemDataRole.UserRole + 1)
-                if kind == "scene" and isinstance(item_id, str):
-                    selected_ids.add(item_id)
-                elif kind == "chapter" and isinstance(item_id, str):
-                    chapter = next(
-                        (chapter for chapter in project.manifest.chapters if chapter.id == item_id),
-                        None,
-                    )
-                    if chapter is not None:
-                        selected_ids.update(scene.id for scene in chapter.scenes)
-        selected_scene_ids = selected_ids or None
         source_paths = self._project_export_sources(project)
         self._set_project_busy(True)
         worker = FunctionWorker(

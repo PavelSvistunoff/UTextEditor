@@ -286,7 +286,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   showing scene headings while chapter headings are hidden. Markdown/text
   export now also abandons a selection when the project generation changes
   during its destination, overwrite, options or unsaved-content dialogs; Qt
-  regressions cover each dialog. Full offline suite: 584 passed, 2 skipped.
+  regressions cover each dialog. Text export now captures and warns about only
+  selected scene buffers, excluding unsaved notes and omitted scenes; an
+  offscreen regression checks the resulting output. Full offline suite:
+  585 passed, 2 skipped.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene
