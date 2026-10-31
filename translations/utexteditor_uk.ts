@@ -675,6 +675,13 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>No canonical file exists for this untitled document.</source><translation>Для цього документа без назви немає основного файлу.</translation></message>
+    <message><source>Canonical file is missing: {path}</source><translation>Основний файл відсутній: {path}</translation></message>
+    <message><source>{path} (disk)</source><translation>{path} (на диску)</translation></message>
+    <message><source>Recovery snapshot</source><translation>Копія для відновлення</translation></message>
+    <message><source>The recovery snapshot matches the current canonical file.</source><translation>Копія для відновлення збігається з поточним основним файлом.</translation></message>
+    <message><source>Cannot compare with the canonical file: {error}</source><translation>Не вдалося порівняти з основним файлом: {error}</translation></message>
+    <message><source>No readable recovery snapshots are available.</source><translation>Немає доступних копій для відновлення, які можна прочитати.</translation></message>
     <message><source>Recovery restore failed: {error}</source><translation>Не вдалося відновити дані: {error}</translation></message>
     <message><source>Recovery comparison</source><translation>Порівняння копій відновлення</translation></message>
     <message><source>Recovery needs attention</source><translation>Відновлення потребує уваги</translation></message>

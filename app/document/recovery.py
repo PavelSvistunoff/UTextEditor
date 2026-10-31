@@ -43,6 +43,15 @@ class RecoveryScan:
     issues: tuple[RecoveryIssue, ...]
 
 
+@dataclass(frozen=True)
+class RecoveryComparisonLabels:
+    untitled: str = "No canonical file exists for this untitled document."
+    missing: str = "Canonical file is missing: {path}"
+    disk: str = "{path} (disk)"
+    snapshot: str = "Recovery snapshot"
+    identical: str = "The recovery snapshot matches the current canonical file."
+
+
 class RecoveryConflictError(ValueError):
     """Raised when a canonical file no longer matches a recovery snapshot."""
 
@@ -219,22 +228,23 @@ class RecoveryStore:
         return document
 
     @staticmethod
-    def compare(entry: RecoveryEntry) -> str:
+    def compare(entry: RecoveryEntry, labels: RecoveryComparisonLabels | None = None) -> str:
+        labels = labels or RecoveryComparisonLabels()
         if entry.canonical_path is None:
-            return "No canonical file exists for this untitled document."
+            return labels.untitled
         canonical = Path(entry.canonical_path)
         if not canonical.is_file():
-            return f"Canonical file is missing: {canonical}"
+            return labels.missing.format(path=canonical)
         current = canonical.read_text(encoding="utf-8-sig")
         difference = "".join(
             difflib.unified_diff(
                 current.splitlines(keepends=True),
                 entry.text.splitlines(keepends=True),
-                fromfile=f"{canonical} (disk)",
-                tofile="Recovery snapshot",
+                fromfile=labels.disk.format(path=canonical),
+                tofile=labels.snapshot,
             )
         )
-        return difference or "The recovery snapshot matches the current canonical file."
+        return difference or labels.identical
 
     @staticmethod
     def digest(data: bytes) -> str:

@@ -356,9 +356,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   temporary-catalog tests check dynamic recovery details. Further recovery
   flows and the wider audit remain outstanding. Recovery restore failure,
   comparison and attention headings, successful restore feedback, and the
-  duplicate-open warning now also use Ukrainian catalog strings. Detailed
-  comparison and underlying recovery errors still need localization. Full
-  offline suite: 585 passed, 2 skipped.
+  duplicate-open warning now also use Ukrainian catalog strings. Recovery
+  comparison labels, status and read-error wrappers are now translated without
+  translating document text. Underlying restore errors and the wider audit
+  still need localization; release catalog compilation remains outstanding.
+  Full offline suite: 587 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

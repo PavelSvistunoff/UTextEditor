@@ -13,7 +13,7 @@ from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QInputDialog
 
 from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
-from app.document.recovery import RecoveryStore
+from app.document.recovery import RecoveryComparisonLabels, RecoveryStore
 from app.document.file_manager import FileManager, ExternalChangeError
 from app.project import Project, ProjectError, WordCount
 from app.document.export import ExportChapter, ExportScene
@@ -24,6 +24,18 @@ from app.ui.character_relationship_dialog import CharacterRelationshipDialog
 from app.ui.revision_history_dialog import RevisionHistoryDialog
 from app.ui.settings_dialog import SettingsDialog
 from app.settings.settings import AppSettings
+
+
+def test_recovery_comparison_formats_localized_errors_and_empty_results(tmp_path):
+    store = RecoveryStore(tmp_path / "recovery")
+    path = tmp_path / "invalid.txt"
+    path.write_text("initial", encoding="utf-8")
+    entry = store.save("doc", "draft", canonical_path=path)
+    path.write_bytes(b"\xff")
+    args = (RecoveryComparisonLabels(), "Без назви", "Помилка: {error}", "Немає копій")
+    result = MainWindow._compare_recovery_entries((entry,), *args)
+    assert str(path) in result and "Помилка:" in result
+    assert MainWindow._compare_recovery_entries((), *args) == "Немає копій"
 
 
 @pytest.fixture(scope="module")

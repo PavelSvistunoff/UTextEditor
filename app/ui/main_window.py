@@ -48,7 +48,7 @@ from app.document.encoding import detect_line_ending, normalize_line_endings, py
 from app.document.export import ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source, export_manuscript
 from app.document.file_manager import ExternalChangeError, FileManager
 from app.document.merge import merge_text
-from app.document.recovery import RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
+from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, WordCount, count_words
 from app.project.search import MAX_DOCUMENT_BYTES, SearchDocument, search_project
 from app.project.autopilot import (
@@ -4039,7 +4039,18 @@ class MainWindow(QMainWindow):
         if choice == "defer":
             return
         if choice == "inspect":
-            worker = FunctionWorker(self._compare_recovery_entries, scan.entries)
+            labels = RecoveryComparisonLabels(
+                untitled=self.tr("No canonical file exists for this untitled document."),
+                missing=self.tr("Canonical file is missing: {path}"),
+                disk=self.tr("{path} (disk)"),
+                snapshot=self.tr("Recovery snapshot"),
+                identical=self.tr("The recovery snapshot matches the current canonical file."),
+            )
+            worker = FunctionWorker(
+                self._compare_recovery_entries, scan.entries, labels,
+                self.tr("Untitled"), self.tr("Cannot compare with the canonical file: {error}"),
+                self.tr("No readable recovery snapshots are available."),
+            )
             self._track_worker(worker)
             worker.signals.finished.connect(
                 self._recovery_comparison_ready, Qt.ConnectionType.QueuedConnection
@@ -4101,18 +4112,19 @@ class MainWindow(QMainWindow):
         self.thread_pool.start(worker)
 
     @staticmethod
-    def _compare_recovery_entries(entries: tuple[RecoveryEntry, ...]) -> str:
+    def _compare_recovery_entries(entries: tuple[RecoveryEntry, ...], labels: RecoveryComparisonLabels,
+                                  untitled: str, error_message: str, empty_message: str) -> str:
         lines: list[str] = []
         for entry in entries:
             try:
-                comparison = RecoveryStore.compare(entry)
+                comparison = RecoveryStore.compare(entry, labels)
             except (OSError, UnicodeError) as exc:
-                comparison = f"Cannot compare with the canonical file: {exc}"
+                comparison = error_message.format(error=exc)
             lines.append(
-                f"{entry.canonical_path or 'Untitled'} — {entry.captured_at}\n"
+                f"{entry.canonical_path or untitled} — {entry.captured_at}\n"
                 f"{comparison[:6000]}"
             )
-        return "\n\n".join(lines) if lines else "No readable recovery snapshots are available."
+        return "\n\n".join(lines) if lines else empty_message
 
     def _recovery_comparison_ready(self, comparison: str) -> None:
         QMessageBox.information(self, self.tr("Recovery comparison"), comparison)

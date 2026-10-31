@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from app.document.recovery import RecoveryConflictError, RecoveryStore
+from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryStore
 from app.document.file_manager import FileManager
 
 
@@ -55,6 +55,27 @@ def test_recovery_comparison_shows_changes_without_editing_canonical_file(tmp_pa
     assert "-saved text" in comparison
     assert "+recovered text" in comparison
     assert canonical.read_text(encoding="utf-8") == "saved text\n"
+
+
+def test_recovery_comparison_localizes_labels_without_translating_document_text(tmp_path: Path) -> None:
+    canonical = tmp_path / "draft.txt"
+    canonical.write_text("saved text\n", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("scene", "recovered text\n", canonical_path=canonical)
+    labels = RecoveryComparisonLabels(
+        untitled="Без назви", missing="Відсутній: {path}", disk="{path} (диск)",
+        snapshot="Копія", identical="Збігається",
+    )
+    comparison = store.compare(entry, labels)
+    assert f"--- {canonical} (диск)" in comparison
+    assert "+++ Копія" in comparison
+    assert "-saved text" in comparison and "+recovered text" in comparison
+    canonical.write_text("recovered text\n", encoding="utf-8")
+    assert store.compare(entry, labels) == "Збігається"
+    canonical.unlink()
+    assert store.compare(entry, labels) == f"Відсутній: {canonical}"
+    untitled = store.save("untitled", "text")
+    assert store.compare(untitled, labels) == "Без назви"
 
 
 def test_scan_reports_corrupt_snapshot_and_preserves_it_for_diagnosis(tmp_path: Path) -> None:
