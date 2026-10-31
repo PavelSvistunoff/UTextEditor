@@ -390,7 +390,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   with cancellation and path placeholders covered by tests. Move, import,
   rename, duplicate and link-management prompts now use Ukrainian strings;
   an offscreen test checks that translated link choices retain their IDs.
-  Full offline suite: 605 passed, 2 skipped.
+  Scene-character association prompts are translated as well; tests verify
+  that both localized presence choices preserve their stored values and that
+  existing development details round-trip. Full offline suite: 607 passed,
+  2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

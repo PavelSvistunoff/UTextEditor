@@ -681,6 +681,23 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Associate character</source><translation>Пов’язати персонажа</translation></message>
+    <message><source>Create a character profile first.</source><translation>Спочатку створіть профіль персонажа.</translation></message>
+    <message><source>Remove a character from this scene…</source><translation>Видалити персонажа з цієї сцени…</translation></message>
+    <message><source>Character:</source><translation>Персонаж:</translation></message>
+    <message><source>Remove scene character</source><translation>Видалити персонажа зі сцени</translation></message>
+    <message><source>Scene participation</source><translation>Участь у сцені</translation></message>
+    <message><source>Presence:</source><translation>Присутність:</translation></message>
+    <message><source>present</source><translation>присутній</translation></message>
+    <message><source>mentioned</source><translation>згаданий</translation></message>
+    <message><source>Scene purpose</source><translation>Мета в сцені</translation></message>
+    <message><source>Narrative purpose (optional):</source><translation>Оповідна мета (необов’язково):</translation></message>
+    <message><source>Character development</source><translation>Розвиток персонажа</translation></message>
+    <message><source>Planned or observed character change in this scene (optional):</source><translation>Запланована або помічена зміна персонажа в цій сцені (необов’язково):</translation></message>
+    <message><source>Character state changes</source><translation>Зміни стану персонажа</translation></message>
+    <message><source>One per line: field | new value | previous value (optional) | evidence (optional)</source><translation>По одному на рядок: поле | нове значення | попереднє значення (необов’язково) | свідчення (необов’язково)</translation></message>
+    <message><source>Invalid character state change</source><translation>Некоректна зміна стану персонажа</translation></message>
+    <message><source>Each entry needs a field and new value separated by '|'.</source><translation>Кожен запис має містити поле й нове значення, розділені символом «|».</translation></message>
     <message><source>Ungrouped scenes</source><translation>Сцени поза розділами</translation></message>
     <message><source>Move scene</source><translation>Перемістити сцену</translation></message>
     <message><source>Destination:</source><translation>Місце призначення:</translation></message>

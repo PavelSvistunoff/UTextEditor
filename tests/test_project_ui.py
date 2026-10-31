@@ -722,6 +722,50 @@ def test_translated_link_picker_preserves_target_ids(application, tmp_path, monk
         window.close()
 
 
+@pytest.mark.parametrize("label, expected", [("присутній", "present"), ("згаданий", "mentioned")])
+def test_translated_scene_presence_preserves_manifest_value(application, tmp_path, monkeypatch, label, expected):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Draft")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("scene", scene.id))
+    called = []
+    monkeypatch.setattr(window, "_run_project_mutation", lambda operation, *args: called.append((operation, args)))
+
+    def choose(*args):
+        if args[1] == "Участь у сцені":
+            assert args[3] == ["присутній", "згаданий"]
+            return label, True
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    monkeypatch.setattr(QInputDialog, "getText", lambda *args, **kwargs: ("purpose", True))
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", lambda *args, **kwargs: ("", True))
+    application.installTranslator(translator)
+    try:
+        window.associate_project_character()
+        association = called[0][1][1]
+        assert association.character_id == character.id and association.presence == expected
+        assert association.purpose == "purpose"
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

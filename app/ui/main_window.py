@@ -3098,22 +3098,22 @@ class MainWindow(QMainWindow):
         if kind != "scene" or not scene_id:
             return
         if not self.project.manifest.characters:
-            QMessageBox.information(self, "Associate character", "Create a character profile first.")
+            QMessageBox.information(self, self.tr("Associate character"), self.tr("Create a character profile first."))
             return
         characters = self.project.manifest.characters
         scene = self.project.get_scene(scene_id)
-        remove_label = "Remove a character from this scene…"
+        remove_label = self.tr("Remove a character from this scene…")
         character_by_label = {_character_choice_label(c): c for c in characters}
         labels = list(character_by_label)
         if scene.character_associations:
             labels.insert(0, remove_label)
-        label, accepted = QInputDialog.getItem(self, "Associate character", "Character:", labels, 0, False)
+        label, accepted = QInputDialog.getItem(self, self.tr("Associate character"), self.tr("Character:"), labels, 0, False)
         if not accepted:
             return
         if label == remove_label:
             current = [self.project.get_character(item.character_id) for item in scene.character_associations]
             current_by_label = {_character_choice_label(c): c for c in current}
-            remove_name, accepted = QInputDialog.getItem(self, "Remove scene character", "Character:", list(current_by_label), 0, False)
+            remove_name, accepted = QInputDialog.getItem(self, self.tr("Remove scene character"), self.tr("Character:"), list(current_by_label), 0, False)
             if accepted:
                 character = current_by_label[remove_name]
                 self._run_project_mutation(self.project.unassociate_character, scene_id, character.id)
@@ -3124,28 +3124,30 @@ class MainWindow(QMainWindow):
             None,
         )
         default_presence = existing.presence if existing else "present"
-        presence, accepted = QInputDialog.getItem(
+        presence_labels = {self.tr("present"): "present", self.tr("mentioned"): "mentioned"}
+        presence_label, accepted = QInputDialog.getItem(
             self,
-            "Scene participation",
-            "Presence:",
-            ["present", "mentioned"],
-            ["present", "mentioned"].index(default_presence),
+            self.tr("Scene participation"),
+            self.tr("Presence:"),
+            list(presence_labels),
+            list(presence_labels.values()).index(default_presence),
             False,
         )
-        if not accepted:
+        if not accepted or presence_label not in presence_labels:
             return
+        presence = presence_labels[presence_label]
         purpose, accepted = QInputDialog.getText(
             self,
-            "Scene purpose",
-            "Narrative purpose (optional):",
+            self.tr("Scene purpose"),
+            self.tr("Narrative purpose (optional):"),
             text=existing.purpose if existing else "",
         )
         if not accepted:
             return
         development, accepted = QInputDialog.getMultiLineText(
             self,
-            "Character development",
-            "Planned or observed character change in this scene (optional):",
+            self.tr("Character development"),
+            self.tr("Planned or observed character change in this scene (optional):"),
             "\n".join(existing.development_notes) if existing else "",
         )
         if not accepted:
@@ -3165,8 +3167,8 @@ class MainWindow(QMainWindow):
         )
         state_text, accepted = QInputDialog.getMultiLineText(
             self,
-            "Character state changes",
-            "One per line: field | new value | previous value (optional) | evidence (optional)",
+            self.tr("Character state changes"),
+            self.tr("One per line: field | new value | previous value (optional) | evidence (optional)"),
             default_changes,
         )
         if not accepted:
@@ -3175,7 +3177,7 @@ class MainWindow(QMainWindow):
         for line in (line.strip() for line in state_text.splitlines() if line.strip()):
             parts = [part.strip() for part in line.split("|", 3)]
             if len(parts) < 2 or not parts[0] or not parts[1]:
-                QMessageBox.warning(self, "Invalid character state change", "Each entry needs a field and new value separated by '|'.")
+                QMessageBox.warning(self, self.tr("Invalid character state change"), self.tr("Each entry needs a field and new value separated by '|'."))
                 return
             changes.append(CharacterStateChange(parts[0], parts[1], parts[2] if len(parts) > 2 else "", parts[3] if len(parts) > 3 else ""))
         self._run_project_mutation(self.project.associate_character, scene_id, SceneCharacterAssociation(character.id, presence, purpose, development_notes=notes, state_changes=changes))
