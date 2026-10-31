@@ -508,7 +508,9 @@ def test_quick_open_arrow_keys_move_through_results(application):
     assert dialog.results.hasFocus()
     QTest.keyClick(dialog.results, Qt.Key.Key_Down)
     assert dialog.results.currentRow() == 1
-    dialog.close()
+    QTest.keyClick(dialog.results, Qt.Key.Key_Return)
+    assert dialog.result() == dialog.DialogCode.Accepted
+    assert dialog.selected().id == "2"
 
 
 def test_quick_open_uses_stable_id_and_preserves_unsaved_tabs(application, tmp_path, monkeypatch):
@@ -1141,7 +1143,7 @@ def test_translated_spellcheck_feedback(application, tmp_path):
         window.close()
 
 
-def test_translated_project_translation_cancellation_progress(application, tmp_path):
+def test_translated_project_translation_cancellation_progress(application, tmp_path, monkeypatch):
     import subprocess
     import sys
     from PySide6.QtCore import QTranslator
@@ -1163,6 +1165,12 @@ def test_translated_project_translation_cancellation_progress(application, tmp_p
     try:
         window.cancel_project_translation()
         assert window._project_translation_progress_dialog.labelText() == "Скасування після поточного запиту до моделі…"
+        messages = []
+        monkeypatch.setattr(window, "_finish_project_translation",
+                            lambda project, message, **kwargs: messages.append(message))
+        window._project_translation_cancel_event = None
+        window._project_translation_failed(window._project_translation_generation, None, "detail")
+        assert messages == ["Не вдалося перекласти проєкт. Файли проєкту не змінено: detail"]
     finally:
         window._project_translation_worker = None
         application.removeTranslator(translator)

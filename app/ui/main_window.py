@@ -1438,8 +1438,7 @@ class MainWindow(QMainWindow):
         if cancelled:
             self._finish_project_translation(
                 project,
-                "Project translation cancelled. No project files were changed. "
-                f"Original snapshot: {translation.snapshot_path}",
+                self.tr("Project translation cancelled. No project files were changed. Original snapshot: {path}").format(path=translation.snapshot_path),
                 outcome="cancelled",
             )
             return
@@ -1455,8 +1454,7 @@ class MainWindow(QMainWindow):
         if not current():
             self._finish_project_translation(
                 project,
-                "Translation was not applied because the project, settings, or an "
-                "open document changed. Original project files were preserved.",
+                self.tr("Translation was not applied because the project, settings, or an open document changed. Original project files were preserved."),
                 warning=True,
                 outcome="discarded",
             )
@@ -1552,14 +1550,16 @@ class MainWindow(QMainWindow):
         self._project_generation += 1
         if self._project_dock is not None:
             self._project_dock.setWindowTitle(result.project.manifest.title)
+        display_languages = {"English": self.tr("English"), "Ukrainian": self.tr("Ukrainian")}
         self._finish_project_translation(
             result.project,
-            f"Project translated from {translation.source_language} to "
-            f"{translation.target_language}. Originals are preserved in "
-            f"{translation.snapshot_path}."
+            self.tr("Project translated from {source} to {target}. Originals are preserved in {path}.").format(
+                source=display_languages.get(translation.source_language, translation.source_language),
+                target=display_languages.get(translation.target_language, translation.target_language),
+                path=translation.snapshot_path,
+            )
             + (
-                " An open document changed during saving; its newer buffer remains "
-                "unsaved."
+                " " + self.tr("An open document changed during saving; its newer buffer remains unsaved.")
                 if changed_buffers
                 else ""
             ),
@@ -1578,9 +1578,9 @@ class MainWindow(QMainWindow):
         self._finish_project_translation(
             project,
             (
-                f"Project translation cancelled. No project files were changed. {error}"
+                self.tr("Project translation cancelled. No project files were changed. {error}").format(error=error)
                 if cancelled
-                else f"Project translation failed. No project files were changed: {error}"
+                else self.tr("Project translation failed. No project files were changed: {error}").format(error=error)
             ),
             warning=not cancelled,
             outcome="cancelled" if cancelled else "failed",
@@ -1600,8 +1600,7 @@ class MainWindow(QMainWindow):
         self._project_translation_cancel_event = None
         self._finish_project_translation(
             project,
-            f"Could not safely apply project translation: {error}. "
-            f"Original snapshot: {translation.snapshot_path}",
+            self.tr("Could not safely apply project translation: {error}. Original snapshot: {path}").format(error=error, path=translation.snapshot_path),
             warning=True,
         )
 

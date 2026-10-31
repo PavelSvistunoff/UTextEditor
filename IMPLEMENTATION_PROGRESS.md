@@ -442,7 +442,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   and spellcheck feedback now use translated templates, including Ukrainian
   plural forms. AI connection states are also translated at display time while
   retaining their internal values. Runtime tests cover connection status,
-  error details and plural selection. Full offline suite: 616 passed, 2 skipped.
+  error details and plural selection. Project translation success, failure,
+  cancellation and stale-state messages now use Ukrainian templates while
+  preserving paths and error details; runtime catalog tests cover feedback.
+  Full offline suite: 635 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

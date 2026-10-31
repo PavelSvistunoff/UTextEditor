@@ -681,6 +681,13 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Project translated from {source} to {target}. Originals are preserved in {path}.</source><translation>Проєкт перекладено з мови {source} мовою {target}. Оригінали збережено в {path}.</translation></message>
+    <message><source>An open document changed during saving; its newer buffer remains unsaved.</source><translation>Відкритий документ змінився під час збереження; його новіший вміст залишається незбереженим.</translation></message>
+    <message><source>Project translation cancelled. No project files were changed. {error}</source><translation>Переклад проєкту скасовано. Файли проєкту не змінено. {error}</translation></message>
+    <message><source>Project translation failed. No project files were changed: {error}</source><translation>Не вдалося перекласти проєкт. Файли проєкту не змінено: {error}</translation></message>
+    <message><source>Could not safely apply project translation: {error}. Original snapshot: {path}</source><translation>Не вдалося безпечно застосувати переклад проєкту: {error}. Початковий знімок: {path}</translation></message>
+    <message><source>Project translation cancelled. No project files were changed. Original snapshot: {path}</source><translation>Переклад проєкту скасовано. Файли проєкту не змінено. Початковий знімок: {path}</translation></message>
+    <message><source>Translation was not applied because the project, settings, or an open document changed. Original project files were preserved.</source><translation>Переклад не застосовано, оскільки проєкт, налаштування або відкритий документ змінилися. Початкові файли проєкту збережено.</translation></message>
     <message><source>Applying all translated project files…</source><translation>Застосування перекладу до всіх файлів проєкту…</translation></message>
     <message><source>Cancelling after the current model request…</source><translation>Скасування після поточного запиту до моделі…</translation></message>
     <message><source>AI: Connected</source><translation>ШІ: підключено</translation></message>
