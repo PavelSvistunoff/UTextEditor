@@ -104,7 +104,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   size limit, and reports them without falling back to stale disk text. Result
   excerpts are also bounded for long search queries. Focused service and Qt
   tests and the full offline suite passed: 574 passed, 2 skipped. Native
-  responsiveness and compiled localization remain outstanding.
+  responsiveness and compiled localization remain outstanding. The search
+  status and unreadable-file details now scroll within a bounded-height area,
+  leaving room for results; an offscreen test covers 100 errors and the
+  omitted-error count. Full offline suite: 636 passed, 2 skipped.
 - **TASK-013 — in progress:** Search > Quick Open provides a keyboard-driven
   picker for scene, chapter, note and character names and character aliases,
   showing type, chapter context and stable IDs. It opens existing documents

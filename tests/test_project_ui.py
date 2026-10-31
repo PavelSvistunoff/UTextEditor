@@ -444,6 +444,25 @@ def test_project_search_panel_reports_omitted_errors(application):
     panel.close()
 
 
+def test_project_search_long_error_report_is_scrollable(application):
+    from app.project.search import SearchResult
+    from app.ui.project_search_panel import ProjectSearchPanel
+
+    panel = ProjectSearchPanel()
+    panel.resize(450, 400)
+    errors = tuple(f"Unreadable file {index}: failure" for index in range(100))
+    panel.set_results(SearchResult((), errors, False, False, 12))
+    panel.show()
+    application.processEvents()
+    assert panel.status_scroll.height() <= 120
+    assert panel.status_scroll.verticalScrollBar().maximum() > 0
+    assert panel.status.textFormat() == Qt.TextFormat.PlainText
+    assert errors[-1] in panel.status.text()
+    assert "Additional unreadable files omitted: 12" in panel.status.text()
+    assert panel.results.height() > panel.status_scroll.height()
+    panel.close()
+
+
 def test_project_search_does_not_copy_certainly_oversized_buffer(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Scene", content="disk word")

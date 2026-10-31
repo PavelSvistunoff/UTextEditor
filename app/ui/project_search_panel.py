@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 
 class ProjectSearchPanel(QWidget):
@@ -26,8 +26,15 @@ class ProjectSearchPanel(QWidget):
         row.addWidget(self.cancel_button)
         layout.addLayout(row)
         self.status = QLabel(self)
+        self.status.setTextFormat(Qt.TextFormat.PlainText)
         self.status.setWordWrap(True)
-        layout.addWidget(self.status)
+        self.status.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
+        self.status_scroll = QScrollArea(self)
+        self.status_scroll.setWidgetResizable(True)
+        self.status_scroll.setMaximumHeight(120)
+        self.status_scroll.setWidget(self.status)
+        layout.addWidget(self.status_scroll)
         self.results = QListWidget(self)
         self.results.setAccessibleName(self.tr("Project search results"))
         self.results.setAccessibleDescription(self.tr("Use arrow keys to choose a result and Enter to open it."))
