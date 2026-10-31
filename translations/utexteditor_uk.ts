@@ -1012,6 +1012,7 @@ Text is sent to the configured Ollama destination:
     <message><source>Restore selected snapshot…</source><translation>Відновити вибрану копію…</translation></message>
     <message><source>Restore selected snapshot</source><translation>Відновити вибрану копію</translation></message>
     <message><source>Recovery snapshot:</source><translation>Копія відновлення:</translation></message>
+    <message><source>Unfinished recovery write; it may still be in progress.</source><translation>Незавершений запис копії відновлення; можливо, він ще триває.</translation></message>
     <message><source>Inspect / compare</source><translation>Переглянути / порівняти</translation></message>
     <message><source>Locate project…</source><translation>Знайти проєкт…</translation></message>
     <message><source>Discard recovery data</source><translation>Видалити дані відновлення</translation></message>

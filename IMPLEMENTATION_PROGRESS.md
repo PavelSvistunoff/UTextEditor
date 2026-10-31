@@ -3,6 +3,17 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-008.02 — DONE:** recovery scans now report unfinished atomic-write
+  temporary files as well as malformed snapshots. The report says a write may
+  still be in progress; automatic retention and document cleanup preserve
+  these files, and confirmed discard removes them. Modified
+  `app/document/recovery.py`, `app/ui/main_window.py`,
+  `translations/utexteditor_uk.ts`, `tests/test_recovery.py`, `README.md`, and
+  `TASKS.md`. Focused recovery and project UI suites: 155 passed; full offline
+  suite: 648 passed, 2 skipped. Ukrainian source catalog validation passed.
+  Incomplete files are diagnostic only;
+  extracting intact content, native accessibility checks, and release catalog
+  compilation remain outstanding.
 - **TASK-005.02 — DONE:** added
   `test_separate_process_edit_after_final_check_exposes_save_race` in
   `tests/test_document.py`. A subprocess writes between the final check and

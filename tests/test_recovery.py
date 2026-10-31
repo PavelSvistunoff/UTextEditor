@@ -92,6 +92,23 @@ def test_scan_reports_corrupt_snapshot_and_preserves_it_for_diagnosis(tmp_path: 
     assert corrupt.exists()
 
 
+def test_scan_reports_unfinished_snapshot_write_and_preserves_it_until_discard(tmp_path: Path) -> None:
+    store = RecoveryStore(tmp_path / "recovery", retention=1)
+    entry = store.save("doc", "valid")
+    partial = entry.snapshot_path.parent / f".{entry.snapshot_path.name}.interrupted.tmp"
+    partial.write_text('{"text":"partial', encoding="utf-8")
+
+    store.save("doc", "newer")
+    scan = store.scan()
+    assert [item.text for item in scan.entries] == ["newer"]
+    assert len(scan.issues) == 1
+    assert scan.issues[0].snapshot_path == partial and scan.issues[0].incomplete_write
+    store.discard_document("doc")
+    assert partial.read_text(encoding="utf-8") == '{"text":"partial'
+    store.discard()
+    assert not partial.exists()
+
+
 @pytest.mark.parametrize("timestamp", ["not a timestamp", "2026-01-01T12:00:00"])
 def test_scan_reports_invalid_timestamp_without_hiding_valid_snapshot(tmp_path: Path, timestamp: str) -> None:
     store = RecoveryStore(tmp_path / "recovery")

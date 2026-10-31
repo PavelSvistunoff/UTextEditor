@@ -4156,7 +4156,11 @@ class MainWindow(QMainWindow):
             for entry in scan.entries
         ]
         details.extend(
-            self.tr("Unreadable recovery entry: {path} ({message})").format(path=issue.snapshot_path, message=issue.message)
+            self.tr("Unreadable recovery entry: {path} ({message})").format(
+                path=issue.snapshot_path,
+                message=(self.tr("Unfinished recovery write; it may still be in progress.")
+                         if issue.incomplete_write else issue.message),
+            )
             for issue in scan.issues
         )
         details.append(

@@ -35,6 +35,7 @@ class RecoveryEntry:
 class RecoveryIssue:
     snapshot_path: Path
     message: str
+    incomplete_write: bool = False
 
 
 @dataclass(frozen=True)
@@ -165,11 +166,17 @@ class RecoveryStore:
                     entries.append(self._read_entry(path))
                 except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
                     issues.append(RecoveryIssue(path, str(exc)))
+            for path in sorted(directory.glob(".*.json.*.tmp")):
+                if path.is_file():
+                    issues.append(RecoveryIssue(
+                        path, "Unfinished recovery write; it may still be in progress.", True
+                    ))
         entries.sort(key=lambda entry: datetime.fromisoformat(entry.captured_at), reverse=True)
         return RecoveryScan(tuple(entries), tuple(issues))
 
     def discard(self, entries: Iterable[RecoveryEntry] | None = None) -> None:
-        targets = [entry.snapshot_path for entry in entries] if entries is not None else list(self.root.glob("*/*.json"))
+        targets = ([entry.snapshot_path for entry in entries] if entries is not None else
+                   [*self.root.glob("*/*.json"), *self.root.glob("*/.*.json.*.tmp")])
         for target in targets:
             resolved_parent = target.parent.resolve()
             if not target.is_file() or self.root.resolve() not in resolved_parent.parents:

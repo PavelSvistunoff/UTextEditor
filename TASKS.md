@@ -213,7 +213,7 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 
 - [~] **TASK-008.01** — Show per-document recovery status and timestamps.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-008.02** — Identify incomplete or corrupt recovery entries.
+- [x] **TASK-008.02** — Identify incomplete or corrupt recovery entries.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-008.03** — Display readable diagnostic information.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
