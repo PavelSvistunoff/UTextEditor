@@ -290,7 +290,9 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   preserved dynamic details. Translation extraction and temporary-catalog
   tests pass; the full offline suite passed: 557 passed, 2 skipped. The editor's
   spelling context-menu Replace and Ignore actions now use translated labels,
-  retaining the original and proposed words as placeholders.
+  retaining the original and proposed words as placeholders. Standalone file
+  open/save dialogs, status and error headings, and recovery-cleanup and
+  autosave failure messages have also been marked and translated.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

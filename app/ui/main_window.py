@@ -4552,7 +4552,7 @@ class MainWindow(QMainWindow):
         return persisted_text, fresh_project
 
     def open_document(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Open file")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Open file"))
         if not path:
             return
         self._open_document_path(path)
@@ -4573,8 +4573,8 @@ class MainWindow(QMainWindow):
         worker = FunctionWorker(self.file_manager.open, path)
         self._track_worker(worker)
         worker.signals.finished.connect(self._opened_document, Qt.ConnectionType.QueuedConnection)
-        worker.signals.failed.connect(lambda exc: QMessageBox.warning(self, "Open failed", str(exc)), Qt.ConnectionType.QueuedConnection)
-        self.statusBar().showMessage("Opening file…")
+        worker.signals.failed.connect(lambda exc: QMessageBox.warning(self, self.tr("Open failed"), str(exc)), Qt.ConnectionType.QueuedConnection)
+        self.statusBar().showMessage(self.tr("Opening file…"))
         self.thread_pool.start(worker)
 
     def _opened_document(self, document) -> None:
@@ -4737,7 +4737,7 @@ class MainWindow(QMainWindow):
         if target is None:
             if editor is not self.tabs.current_editor():
                 self.tabs.setCurrentWidget(editor)
-            path, _ = QFileDialog.getSaveFileName(self, "Save file")
+            path, _ = QFileDialog.getSaveFileName(self, self.tr("Save file"))
             if not path:
                 if callback:
                     callback(False)
@@ -4748,7 +4748,7 @@ class MainWindow(QMainWindow):
         for index in range(self.tabs.count()):
             other = self.tabs.widget(index)
             if other is not editor and other and other.document_state.path and other.document_state.path.resolve() == resolved:
-                QMessageBox.warning(self, "Save failed", "That file is already open in another tab.")
+                QMessageBox.warning(self, self.tr("Save failed"), self.tr("That file is already open in another tab."))
                 if callback:
                     callback(False)
                 return False
@@ -4793,7 +4793,7 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         if editor is self.tabs.current_editor():
-            self.statusBar().showMessage("Saving file…")
+            self.statusBar().showMessage(self.tr("Saving file…"))
         self.thread_pool.start(worker)
         return True
 
@@ -4848,7 +4848,7 @@ class MainWindow(QMainWindow):
             self._track_worker(worker)
             worker.signals.failed.connect(
                 lambda error: self.statusBar().showMessage(
-                    f"Old recovery data could not be removed: {error}", 8000
+                    self.tr("Old recovery data could not be removed: {error}").format(error=error), 8000
                 ),
                 Qt.ConnectionType.QueuedConnection,
             )
@@ -4861,9 +4861,9 @@ class MainWindow(QMainWindow):
                 message = str(error)
                 if isinstance(error, ExternalChangeError) or (isinstance(error, ProjectError) and "changed on disk" in message):
                     message += "\n\n" + self.tr("Use File > Review External Changes… to compare versions and choose how to proceed.")
-                QMessageBox.warning(self, "Save failed", message)
+                QMessageBox.warning(self, self.tr("Save failed"), message)
             else:
-                self.statusBar().showMessage(f"Autosave failed: {error}", 10000)
+                self.statusBar().showMessage(self.tr("Autosave failed: {error}").format(error=error), 10000)
         if callback:
             callback(False)
 
@@ -4871,7 +4871,7 @@ class MainWindow(QMainWindow):
         editor = self.tabs.current_editor()
         if not editor:
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Save file")
+        path, _ = QFileDialog.getSaveFileName(self, self.tr("Save file"))
         if path:
             self._save_editor(editor, target=Path(path))
 
