@@ -675,6 +675,11 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Recovery restore failed: {error}</source><translation>Не вдалося відновити дані: {error}</translation></message>
+    <message><source>Recovery comparison</source><translation>Порівняння копій відновлення</translation></message>
+    <message><source>Recovery needs attention</source><translation>Відновлення потребує уваги</translation></message>
+    <message><source>{document_id}: an editor for the canonical path is already open; recovered content was opened separately.</source><translation>{document_id}: редактор для основного файлу вже відкрито; відновлений вміст відкрито окремо.</translation></message>
+    <message><source>Recovered documents are open and remain unsaved until you save them.</source><translation>Відновлені документи відкрито; вони залишаться незбереженими, доки ви їх не збережете.</translation></message>
     <message><source>Recovery data could not be inspected: {error}</source><translation>Не вдалося перевірити дані відновлення: {error}</translation></message>
     <message><source>No recovery data found.</source><translation>Даних відновлення не знайдено.</translation></message>
     <message><source>Unreadable recovery entry: {path} ({message})</source><translation>Не вдалося прочитати запис відновлення: {path} ({message})</translation></message>

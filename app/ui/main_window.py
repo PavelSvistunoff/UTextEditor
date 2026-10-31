@@ -4095,7 +4095,7 @@ class MainWindow(QMainWindow):
         self._track_worker(worker)
         worker.signals.finished.connect(self._recovery_restore_finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(
-            lambda error: self.statusBar().showMessage(f"Recovery restore failed: {error}", 10000),
+            lambda error: self.statusBar().showMessage(self.tr("Recovery restore failed: {error}").format(error=error), 10000),
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
@@ -4115,7 +4115,7 @@ class MainWindow(QMainWindow):
         return "\n\n".join(lines) if lines else "No readable recovery snapshots are available."
 
     def _recovery_comparison_ready(self, comparison: str) -> None:
-        QMessageBox.information(self, "Recovery comparison", comparison)
+        QMessageBox.information(self, self.tr("Recovery comparison"), comparison)
 
     @staticmethod
     def _prepare_recovery_restore(store: RecoveryStore, entries: tuple[RecoveryEntry, ...], located_directory):
@@ -4188,15 +4188,15 @@ class MainWindow(QMainWindow):
                 if duplicate:
                     document.path = None
                     warnings.append(
-                        f"{entry.document_id}: an editor for the canonical path is already open; "
-                        "recovered content was opened separately."
+                        self.tr("{document_id}: an editor for the canonical path is already open; "
+                                "recovered content was opened separately.").format(document_id=entry.document_id)
                     )
             editor = self.tabs.add_document(document)
             editor._recovery_document_id = entry.document_id
         if warnings:
-            QMessageBox.warning(self, "Recovery needs attention", "\n".join(warnings))
+            QMessageBox.warning(self, self.tr("Recovery needs attention"), "\n".join(warnings))
         elif restored:
-            self.statusBar().showMessage("Recovered documents are open and remain unsaved until you save them.", 8000)
+            self.statusBar().showMessage(self.tr("Recovered documents are open and remain unsaved until you save them."), 8000)
 
     def _recovery_payloads(self, *, exclude_discarded: bool = False) -> tuple[_RecoveryPayload, ...]:
         if self.recovery_store is None:

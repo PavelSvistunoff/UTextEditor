@@ -83,6 +83,8 @@ def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     assert translator.translate("MainWindow", "Book PDF compiled to {path}").format(path="книга.pdf") == "Книгу PDF створено: книга.pdf"
     assert translator.translate("MainWindow", "Plain text (*.txt)") == "Звичайний текст (*.txt)"
     assert translator.translate("MainWindow", "Recover unsaved work") == "Відновити незбережену роботу"
+    assert translator.translate("MainWindow", "Recovery restore failed: {error}").format(error="помилка") == "Не вдалося відновити дані: помилка"
+    assert translator.translate("MainWindow", "{document_id}: an editor for the canonical path is already open; recovered content was opened separately.").format(document_id="abc") == "abc: редактор для основного файлу вже відкрито; відновлений вміст відкрито окремо."
     assert translator.translate("MainWindow", "Unreadable recovery entry: {path} ({message})").format(path="файл", message="помилка") == "Не вдалося прочитати запис відновлення: файл (помилка)"
     assert translator.translate("MainWindow", "Manuscript exported to {path}").format(path="роман.txt") == "Рукопис експортовано до роман.txt"
     assert translator.translate("MainWindow", "Replace the existing file {path}?").format(path="книга.pdf") == "Замінити наявний файл книга.pdf?"
