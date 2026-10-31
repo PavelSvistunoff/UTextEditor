@@ -262,7 +262,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   passed, 2 skipped. Shared Cyrillic words alone no longer classify text as
   Ukrainian: two Russian examples and an ambiguous Ukrainian example now fall
   back to Auto. The corpus contains 23 cases; broader evaluation remains.
-  Full offline suite: 550 passed, 2 skipped.
+  Full offline suite: 550 passed, 2 skipped. Detection now normalizes Unicode
+  before inspecting scripts and treats remaining combining marks as ambiguous.
+  An expanded 33-case corpus includes decomposed Ukrainian and accented or
+  unsupported text: the previous detector matched 30 cases and the updated
+  detector matched 33. This remains a small, nonrepresentative corpus; broader
+  evaluation is still needed. Full offline suite: 567 passed, 2 skipped.
 - **TASK-033 — in progress:** added a command-line TS validator for missing,
   unfinished and malformed entries, Qt and named-format placeholder parity,
   and English/Ukrainian plural forms. It can compare against an independently

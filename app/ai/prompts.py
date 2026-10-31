@@ -1,6 +1,7 @@
 """Centralized prompts for structured local AI operations."""
 
 import re
+import unicodedata
 
 DEFAULT_AI_ROLE = "You are a medium. Predict what I will say next."
 DEFAULT_COMPLETION_TEMPLATE = (
@@ -25,17 +26,18 @@ def completion_prompt(
 
 def detect_language(text: str) -> str:
     """Detect clear English or Ukrainian signals and preserve ambiguity as Auto."""
-    value = (text or "").strip()
+    value = unicodedata.normalize("NFC", text or "").strip()
     if not value:
         return "Auto"
 
     has_ukrainian = bool(re.search(r"[їієґЇІЄҐ]", value))
     has_cyrillic = bool(re.search(r"[а-яёіїєґА-ЯЁІЇЄҐ]", value))
     has_latin = bool(re.search(r"[A-Za-z]", value))
-    # Other alphabets or Russian-specific letters do not provide reliable
-    # evidence for either supported language, including mixed-script input.
-    if re.search(r"[ыэёъЫЭЁЪ]", value) or re.search(
-        r"[^\W\d_A-Za-zа-яёіїєґА-ЯЁІЇЄҐ]", value
+    # Unsupported letters and remaining combining marks are ambiguous.
+    if (
+        any(unicodedata.category(char).startswith("M") for char in value)
+        or re.search(r"[ыэёъЫЭЁЪ]", value)
+        or re.search(r"[^\W\d_A-Za-zа-яёіїєґА-ЯЁІЇЄҐ]", value)
     ):
         return "Auto"
     if len(value) < 8:
