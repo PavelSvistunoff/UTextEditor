@@ -48,29 +48,42 @@ def project_planning_context(project, *, limit: int = MAX_CHARACTER_CONTEXT) -> 
 
 def scene_character_context(project, scene_id: str, *, limit: int = MAX_CHARACTER_CONTEXT) -> str:
     """Render profiles explicitly associated with a scene and adjacent relationships only."""
+    return capture_scene_character_context(project, scene_id, limit=limit)[0]
+
+
+def capture_scene_character_context(project, scene_id: str, *, limit: int = MAX_CHARACTER_CONTEXT) -> tuple[str, bool]:
+    """Return the rendered context and whether its character details were limited."""
     scene = project.get_scene(scene_id)
-    if limit <= 0:
-        return ""
     associations = scene.character_associations
     if not associations:
-        return ""
+        return "", False
     selected = {item.character_id for item in associations}
     characters = {character.id: character for character in project.manifest.characters}
     lines: list[str] = []
+    omitted = False
     for association in associations:
         character = characters.get(association.character_id)
         if character is None:
             continue
-        lines.append(_profile(character, association))
+        profile, limited = _profile(character, association)
+        lines.append(profile)
+        omitted |= limited
         for relationship in project.manifest.character_relationships:
             if relationship.source_id == character.id and relationship.target_id in selected:
                 other = characters[relationship.target_id]
                 lines.append(f"Relationship: {character.full_name} → {other.full_name}: {relationship.relationship_type}; {relationship.description}; attitude={relationship.attitude}; trust={relationship.trust}")
-    return "\n".join(lines)[:limit]
+    rendered = "\n".join(lines)
+    return rendered[:max(0, limit)], omitted or len(rendered) > max(0, limit)
 
 
-def _profile(character: Character, association: SceneCharacterAssociation) -> str:
+def _profile(character: Character, association: SceneCharacterAssociation) -> tuple[str, bool]:
     lines = [f"Character: {character.display_name or character.full_name} ({character.role})"]
+    omitted = False
+
+    def bounded(items, maximum):
+        nonlocal omitted
+        omitted |= len(items) > maximum
+        return items[:maximum]
     if association.presence == "mentioned":
         lines.append("Scene status: mentioned, not physically present.")
     if association.purpose:
@@ -79,22 +92,22 @@ def _profile(character: Character, association: SceneCharacterAssociation) -> st
         lines.append(f"Primary motivation: {character.primary_motivation}")
     goals = [goal.description for goal in character.goals if goal.status == "active"]
     if goals:
-        lines.append("Active goals: " + "; ".join(goals[:5]))
+        lines.append("Active goals: " + "; ".join(bounded(goals, 5)))
     traits = character.personality.get("traits", [])
     if traits:
-        lines.append("Traits: " + "; ".join(traits[:8]))
+        lines.append("Traits: " + "; ".join(bounded(traits, 8)))
     for kind in ("knows", "believes", "suspects", "does_not_know", "conceals"):
         statements = [item.statement for item in character.knowledge if item.kind == kind]
         if statements:
-            lines.append(f"{kind.replace('_', ' ').title()}: " + "; ".join(statements[:5]))
+            lines.append(f"{kind.replace('_', ' ').title()}: " + "; ".join(bounded(statements, 5)))
     if character.arc.get("current_state"):
         lines.append(f"Current arc state: {character.arc['current_state']}")
     if association.relevant_goals:
-        lines.append("Scene-relevant goals: " + "; ".join(association.relevant_goals[:5]))
+        lines.append("Scene-relevant goals: " + "; ".join(bounded(association.relevant_goals, 5)))
     if association.development_notes:
-        lines.append("Development notes: " + "; ".join(association.development_notes[:5]))
-    for change in association.state_changes[:8]:
+        lines.append("Development notes: " + "; ".join(bounded(association.development_notes, 5)))
+    for change in bounded(association.state_changes, 8):
         previous = f" (previously: {change.previous_value})" if change.previous_value else ""
         evidence = f"; evidence: {change.evidence}" if change.evidence else ""
         lines.append(f"Scene state change: {change.field} → {change.value}{previous}{evidence}")
-    return "\n".join(lines)
+    return "\n".join(lines), omitted

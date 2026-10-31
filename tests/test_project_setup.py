@@ -485,6 +485,38 @@ def test_scene_context_includes_each_associated_directed_relationship_once(tmp_p
     assert "Nia" not in context
 
 
+@pytest.mark.parametrize("field", ["goals", "traits", "knowledge", "relevant_goals", "development_notes", "state_changes"])
+def test_scene_context_reports_detail_limits_only_for_associated_characters(tmp_path, field):
+    from app.project import SceneCharacterAssociation
+    from app.project.character_context import capture_scene_character_context, scene_character_context
+    from app.project.model import CharacterGoal, CharacterKnowledge, CharacterStateChange
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening")
+    character = project.add_character("Mara")
+    association = SceneCharacterAssociation(character.id)
+    project.associate_character(scene.id, association)
+    character = next(item for item in project.manifest.characters if item.id == character.id)
+    association = project.get_scene(scene.id).character_associations[0]
+    if field == "goals":
+        character.goals = [CharacterGoal(str(i)) for i in range(6)]
+    elif field == "traits":
+        character.personality["traits"] = [str(i) for i in range(9)]
+    elif field == "knowledge":
+        character.knowledge = [CharacterKnowledge("knows", str(i)) for i in range(6)]
+    elif field == "state_changes":
+        association.state_changes = [CharacterStateChange("current_state", str(i)) for i in range(9)]
+    else:
+        setattr(association, field, [str(i) for i in range(6)])
+
+    context, limited = capture_scene_character_context(project, scene.id)
+    assert limited
+    assert context == scene_character_context(project, scene.id)
+    assert capture_scene_character_context(project, scene.id, limit=1)[1]
+    project.get_scene(scene.id).character_associations.clear()
+    assert capture_scene_character_context(project, scene.id) == ("", False)
+
+
 def test_auto_writer_writes_only_empty_scenes(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter")

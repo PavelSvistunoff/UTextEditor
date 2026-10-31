@@ -191,10 +191,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   Tests cover exact context, cancellation and edits during review. Closed
   notes are now checked in the worker before sending and after generation;
   stale results are discarded. As with other filesystem checks, a change can
-  still race the final check. Reporting of character-detail limits and compiled
-  Ukrainian translations remain outstanding. The preview flags omitted
-  document prefixes and character text cut by the length limit. Full offline
-  suite: 481 passed, 2 skipped.
+  still race the final check. The preview flags omitted
+  document prefixes and character text cut by the length limit. It also flags
+  character goals, traits, knowledge, scene goals, development notes and state
+  changes omitted by per-field limits. Focused service and offscreen review
+  tests cover these limits; compiled Ukrainian translations remain outstanding.
+  Full offline suite: 557 passed, 2 skipped.
 - **TASK-023 — in progress:** project translation now retains captured source
   contents and presents titles and texts side by side before explicit Apply or
   Cancel. It rechecks project, settings and all open project editors after

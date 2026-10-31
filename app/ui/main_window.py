@@ -61,7 +61,7 @@ from app.project.autopilot import (
 from app.project.auto_writer import AutoWriterResult, run_auto_writer
 from app.project.model import Character, CharacterRelationship, CharacterStateChange
 from app.project.model import SceneCharacterAssociation
-from app.project.character_context import MAX_CHARACTER_CONTEXT, project_planning_context, scene_character_context
+from app.project.character_context import capture_scene_character_context, project_planning_context, scene_character_context
 from app.project.outline import parse_outline
 from app.project.translation import (
     ProjectTranslation,
@@ -5999,9 +5999,7 @@ class MainWindow(QMainWindow):
         project_generation = self._project_generation
         character_truncated = False
         if project is not None:
-            characters = scene_character_context(project, binding.item_id, limit=MAX_CHARACTER_CONTEXT + int(review))
-            character_truncated = len(characters) > MAX_CHARACTER_CONTEXT
-            characters = characters[:MAX_CHARACTER_CONTEXT]
+            characters, character_truncated = capture_scene_character_context(project, binding.item_id)
             function = complete_project_scene
             args = (self.completion_service, project,
                     tuple((note.id, note.title, note.type) for note in project.manifest.notes

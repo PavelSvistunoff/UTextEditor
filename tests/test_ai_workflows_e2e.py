@@ -213,6 +213,36 @@ def test_review_identifies_omitted_document_prefix(window, monkeypatch):
     wait_until(lambda: window._completion_worker is None)
 
 
+def test_review_identifies_character_detail_limit(window, tmp_path, monkeypatch):
+    from app.project import SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "character-context", "Novel")
+    scene = project.add_scene("Scene", content="Draft")
+    character = project.add_character("Mara")
+    character.personality["traits"] = [f"trait {i}" for i in range(9)]
+    project.update_character(character.id, character)
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    editor = window.tabs.current_editor()
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    summaries = []
+
+    def review(dialog):
+        summaries.extend(label.text() for label in dialog.findChildren(QLabel))
+        assert "trait 7" in dialog.context.toPlainText()
+        assert "trait 8" not in dialog.context.toPlainText()
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr("app.ui.main_window.CompletionContextDialog.exec", review)
+    window.request_completion(review=True)
+    wait_until(lambda: bool(summaries))
+    assert any("Associated character context was truncated" in text for text in summaries)
+    wait_until(lambda: window._completion_worker is None)
+
+
 @pytest.mark.parametrize("decision", ["select", "cancel", "stale"])
 def test_auto_writer_review_applies_only_selected_and_rejects_stale(window, tmp_path, monkeypatch, decision):
     project = Project.create(tmp_path / "draft-review", "Novel")
