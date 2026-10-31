@@ -3,6 +3,12 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-001.03 — PARTIAL:** changing the target of an active new-words goal
+  no longer reattaches the tracker or discards undo checkpoints. Modified
+  `app/ui/main_window.py`, `tests/test_editor_widget.py`, and `README.md`.
+  Focused tests: 78 passed; full offline suite: 672 passed, 2 skipped.
+  Scope changes and disabling/re-enabling tracking still reattach and can lose
+  earlier checkpoints; bounded undo metadata remains outstanding.
 - **TASK-001.03 — PARTIAL:** pausing no longer drops tracker checkpoints;
   paused edits add no new words, while undo/redo follows retained checkpoints.
   Reset removes today's counts from retained checkpoints instead of replacing

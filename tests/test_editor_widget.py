@@ -826,6 +826,31 @@ def test_writing_goal_preserves_undo_across_pause_and_reset(application: QApplic
     window.close()
 
 
+def test_changing_new_word_goal_target_preserves_undo_history(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(10, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+    editor.insertPlainText("first second")
+    assert window.writing_goals.count_new_words({document_id}) == 2
+
+    with patch("app.ui.main_window.WritingGoalDialog") as dialog_type:
+        dialog_type.return_value.exec.return_value = QDialog.DialogCode.Accepted
+        dialog_type.return_value.values.return_value = (20, "new_words")
+        window.configure_writing_goal()
+
+    assert window.writing_goals.target == 20
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 2
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
 def test_writing_goal_compacts_merged_qt_commands_and_keeps_undo_branches(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()

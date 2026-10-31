@@ -891,8 +891,12 @@ class MainWindow(QMainWindow):
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             target, scope = dialog.values()
+            preserve_history = (
+                self.writing_goals.scope == scope == "new_words"
+                and self.writing_goals.target > 0 and target > 0
+            )
             self.writing_goals.configure(target, scope)
-            self._attach_open_writing_goal_documents(reset_history=True)
+            self._attach_open_writing_goal_documents(reset_history=not preserve_history)
             self._schedule_writing_goal_persist()
             self._refresh_writing_goal()
 
