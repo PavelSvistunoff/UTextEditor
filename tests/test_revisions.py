@@ -317,3 +317,33 @@ def test_delete_rejects_snapshot_replaced_after_selection(tmp_path) -> None:
     with pytest.raises(ValueError, match="changed since"):
         store.delete(selected, confirmed=True)
     assert store.read(selected.snapshot_path).documents["one"] == "second"
+
+
+def rewrite_snapshot_timestamp(store, snapshot, timestamp):
+    payload = json.loads(snapshot.snapshot_path.read_text(encoding="utf-8"))
+    payload["captured_at"] = timestamp
+    payload["digest"] = store._digest(store._serialize({key: value for key, value in payload.items() if key != "digest"}))
+    snapshot.snapshot_path.write_bytes(store._serialize(payload))
+
+
+@pytest.mark.parametrize("timestamp", ["invalid", "2026-10-31T12:00:00"])
+def test_invalid_revision_timestamp_is_diagnosed_without_hiding_valid_snapshot(tmp_path, timestamp):
+    store = RevisionStore(tmp_path / "revisions")
+    valid = create_snapshot(store, order=[], titles={}, documents={})
+    damaged = create_snapshot(store, order=[], titles={}, documents={})
+    rewrite_snapshot_timestamp(store, damaged, timestamp)
+    snapshots, issues = store.list_snapshots()
+    assert snapshots == (valid,)
+    assert len(issues) == 1 and "timestamp" in issues[0].message
+    assert damaged.snapshot_path.exists()
+
+
+def test_revision_history_orders_capture_times_by_instant(tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+    earlier = create_snapshot(store, order=[], titles={}, documents={})
+    later = create_snapshot(store, order=[], titles={}, documents={})
+    rewrite_snapshot_timestamp(store, earlier, "2026-10-31T12:00:00+02:00")
+    rewrite_snapshot_timestamp(store, later, "2026-10-31T11:00:00+00:00")
+    snapshots, issues = store.list_snapshots()
+    assert not issues
+    assert [snapshot.snapshot_id for snapshot in snapshots] == [later.snapshot_id, earlier.snapshot_id]

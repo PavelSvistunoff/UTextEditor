@@ -1,6 +1,17 @@
 
 # Implementation progress
 
+- **TASK-009.01 — chronology hardening (2026-10-31):** revision reads
+  validate timezone-aware capture timestamps and listing sorts by instant
+  rather than timestamp text. Regression tests cover invalid and timezone-free
+  timestamps (with valid integrity digests), preservation of invalid files and
+  valid companion snapshots, plus differing timezone offsets. Revision suite:
+  19 passed; full offline suite: 700 passed, 2 skipped; diff reviewed and
+  whitespace check passed. README/TASKS updated. No new UI controls or strings;
+  existing diagnostics show validation errors. Restore/scheduling and native
+  verification remain open. Previous benchmark committed as b7aa90f; this
+  change remains uncommitted.
+
 - **TASK-006.01/.02 — DONE; .03/.04 — PARTIAL (2026-10-31):** editor
   benchmark accepts --sizes and --repetitions, reports median/max per repeated
   operation and handles missing Unix resource support. Ten samples at

@@ -120,7 +120,7 @@ class RevisionStore:
                 snapshots.append(self.read(path))
             except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
                 issues.append(RevisionIssue(path, str(exc)))
-        snapshots.sort(key=lambda snapshot: snapshot.captured_at, reverse=True)
+        snapshots.sort(key=lambda snapshot: datetime.fromisoformat(snapshot.captured_at), reverse=True)
         return tuple(snapshots), tuple(issues)
 
     def read(self, snapshot: str | Path | RevisionSnapshot) -> RevisionSnapshot:
@@ -136,6 +136,12 @@ class RevisionStore:
         required_strings = ("snapshot_id", "name", "captured_at")
         if any(not isinstance(payload.get(key), str) or not payload[key] for key in required_strings):
             raise ValueError("Revision snapshot is missing required metadata.")
+        try:
+            captured_at = datetime.fromisoformat(payload["captured_at"])
+            if captured_at.utcoffset() is None:
+                raise ValueError("Missing timezone")
+        except (ValueError, OverflowError) as exc:
+            raise ValueError("Revision snapshot has an invalid or timezone-free capture timestamp.") from exc
         order = payload.get("scene_order")
         titles = payload.get("scene_titles")
         documents = payload.get("documents")

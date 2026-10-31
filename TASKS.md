@@ -265,6 +265,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
 **Priority:** High · **Parent status:** open
 
 - [x] **TASK-009.01** — Add snapshot preview.
+  History chronology now uses timezone-aware instants; malformed/timezone-free
+  capture timestamps are diagnosed without hiding valid snapshots.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-009.02** — Add confirmed snapshot deletion.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
