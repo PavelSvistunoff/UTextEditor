@@ -5508,11 +5508,11 @@ class MainWindow(QMainWindow):
 
     def _start_project_analysis(self, task: str) -> None:
         if not self.settings.ai_enabled:
-            QMessageBox.information(self, "AI is disabled", "Enable AI in the AI menu before requesting project analysis.")
+            QMessageBox.information(self, self.tr("AI is disabled"), self.tr("Enable AI in the AI menu before requesting project analysis."))
             return
         project = self.project
         if project is None or self.project_view is None:
-            QMessageBox.information(self, "No project open", "Open a project and select a scene first.")
+            QMessageBox.information(self, self.tr("No project open"), self.tr("Open a project and select a scene first."))
             return
         if not self._ensure_ai_context_consent():
             return
@@ -5530,29 +5530,29 @@ class MainWindow(QMainWindow):
         scene_ids = [identifier for kind, identifier in selected_refs if kind == "scene"]
         note_ids = [identifier for kind, identifier in selected_refs if kind == "note"]
         if len(scene_ids) != 1:
-            requirement = "exactly one scene"
-            QMessageBox.information(self, "Select project context", f"Select {requirement} in the Project dock.")
+            QMessageBox.information(self, self.tr("Select project context"), self.tr("Select exactly one scene in the Project dock."))
             return
         scene_id = scene_ids[0]
         scene = project.get_scene(scene_id)
         notes = [project.get_note(note_id) for note_id in note_ids]
         associated = [project.get_character(item.character_id) for item in scene.character_associations]
         if task == "continuity" and not notes and not associated:
-            QMessageBox.information(self, "Select project context", "Select a scene with associated characters or at least one reference note.")
+            QMessageBox.information(self, self.tr("Select project context"), self.tr("Select a scene with associated characters or at least one reference note."))
             return
-        task_name = "Summarize this selected scene" if task == "summary" else "Check continuity against selected notes and associated characters"
-        source_lines = [f"Scene: {scene.title} ({scene.id})"]
-        source_lines.extend(f"Reference note: {note.title} ({note.type}, {note.id})" for note in notes)
-        source_lines.extend(f"Associated character: {character.display_name or character.full_name} ({character.id})" for character in associated)
-        source_lines.append(f"Destination: {self.provider.host} — model {self.provider.model}")
-        confirmation = (
-            f"{task_name}?\n\n"
-            + "\n".join(source_lines)
-            + f"\n\nAt most {self.settings.context_size} characters from these selected files will be sent."
-        )
+        task_name = self.tr("Summarize this selected scene") if task == "summary" else self.tr("Check continuity against selected notes and associated characters")
+        source_lines = [self.tr("Scene: {title} ({id})").format(title=scene.title, id=scene.id)]
+        note_types = {"character": self.tr("character"), "setting": self.tr("setting"),
+                      "timeline": self.tr("timeline"), "research": self.tr("research"), "general": self.tr("general")}
+        source_lines.extend(self.tr("Reference note: {title} ({type}, {id})").format(
+            title=note.title, type=note_types.get(note.type, note.type), id=note.id) for note in notes)
+        source_lines.extend(self.tr("Associated character: {name} ({id})").format(
+            name=character.display_name or character.full_name, id=character.id) for character in associated)
+        source_lines.append(self.tr("Destination: {host} — model {model}").format(host=self.provider.host, model=self.provider.model))
+        confirmation = self.tr("{task}?\n\n{sources}\n\nAt most {limit} characters from these selected files will be sent.").format(
+            task=task_name, sources="\n".join(source_lines), limit=self.settings.context_size)
         if QMessageBox.question(
             self,
-            "Confirm local project analysis",
+            self.tr("Confirm local project analysis"),
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:

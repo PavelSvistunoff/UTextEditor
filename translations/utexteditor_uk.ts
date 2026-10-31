@@ -681,6 +681,34 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>AI is disabled</source><translation>ШІ вимкнено</translation></message>
+    <message><source>Enable AI in the AI menu before requesting project analysis.</source><translation>Увімкніть ШІ в меню ШІ перед запитом аналізу проєкту.</translation></message>
+    <message><source>No project open</source><translation>Проєкт не відкрито</translation></message>
+    <message><source>Open a project and select a scene first.</source><translation>Спочатку відкрийте проєкт і виберіть сцену.</translation></message>
+    <message><source>Select project context</source><translation>Виберіть контекст проєкту</translation></message>
+    <message><source>Select exactly one scene in the Project dock.</source><translation>Виберіть рівно одну сцену на панелі проєкту.</translation></message>
+    <message><source>Select a scene with associated characters or at least one reference note.</source><translation>Виберіть сцену з пов’язаними персонажами або хоча б одну довідкову нотатку.</translation></message>
+    <message><source>Summarize this selected scene</source><translation>Підсумувати вибрану сцену</translation></message>
+    <message><source>Check continuity against selected notes and associated characters</source><translation>Перевірити узгодженість із вибраними нотатками та пов’язаними персонажами</translation></message>
+    <message><source>Scene: {title} ({id})</source><translation>Сцена: {title} ({id})</translation></message>
+    <message><source>character</source><translation>персонаж</translation></message>
+    <message><source>setting</source><translation>місце дії</translation></message>
+    <message><source>timeline</source><translation>хронологія</translation></message>
+    <message><source>research</source><translation>дослідження</translation></message>
+    <message><source>general</source><translation>загальне</translation></message>
+    <message><source>Reference note: {title} ({type}, {id})</source><translation>Довідкова нотатка: {title} ({type}, {id})</translation></message>
+    <message><source>Associated character: {name} ({id})</source><translation>Пов’язаний персонаж: {name} ({id})</translation></message>
+    <message><source>Destination: {host} — model {model}</source><translation>Призначення: {host} — модель {model}</translation></message>
+    <message><source>{task}?
+
+{sources}
+
+At most {limit} characters from these selected files will be sent.</source><translation>{task}?
+
+{sources}
+
+Буде надіслано не більше {limit} символів із цих вибраних файлів.</translation></message>
+    <message><source>Confirm local project analysis</source><translation>Підтвердити локальний аналіз проєкту</translation></message>
     <message><source>Add some story details before requesting suggestions.</source><translation>Додайте подробиці історії перед запитом пропозицій.</translation></message>
     <message><source>The template must be no longer than 6,000 characters.</source><translation>Шаблон має містити не більше 6000 символів.</translation></message>
     <message><source>Send this {length}-character template to the configured model to suggest ideas for its gaps?
