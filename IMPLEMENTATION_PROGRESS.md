@@ -1,6 +1,20 @@
 
 # Implementation progress
 
+- **TASK-007.V1 — DONE (2026-10-31 audit):** reviewed FileManager.save,
+  MainWindow.review_external_changes and merge_text. TASK-007.01–.04 are
+  verified by test_conflict_dialog_displays_versions_and_proposal,
+  test_conflict_review_stages_merge_and_rechecks_disk_on_save,
+  test_conflict_review_cancel_reload_and_stale_buffer,
+  test_conflict_review_save_elsewhere_or_reject_unresolved_markers and
+  test_conflict_review_rejects_disk_change_during_review. Focused merge,
+  document and project UI suites: 172 passed. No runtime changes in this audit;
+  previous full suite: 673 passed, 2 skipped. TASK-007.05 remains partial:
+  disk checks precede replacement but cannot exclude independent writers.
+  Native keyboard/accessibility checks on supported platforms and release
+  catalog compilation remain open. TASKS.md reconciled; no duplicate feature
+  implementation. Manifest coordination committed as 5760925.
+
 - **TASK-005.04 — PARTIAL (2026-10-31):** project manifest writes now use
   the shared document write lock. The lock is reentrant so bulk workflows
   can persist manifests while already holding it. Added

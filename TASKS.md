@@ -186,17 +186,21 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-007 — Implement external file conflict resolution
+Audit: version display, explicit reload/save-elsewhere/merge, cancellation and
+stale-review protection are verified. Saves recheck staged disk state; the
+independent-process final-check-to-replace race remains (TASK-005). Native
+keyboard/screen-reader checks and release translation compilation remain open.
 **Priority:** High · **Parent status:** partial
 
-- [?] **TASK-007.01** — Detect when disk content differs from the saved base.  
+- [x] **TASK-007.01** — Detect when disk content differs from the saved base.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-007.02** — Present saved base, current disk version, and open buffer.  
+- [x] **TASK-007.02** — Present saved base, current disk version, and open buffer.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-007.03** — Support reload, save elsewhere, and reviewed merge.  
+- [x] **TASK-007.03** — Support reload, save elsewhere, and reviewed merge.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-007.04** — Preserve unsaved content when the user cancels.  
+- [x] **TASK-007.04** — Preserve unsaved content when the user cancels.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-007.05** — Recheck disk state before writing.  
+- [~] **TASK-007.05** — Recheck disk state before writing.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -205,9 +209,9 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 - Cancellation preserves all versions.
 - Concurrent-change tests pass.
 
-- [ ] **TASK-007.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-007.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-007.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-007.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-008 — Improve recovery diagnosis
