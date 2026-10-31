@@ -675,6 +675,15 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Compile book as PDF</source><translation>Створити книгу PDF</translation></message>
+    <message><source>PDF book (*.pdf)</source><translation>Книга PDF (*.pdf)</translation></message>
+    <message><source>Replace compiled book</source><translation>Замінити створену книгу</translation></message>
+    <message><source>Replace the existing file {path}?</source><translation>Замінити наявний файл {path}?</translation></message>
+    <message><source>Compile unsaved content</source><translation>Створити книгу з незбереженого вмісту</translation></message>
+    <message><source>The compiled book will include unsaved scene edits currently shown in project tabs. Continue?</source><translation>Створена книга міститиме незбережені зміни сцен, відкритих у вкладках проєкту. Продовжити?</translation></message>
+    <message><source>Compiling book PDF…</source><translation>Створення книги PDF…</translation></message>
+    <message><source>Book PDF compiled to {path}</source><translation>Книгу PDF створено: {path}</translation></message>
+    <message><source>Book compilation failed</source><translation>Не вдалося створити книгу</translation></message>
     <message>
         <source>Associated scenes</source>
         <translation>Пов’язані сцени</translation>

@@ -320,7 +320,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   spelling context-menu Replace and Ignore actions now use translated labels,
   retaining the original and proposed words as placeholders. Standalone file
   open/save dialogs, status and error headings, and recovery-cleanup and
-  autosave failure messages have also been marked and translated.
+  autosave failure messages have also been marked and translated. PDF export
+  dialogs, overwrite and unsaved-content prompts, and status/error headings
+  now use Ukrainian catalog entries with tested path placeholders. The wider
+  audit, including PDF document labels, and release catalog compilation
+  remain outstanding. Full offline suite: 571 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

@@ -3747,9 +3747,9 @@ class MainWindow(QMainWindow):
         book_title, author, page_size, include_scene_headings = options
         destination, _selected_filter = QFileDialog.getSaveFileName(
             self,
-            "Compile book as PDF",
+            self.tr("Compile book as PDF"),
             str(project.root / f"{project.manifest.title}.pdf"),
-            "PDF book (*.pdf)",
+            self.tr("PDF book (*.pdf)"),
         )
         if not destination:
             return
@@ -3758,8 +3758,8 @@ class MainWindow(QMainWindow):
         if target.exists():
             if QMessageBox.question(
                 self,
-                "Replace compiled book",
-                f"Replace the existing file {target}?",
+                self.tr("Replace compiled book"),
+                self.tr("Replace the existing file {path}?").format(path=target),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             ) != QMessageBox.StandardButton.Yes:
                 return
@@ -3777,8 +3777,8 @@ class MainWindow(QMainWindow):
                 unsaved = unsaved or editor.document_state.dirty
         if unsaved and QMessageBox.question(
             self,
-            "Compile unsaved content",
-            "The compiled book will include unsaved scene edits currently shown in project tabs. Continue?",
+            self.tr("Compile unsaved content"),
+            self.tr("The compiled book will include unsaved scene edits currently shown in project tabs. Continue?"),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
@@ -3816,7 +3816,7 @@ class MainWindow(QMainWindow):
             lambda error, project=project: self._project_book_compile_failed(project, error),
             Qt.ConnectionType.QueuedConnection,
         )
-        self.statusBar().showMessage("Compiling book PDF…")
+        self.statusBar().showMessage(self.tr("Compiling book PDF…"))
         self.thread_pool.start(worker)
 
     @staticmethod
@@ -3863,11 +3863,11 @@ class MainWindow(QMainWindow):
 
     def _project_book_compiled(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)
-        self.statusBar().showMessage(f"Book PDF compiled to {path}", 8000)
+        self.statusBar().showMessage(self.tr("Book PDF compiled to {path}").format(path=path), 8000)
 
     def _project_book_compile_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)
-        QMessageBox.warning(self, "Book compilation failed", str(error))
+        QMessageBox.warning(self, self.tr("Book compilation failed"), str(error))
 
     def _ask_export_options(self):
         dialog = QDialog(self)
