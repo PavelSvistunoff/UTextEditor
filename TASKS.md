@@ -49,7 +49,7 @@
 | TASK-030 | Improve character profile navigation | partial |
 | TASK-031 | Improve automatic language detection | partial |
 | TASK-032 | Complete Ukrainian interface localization | partial |
-| TASK-033 | Add automated localization validation | partial |
+| TASK-033 | Add automated localization validation | complete |
 | TASK-034 | Perform accessibility audit and fixes | partial |
 | TASK-035 | Evaluate and implement selected interface extensions | complete (evaluation only; extensions deferred) |
 
@@ -845,30 +845,38 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-033 — Add automated localization validation
-**Priority:** High · **Parent status:** partial
+**Priority:** High · **Parent status:** complete
 
-- [?] **TASK-033.01** — Add translation completeness checks.  
+- [x] **TASK-033.01** — Add translation completeness checks.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-033.02** — Validate placeholder parity.  
+- [x] **TASK-033.02** — Validate placeholder parity.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-033.03** — Detect missing or malformed translations.  
+- [x] **TASK-033.03** — Detect missing or malformed translations.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-033.04** — Integrate checks into the developer workflow.
   Added localization CI on pushes/PRs/manual runs: catalog validation, explicit
   extraction coverage and existing regression tests. Local commands pass; the
   first hosted run remains to be observed after an authorized push.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-033.05** — Document extraction, validation, and compilation.  
+- [x] **TASK-033.05** — Document extraction, validation, and compilation.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Verification: 14 localization regressions pass, including CLI failures for
+unfinished/invalid catalogs, placeholders, plurals and missing extracted entries.
+All 897 marked UI sources are covered; temporary English/Ukrainian compilation
+passes (28/903 entries). README documents extraction/validation/compilation;
+CI invokes the same tools. Hosted CI execution is unobserved until push.
+V2 native UI checks are N/A: this task adds validation tooling, no UI behavior;
+release asset updates and native localization audit remain TASK-032/TASK-034.
 
 **Parent acceptance gate (all must pass):**
 - Invalid placeholders cause validation failure.
 - Missing translations are reported clearly.
 - Checks can run locally and in CI.
 
-- [ ] **TASK-033.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-033.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-033.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [x] **TASK-033.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-034 — Perform accessibility audit and fixes

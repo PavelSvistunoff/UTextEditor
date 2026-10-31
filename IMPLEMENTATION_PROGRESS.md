@@ -1,6 +1,20 @@
 
 # Implementation progress
 
+- **TASK-033 — COMPLETE (2026-10-31):** acceptance audit verified checker
+  completeness, Qt/named/indexed placeholder parity, malformed/duplicate/empty
+  and plural errors, extracted source coverage, CLI nonzero exit/reporting,
+  compiled runtime lookup, README instructions and CI integration. Added three
+  CLI regressions for unfinished translations, invalid root and missing context.
+  Localization suite: 14 passed. Extracted coverage: 897 strings, passed.
+  Temporary catalog compilation: English 28 and Ukrainian 903 finished entries,
+  none unfinished; generated repository assets untouched. Full offline suite:
+  708 passed, 2 skipped. Diff reviewed and whitespace check passed. All
+  TASK-033 numbered tickets and V1/V2 reconciled; native UI checks N/A because
+  this task changes tooling only. First hosted CI run remains unobserved;
+  complete interface translation/native review remain TASK-032/TASK-034.
+  Changes uncommitted; no push attempted.
+
 - **TASK-033.04 — DONE (2026-10-31):** added
   .github/workflows/localization.yml for push, pull request and manual runs
   with read-only repository permissions, Python 3.12 and offscreen Qt. It

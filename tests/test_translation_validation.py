@@ -145,3 +145,19 @@ def test_extracted_sources_match_ukrainian_catalog(tmp_path):
     subprocess.run([str(lupdate), *(str(path) for path in sources), "-ts", str(reference)],
                    check=True, capture_output=True)
     assert validate(Path("translations/utexteditor_uk.ts"), reference) == []
+
+
+@pytest.mark.parametrize("contents, expected", [
+    ('<TS language="uk_UA"><context><name>Window</name><message><source>Save</source><translation type="unfinished">Зберегти</translation></message></context></TS>', "unfinished translation"),
+    ('<wrong-root/>', "root element must be TS"),
+    ('<TS><context><message><source>Save</source><translation>Зберегти</translation></message></context></TS>', "missing context or source"),
+])
+def test_cli_rejects_unfinished_and_structurally_invalid_catalogs(tmp_path, contents, expected):
+    target = tmp_path / "invalid.ts"
+    target.write_text(contents, encoding="utf-8")
+    checker = Path(__file__).resolve().parents[1] / "tools" / "check_translations.py"
+    result = subprocess.run([sys.executable, str(checker), str(target)], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert expected in result.stderr
+    assert "translation problem(s)" in result.stderr
+    assert "validation passed" not in result.stdout
