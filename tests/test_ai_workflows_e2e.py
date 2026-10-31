@@ -869,6 +869,25 @@ def test_navigation_history_preserves_unsaved_buffers_and_skips_stale_locations(
     assert editor_b.toPlainText().endswith("second")
 
 
+def test_navigation_history_skips_relinked_scene(window, tmp_path):
+    project = Project.create(tmp_path / "navigation-relink", "Novel")
+    first = project.add_scene("First", content="first")
+    second = project.add_scene("Second", content="second")
+    window._project_opened(project)
+    window._open_project_document("scene", first.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    old_editor = window.tabs.current_editor()
+    window._open_project_document("scene", second.id)
+    wait_until(lambda: window.tabs.current_editor() is not old_editor)
+    current_editor = window.tabs.current_editor()
+    (project.root / "replacement.md").write_text("replacement", encoding="utf-8")
+    project.relink_scene(first.id, "replacement.md")
+    window._navigate_history(-1)
+    assert window.tabs.current_editor() is not old_editor
+    assert old_editor.toPlainText() == "first"
+    assert current_editor.toPlainText() == "second"
+
+
 def test_project_analysis_cancel_action_works_in_ukrainian(app, tmp_path, monkeypatch):
     settings_path = tmp_path / "uk.yaml"
     monkeypatch.setattr(AppSettings, "_default_settings_path", staticmethod(lambda: settings_path))

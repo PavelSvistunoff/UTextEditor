@@ -175,8 +175,9 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   mark complete. A further offscreen regression covers Back and Forward across
   two Unicode search-result selections in an unsaved scene and verifies that
   neither the buffer nor the disk is changed. Reopening closed destinations
-  and native verification remain outstanding. Full offline suite: 617 passed,
-  2 skipped.
+  and native verification remain outstanding. History now also skips a tab
+  when its scene or note has been relinked to a different path; an offscreen
+  regression covers a relinked scene. Full offline suite: 618 passed, 2 skipped.
 - **TASK-020 — in progress:** Find and Replace now offer case and whole-word
   controls while retaining case-sensitive literal defaults. Navigation,
   counts and replacement use the same Qt matching rules, replace-all remains a

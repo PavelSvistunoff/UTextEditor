@@ -5350,8 +5350,11 @@ class MainWindow(QMainWindow):
                         or binding.item_id != point.item_id):
                     return False
                 try:
-                    (self.project.get_scene if point.kind == "scene" else self.project.get_note)(point.item_id)
+                    item = (self.project.get_scene if point.kind == "scene" else self.project.get_note)(point.item_id)
                 except ProjectError:
+                    return False
+                path = editor.document_state.path
+                if path is None or path.resolve() != (self.project.root / item.path).resolve():
                     return False
             cursor = editor.textCursor()
             cursor.setPosition(point.anchor)
