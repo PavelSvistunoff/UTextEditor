@@ -39,6 +39,7 @@ class QuickOpenDialog(QDialog):
         self.query.returnPressed.connect(self._accept_selection)
         self.results.itemActivated.connect(lambda _: self._accept_selection())
         down = QShortcut(QKeySequence(Qt.Key.Key_Down), self.query)
+        down.setContext(Qt.ShortcutContext.WidgetShortcut)
         down.activated.connect(self.results.setFocus)
         self._filter("")
 

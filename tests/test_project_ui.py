@@ -294,6 +294,33 @@ def test_conflict_review_save_elsewhere_or_reject_unresolved_markers(application
     window.close()
 
 
+def test_project_search_results_are_keyboard_accessible(application):
+    from PySide6.QtGui import QAccessible
+    from PySide6.QtTest import QTest
+    from app.project.search import SearchMatch, SearchResult
+    from app.ui.project_search_panel import ProjectSearchPanel
+
+    panel = ProjectSearchPanel()
+    first = SearchMatch("scene", "1", "First", 0, 1, 1, "word", "digest")
+    second = SearchMatch("note", "2", "Second", 0, 1, 1, "word", "digest")
+    panel.set_results(SearchResult((first, second), (), False, False))
+    opened = []
+    panel.result_requested.connect(opened.append)
+    panel.show()
+    panel.query.setFocus()
+    application.processEvents()
+    QTest.keyClick(panel.query, Qt.Key.Key_Down)
+    assert panel.results.hasFocus() and panel.results.currentRow() == 0
+    QTest.keyClick(panel.results, Qt.Key.Key_Down)
+    QTest.keyClick(panel.results, Qt.Key.Key_Return)
+    assert opened == [second]
+    interface = QAccessible.queryAccessibleInterface(panel.results)
+    assert "Enter" in interface.text(QAccessible.Text.Description)
+    query_interface = QAccessible.queryAccessibleInterface(panel.query)
+    assert "Down" in query_interface.text(QAccessible.Text.Description)
+    panel.close()
+
+
 def test_project_search_finds_open_unsaved_text_and_navigates_only_current_matches(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Scene", content="disk content")
@@ -468,6 +495,20 @@ def test_quick_open_keyboard_selects_filtered_result(application):
     QTest.keyClick(dialog.query, Qt.Key.Key_Return)
     assert dialog.result() == dialog.DialogCode.Accepted
     assert dialog.selected().id == "2"
+
+
+def test_quick_open_arrow_keys_move_through_results(application):
+    from PySide6.QtTest import QTest
+    from app.ui.quick_open_dialog import QuickOpenDialog, QuickOpenItem
+    dialog = QuickOpenDialog((QuickOpenItem("scene", "1", "First"), QuickOpenItem("note", "2", "Second")))
+    dialog.show()
+    dialog.query.setFocus()
+    application.processEvents()
+    QTest.keyClick(dialog.query, Qt.Key.Key_Down)
+    assert dialog.results.hasFocus()
+    QTest.keyClick(dialog.results, Qt.Key.Key_Down)
+    assert dialog.results.currentRow() == 1
+    dialog.close()
 
 
 def test_quick_open_uses_stable_id_and_preserves_unsaved_tabs(application, tmp_path, monkeypatch):

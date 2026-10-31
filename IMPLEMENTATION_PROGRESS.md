@@ -446,10 +446,14 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use
-  arrow and Space keys to select and reject items. Native keyboard, screen
+  arrow and Space keys to select and reject items. Project search now moves
+  focus from its query to the results with Down, exposes result navigation
+  instructions, and opens a selected result with Enter. Quick Open's Down
+  shortcut is limited to its query so arrow keys can navigate its results.
+  Offscreen keyboard tests cover both workflows. Native keyboard, screen
   reader and system-palette audits across core workflows, as well as compiled
   translations, remain outstanding. Do not mark complete. Full offline suite:
-  541 passed, 2 skipped.
+  635 passed, 2 skipped.
 - **TASK-035 — complete:** documented independent scope and decisions for
   toolbar, appearance override, interface languages, writing languages and
   alternative providers in `UNIMPLEMENTED_FEATURES.md`. All are deferred for

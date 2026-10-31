@@ -1725,6 +1725,8 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>ProjectSearchPanel</name>
+    <message><source>Press Down to move to search results.</source><translation>Натисніть стрілку вниз, щоб перейти до результатів пошуку.</translation></message>
+    <message><source>Use arrow keys to choose a result and Enter to open it.</source><translation>Клавішами зі стрілками виберіть результат і натисніть Enter, щоб відкрити його.</translation></message>
     <message><source>Search project text</source><translation>Пошук у тексті проєкту</translation></message>
     <message><source>Search</source><translation>Пошук</translation></message>
     <message><source>Cancel</source><translation>Скасувати</translation></message>

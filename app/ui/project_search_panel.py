@@ -1,6 +1,7 @@
 """Persistent controls and results for project-wide text search."""
 
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 
 
@@ -16,6 +17,7 @@ class ProjectSearchPanel(QWidget):
         self.query = QLineEdit(self)
         self.query.setPlaceholderText(self.tr("Search project text"))
         self.query.setAccessibleName(self.tr("Search project text"))
+        self.query.setAccessibleDescription(self.tr("Press Down to move to search results."))
         self.search_button = QPushButton(self.tr("Search"), self)
         self.cancel_button = QPushButton(self.tr("Cancel"), self)
         self.cancel_button.setEnabled(False)
@@ -28,14 +30,33 @@ class ProjectSearchPanel(QWidget):
         layout.addWidget(self.status)
         self.results = QListWidget(self)
         self.results.setAccessibleName(self.tr("Project search results"))
+        self.results.setAccessibleDescription(self.tr("Use arrow keys to choose a result and Enter to open it."))
         layout.addWidget(self.results)
         self.query.returnPressed.connect(self._request)
         self.search_button.clicked.connect(self._request)
         self.cancel_button.clicked.connect(self.cancel_requested)
         self.results.itemActivated.connect(lambda item: self.result_requested.emit(item.data(Qt.ItemDataRole.UserRole)))
+        down = QShortcut(QKeySequence(Qt.Key.Key_Down), self.query)
+        down.setContext(Qt.ShortcutContext.WidgetShortcut)
+        down.activated.connect(self._focus_results)
+        for key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            shortcut = QShortcut(QKeySequence(key), self.results)
+            shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
+            shortcut.activated.connect(self._open_selected_result)
 
     def _request(self):
         self.search_requested.emit(self.query.text())
+
+    def _focus_results(self):
+        if self.results.count():
+            if self.results.currentRow() < 0:
+                self.results.setCurrentRow(0)
+            self.results.setFocus()
+
+    def _open_selected_result(self):
+        item = self.results.currentItem()
+        if item is not None:
+            self.result_requested.emit(item.data(Qt.ItemDataRole.UserRole))
 
     def set_running(self, running: bool):
         self.cancel_button.setEnabled(running)
