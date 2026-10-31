@@ -392,8 +392,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   an offscreen test checks that translated link choices retain their IDs.
   Scene-character association prompts are translated as well; tests verify
   that both localized presence choices preserve their stored values and that
-  existing development details round-trip. Full offline suite: 607 passed,
-  2 skipped.
+  existing development details round-trip. Directed-relationship management
+  and character-profile import/export messages are also translated; a Qt test
+  checks the localized remove action targets the correct relationship. Full
+  offline suite: 608 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

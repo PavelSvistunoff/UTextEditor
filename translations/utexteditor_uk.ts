@@ -681,6 +681,27 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Character relationship</source><translation>Стосунки персонажа</translation></message>
+    <message><source>Create another character first.</source><translation>Спочатку створіть іншого персонажа.</translation></message>
+    <message><source>Related character:</source><translation>Пов’язаний персонаж:</translation></message>
+    <message><source>Character relationships</source><translation>Стосунки персонажа</translation></message>
+    <message><source>This character has no relationships yet.</source><translation>У цього персонажа ще немає стосунків.</translation></message>
+    <message><source>Manage relationship</source><translation>Керувати стосунками</translation></message>
+    <message><source>Relationship:</source><translation>Стосунки:</translation></message>
+    <message><source>Action:</source><translation>Дія:</translation></message>
+    <message><source>Edit relationship</source><translation>Редагувати стосунки</translation></message>
+    <message><source>Remove relationship</source><translation>Видалити стосунки</translation></message>
+    <message><source>Remove this directed relationship?</source><translation>Видалити цей спрямований зв’язок?</translation></message>
+    <message><source>Import Character Profile</source><translation>Імпортувати профіль персонажа</translation></message>
+    <message><source>Character profile (*.yaml *.yml)</source><translation>Профіль персонажа (*.yaml *.yml)</translation></message>
+    <message><source>Export Character Profile</source><translation>Експортувати профіль персонажа</translation></message>
+    <message><source>Character profile (*.yaml)</source><translation>Профіль персонажа (*.yaml)</translation></message>
+    <message><source>Replace profile file</source><translation>Замінити файл профілю</translation></message>
+    <message><source>Replace the existing file?
+{path}</source><translation>Замінити наявний файл?
+{path}</translation></message>
+    <message><source>Character export failed</source><translation>Не вдалося експортувати персонажа</translation></message>
+    <message><source>Character profile exported to {path}</source><translation>Профіль персонажа експортовано до {path}</translation></message>
     <message><source>Associate character</source><translation>Пов’язати персонажа</translation></message>
     <message><source>Create a character profile first.</source><translation>Спочатку створіть профіль персонажа.</translation></message>
     <message><source>Remove a character from this scene…</source><translation>Видалити персонажа з цієї сцени…</translation></message>

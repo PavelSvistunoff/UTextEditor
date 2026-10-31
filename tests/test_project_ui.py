@@ -766,6 +766,49 @@ def test_translated_scene_presence_preserves_manifest_value(application, tmp_pat
         window.close()
 
 
+def test_translated_relationship_action_removes_only_selected_direction(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+    from app.project.model import CharacterRelationship
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    first, second = project.add_character("Mara"), project.add_character("Ivo")
+    relation = CharacterRelationship("00000000-0000-4000-8000-000000000001", first.id, second.id)
+    project.add_character_relationship(relation)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("character", first.id))
+    called = []
+    monkeypatch.setattr(window, "_run_project_mutation", lambda operation, *args: called.append((operation, args)))
+
+    def choose(*args):
+        if args[2] == "Дія:":
+            assert args[3] == ["Редагувати стосунки", "Видалити стосунки"]
+            return args[3][1], True
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    application.installTranslator(translator)
+    try:
+        window.manage_project_character_relationships()
+        assert called[0][1] == (relation.id,)
+        assert called[0][0].__name__ == "remove_character_relationship"
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

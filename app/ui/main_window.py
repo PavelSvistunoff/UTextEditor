@@ -3190,10 +3190,10 @@ class MainWindow(QMainWindow):
             return
         targets = [c for c in self.project.manifest.characters if c.id != source_id]
         if not targets:
-            QMessageBox.information(self, "Character relationship", "Create another character first.")
+            QMessageBox.information(self, self.tr("Character relationship"), self.tr("Create another character first."))
             return
         target_by_label = {_character_choice_label(c): c for c in targets}
-        target_name, accepted = QInputDialog.getItem(self, "Character relationship", "Related character:", list(target_by_label), 0, False)
+        target_name, accepted = QInputDialog.getItem(self, self.tr("Character relationship"), self.tr("Related character:"), list(target_by_label), 0, False)
         if not accepted:
             return
         target = target_by_label[target_name]
@@ -3218,7 +3218,7 @@ class MainWindow(QMainWindow):
             if character_id in (item.source_id, item.target_id)
         ]
         if not relationships:
-            QMessageBox.information(self, "Character relationships", "This character has no relationships yet.")
+            QMessageBox.information(self, self.tr("Character relationships"), self.tr("This character has no relationships yet."))
             return
         labels = {}
         for relation in relationships:
@@ -3226,17 +3226,20 @@ class MainWindow(QMainWindow):
             arrow = "→" if relation.source_id == character_id else "←"
             other = characters[other_id]
             labels[f"{arrow} {other.display_name or other.full_name} — {relation.relationship_type} [{relation.id}]"] = relation
-        label, accepted = QInputDialog.getItem(self, "Manage relationship", "Relationship:", list(labels), 0, False)
+        label, accepted = QInputDialog.getItem(self, self.tr("Manage relationship"), self.tr("Relationship:"), list(labels), 0, False)
         if not accepted:
             return
         relationship = labels[label]
-        action, accepted = QInputDialog.getItem(self, "Manage relationship", "Action:", ["Edit", "Remove"], 0, False)
+        edit_action, remove_action = self.tr("Edit relationship"), self.tr("Remove relationship")
+        action, accepted = QInputDialog.getItem(self, self.tr("Manage relationship"), self.tr("Action:"), [edit_action, remove_action], 0, False)
         if not accepted:
             return
-        if action == "Remove":
-            answer = QMessageBox.question(self, "Remove relationship", "Remove this directed relationship?")
+        if action == remove_action:
+            answer = QMessageBox.question(self, self.tr("Remove relationship"), self.tr("Remove this directed relationship?"))
             if answer == QMessageBox.StandardButton.Yes:
                 self._run_project_mutation(self.project.remove_character_relationship, relationship.id)
+            return
+        if action != edit_action:
             return
         dialog = CharacterRelationshipDialog(relationship, self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
@@ -3250,7 +3253,7 @@ class MainWindow(QMainWindow):
     def import_project_character(self) -> None:
         if self.project is None:
             return
-        source, _ = QFileDialog.getOpenFileName(self, "Import Character Profile", "", "Character profile (*.yaml *.yml)")
+        source, _ = QFileDialog.getOpenFileName(self, self.tr("Import Character Profile"), "", self.tr("Character profile (*.yaml *.yml)"))
         if source:
             self._run_project_mutation(self.project.import_character, source)
 
@@ -3262,20 +3265,20 @@ class MainWindow(QMainWindow):
             return
         character = self.project.get_character(character_id)
         suggested = f"{character.full_name}.yaml"
-        target, _ = QFileDialog.getSaveFileName(self, "Export Character Profile", suggested, "Character profile (*.yaml)")
+        target, _ = QFileDialog.getSaveFileName(self, self.tr("Export Character Profile"), suggested, self.tr("Character profile (*.yaml)"))
         if not target:
             return
         replace_existing = Path(target).exists()
         if replace_existing:
-            answer = QMessageBox.question(self, "Replace profile file", f"Replace the existing file?\n{target}")
+            answer = QMessageBox.question(self, self.tr("Replace profile file"), self.tr("Replace the existing file?\n{path}").format(path=target))
             if answer != QMessageBox.StandardButton.Yes:
                 return
         try:
             self.project.export_character(character_id, target, replace_existing=replace_existing)
         except (OSError, ProjectError, ValueError) as exc:
-            QMessageBox.warning(self, "Character export failed", str(exc))
+            QMessageBox.warning(self, self.tr("Character export failed"), str(exc))
             return
-        self.statusBar().showMessage(f"Character profile exported to {target}", 5000)
+        self.statusBar().showMessage(self.tr("Character profile exported to {path}").format(path=target), 5000)
 
     def open_character_associated_scene(self) -> None:
         project = self.project
