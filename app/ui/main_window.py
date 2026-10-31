@@ -1609,11 +1609,29 @@ class MainWindow(QMainWindow):
             generation == self._project_translation_generation
             and self._project_translation_worker is not None
         ):
+            match = re.fullmatch(r"(Translating|Translated) (.*) \((\d+) of (\d+)\)[….]", message, re.DOTALL)
+            if match:
+                label = match[2]
+                if label == "project title":
+                    label = self.tr("project title")
+                else:
+                    for prefix, translated in (
+                        ("Chapter title ", self.tr("Chapter title {name}")),
+                        ("Scene title ", self.tr("Scene title {name}")),
+                        ("Reference note title ", self.tr("Reference note title {name}")),
+                        ("text for ", self.tr("text for {name}")),
+                    ):
+                        if label.startswith(prefix):
+                            label = translated.format(name=label[len(prefix):])
+                            break
+                template = (self.tr("Translating {item} ({current} of {total})…")
+                            if match[1] == "Translating"
+                            else self.tr("Translated {item} ({current} of {total})."))
+                message = template.format(item=label, current=match[3], total=match[4])
             if self._translation_activity is not None:
-                match = re.fullmatch(r"(Translating|Translated) (.*) \((\d+) of (\d+)\)[….]", message)
                 if match:
                     completed = int(match[3]) - (match[1] == "Translating")
-                    detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(completed), match[4], match[2])
+                    detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(completed), match[4], label)
                     self.ai_activity.set_detail(self._translation_activity, detail)
             self.statusBar().showMessage(message)
             if self._project_translation_progress_dialog is not None:

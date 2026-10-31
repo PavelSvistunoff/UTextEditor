@@ -1163,6 +1163,14 @@ def test_translated_project_translation_cancellation_progress(application, tmp_p
     window._project_translation_progress_dialog = QProgressDialog(window)
     application.installTranslator(translator)
     try:
+        window._show_project_translation_progress(
+            window._project_translation_generation, "Translating Scene title 'Місто (старе)' (2 of 5)…"
+        )
+        assert window._project_translation_progress_dialog.labelText() == "Переклад: Назва сцени 'Місто (старе)' (2 з 5)…"
+        window._show_project_translation_progress(
+            window._project_translation_generation, "Translated text for scene-1 (3 of 5)."
+        )
+        assert window._project_translation_progress_dialog.labelText() == "Перекладено: текст для scene-1 (3 з 5)."
         window.cancel_project_translation()
         assert window._project_translation_progress_dialog.labelText() == "Скасування після поточного запиту до моделі…"
         messages = []

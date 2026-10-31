@@ -681,6 +681,13 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>project title</source><translation>назва проєкту</translation></message>
+    <message><source>Chapter title {name}</source><translation>Назва розділу {name}</translation></message>
+    <message><source>Scene title {name}</source><translation>Назва сцени {name}</translation></message>
+    <message><source>Reference note title {name}</source><translation>Назва довідкової нотатки {name}</translation></message>
+    <message><source>text for {name}</source><translation>текст для {name}</translation></message>
+    <message><source>Translating {item} ({current} of {total})…</source><translation>Переклад: {item} ({current} з {total})…</translation></message>
+    <message><source>Translated {item} ({current} of {total}).</source><translation>Перекладено: {item} ({current} з {total}).</translation></message>
     <message><source>Project translated from {source} to {target}. Originals are preserved in {path}.</source><translation>Проєкт перекладено з мови {source} мовою {target}. Оригінали збережено в {path}.</translation></message>
     <message><source>An open document changed during saving; its newer buffer remains unsaved.</source><translation>Відкритий документ змінився під час збереження; його новіший вміст залишається незбереженим.</translation></message>
     <message><source>Project translation cancelled. No project files were changed. {error}</source><translation>Переклад проєкту скасовано. Файли проєкту не змінено. {error}</translation></message>

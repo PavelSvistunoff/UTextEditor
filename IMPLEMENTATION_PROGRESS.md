@@ -445,6 +445,8 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   error details and plural selection. Project translation success, failure,
   cancellation and stale-state messages now use Ukrainian templates while
   preserving paths and error details; runtime catalog tests cover feedback.
+  Translation progress now localizes its status and field labels in the UI
+  while preserving source titles and IDs and the service's progress API.
   Full offline suite: 635 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
