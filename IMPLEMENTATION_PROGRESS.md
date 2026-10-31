@@ -3,6 +3,14 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-001.03 — PARTIAL:** pausing no longer drops tracker checkpoints;
+  paused edits add no new words, while undo/redo follows retained checkpoints.
+  Reset removes today's counts from retained checkpoints instead of replacing
+  the history. Modified `app/document/writing_goals.py`, `app/ui/main_window.py`,
+  `tests/test_writing_goals.py`, `tests/test_editor_widget.py`, and `README.md`.
+  Focused tests: 77 passed; full offline suite: 671 passed, 2 skipped.
+  Reconfiguration can still discard checkpoints;
+  complete cross-scope accounting and a bounded history remain outstanding.
 - **TASK-001.03 — PARTIAL:** undo/redo to a checkpoint no longer retained by
   the tracker no longer credits restored text as newly written. Modified
   `app/document/writing_goals.py`, `tests/test_writing_goals.py`,

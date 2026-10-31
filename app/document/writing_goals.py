@@ -136,9 +136,9 @@ class WritingGoalTracker:
 
         del states[index + 1:]
         # A Qt undo/redo may reach a state that predates our attached history
-        # (for example after tracking was paused or reconfigured). Its text is
+        # (for example after tracking was reconfigured). Its text is
         # restored, not newly written, even when the old checkpoint is absent.
-        added = 0 if undo or redo else self._new_tokens_added(before, text)
+        added = 0 if undo or redo or self.paused else self._new_tokens_added(before, text)
         counts = states[index][1]
         if added:
             # Progress snapshots are immutable after being stored. Reuse the

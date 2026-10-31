@@ -160,6 +160,22 @@ def test_compacted_command_preserves_daily_counts_through_reset_undo_and_redo() 
     assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 0
 
 
+def test_paused_edits_keep_undo_checkpoints_without_counting_new_words() -> None:
+    tracker = WritingGoalTracker(10, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "first", local_date="2026-10-17")
+    tracker.set_paused(True)
+    assert tracker.record_text("doc", "first paused", local_date="2026-10-17") == 0
+    tracker.set_paused(False)
+    tracker.record_text("doc", "first", local_date="2026-10-17", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 1
+    tracker.record_text("doc", "", local_date="2026-10-17", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
+    tracker.record_text("doc", "first", local_date="2026-10-17", redo=True)
+    tracker.record_text("doc", "first paused", local_date="2026-10-17", redo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 1
+
+
 def test_goal_settings_and_progress_round_trip_atomically(tmp_path: Path) -> None:
     store = WritingGoalStore(tmp_path / "settings" / "writing-goals.json")
     tracker = WritingGoalTracker(250, "new_words")

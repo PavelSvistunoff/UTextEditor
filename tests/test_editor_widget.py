@@ -10,7 +10,7 @@ pytest.importorskip("PySide6")
 from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QAction, QFontDatabase, QIcon, QPalette, QTextCursor
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QPlainTextEdit
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox, QPlainTextEdit
 
 from app.document.document import Document
 from app.document.text_formatting import indent_lines, outdent_lines
@@ -783,6 +783,44 @@ def test_writing_goal_does_not_credit_undo_after_history_reattachment(applicatio
 
     assert editor.toPlainText() == "existing words"
     assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_preserves_undo_across_pause_and_reset(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(10, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+
+    def append_word(text: str) -> None:
+        cursor = editor.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.beginEditBlock()
+        cursor.insertText(text)
+        cursor.endEditBlock()
+
+    append_word("first")
+    window.toggle_writing_goal_pause()
+    append_word(" paused")
+    window.toggle_writing_goal_pause()
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    editor.undo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.redo()
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 1
+    with patch("app.ui.main_window.QMessageBox.question", return_value=QMessageBox.StandardButton.Yes):
+        window.reset_writing_goal()
+    editor.undo()
+    editor.redo()
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    assert editor.toPlainText() == "first paused"
     editor.document_state.mark_saved()
     window._writing_goal_persist_timer.stop()
     window.close()

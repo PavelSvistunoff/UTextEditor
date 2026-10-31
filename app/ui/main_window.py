@@ -790,7 +790,6 @@ class MainWindow(QMainWindow):
         document_id = self._goal_document_id(editor)
         if (
             self.writing_goals.target == 0
-            or self.writing_goals.paused
             or self.writing_goals.scope != "new_words"
         ):
             self.writing_goals.attach(document_id, editor.toPlainText())
@@ -902,7 +901,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, self.tr("No daily goal"), self.tr("Set a daily goal before pausing it."))
             return
         self.writing_goals.set_paused(not self.writing_goals.paused)
-        self._attach_open_writing_goal_documents(reset_history=True)
+        self._attach_open_writing_goal_documents()
         self._schedule_writing_goal_persist()
         self._refresh_writing_goal()
 
@@ -915,7 +914,7 @@ class MainWindow(QMainWindow):
         ) != QMessageBox.StandardButton.Yes:
             return
         self.writing_goals.reset_today()
-        self._attach_open_writing_goal_documents(reset_history=True)
+        self._attach_open_writing_goal_documents()
         self._schedule_writing_goal_persist()
         self._refresh_writing_goal()
 
