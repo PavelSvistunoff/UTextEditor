@@ -306,3 +306,24 @@ def test_directory_resolution_failure_does_not_hide_valid_snapshots(tmp_path, mo
     assert scan.issues[0].snapshot_path == damaged.snapshot_path.parent
     assert "Cannot resolve" in scan.issues[0].message
     assert damaged.snapshot_path.exists()
+
+
+@pytest.mark.parametrize("field", ["canonical_path", "project_path"])
+@pytest.mark.parametrize("invalid_path", ["", "bad\x00path"])
+def test_invalid_recovery_paths_are_diagnosed_and_preserved(tmp_path, field, invalid_path):
+    store = RecoveryStore(tmp_path / "recovery", retention=1)
+    damaged = store.save("doc", "preserve draft")
+    payload = json.loads(damaged.snapshot_path.read_text(encoding="utf-8"))
+    payload[field] = invalid_path
+    damaged.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+    original = damaged.snapshot_path.read_bytes()
+    valid = store.save("other", "readable")
+
+    scan = store.scan()
+    assert scan.entries == (valid,)
+    assert len(scan.issues) == 1
+    assert field in scan.issues[0].message
+    store.save("doc", "new draft")
+    store.discard_document("doc")
+    assert damaged.snapshot_path.read_bytes() == original
+    assert store.restore(valid).text == "readable"

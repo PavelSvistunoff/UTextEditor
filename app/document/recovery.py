@@ -297,7 +297,9 @@ class RecoveryStore:
         if not isinstance(payload.get("canonical_existed"), bool):
             raise ValueError("Recovery snapshot has an invalid canonical file state.")
         for field in ("canonical_path", "project_path"):
-            if payload.get(field) is not None and not isinstance(payload[field], str):
+            if payload.get(field) is not None and (
+                not isinstance(payload[field], str) or not payload[field] or "\x00" in payload[field]
+            ):
                 raise ValueError(f"Recovery snapshot has an invalid {field}.")
         if payload.get("project_id") is not None and not isinstance(payload["project_id"], str):
             raise ValueError("Recovery snapshot has an invalid project ID.")

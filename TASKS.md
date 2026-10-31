@@ -227,7 +227,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
   a diagnostic. Symbolic-link snapshots are diagnosed and preserved by automatic
   cleanup. Directory-resolution errors also preserve access to other snapshots;
   comparisons now label truncation beyond 6,000 characters in English/Ukrainian;
-  broader diagnosis remains incomplete.
+  Empty/NUL-containing snapshot paths are diagnosed and preserved; broader
+  diagnosis remains incomplete.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-008.04** — Support selective recovery or export of valid content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

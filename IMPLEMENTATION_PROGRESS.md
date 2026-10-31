@@ -1,6 +1,15 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** empty and NUL-containing
+  canonical/project paths in recovery snapshots now produce invalid-entry
+  diagnostics. Automatic retention and cleanup preserve these damaged entries.
+  Added test_invalid_recovery_paths_are_diagnosed_and_preserved with four
+  path/field cases and a valid companion snapshot. Recovery tests: 27 passed;
+  full offline suite: 683 passed, 2 skipped; diff check passed. README and
+  TASKS updated. Damaged-content extraction and native checks remain open.
+  Prior comparison notice committed as 2995d88; no push requested this turn.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** recovery comparisons now label
   the existing 6,000-character per-entry truncation, with Ukrainian translation.
   Added test_recovery_comparison_labels_truncated_diff_without_changing_snapshot
