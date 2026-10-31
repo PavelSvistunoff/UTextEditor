@@ -1888,7 +1888,7 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
     monkeypatch.setattr(
         "app.ui.main_window.OllamaClient.check_connection", lambda _self: True
     )
-    monkeypatch.setattr(MainWindow, "_ask_pdf_options", lambda _self, title: (title, "An Author", "A4", False, {scene.id}))
+    monkeypatch.setattr(MainWindow, "_ask_pdf_options", lambda _self, title: (title, "An Author", "A4", False, False, {scene.id}))
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
     scene = project.add_scene("Opening", chapter_id=chapter.id, content="saved text")
@@ -1942,6 +1942,7 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
     assert "current unsaved text" in content
     assert "An Author" in content
     assert "Opening" not in content
+    assert "Chapter One" not in content
     assert "Omitted" not in content and "not exported" not in content
     assert pdf.pagePointSize(0).width() > 590
     assert "\r\nsaved text\r\n" not in content

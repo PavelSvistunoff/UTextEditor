@@ -15,6 +15,8 @@ class PdfOptionsDialog(QDialog):
         self.page_size.addItems(["A5", "A4", "Letter"])
         self.scene_headings = QCheckBox(self.tr("Include scene headings"), self)
         self.scene_headings.setChecked(True)
+        self.chapter_headings = QCheckBox(self.tr("Include chapter headings"), self)
+        self.chapter_headings.setChecked(True)
         self.scenes = QListWidget(self)
         self.scenes.setAccessibleName(self.tr("Scenes to include"))
         for scene_id, label in scenes:
@@ -35,6 +37,7 @@ class PdfOptionsDialog(QDialog):
         buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(bool(title.strip()))
         layout = QVBoxLayout(self)
         layout.addLayout(form)
+        layout.addWidget(self.chapter_headings)
         layout.addWidget(self.scene_headings)
         layout.addWidget(QLabel(self.tr("Scenes to include (unchecked scenes are omitted):"), self))
         layout.addWidget(self.scenes)

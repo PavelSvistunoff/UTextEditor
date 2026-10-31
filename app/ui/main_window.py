@@ -3747,7 +3747,7 @@ class MainWindow(QMainWindow):
         options = self._ask_pdf_options(project.manifest.title)
         if options is None or self.project is not project or self._project_generation != generation:
             return
-        book_title, author, page_size, include_scene_headings, selected_scene_ids = options
+        book_title, author, page_size, include_scene_headings, include_chapter_headings, selected_scene_ids = options
         destination, _selected_filter = QFileDialog.getSaveFileName(
             self,
             self.tr("Compile book as PDF"),
@@ -3817,6 +3817,7 @@ class MainWindow(QMainWindow):
             author,
             include_scene_headings,
             source_paths,
+            include_chapter_headings,
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -3843,6 +3844,7 @@ class MainWindow(QMainWindow):
         author="",
         include_scene_headings=True,
         source_paths=None,
+        include_chapter_headings=True,
     ):
         ensure_destination_not_source(target, source_paths or MainWindow._project_export_sources(project))
         captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
@@ -3865,6 +3867,7 @@ class MainWindow(QMainWindow):
             page_size=page_size,
             author=author,
             include_scene_headings=include_scene_headings,
+            include_chapter_headings=include_chapter_headings,
         )
 
     def _ask_pdf_options(self, title: str):
@@ -3877,7 +3880,8 @@ class MainWindow(QMainWindow):
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return None
         return (dialog.title.text().strip(), dialog.author.text().strip(),
-                dialog.page_size.currentText(), dialog.scene_headings.isChecked(), dialog.selected_scene_ids())
+                dialog.page_size.currentText(), dialog.scene_headings.isChecked(),
+                dialog.chapter_headings.isChecked(), dialog.selected_scene_ids())
 
     def _project_book_compiled(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)

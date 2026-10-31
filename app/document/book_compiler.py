@@ -36,6 +36,7 @@ def compile_book_pdf(
     page_size: str = "A5",
     author: str = "",
     include_scene_headings: bool = True,
+    include_chapter_headings: bool = True,
 ) -> Path:
     """Write a PDF with a title page, ordered chapters, and page numbers."""
     target = Path(destination)
@@ -50,7 +51,8 @@ def compile_book_pdf(
 
     _validate_scenes(chapters, ungrouped_scenes, scene_texts)
     document = _build_document(title, chapters, ungrouped_scenes, scene_texts, author=author,
-                               include_scene_headings=include_scene_headings)
+                               include_scene_headings=include_scene_headings,
+                               include_chapter_headings=include_chapter_headings)
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
@@ -109,6 +111,7 @@ def _build_document(
     *,
     author: str = "",
     include_scene_headings: bool = True,
+    include_chapter_headings: bool = True,
 ) -> QTextDocument:
     document = QTextDocument()
     document.setDefaultFont(QFont("Georgia", 11))
@@ -131,17 +134,14 @@ def _build_document(
     toc_format.setPageBreakPolicy(QTextFormat.PageBreakFlag.PageBreak_AlwaysBefore)
     _insert_block(cursor, "Contents", toc_format, _char_format(20, bold=True))
     for chapter in chapters:
-        _insert_block(
-            cursor,
-            chapter.title,
-            _block_format(),
-            _char_format(12, bold=True),
-        )
+        if include_chapter_headings:
+            _insert_block(cursor, chapter.title, _block_format(), _char_format(12, bold=True))
         if include_scene_headings:
             for scene in chapter.scenes:
                 _insert_block(cursor, scene.title, _block_format(), _char_format(10))
     if ungrouped_scenes:
-        _insert_block(cursor, "Additional Scenes", _block_format(), _char_format(12, bold=True))
+        if include_chapter_headings:
+            _insert_block(cursor, "Additional Scenes", _block_format(), _char_format(12, bold=True))
         if include_scene_headings:
             for scene in ungrouped_scenes:
                 _insert_block(cursor, scene.title, _block_format(), _char_format(10))
@@ -152,7 +152,9 @@ def _build_document(
         heading_format = _block_format(Qt.AlignmentFlag.AlignHCenter)
         heading_format.setPageBreakPolicy(QTextFormat.PageBreakFlag.PageBreak_AlwaysBefore)
         heading_format.setBottomMargin(30)
-        _insert_block(cursor, chapter.title, heading_format, _char_format(20, bold=True))
+        # Keep a nonprinting block to carry the page break when the title is hidden.
+        _insert_block(cursor, chapter.title if include_chapter_headings else "\u200b",
+                      heading_format, _char_format(20 if include_chapter_headings else 1, bold=True))
         for scene in chapter.scenes:
             _insert_scene(cursor, scene, scene_texts[scene.scene_id], include_scene_headings)
 
@@ -160,7 +162,8 @@ def _build_document(
         heading_format = _block_format(Qt.AlignmentFlag.AlignHCenter)
         heading_format.setPageBreakPolicy(QTextFormat.PageBreakFlag.PageBreak_AlwaysBefore)
         heading_format.setBottomMargin(24)
-        _insert_block(cursor, "Additional Scenes", heading_format, _char_format(20, bold=True))
+        _insert_block(cursor, "Additional Scenes" if include_chapter_headings else "\u200b",
+                      heading_format, _char_format(20 if include_chapter_headings else 1, bold=True))
         for scene in ungrouped_scenes:
             _insert_scene(cursor, scene, scene_texts[scene.scene_id], include_scene_headings)
     return document

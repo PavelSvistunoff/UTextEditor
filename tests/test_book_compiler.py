@@ -162,6 +162,7 @@ def test_pdf_options_require_a_title_and_default_to_a5(application):
     ok = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.StandardButton.Ok)
     assert dialog.page_size.currentText() == "A5"
     assert dialog.scene_headings.isChecked()
+    assert dialog.chapter_headings.isChecked()
     assert ok.isEnabled()
     dialog.title.setText("  ")
     assert not ok.isEnabled()
@@ -191,6 +192,36 @@ def test_pdf_can_omit_scene_headings_from_contents_and_body(application, tmp_pat
     assert "Hidden ungrouped title" not in text
     assert "Chapter prose" in text and "Ungrouped prose" in text
     assert "Chapter" in text
+
+
+def test_pdf_can_omit_chapter_headings_and_keep_section_page_breaks(application, tmp_path):
+    from PySide6.QtPdf import QPdfDocument
+
+    path = tmp_path / "without-chapter-headings.pdf"
+    compile_book_pdf(
+        path, "Novel",
+        [ExportChapter("Hidden chapter", (ExportScene("s", "Scene title"),))],
+        [ExportScene("u", "Other scene")],
+        {"s": "Chapter prose", "u": "Ungrouped prose"},
+        include_chapter_headings=False, include_scene_headings=False,
+    )
+    pdf = QPdfDocument(application)
+    pdf.load(str(path))
+    pages = [pdf.getAllText(i).text() for i in range(pdf.pageCount())]
+    text = "\n".join(pages)
+    assert "Hidden chapter" not in text and "Additional Scenes" not in text
+    assert "Scene title" not in text and "Other scene" not in text
+    assert "Chapter prose" in pages[2]
+    assert "Ungrouped prose" in pages[3]
+
+    with_scenes = tmp_path / "scene-headings-only.pdf"
+    compile_book_pdf(with_scenes, "Novel",
+                     [ExportChapter("Hidden chapter", (ExportScene("s", "Scene title"),))],
+                     [], {"s": "Chapter prose"}, include_chapter_headings=False)
+    pdf.load(str(with_scenes))
+    pages = [pdf.getAllText(i).text() for i in range(pdf.pageCount())]
+    assert "Hidden chapter" not in "\n".join(pages)
+    assert "Scene title" in pages[1] and "Scene title" in pages[2]
 
 
 def test_failed_book_compilation_preserves_existing_destination(

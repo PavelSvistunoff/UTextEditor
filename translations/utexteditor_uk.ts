@@ -2078,6 +2078,7 @@
 </context>
 <context>
     <name>PdfOptionsDialog</name>
+    <message><source>Include chapter headings</source><translation>Додавати заголовки розділів</translation></message>
     <message><source>Scenes to include</source><translation>Сцени для включення</translation></message>
     <message><source>Scenes to include (unchecked scenes are omitted):</source><translation>Сцени для включення (непозначені сцени буде пропущено):</translation></message>
     <message><source>Include scene headings</source><translation>Додавати заголовки сцен</translation></message>

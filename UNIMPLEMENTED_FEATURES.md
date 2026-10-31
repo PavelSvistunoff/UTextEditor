@@ -232,8 +232,8 @@ network read may continue until data arrives or the connection times out.
    directory. This must not imply that recovery snapshots are a complete backup.
 9. **Improve manuscript export and PDF options** (medium effort). Existing
    Markdown/plain-text export supports scene subsets; PDF now offers paper
-   size, title-page title and author, optional scene headings, and scene selection.
-   Consider a preview and choices for chapter headings. Acceptance: use a captured buffer
+   size, title-page title and author, optional chapter and scene headings, and scene selection.
+   Consider a preview. Acceptance: use a captured buffer
    state, show omissions and unsaved content, preserve source files, and retain
    explicit replacement confirmation. Page-numbered contents and stable
    pagination need dedicated PDF testing across platforms.

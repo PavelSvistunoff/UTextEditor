@@ -279,9 +279,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   unchecked scenes are omitted without being read, and only selected unsaved
   buffers are included. A stale project generation cancels the selection.
   Tests cover duplicate labels, omitted unreadable scenes and stale options.
-  Preview, chapter-heading options, captured closed-scene contents, compiled
-  translations and native review remain outstanding. Full offline suite:
-  578 passed, 2 skipped.
+  PDF chapter headings can now also be omitted from the contents and body;
+  section page breaks remain. Preview, captured closed-scene contents, compiled
+  translations and native review remain outstanding. Do not mark complete.
+  Full offline suite: 579 passed, 2 skipped; focused PDF tests also cover
+  showing scene headings while chapter headings are hidden.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene
