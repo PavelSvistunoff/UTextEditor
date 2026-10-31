@@ -681,6 +681,24 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Ungrouped scenes</source><translation>Сцени поза розділами</translation></message>
+    <message><source>Move scene</source><translation>Перемістити сцену</translation></message>
+    <message><source>Destination:</source><translation>Місце призначення:</translation></message>
+    <message><source>Import scene</source><translation>Імпортувати сцену</translation></message>
+    <message><source>Copy this UTF-8 text file into the project? The original file will remain unchanged.</source><translation>Скопіювати цей текстовий файл UTF-8 до проєкту? Початковий файл залишиться без змін.</translation></message>
+    <message><source>Rename project item</source><translation>Перейменувати елемент проєкту</translation></message>
+    <message><source>Title:</source><translation>Назва:</translation></message>
+    <message><source>Duplicate note</source><translation>Дублювати нотатку</translation></message>
+    <message><source>Also copy this note's outgoing links?</source><translation>Також скопіювати вихідні посилання цієї нотатки?</translation></message>
+    <message><source>Scene: {title} [{id}]</source><translation>Сцена: {title} [{id}]</translation></message>
+    <message><source>Note: {title} [{id}]</source><translation>Нотатка: {title} [{id}]</translation></message>
+    <message><source>Link note</source><translation>Пов’язати нотатку</translation></message>
+    <message><source>There are no other project items to link.</source><translation>Немає інших елементів проєкту для зв’язування.</translation></message>
+    <message><source>Link to:</source><translation>Пов’язати з:</translation></message>
+    <message><source>Unlink note</source><translation>Видалити зв’язок нотатки</translation></message>
+    <message><source>This note has no outgoing links.</source><translation>Ця нотатка не має вихідних посилань.</translation></message>
+    <message><source>Missing target: {id}</source><translation>Відсутня ціль: {id}</translation></message>
+    <message><source>Remove link to:</source><translation>Видалити посилання на:</translation></message>
     <message><source>Remove chapter</source><translation>Видалити розділ</translation></message>
     <message><source>Move its scenes to the ungrouped manuscript list and remove the empty chapter?</source><translation>Перемістити його сцени до списку сцен поза розділами та видалити порожній розділ?</translation></message>
     <message><source>Remove the empty chapter “{title}”?</source><translation>Видалити порожній розділ «{title}»?</translation></message>

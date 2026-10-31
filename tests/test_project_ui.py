@@ -682,6 +682,46 @@ def test_translated_character_removal_cancel_keeps_profile(application, tmp_path
         window.close()
 
 
+def test_translated_link_picker_preserves_target_ids(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    note = project.add_note("Notes")
+    scene = project.add_scene("Draft")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("note", note.id))
+    called = []
+    monkeypatch.setattr(window, "_run_project_mutation", lambda operation, *args: called.append((operation, args)))
+
+    def choose(*args):
+        assert args[3] == [f"Сцена: Draft [{scene.id[-8:]}]"]
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    application.installTranslator(translator)
+    try:
+        window.link_project_note()
+        assert called[-1][1] == (note.id, scene.id)
+        project.link_note(note.id, scene.id)
+        window.unlink_project_note()
+        assert called[-1][1] == (note.id, scene.id)
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

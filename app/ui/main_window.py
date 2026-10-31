@@ -3414,15 +3414,15 @@ class MainWindow(QMainWindow):
         kind, scene_id = self._selected_project_item()
         if kind != "scene" or not scene_id:
             return
-        destinations = [("ungrouped", "Ungrouped scenes")]
+        destinations = [("ungrouped", self.tr("Ungrouped scenes"))]
         destinations.extend(
             (chapter.id, f"{chapter.title} [{chapter.id[-8:]}]")
             for chapter in self.project.manifest.chapters
         )
         label, accepted = QInputDialog.getItem(
             self,
-            "Move scene",
-            "Destination:",
+            self.tr("Move scene"),
+            self.tr("Destination:"),
             [title for _, title in destinations],
             0,
             False,
@@ -3449,13 +3449,13 @@ class MainWindow(QMainWindow):
     def import_project_scene(self) -> None:
         if self.project is None:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Import scene")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Import scene"))
         if not path:
             return
         answer = QMessageBox.question(
             self,
-            "Import scene",
-            "Copy this UTF-8 text file into the project? The original file will remain unchanged.",
+            self.tr("Import scene"),
+            self.tr("Copy this UTF-8 text file into the project? The original file will remain unchanged."),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         )
         if answer == QMessageBox.StandardButton.Yes:
@@ -3483,7 +3483,7 @@ class MainWindow(QMainWindow):
         else:
             return
         title, accepted = QInputDialog.getText(
-            self, "Rename project item", "Title:", text=item.title
+            self, self.tr("Rename project item"), self.tr("Title:"), text=item.title
         )
         if accepted:
             self._run_project_mutation(rename, item_id, title)
@@ -3505,8 +3505,8 @@ class MainWindow(QMainWindow):
         elif kind == "note":
             copy_links = QMessageBox.question(
                 self,
-                "Duplicate note",
-                "Also copy this note's outgoing links?",
+                self.tr("Duplicate note"),
+                self.tr("Also copy this note's outgoing links?"),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             ) == QMessageBox.StandardButton.Yes
             self._run_project_mutation(
@@ -3521,18 +3521,18 @@ class MainWindow(QMainWindow):
         if project is None or kind != "note":
             return
         targets: list[tuple[str, str]] = [
-            (scene.id, f"Scene: {scene.title} [{scene.id[-8:]}]") for scene in project.iter_scenes()
+            (scene.id, self.tr("Scene: {title} [{id}]").format(title=scene.title, id=scene.id[-8:])) for scene in project.iter_scenes()
         ]
         targets.extend(
-            (note.id, f"Note: {note.title} [{note.id[-8:]}]")
+            (note.id, self.tr("Note: {title} [{id}]").format(title=note.title, id=note.id[-8:]))
             for note in project.manifest.notes
             if note.id != note_id
         )
         if not targets:
-            QMessageBox.information(self, "Link note", "There are no other project items to link.")
+            QMessageBox.information(self, self.tr("Link note"), self.tr("There are no other project items to link."))
             return
         label, accepted = QInputDialog.getItem(
-            self, "Link note", "Link to:", [text for _, text in targets], 0, False
+            self, self.tr("Link note"), self.tr("Link to:"), [text for _, text in targets], 0, False
         )
         if accepted:
             target_id = next(identifier for identifier, text in targets if text == label)
@@ -3545,22 +3545,22 @@ class MainWindow(QMainWindow):
             return
         links = project.links_from(note_id)
         if not links:
-            QMessageBox.information(self, "Unlink note", "This note has no outgoing links.")
+            QMessageBox.information(self, self.tr("Unlink note"), self.tr("This note has no outgoing links."))
             return
         choices: list[tuple[str, str]] = []
         for link in links:
             try:
                 target = project.get_scene(link.target_id)
-                title = f"Scene: {target.title} [{target.id[-8:]}]"
+                title = self.tr("Scene: {title} [{id}]").format(title=target.title, id=target.id[-8:])
             except ProjectError:
                 try:
                     target = project.get_note(link.target_id)
-                    title = f"Note: {target.title} [{target.id[-8:]}]"
+                    title = self.tr("Note: {title} [{id}]").format(title=target.title, id=target.id[-8:])
                 except ProjectError:
-                    title = f"Missing target: {link.target_id}"
+                    title = self.tr("Missing target: {id}").format(id=link.target_id)
             choices.append((link.target_id, title))
         label, accepted = QInputDialog.getItem(
-            self, "Unlink note", "Remove link to:", [text for _, text in choices], 0, False
+            self, self.tr("Unlink note"), self.tr("Remove link to:"), [text for _, text in choices], 0, False
         )
         if accepted:
             target_id = next(identifier for identifier, text in choices if text == label)

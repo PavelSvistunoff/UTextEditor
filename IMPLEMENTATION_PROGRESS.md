@@ -387,8 +387,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   prompts now use translated labels. Note-type choices retain their stable
   manifest values in both languages; offscreen tests cover all five types.
   Project-item removal choices and destructive confirmations are now translated,
-  with cancellation and path placeholders covered by tests. Full offline suite:
-  604 passed, 2 skipped.
+  with cancellation and path placeholders covered by tests. Move, import,
+  rename, duplicate and link-management prompts now use Ukrainian strings;
+  an offscreen test checks that translated link choices retain their IDs.
+  Full offline suite: 605 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use
