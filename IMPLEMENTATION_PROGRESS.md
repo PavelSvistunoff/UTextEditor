@@ -397,8 +397,11 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   checks the localized remove action targets the correct relationship. The
   AI project setup, Auto-writer and project translation confirmation messages
   now disclose their content and destination in Ukrainian; a cancellation test
-  checks the translated destination and language labels. Further AI workflows
-  still need auditing. Full offline suite: 609 passed, 2 skipped.
+  checks the translated destination and language labels. Template-suggestion
+  and autonomous Auto-pilot disclosures now also show the destination and the
+  automatic-application behavior in Ukrainian; a cancellation test checks that
+  disclosure. Further AI workflows still need auditing. Full offline suite:
+  610 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

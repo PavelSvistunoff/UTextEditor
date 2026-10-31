@@ -1925,20 +1925,20 @@ class MainWindow(QMainWindow):
             dialog.set_suggesting(False)
             return
         if not brief.strip():
-            dialog.set_suggesting(False, "Add some story details before requesting suggestions.")
+            dialog.set_suggesting(False, self.tr("Add some story details before requesting suggestions."))
             return
         if len(brief) > 6000:
-            dialog.set_suggesting(False, "The template must be no longer than 6,000 characters.")
+            dialog.set_suggesting(False, self.tr("The template must be no longer than 6,000 characters."))
             return
-        confirmation = (
-            f"Send this {len(brief)}-character template to the configured model "
+        confirmation = self.tr(
+            "Send this {length}-character template to the configured model "
             "to suggest ideas for its gaps?\n\n"
-            f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
+            "Destination: {host} — model {model}\n\n"
             "Only the template text is sent. No project files or open documents are included."
-        )
+        ).format(length=len(brief), host=self.provider.host, model=self.provider.model)
         if QMessageBox.question(
             self,
-            "Confirm AI suggestions",
+            self.tr("Confirm AI suggestions"),
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
@@ -1954,7 +1954,7 @@ class MainWindow(QMainWindow):
         self._set_project_busy(True)
         if self._project_setup_cancel_action is not None:
             self._project_setup_cancel_action.setEnabled(True)
-        self.statusBar().showMessage("Generating suggestions for the writing template…")
+        self.statusBar().showMessage(self.tr("Generating suggestions for the writing template…"))
         worker = FunctionWorker(
             self._suggest_project_brief_text,
             self.provider,
@@ -2001,27 +2001,28 @@ class MainWindow(QMainWindow):
             dialog.set_autopilot_running(False)
             return
         if not brief.strip():
-            dialog.set_autopilot_running(False, "Add story details before starting Auto-pilot.")
+            dialog.set_autopilot_running(False, self.tr("Add story details before starting Auto-pilot."))
             return
         if len(brief) > 6000:
-            dialog.set_autopilot_running(False, "The template must be no longer than 6,000 characters.")
+            dialog.set_autopilot_running(False, self.tr("The template must be no longer than 6,000 characters."))
             return
         existing_outline = self._project_outline_metadata(project)
         character_context = project_planning_context(project)
-        confirmation = (
+        confirmation = self.tr(
             "Auto-pilot will send your edited setup template and existing project outline "
             "metadata plus these compact character profiles to the configured model.\n\n"
-            f"{character_context or '[No profiles with motivations, active goals, or internal conflicts.]'}\n\n"
-            f"Destination: {self.provider.host} — model {self.provider.model}\n\n"
-            f"It may add up to {MAX_AUTOPILOT_CHAPTERS} chapters, {MAX_AUTOPILOT_SCENES} "
-            f"scenes, and {MAX_AUTOPILOT_CHARACTERS} character notes. It will draft "
+            "{profiles}\n\nDestination: {host} — model {model}\n\n"
+            "It may add up to {chapters} chapters, {scenes} "
+            "scenes, and {characters} character notes. It will draft "
             "all new scenes, leave every existing file untouched, and apply the additions "
             "automatically without per-change approval. If any generation fails or is cancelled, "
             "none of the generated changes are added."
-        )
+        ).format(profiles=character_context or self.tr("[No profiles with motivations, active goals, or internal conflicts.]"),
+                 host=self.provider.host, model=self.provider.model, chapters=MAX_AUTOPILOT_CHAPTERS,
+                 scenes=MAX_AUTOPILOT_SCENES, characters=MAX_AUTOPILOT_CHARACTERS)
         if QMessageBox.question(
             self,
-            "Confirm autonomous Auto-pilot",
+            self.tr("Confirm autonomous Auto-pilot"),
             confirmation,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
@@ -2039,7 +2040,7 @@ class MainWindow(QMainWindow):
         self._set_project_busy(True)
         if self._project_setup_cancel_action is not None:
             self._project_setup_cancel_action.setEnabled(True)
-        self.statusBar().showMessage("Auto-pilot is refining the plan and drafting new project content…")
+        self.statusBar().showMessage(self.tr("Auto-pilot is refining the plan and drafting new project content…"))
         worker = FunctionWorker(
             run_autopilot,
             self.provider,

@@ -681,6 +681,35 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Add some story details before requesting suggestions.</source><translation>Додайте подробиці історії перед запитом пропозицій.</translation></message>
+    <message><source>The template must be no longer than 6,000 characters.</source><translation>Шаблон має містити не більше 6000 символів.</translation></message>
+    <message><source>Send this {length}-character template to the configured model to suggest ideas for its gaps?
+
+Destination: {host} — model {model}
+
+Only the template text is sent. No project files or open documents are included.</source><translation>Надіслати цей шаблон із {length} символів налаштованій моделі, щоб вона запропонувала ідеї для пропущених частин?
+
+Призначення: {host} — модель {model}
+
+Надсилається лише текст шаблону. Файли проєкту та відкриті документи не включаються.</translation></message>
+    <message><source>Confirm AI suggestions</source><translation>Підтвердити запит пропозицій ШІ</translation></message>
+    <message><source>Generating suggestions for the writing template…</source><translation>Генерування пропозицій для творчого шаблону…</translation></message>
+    <message><source>Add story details before starting Auto-pilot.</source><translation>Додайте подробиці історії перед запуском автопілота.</translation></message>
+    <message><source>Auto-pilot will send your edited setup template and existing project outline metadata plus these compact character profiles to the configured model.
+
+{profiles}
+
+Destination: {host} — model {model}
+
+It may add up to {chapters} chapters, {scenes} scenes, and {characters} character notes. It will draft all new scenes, leave every existing file untouched, and apply the additions automatically without per-change approval. If any generation fails or is cancelled, none of the generated changes are added.</source><translation>Автопілот надішле налаштованій моделі відредагований шаблон, наявні метадані плану проєкту та ці стислі профілі персонажів.
+
+{profiles}
+
+Призначення: {host} — модель {model}
+
+Він може додати до {chapters} розділів, {scenes} сцен і {characters} нотаток про персонажів. Він напише чернетки всіх нових сцен, залишить наявні файли без змін і автоматично застосує доповнення без окремого підтвердження кожної зміни. Якщо будь-яке генерування не вдасться або його буде скасовано, жодні створені зміни не додаються.</translation></message>
+    <message><source>Confirm autonomous Auto-pilot</source><translation>Підтвердити автономний автопілот</translation></message>
+    <message><source>Auto-pilot is refining the plan and drafting new project content…</source><translation>Автопілот уточнює план і створює новий вміст проєкту…</translation></message>
     <message><source>AI project setup</source><translation>Налаштування проєкту із ШІ</translation></message>
     <message><source>Enter a short writing brief first.</source><translation>Спочатку введіть короткий творчий задум.</translation></message>
     <message><source>The writing brief must be no longer than 6,000 characters.</source><translation>Творчий задум має містити не більше 6000 символів.</translation></message>

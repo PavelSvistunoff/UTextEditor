@@ -842,6 +842,42 @@ def test_translated_project_translation_confirmation_discloses_destination(appli
         window.close()
 
 
+def test_translated_autopilot_confirmation_discloses_automatic_changes(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+    from app.ui.project_brief_dialog import ProjectBriefDialog
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    project = Project.create(tmp_path / "project", "Book")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window.settings.ai_enabled = True
+    dialog = ProjectBriefDialog(window)
+    window._project_setup_brief_dialog = dialog
+    monkeypatch.setattr(window, "_ensure_ai_context_consent", lambda **kwargs: True)
+    questions = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: questions.append(args) or QMessageBox.StandardButton.Cancel)
+    application.installTranslator(translator)
+    try:
+        window._start_project_autopilot(project, dialog, "Story")
+        assert questions[0][1] == "Підтвердити автономний автопілот"
+        assert "автоматично" in questions[0][2] and window.provider.host in questions[0][2]
+        assert not window._project_busy and list(project.iter_scenes()) == []
+    finally:
+        application.removeTranslator(translator)
+        dialog.reject()
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
