@@ -228,6 +228,7 @@ keyboard/screen-reader checks and release translation compilation remain open.
   cleanup. Directory-resolution errors also preserve access to other snapshots;
   comparisons now label truncation beyond 6,000 characters in English/Ukrainian;
   Empty/NUL-containing snapshot paths are diagnosed and preserved; broader
+  inspection includes captured text when a canonical file is absent. Broader
   diagnosis remains incomplete.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-008.04** — Support selective recovery or export of valid content.

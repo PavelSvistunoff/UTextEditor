@@ -3257,3 +3257,16 @@ def test_recovery_comparison_labels_truncated_diff_without_changing_snapshot(tmp
         (short,), RecoveryComparisonLabels(), "Untitled", "Error: {error}", "Empty", "Скорочено"
     )
     assert "Скорочено" not in result
+
+
+@pytest.mark.parametrize("missing", [False, True])
+def test_recovery_inspection_includes_text_without_canonical_file(tmp_path, missing):
+    store = RecoveryStore(tmp_path / "recovery")
+    canonical = tmp_path / "missing.txt" if missing else None
+    entry = store.save("doc", "captured manuscript", canonical_path=canonical)
+    result = MainWindow._compare_recovery_entries(
+        (entry,), RecoveryComparisonLabels(snapshot="Копія"), "Untitled", "Error: {error}", "Empty"
+    )
+    assert "Копія\ncaptured manuscript" in result
+    assert not (tmp_path / "missing.txt").exists()
+    assert store.scan().entries == (entry,)

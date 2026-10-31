@@ -254,10 +254,10 @@ class RecoveryStore:
     def compare(entry: RecoveryEntry, labels: RecoveryComparisonLabels | None = None) -> str:
         labels = labels or RecoveryComparisonLabels()
         if entry.canonical_path is None:
-            return labels.untitled
+            return f"{labels.untitled}\n\n{labels.snapshot}\n{entry.text}"
         canonical = Path(entry.canonical_path)
         if not canonical.is_file():
-            return labels.missing.format(path=canonical)
+            return f"{labels.missing.format(path=canonical)}\n\n{labels.snapshot}\n{entry.text}"
         current = canonical.read_text(encoding="utf-8-sig")
         difference = "".join(
             difflib.unified_diff(

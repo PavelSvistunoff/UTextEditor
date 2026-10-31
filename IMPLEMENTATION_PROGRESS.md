@@ -1,6 +1,16 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** recovery inspection now includes
+  captured text for untitled snapshots and snapshots without a canonical file,
+  using existing localized labels and the existing UI truncation notice.
+  Updated localized comparison assertions and added
+  test_recovery_inspection_includes_text_without_canonical_file (two cases).
+  Focused recovery/domain/UI tests: 42 passed; full suite: 685 passed, 2 skipped.
+  README and TASKS updated; diff check passed. No new UI strings. Pagination,
+  damaged-content extraction and native verification remain open. Prior path
+  validation fix committed as 6afc551; no push requested this turn.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** empty and NUL-containing
   canonical/project paths in recovery snapshots now produce invalid-entry
   diagnostics. Automatic retention and cleanup preserve these damaged entries.

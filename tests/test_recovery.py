@@ -73,9 +73,9 @@ def test_recovery_comparison_localizes_labels_without_translating_document_text(
     canonical.write_text("recovered text\n", encoding="utf-8")
     assert store.compare(entry, labels) == "Збігається"
     canonical.unlink()
-    assert store.compare(entry, labels) == f"Відсутній: {canonical}"
+    assert store.compare(entry, labels) == f"Відсутній: {canonical}\n\nКопія\nrecovered text\n"
     untitled = store.save("untitled", "text")
-    assert store.compare(untitled, labels) == "Без назви"
+    assert store.compare(untitled, labels) == "Без назви\n\nКопія\ntext"
 
 
 def test_scan_reports_corrupt_snapshot_and_preserves_it_for_diagnosis(tmp_path: Path) -> None:
