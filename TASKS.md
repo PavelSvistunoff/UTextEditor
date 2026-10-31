@@ -312,7 +312,9 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-011 — Improve file encoding and large-file handling
 **Priority:** Medium · **Parent status:** open
 
-- [ ] **TASK-011.01** — Investigate support for non-UTF-8 encodings.  
+- [x] **TASK-011.01** — Investigate support for non-UTF-8 encodings.
+  Completed codec experiment and compatibility design in docs/encoding-support.md;
+  strict failure-preservation regressions pass. Selection remains TASK-011.02.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-011.02** — Add encoding selection where appropriate.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

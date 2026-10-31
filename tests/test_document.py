@@ -294,3 +294,30 @@ def test_document_via_text_update_on_same_value_does_not_increase_revision() -> 
 
     assert document.revision == before
     assert not document.dirty
+
+
+@pytest.mark.parametrize("encoding", ["cp1251", "cp1252", "utf-16"])
+def test_open_unsupported_encoding_preserves_original_bytes(tmp_path, encoding):
+    path = tmp_path / "legacy.txt"
+    raw = ("Привіт" if encoding == "cp1251" else "café").encode(encoding)
+    path.write_bytes(raw)
+    with pytest.raises(UnicodeError):
+        FileManager().open(path)
+    assert path.read_bytes() == raw
+
+
+@pytest.mark.parametrize("encoding", ["cp1251", "cp1252"])
+def test_unrepresentable_save_preserves_disk_and_dirty_buffer(tmp_path, encoding):
+    path = tmp_path / "draft.txt"
+    path.write_bytes(b"original")
+    manager = FileManager()
+    document = manager.open(path)
+    document.encoding = encoding
+    document.update_text("draft 😀")
+    digest = document.disk_digest
+    with pytest.raises(UnicodeEncodeError):
+        manager.save(document)
+    assert path.read_bytes() == b"original"
+    assert document.text == "draft 😀" and document.dirty
+    assert document.disk_digest == digest
+    assert not list(tmp_path.glob(".*.tmp"))

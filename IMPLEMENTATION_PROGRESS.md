@@ -1,6 +1,21 @@
 
 # Implementation progress
 
+- **TASK-011.01 — DONE (2026-10-31):** inspected FileManager, Document,
+  line-ending helpers and dependent conflict/recovery/project workflows.
+  Added docs/encoding-support.md with standard-library codec experiment,
+  ambiguity example, explicit-selection recommendation, BOM/endian policy,
+  compatibility boundaries and follow-up acceptance requirements. UTF-8,
+  UTF-16, UTF-16-LE, CP1251 and CP1252 synthetic samples round-trip; CP1251
+  also decodes incorrectly but successfully as CP1252, ruling out decode
+  success as an automatic selection rule. Added five FileManager regressions
+  for unsupported opens and unrepresentable saves preserving source bytes,
+  dirty text/digest and temporary-file cleanup. Document tests: 25 passed;
+  full offline suite: 803 passed, 2 skipped; diff reviewed and whitespace
+  check passed. README links design; TASKS updated. No new UI or dependencies.
+  This investigation is complete; encoding selection, broader binary detection
+  and large-file work remain separate TASK-011 tickets. Uncommitted, no push.
+
 - **TASK-020.05 — DONE; .01–.04/V1 — verified (2026-10-31):** audited
   shared Qt matching flags, batched/stale-safe counting, current-match checks,
   replace-all edit blocks, focus shortcuts and MainWindow refresh connections.
