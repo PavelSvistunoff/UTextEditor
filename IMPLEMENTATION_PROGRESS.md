@@ -262,11 +262,16 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   unfinished and malformed entries, Qt and named-format placeholder parity,
   and English/Ukrainian plural forms. It can compare against an independently
   extracted source catalog, exits nonzero on errors, and has offline tests.
-  Existing catalog entries pass validation; comparison against a fresh Qt
-  extraction reports 57 gaps, including false contexts produced for calls such
-  as `dialog.tr`. Extraction, validation and compilation are documented.
-  Resolve the context discrepancies and remaining localization coverage before
-  treating the audit as complete. Full offline suite: 538 passed, 2 skipped.
+  An earlier comparison against a fresh Qt extraction reported 57 gaps,
+  including false contexts produced for calls such as `dialog.tr`.
+  Extraction, validation and compilation are documented.
+  Calls through character-dialog and AI-activity instances now use their widget
+  classes for translation, so a fresh extraction uses the runtime contexts.
+  The extracted marked strings match the Ukrainian source catalog, and an
+  automated extraction comparison guards against regressions. This does not
+  detect hardcoded, unmarked strings; the broader UI audit and compiled
+  catalogs remain outstanding. Do not mark complete on extraction alone.
+  Full offline suite: 547 passed, 2 skipped.
 - **TASK-032 — in progress:** the Ukrainian source catalog now covers the
   previously missing character portrait and scene-development workflow labels,
   prompts and errors, plus the main-window open-error title. A full UI audit,

@@ -67,3 +67,14 @@ def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     assert translator.translate("CharacterDialog", "Choose Portrait…") == "Вибрати портрет…"
     assert translator.translate("CharacterDialog", "No open associated scene") == "Немає відкритої пов’язаної сцени"
     assert translator.translate("MainWindow", "Open failed") == "Не вдалося відкрити"
+
+
+def test_extracted_sources_match_ukrainian_catalog(tmp_path):
+    lupdate = Path(sys.executable).parent / "pyside6-lupdate"
+    if not lupdate.exists():
+        pytest.skip("Qt Linguist extractor is unavailable")
+    reference = tmp_path / "extracted.ts"
+    sources = sorted(Path("app/ui").glob("*.py"))
+    subprocess.run([str(lupdate), *(str(path) for path in sources), "-ts", str(reference)],
+                   check=True, capture_output=True)
+    assert validate(Path("translations/utexteditor_uk.ts"), reference) == []

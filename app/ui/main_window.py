@@ -1249,7 +1249,7 @@ class MainWindow(QMainWindow):
                 )
             ),
         )
-        self._auto_writer_activity = self.ai_activity.add(self.ai_activity.tr("Auto-writer"), context=project.manifest.title, cancel=self.cancel_auto_writer,
+        self._auto_writer_activity = self.ai_activity.add(AIActivityPanel.tr("Auto-writer"), context=project.manifest.title, cancel=self.cancel_auto_writer,
                                                          show=lambda: self._auto_writer_progress_dialog.show() if self._auto_writer_progress_dialog else None)
         activity = self._auto_writer_activity
         worker.signals.started.connect(lambda: self.ai_activity.set_state(activity, "running"), Qt.ConnectionType.QueuedConnection)
@@ -1377,7 +1377,7 @@ class MainWindow(QMainWindow):
             ),
             temperature=self.settings.temperature,
         )
-        self._translation_activity = self.ai_activity.add(self.ai_activity.tr("Project translation"), context=project.manifest.title, cancel=self.cancel_project_translation,
+        self._translation_activity = self.ai_activity.add(AIActivityPanel.tr("Project translation"), context=project.manifest.title, cancel=self.cancel_project_translation,
                                                           show=lambda: self._project_translation_progress_dialog.show() if self._project_translation_progress_dialog else None)
         activity = self._translation_activity
         worker.signals.started.connect(lambda: self.ai_activity.set_state(activity, "running"), Qt.ConnectionType.QueuedConnection)
@@ -1475,7 +1475,7 @@ class MainWindow(QMainWindow):
         self._project_translation_committing = True
         if self._translation_activity is not None:
             self._translation_activity.cancel = None
-            self.ai_activity.set_detail(self._translation_activity, self.ai_activity.tr("Applying changes…"))
+            self.ai_activity.set_detail(self._translation_activity, AIActivityPanel.tr("Applying changes…"))
         worker = FunctionWorker(commit_project_translation, project, translation)
         self._project_translation_worker = worker
         self._track_worker(worker)
@@ -1600,7 +1600,7 @@ class MainWindow(QMainWindow):
                 match = re.fullmatch(r"(Translating|Translated) (.*) \((\d+) of (\d+)\)[….]", message)
                 if match:
                     completed = int(match[3]) - (match[1] == "Translating")
-                    detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(completed), match[4], match[2])
+                    detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(completed), match[4], match[2])
                     self.ai_activity.set_detail(self._translation_activity, detail)
             self.statusBar().showMessage(message)
             if self._project_translation_progress_dialog is not None:
@@ -1704,7 +1704,7 @@ class MainWindow(QMainWindow):
         self._auto_writer_committing = True
         if self._auto_writer_activity is not None:
             self._auto_writer_activity.cancel = None
-            self.ai_activity.set_detail(self._auto_writer_activity, self.ai_activity.tr("Applying changes…"))
+            self.ai_activity.set_detail(self._auto_writer_activity, AIActivityPanel.tr("Applying changes…"))
         applying_message = (
             "Auto-writer drafts are complete; applying snapshot-protected scene updates…"
         )
@@ -1802,7 +1802,7 @@ class MainWindow(QMainWindow):
             if self._auto_writer_activity is not None:
                 match = re.fullmatch(r"Auto-writer generating scene (\d+) of (\d+): (.*)", message)
                 if match:
-                    detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(int(match[1]) - 1), match[2], match[3])
+                    detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(int(match[1]) - 1), match[2], match[3])
                     self.ai_activity.set_detail(self._auto_writer_activity, detail)
             self.statusBar().showMessage(message)
             if self._auto_writer_progress_dialog is not None:
@@ -1816,7 +1816,7 @@ class MainWindow(QMainWindow):
             and self._auto_writer_progress_dialog is not None
         ):
             if self._auto_writer_activity is not None:
-                detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(completed), str(total), title)
+                detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(completed), str(total), title)
                 self.ai_activity.set_detail(self._auto_writer_activity, detail)
             self._auto_writer_progress_dialog.append_scene(
                 title, text, completed, total
@@ -1884,7 +1884,7 @@ class MainWindow(QMainWindow):
             self.settings.temperature,
             character_context=character_context or project_planning_context(project),
         )
-        self._track_ai_activity(worker, self.ai_activity.tr("Project outline"), context=project.manifest.title,
+        self._track_ai_activity(worker, AIActivityPanel.tr("Project outline"), context=project.manifest.title,
                                 cancel=self.cancel_project_setup,
                                 current=lambda: generation == self._project_setup_generation and project is self.project and self.settings.ai_enabled and settings_generation == self._settings_generation and project_generation == self._project_generation)
         self._project_setup_worker = worker
@@ -1957,7 +1957,7 @@ class MainWindow(QMainWindow):
             1400,
             self.settings.temperature,
         )
-        self._track_ai_activity(worker, self.ai_activity.tr("Story suggestions"), context=project.manifest.title,
+        self._track_ai_activity(worker, AIActivityPanel.tr("Story suggestions"), context=project.manifest.title,
                                 cancel=self.cancel_project_setup,
                                 current=lambda: generation == self._project_setup_generation and project is self.project and self.settings.ai_enabled and settings_generation == self._settings_generation and project_generation == self._project_generation and dialog is self._project_setup_brief_dialog and dialog.brief() == brief)
         self._project_setup_worker = worker
@@ -2046,7 +2046,7 @@ class MainWindow(QMainWindow):
             is_cancelled=cancel_event.is_set,
             progress=lambda completed, total, title: self.project_autopilot_progress.emit(generation, completed, total, title),
         )
-        self._autopilot_activity = self._track_ai_activity(worker, self.ai_activity.tr("Auto-pilot generation"), context=project.manifest.title,
+        self._autopilot_activity = self._track_ai_activity(worker, AIActivityPanel.tr("Auto-pilot generation"), context=project.manifest.title,
                                                           cancel=self.cancel_project_setup,
                                                           current=lambda: generation == self._project_setup_generation and project is self.project and self.settings.ai_enabled and settings_generation == self._settings_generation and project_generation == self._project_generation and dialog is self._project_setup_brief_dialog)
         self._project_setup_worker = worker
@@ -2072,7 +2072,7 @@ class MainWindow(QMainWindow):
 
     def _show_autopilot_activity(self, generation: int, completed: int, total: int, title: str) -> None:
         if generation == self._project_setup_generation and self._autopilot_activity is not None:
-            detail = format_qt(self.ai_activity.tr("%1 of %2 completed — %3"), str(completed), str(total), title)
+            detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(completed), str(total), title)
             self.ai_activity.set_detail(self._autopilot_activity, detail)
 
     @staticmethod
@@ -2803,8 +2803,8 @@ class MainWindow(QMainWindow):
             dialog.portrait_button.setEnabled(True)
             dialog.save_button.setEnabled(True)
             if dialog.portrait_revision == revision:
-                dialog.portrait_label.setText(dialog.tr("Portrait could not be loaded."))
-                QMessageBox.warning(dialog, dialog.tr("Portrait error"), str(error))
+                dialog.portrait_label.setText(CharacterDialog.tr("Portrait could not be loaded."))
+                QMessageBox.warning(dialog, CharacterDialog.tr("Portrait error"), str(error))
 
         worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
@@ -2812,7 +2812,7 @@ class MainWindow(QMainWindow):
 
     def _suggest_scene_development(self, dialog: CharacterDialog, project: Project) -> None:
         if project is None or project is not self.project or not self.settings.ai_enabled:
-            QMessageBox.information(dialog, dialog.tr("AI unavailable"), dialog.tr("Enable AI in settings before requesting suggestions."))
+            QMessageBox.information(dialog, CharacterDialog.tr("AI unavailable"), CharacterDialog.tr("Enable AI in settings before requesting suggestions."))
             return
         if not self._ensure_ai_context_consent():
             return
@@ -2824,19 +2824,19 @@ class MainWindow(QMainWindow):
             if any(item.character_id == dialog.character.id for item in scene.character_associations):
                 choices[f"{scene.title} [{scene.id}]"] = editor
         if not choices:
-            QMessageBox.information(dialog, dialog.tr("No open associated scene"), dialog.tr("Open a scene associated with this character before requesting suggestions."))
+            QMessageBox.information(dialog, CharacterDialog.tr("No open associated scene"), CharacterDialog.tr("Open a scene associated with this character before requesting suggestions."))
             return
-        choice, accepted = QInputDialog.getItem(dialog, dialog.tr("Scene development"), dialog.tr("Choose an open associated scene:"), list(choices), 0, False)
+        choice, accepted = QInputDialog.getItem(dialog, CharacterDialog.tr("Scene development"), CharacterDialog.tr("Choose an open associated scene:"), list(choices), 0, False)
         if not accepted or choice not in choices:
             return
         editor = choices[choice]
         fields = dialog.profile_fields()
         text = editor.toPlainText()[:min(self.settings.context_size, 32_000)]
         if not text.strip():
-            QMessageBox.information(dialog, dialog.tr("Empty scene"), dialog.tr("The selected scene has no text to review."))
+            QMessageBox.information(dialog, CharacterDialog.tr("Empty scene"), CharacterDialog.tr("The selected scene has no text to review."))
             return
-        message = dialog.tr("Send this profile and the selected scene excerpt to %1 (model %2)? Requests and responses appear in AI diagnostics.")
-        if QMessageBox.question(dialog, dialog.tr("Confirm AI request"), format_qt(message, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+        message = CharacterDialog.tr("Send this profile and the selected scene excerpt to %1 (model %2)? Requests and responses appear in AI diagnostics.")
+        if QMessageBox.question(dialog, CharacterDialog.tr("Confirm AI request"), format_qt(message, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
             return
         if not self._ensure_ai_context_consent():
             return
@@ -2845,7 +2845,7 @@ class MainWindow(QMainWindow):
         active = [True]
         worker = FunctionWorker(suggest_character_development, self.provider, fields, text, self.settings.language, self.settings.temperature)
         dialog.development_button.setEnabled(False)
-        dialog.development_button.setText(dialog.tr("Generating suggestions…"))
+        dialog.development_button.setText(CharacterDialog.tr("Generating suggestions…"))
         self._track_worker(worker)
 
         def closed(_result):
@@ -2864,25 +2864,25 @@ class MainWindow(QMainWindow):
             worker.cancel()
             if active[0]:
                 dialog.development_button.setEnabled(True)
-                dialog.development_button.setText(dialog.tr("Suggest Scene Development with AI…"))
+                dialog.development_button.setText(CharacterDialog.tr("Suggest Scene Development with AI…"))
 
-        self._track_ai_activity(worker, self.ai_activity.tr("Character development"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_development)
+        self._track_ai_activity(worker, AIActivityPanel.tr("Character development"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_development)
 
         def finished(proposals):
             if not active[0] or worker.cancelled:
                 return
             dialog.development_button.setEnabled(True)
-            dialog.development_button.setText(dialog.tr("Suggest Scene Development with AI…"))
+            dialog.development_button.setText(CharacterDialog.tr("Suggest Scene Development with AI…"))
             if not current():
-                QMessageBox.information(dialog, dialog.tr("Context changed"), dialog.tr("The profile, scene, or project changed. Please try again."))
+                QMessageBox.information(dialog, CharacterDialog.tr("Context changed"), CharacterDialog.tr("The profile, scene, or project changed. Please try again."))
                 return
             if not proposals:
-                QMessageBox.information(dialog, dialog.tr("No suggestions"), dialog.tr("The model returned no supported character updates."))
+                QMessageBox.information(dialog, CharacterDialog.tr("No suggestions"), CharacterDialog.tr("The model returned no supported character updates."))
                 return
             review = QDialog(dialog)
-            review.setWindowTitle(dialog.tr("Review character development"))
+            review.setWindowTitle(CharacterDialog.tr("Review character development"))
             layout = QVBoxLayout(review)
-            layout.addWidget(QLabel(dialog.tr("Select individual suggestions to stage in the profile. Save the profile to keep them.")))
+            layout.addWidget(QLabel(CharacterDialog.tr("Select individual suggestions to stage in the profile. Save the profile to keep them.")))
             review.resize(700, 500)
             scroll = QScrollArea(review)
             scroll.setWidgetResizable(True)
@@ -2890,7 +2890,7 @@ class MainWindow(QMainWindow):
             proposals_layout = QVBoxLayout(review_content)
             checkboxes = []
             for proposal in proposals:
-                checkbox = QCheckBox(f"{proposal.field}: {proposal.value}\n{dialog.tr('Evidence')}: {proposal.evidence}", review)
+                checkbox = QCheckBox(f"{proposal.field}: {proposal.value}\n{CharacterDialog.tr('Evidence')}: {proposal.evidence}", review)
                 proposals_layout.addWidget(checkbox)
                 checkboxes.append(checkbox)
             scroll.setWidget(review_content)
@@ -2901,15 +2901,15 @@ class MainWindow(QMainWindow):
             layout.addWidget(buttons)
             if review.exec() == QDialog.DialogCode.Accepted:
                 if not current():
-                    QMessageBox.information(dialog, dialog.tr("Context changed"), dialog.tr("The profile, scene, or project changed. Please try again."))
+                    QMessageBox.information(dialog, CharacterDialog.tr("Context changed"), CharacterDialog.tr("The profile, scene, or project changed. Please try again."))
                     return
                 dialog.apply_development_proposals([proposal for proposal, checkbox in zip(proposals, checkboxes) if checkbox.isChecked()])
 
         def failed(error):
             if active[0] and not worker.cancelled:
                 dialog.development_button.setEnabled(True)
-                dialog.development_button.setText(dialog.tr("Suggest Scene Development with AI…"))
-                QMessageBox.warning(dialog, dialog.tr("Character development failed"), str(error))
+                dialog.development_button.setText(CharacterDialog.tr("Suggest Scene Development with AI…"))
+                QMessageBox.warning(dialog, CharacterDialog.tr("Character development failed"), str(error))
 
         worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
@@ -2917,16 +2917,16 @@ class MainWindow(QMainWindow):
 
     def _suggest_character_profile(self, dialog: CharacterDialog, project: Project) -> None:
         if project is None or project is not self.project or not self.settings.ai_enabled:
-            QMessageBox.information(dialog, dialog.tr("AI unavailable"), dialog.tr("Enable AI in settings before requesting suggestions."))
+            QMessageBox.information(dialog, CharacterDialog.tr("AI unavailable"), CharacterDialog.tr("Enable AI in settings before requesting suggestions."))
             return
         if not self._ensure_ai_context_consent():
             return
         fields = dialog.profile_fields()
         if not any(not value.strip() for value in fields.values()):
-            QMessageBox.information(dialog, dialog.tr("No empty fields"), dialog.tr("There are no empty fields to fill."))
+            QMessageBox.information(dialog, CharacterDialog.tr("No empty fields"), CharacterDialog.tr("There are no empty fields to fill."))
             return
-        confirmation = dialog.tr("Send the current character profile to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.")
-        if QMessageBox.question(dialog, dialog.tr("Confirm AI request"), format_qt(confirmation, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+        confirmation = CharacterDialog.tr("Send the current character profile to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.")
+        if QMessageBox.question(dialog, CharacterDialog.tr("Confirm AI request"), format_qt(confirmation, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
             return
         if not self._ensure_ai_context_consent():
             return
@@ -2935,7 +2935,7 @@ class MainWindow(QMainWindow):
         active = [True]
         worker = FunctionWorker(suggest_character_fields, self.provider, fields, self.settings.language, self.settings.temperature)
         dialog.ai_button.setEnabled(False)
-        dialog.ai_button.setText(dialog.tr("Generating suggestions…"))
+        dialog.ai_button.setText(CharacterDialog.tr("Generating suggestions…"))
         self._track_worker(worker)
         def closed(_result):
             active[0] = False
@@ -2951,31 +2951,31 @@ class MainWindow(QMainWindow):
             worker.cancel()
             if active[0]:
                 dialog.ai_button.setEnabled(True)
-                dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
+                dialog.ai_button.setText(CharacterDialog.tr("Fill Empty Fields with AI…"))
 
-        self._track_ai_activity(worker, self.ai_activity.tr("Character suggestions"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_suggestions)
+        self._track_ai_activity(worker, AIActivityPanel.tr("Character suggestions"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_suggestions)
 
         def finished(suggestions):
             if not active[0] or worker.cancelled:
                 return
             dialog.ai_button.setEnabled(True)
-            dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
+            dialog.ai_button.setText(CharacterDialog.tr("Fill Empty Fields with AI…"))
             if not current():
-                QMessageBox.information(dialog, dialog.tr("Profile changed"), dialog.tr("The profile or project changed while suggestions were generated. Please try again."))
+                QMessageBox.information(dialog, CharacterDialog.tr("Profile changed"), CharacterDialog.tr("The profile or project changed while suggestions were generated. Please try again."))
                 return
             preview = GeneratedTextDialog("\n\n".join(f"{key}:\n{value}" for key, value in suggestions.items()), dialog)
-            preview.setWindowTitle(dialog.tr("Review character suggestions"))
-            preview.insert_button.setText(dialog.tr("Fill empty fields"))
-            preview.findChild(QLabel).setText(dialog.tr("Review these suggestions before filling the empty fields. Save the profile to keep them."))
+            preview.setWindowTitle(CharacterDialog.tr("Review character suggestions"))
+            preview.insert_button.setText(CharacterDialog.tr("Fill empty fields"))
+            preview.findChild(QLabel).setText(CharacterDialog.tr("Review these suggestions before filling the empty fields. Save the profile to keep them."))
             if preview.exec() == QDialog.DialogCode.Accepted and current():
                 dialog.apply_profile_suggestions(suggestions)
 
         def failed(error):
             if active[0] and not worker.cancelled:
                 dialog.ai_button.setEnabled(True)
-                dialog.ai_button.setText(dialog.tr("Fill Empty Fields with AI…"))
+                dialog.ai_button.setText(CharacterDialog.tr("Fill Empty Fields with AI…"))
                 if current():
-                    QMessageBox.warning(dialog, dialog.tr("AI suggestions failed"), str(error))
+                    QMessageBox.warning(dialog, CharacterDialog.tr("AI suggestions failed"), str(error))
 
         worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
@@ -5188,7 +5188,7 @@ class MainWindow(QMainWindow):
             temperature=self.settings.temperature,
         )
         self._track_ai_activity(
-            worker, self.ai_activity.tr("Text generation"), context=editor.document_state.display_name, retry=self.generate_from_prompt,
+            worker, AIActivityPanel.tr("Text generation"), context=editor.document_state.display_name, retry=self.generate_from_prompt,
             cancel=lambda: self.cancel_text_generation() if self._generate_worker is worker else worker.cancel(),
             current=lambda: (generation == self._generate_generation and editor is self.tabs.current_editor()
                              and editor.revision == revision and self._settings_generation == settings_generation
@@ -5377,7 +5377,7 @@ class MainWindow(QMainWindow):
             self.settings.temperature,
         )
         self._track_ai_activity(
-            worker, self.ai_activity.tr("Project analysis"), context=scene.title,
+            worker, AIActivityPanel.tr("Project analysis"), context=scene.title,
             cancel=lambda: self.cancel_project_analysis() if self._project_ai_worker is worker else worker.cancel(),
             current=lambda: (request_generation == self._project_ai_generation and project is self.project
                              and settings_generation == self._settings_generation and project_generation == self._project_generation
@@ -5724,7 +5724,7 @@ class MainWindow(QMainWindow):
             host, model, interaction_observer=self._emit_ai_interaction
         )
         worker = FunctionWorker(client.check_connection)
-        self._track_ai_activity(worker, self.ai_activity.tr("Test AI connection"),
+        self._track_ai_activity(worker, AIActivityPanel.tr("Test AI connection"),
                                 current=lambda: generation == self._settings_connection_generation,
                                 successful=bool)
         self._settings_connection_worker = worker
@@ -5836,7 +5836,7 @@ class MainWindow(QMainWindow):
     def _retry_editor_ai(self, editor_ref, action) -> None:
         editor = editor_ref()
         if editor is None or editor is not self.tabs.current_editor():
-            self.statusBar().showMessage(self.ai_activity.tr("Reopen the original document before retrying."), 6000)
+            self.statusBar().showMessage(AIActivityPanel.tr("Reopen the original document before retrying."), 6000)
             return
         action()
 
@@ -5866,7 +5866,7 @@ class MainWindow(QMainWindow):
     def _check_connection(self) -> None:
         generation = self._settings_generation
         worker = FunctionWorker(self.provider.check_connection)
-        self._track_ai_activity(worker, self.ai_activity.tr("AI connection"),
+        self._track_ai_activity(worker, AIActivityPanel.tr("AI connection"),
                                 current=lambda: generation == self._settings_generation,
                                 successful=bool, retry=self._check_connection)
         self._track_worker(worker)
@@ -6052,7 +6052,7 @@ class MainWindow(QMainWindow):
                                              and current_notes == note_editors)))
 
         self._track_ai_activity(
-            worker, self.ai_activity.tr("Text completion"), context=editor.document_state.display_name,
+            worker, AIActivityPanel.tr("Text completion"), context=editor.document_state.display_name,
             current=completion_current,
             cancel=lambda: self._cancel_activity_completion(worker),
             retry=lambda editor_ref=weakref.ref(editor): self._retry_editor_ai(editor_ref, self.request_completion),
@@ -6247,7 +6247,7 @@ class MainWindow(QMainWindow):
             return
         worker = FunctionWorker(self.spellcheck_service.check, text, self.settings.language, revision)
         self._track_ai_activity(
-            worker, self.ai_activity.tr("Spellcheck"), context=editor.document_state.display_name,
+            worker, AIActivityPanel.tr("Spellcheck"), context=editor.document_state.display_name,
             cancel=lambda: self._cancel_activity_spellcheck(worker),
             retry=lambda editor_ref=weakref.ref(editor): self._retry_editor_ai(editor_ref, self.check_spelling),
             current=lambda: (self.settings.ai_enabled and editor is self.tabs.current_editor() and editor.revision == revision
