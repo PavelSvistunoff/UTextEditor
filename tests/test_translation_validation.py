@@ -56,6 +56,13 @@ def test_empty_malformed_and_valid_catalogs(tmp_path):
     assert validate(target) == []
 
 
+def test_duplicate_messages_are_reported_instead_of_masking_errors(tmp_path):
+    target = tmp_path / "uk.ts"
+    catalog(target, [("Hello %1", "Привіт %2", False), ("Hello %1", "Привіт %1", False)])
+    errors = validate(target)
+    assert any("duplicate message" in error and "Hello %1" in error for error in errors)
+
+
 def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     lrelease = Path(sys.executable).parent / "pyside6-lrelease"
     if not lrelease.exists():

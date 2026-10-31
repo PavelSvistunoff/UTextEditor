@@ -2112,7 +2112,6 @@
     <message><source>Open failed</source><translation>Не вдалося відкрити</translation></message>
     <message><source>Open file</source><translation>Відкрити файл</translation></message>
     <message><source>Opening file…</source><translation>Відкриття файлу…</translation></message>
-    <message><source>Save file</source><translation>Зберегти файл</translation></message>
     <message><source>Save failed</source><translation>Не вдалося зберегти</translation></message>
     <message><source>That file is already open in another tab.</source><translation>Цей файл уже відкрито в іншій вкладці.</translation></message>
     <message><source>Saving file…</source><translation>Збереження файлу…</translation></message>

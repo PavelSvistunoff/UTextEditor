@@ -296,7 +296,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   automated extraction comparison guards against regressions. This does not
   detect hardcoded, unmarked strings; the broader UI audit and compiled
   catalogs remain outstanding. Do not mark complete on extraction alone.
-  Full offline suite: 547 passed, 2 skipped.
+  Full offline suite: 547 passed, 2 skipped. Duplicate context/source/comment
+  entries now fail validation instead of masking an earlier entry; one
+  identical duplicate was removed from the Ukrainian source catalog. Focused
+  validator tests and the full offline suite passed: 570 passed, 2 skipped.
 - **TASK-032 — in progress:** the Ukrainian source catalog now covers the
   previously missing character portrait and scene-development workflow labels,
   prompts and errors, plus the main-window open-error title. A full UI audit,

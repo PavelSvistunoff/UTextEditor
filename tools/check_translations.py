@@ -37,6 +37,8 @@ def read_catalog(path: Path):
             if not name or source is None:
                 raise ValueError("message is missing context or source")
             key = (name, source, message.findtext("comment") or "")
+            if key in messages:
+                raise ValueError(f"duplicate message in {name}: {source!r}")
             messages[key] = (message, translation)
     return root.get("language", ""), messages
 
