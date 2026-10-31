@@ -1,6 +1,17 @@
 
 # Implementation progress
 
+- **TASK-001.03 — PARTIAL (2026-10-31):** Save As to an identity with
+  persisted progress now preserves source checkpoints when that destination
+  is not actively tracked. Each checkpoint retains the larger daily count
+  from source/destination, matching existing rekey semantics without allowing
+  undo to erase prior destination contributions. Shared count snapshots remain
+  shared during transfer. Added regression for undo/redo above and below the
+  destination floor; updated existing larger-destination test. Goal tests:
+  30 passed; full offline suite: 693 passed, 2 skipped; diff check passed.
+  README/TASKS updated. Active destination collisions and bounded metadata
+  remain open. Previous checkpoint committed as 59eebb6; new work uncommitted.
+
 - **TASK-001.03 — PARTIAL (2026-10-31 resumed checkpoint):** verified the
   uncommitted identity-transfer change and continued with goal scope/enable
   transitions. Configuration no longer reattaches histories; inactive edits

@@ -89,16 +89,29 @@ class WritingGoalTracker:
             old_id in self._histories
             and self._current_text.get(old_id) == text
             and new_id not in self._histories
-            and all(new_id not in values for values in self.progress.values())
         )
+        destination_counts = {
+            day: values[new_id] for day, values in self.progress.items() if new_id in values
+        }
         for values in self.progress.values():
             old_count = values.pop(old_id, None)
             if old_count is not None:
                 values[new_id] = max(values.get(new_id, 0), old_count)
         history = self._histories.pop(old_id, None)
         self._current_text.pop(old_id, None)
-        if preserve_history:
-            self._histories[new_id] = history
+        if preserve_history and history is not None:
+            states, index = history
+            if destination_counts:
+                merged_counts: dict[int, dict[str, int]] = {}
+                for position, (fingerprint, counts) in enumerate(states):
+                    key = id(counts)
+                    if key not in merged_counts:
+                        merged = dict(counts)
+                        for day, count in destination_counts.items():
+                            merged[day] = max(merged.get(day, 0), count)
+                        merged_counts[key] = merged
+                    states[position] = (fingerprint, merged_counts[key])
+            self._histories[new_id] = (states, index)
             self._current_text[new_id] = text
         else:
             self.attach(new_id, text)

@@ -240,7 +240,7 @@ def test_rekey_preserves_undo_redo_checkpoints_for_unused_destination(new_id):
     assert tracker.count_new_words({new_id}, local_date="2026-10-18") == 1
 
 
-def test_rekey_existing_destination_keeps_larger_progress_without_reusing_source_history():
+def test_rekey_existing_destination_keeps_larger_progress_through_undo():
     tracker = WritingGoalTracker(100, "new_words", progress={"2026-10-18": {"file:/saved.txt": 10}})
     tracker.attach("untitled", "")
     tracker.record_text("untitled", "new words", local_date="2026-10-18")
@@ -258,3 +258,18 @@ def test_rekey_changed_text_attaches_fresh_checkpoint_without_counting_it():
     assert len(tracker._histories["file:/saved.txt"][0]) == 1
     assert tracker._current_text["file:/saved.txt"] == "different buffer"
     assert tracker.count_new_words({"file:/saved.txt"}, local_date="2026-10-18") == 2
+
+
+def test_rekey_existing_progress_preserves_source_undo_above_destination_floor():
+    tracker = WritingGoalTracker(100, "new_words", progress={"2026-10-18": {"saved": 1}})
+    tracker.attach("source", "")
+    tracker.record_text("source", "one ", local_date="2026-10-18")
+    tracker.record_text("source", "one two", local_date="2026-10-18")
+    tracker.rekey_document("source", "saved", "one two")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-18") == 2
+    tracker.record_text("saved", "one ", undo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-18") == 1
+    tracker.record_text("saved", "", undo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-18") == 1
+    tracker.record_text("saved", "one two", redo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-18") == 2

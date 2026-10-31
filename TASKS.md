@@ -67,9 +67,10 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 - [~] **TASK-001.03** — Preserve correct behavior across undo, redo, pause, and reset.
   Saving to an unused tracking identity now retains checkpoints; same-ID rekeys
   retain matching history. Existing-destination progress and mismatched text
-  keep the conservative reattachment behavior. Scope/enable transitions now
+  now form minimum daily counts in transferred checkpoints when the destination
+  is not actively tracked. Scope/enable transitions now
   preserve checkpoints, with no new-word credit for inactive edits; bounded
-  history and existing-identity accounting remain outstanding.
+  history and actively tracked identity collisions remain outstanding.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.04** — Coordinate pruning with Qt undo history.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

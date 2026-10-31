@@ -96,7 +96,7 @@ Save conflict checks run both before and after staging standalone files, project
 
 Exports use UTF-8 without a byte-order mark and normalize line endings to LF. Export and snapshot creation do not save source documents or clear their dirty state.
 
-Saving to a new writing-goal document identity preserves undo/redo checkpoints when that identity has no existing progress. Writing-goal configuration and per-document daily progress are stored locally in `writing-goals.json` beside the application settings. The local system date defines the daily boundary; changing the timezone does not delete progress recorded under other dates.
+Saving to a new writing-goal document identity preserves undo/redo checkpoints when that identity is not actively tracked; existing destination progress provides a minimum daily count across those checkpoints. Writing-goal configuration and per-document daily progress are stored locally in `writing-goals.json` beside the application settings. The local system date defines the daily boundary; changing the timezone does not delete progress recorded under other dates.
 
 ## Install and run
 
