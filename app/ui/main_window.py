@@ -3566,6 +3566,7 @@ class MainWindow(QMainWindow):
         kind, note_id = self._selected_project_item()
         if project is None or kind not in {"scene", "note"}:
             return
+        generation = self._project_generation
         links = list(project.links_from(note_id)) + list(project.links_to(note_id))
         targets: dict[str, str] = {}
         for link in links:
@@ -3576,16 +3577,20 @@ class MainWindow(QMainWindow):
                 try:
                     targets[target_id] = project.get_note(target_id).title
                 except ProjectError:
-                    targets[target_id] = f"Orphaned link ({target_id})"
+                    targets[target_id] = self.tr("Orphaned link ({item_id})").format(item_id=target_id)
         if not targets:
             QMessageBox.information(self, self.tr("Open linked item"), self.tr("This item has no links."))
             return
-        labels = [f"{title} [{identifier}]" for identifier, title in targets.items()]
+        labels = {f"{title} [{identifier}]": identifier for identifier, title in targets.items()}
         label, accepted = QInputDialog.getItem(
-            self, "Open linked item", "Navigate to:", labels, 0, False
+            self, self.tr("Open linked item"), self.tr("Navigate to:"), list(labels), 0, False
         )
-        if accepted:
-            item_id = label.rsplit("[", 1)[1][:-1]
+        if accepted and label in labels and self.project is project and self._project_generation == generation:
+            item_id = labels[label]
+            current_links = list(project.links_from(note_id)) + list(project.links_to(note_id))
+            if not any({link.source_id, link.target_id} == {note_id, item_id} for link in current_links):
+                self.statusBar().showMessage(self.tr("The link is no longer available."), 5000)
+                return
             try:
                 project.get_scene(item_id)
                 target_kind = "scene"
@@ -3594,7 +3599,7 @@ class MainWindow(QMainWindow):
                     project.get_note(item_id)
                     target_kind = "note"
                 except ProjectError:
-                    QMessageBox.warning(self, "Orphaned link", "The target was removed. Relink or remove this link.")
+                    QMessageBox.warning(self, self.tr("Orphaned link"), self.tr("The target was removed. Relink or remove this link."))
                     return
             self._open_project_document(target_kind, item_id)
 

@@ -541,6 +541,41 @@ def test_open_linked_item_navigates_from_scene_to_note_without_changing_links(ap
     window.close()
 
 
+def test_link_navigation_rechecks_selected_link_and_project(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Book")
+    scene = project.add_scene("Scene [draft]", content="text")
+    note = project.add_note("Note", content="world")
+    project.link_note(note.id, scene.id)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("note", note.id))
+    opened = []
+    monkeypatch.setattr(window, "_open_project_document", lambda *args: opened.append(args))
+    monkeypatch.setattr(QInputDialog, "getItem", lambda *args: (args[3][0], True))
+    window.open_linked_project_item()
+    assert opened == [("scene", scene.id)]
+
+    def remove_link(*args):
+        project.unlink_note(note.id, scene.id)
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", remove_link)
+    window.open_linked_project_item()
+    assert opened == [("scene", scene.id)]
+    assert "no longer available" in window.statusBar().currentMessage()
+    project.link_note(note.id, scene.id)
+
+    def switch_project(*args):
+        window.project = None
+        return args[3][0], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", switch_project)
+    window.open_linked_project_item()
+    assert opened == [("scene", scene.id)]
+    window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

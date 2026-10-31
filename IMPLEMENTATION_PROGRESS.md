@@ -138,7 +138,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   stale associations and failed saves are handled without silently losing
   edits. Native keyboard/accessibility review and release catalog compilation
   remain outstanding; do not mark complete until verified. Full offline suite:
-  592 passed, 2 skipped.
+  592 passed, 2 skipped. Linked-item navigation also rechecks the project and
+  link after selection, uses stable IDs even when titles contain brackets, and
+  translates its picker and stale-link messages. Full offline suite after this
+  follow-up: 597 passed, 2 skipped.
 - **TASK-016 — in progress:** Qt's existing Ctrl+Tab and Ctrl+Shift+Tab
   behavior was verified with offscreen keyboard tests, and View > Open Tabs
   provides a searchable picker with modified markers, file/project context,

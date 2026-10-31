@@ -681,6 +681,11 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Orphaned link ({item_id})</source><translation>Посилання без цілі ({item_id})</translation></message>
+    <message><source>Navigate to:</source><translation>Перейти до:</translation></message>
+    <message><source>The link is no longer available.</source><translation>Посилання більше недоступне.</translation></message>
+    <message><source>Orphaned link</source><translation>Посилання без цілі</translation></message>
+    <message><source>The target was removed. Relink or remove this link.</source><translation>Ціль видалено. Змініть або видаліть це посилання.</translation></message>
     <message><source>Wait for the character profile to finish saving.</source><translation>Дочекайтеся завершення збереження профілю персонажа.</translation></message>
     <message><source>Return to Character Profile</source><translation>Повернутися до профілю персонажа</translation></message>
     <message><source>No canonical file exists for this untitled document.</source><translation>Для цього документа без назви немає основного файлу.</translation></message>
