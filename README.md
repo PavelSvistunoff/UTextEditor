@@ -76,6 +76,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - `Auto` uses local script and common-word signals, and ambiguous or short text remains `Auto` for the model to infer.
 - Files are currently read into memory as a whole; very large files may still use substantial memory even though reads and writes run off the GUI thread.
 - Writing-goal undo metadata can still grow with the number of separate undo commands in a long editing session; it is not yet bounded.
+- Reattaching writing-goal tracking discards its earlier checkpoints. Undo or redo to an unknown checkpoint does not count restored text as new writing, but cannot reconstruct its earlier contribution to the daily count.
 - The app currently supports UTF-8 files only. It rejects embedded NULs as likely binary input; broader binary detection is not implemented.
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
 - The UI is minimal and has no toolbar. Recent standalone files and projects are listed separately.

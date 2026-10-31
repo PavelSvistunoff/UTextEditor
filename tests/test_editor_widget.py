@@ -767,6 +767,27 @@ def test_daily_new_words_goal_tracks_typing_undo_and_redo(application: QApplicat
     window.close()
 
 
+def test_writing_goal_does_not_credit_undo_after_history_reattachment(application: QApplication) -> None:
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    editor.setPlainText("existing words")
+    window.writing_goals.configure(10, "new_words")
+    window._attach_writing_goal_document(editor, reset_history=True)
+    editor.selectAll()
+    editor.textCursor().removeSelectedText()
+    window._attach_writing_goal_document(editor, reset_history=True)
+    document_id = editor._writing_goal_document_id
+
+    editor.undo()
+
+    assert editor.toPlainText() == "existing words"
+    assert window.writing_goals.count_new_words({document_id}) == 0
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
 def test_writing_goal_compacts_merged_qt_commands_and_keeps_undo_branches(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()

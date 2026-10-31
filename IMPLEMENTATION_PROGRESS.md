@@ -3,6 +3,13 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-001.03 — PARTIAL:** undo/redo to a checkpoint no longer retained by
+  the tracker no longer credits restored text as newly written. Modified
+  `app/document/writing_goals.py`, `tests/test_writing_goals.py`,
+  `tests/test_editor_widget.py`, `README.md`, and `TASKS.md`. Focused tests:
+  75 passed; full offline suite: 669 passed, 2 skipped. Earlier daily
+  contributions cannot be reconstructed after history reattachment; complete
+  pause/reset/undo accounting remains outstanding.
 - **TASK-001.05 — PARTIAL:** added `benchmarks/writing_goal_history.py`, an
   offline Qt session with 1,000 separate synthetic word-insertion commands and
   100 undo/redo operations. On this machine it recorded 101/501/1,001 tracker

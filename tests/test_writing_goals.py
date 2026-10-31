@@ -43,6 +43,20 @@ def test_undo_and_redo_restore_daily_insertion_contribution() -> None:
     assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 3
 
 
+@pytest.mark.parametrize("action", ["undo", "redo"])
+def test_unknown_undo_or_redo_state_does_not_count_restored_words(action: str) -> None:
+    tracker = WritingGoalTracker(10, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "first", local_date="2026-10-17")
+    # Reattachment represents an editor state whose prior Qt undo entries
+    # outlive the tracker's earlier checkpoints.
+    tracker.attach("doc", "first")
+    assert tracker.record_text("doc", "first restored words", local_date="2026-10-17", **{action: True}) == 0
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 1
+    tracker.record_text("doc", "first restored words new", local_date="2026-10-17")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 2
+
+
 def test_deletion_does_not_reduce_words_written_and_branching_after_undo_is_consistent() -> None:
     tracker = WritingGoalTracker(10, "new_words")
     tracker.attach("doc", "")
