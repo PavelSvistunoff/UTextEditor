@@ -539,6 +539,7 @@
 </context>
 <context>
     <name>FindReplaceWidget</name>
+    <message><source>Counting matches…</source><translation>Підрахунок збігів…</translation></message>
     <message><source>Match case</source><translation>З урахуванням регістру</translation></message>
     <message><source>Whole words</source><translation>Лише цілі слова</translation></message>
     <message>

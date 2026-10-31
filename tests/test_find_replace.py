@@ -6,6 +6,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QTextCursor
 
 from app.i18n import install_translation
@@ -94,6 +95,42 @@ def test_case_and_whole_word_options_keep_counts_navigation_and_replacement_cons
     assert editor.toPlainText() == "😀 текст текст словом текст"
     editor.undo()
     assert editor.toPlainText() == "😀 СЛОВО слово словом слово"
+
+
+def test_large_case_insensitive_count_yields_and_discards_old_query(application):
+    editor = EditorWidget()
+    editor.setPlainText("Word " * 3000)
+    bar = make_find_bar(editor)
+    bar.case_sensitive.setChecked(False)
+    assert bar.match_count.text() == "Counting matches…"
+    event = []
+    QTimer.singleShot(0, lambda: event.append(True))
+    for _ in range(100):
+        application.processEvents()
+        if bar.match_count.text() == "3000 matches":
+            break
+    assert event and bar.match_count.text() == "3000 matches"
+    bar.find_edit.setText("Word")
+    assert bar.match_count.text() == "Counting matches…"
+    bar.find_edit.setText("missing")
+    application.processEvents()
+    assert bar.match_count.text() == "0 matches"
+    assert editor.toPlainText() == "Word " * 3000
+
+
+def test_large_count_is_replaced_when_active_editor_changes(application):
+    first, second = EditorWidget(), EditorWidget()
+    first.setPlainText("Word " * 3000)
+    second.setPlainText("WORD")
+    current = [first]
+    bar = FindReplaceWidget(lambda: current[0])
+    bar.case_sensitive.setChecked(False)
+    bar.find_edit.setText("word")
+    assert bar.match_count.text() == "Counting matches…"
+    current[0] = second
+    bar.refresh()
+    application.processEvents()
+    assert bar.match_count.text() == "1 match"
 
 
 def test_whole_word_replace_does_not_replace_partial_selection(application):

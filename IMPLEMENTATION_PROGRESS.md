@@ -177,8 +177,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   Tests cover Ukrainian case, Unicode positions, whole-word selections,
   no-op and no-match behavior, undo, focus and an offscreen small-width layout.
   Compiled Ukrainian strings and native small-window/keyboard verification
-  remain outstanding; large match sets may also need performance work. Do not
-  mark complete until verified. Full offline suite: 469 passed, 2 skipped.
+  remain outstanding. Case-insensitive and whole-word match counts now run in
+  bounded event-loop batches; changing the query or active editor discards an
+  unfinished count. Tests cover yielding and stale counts. Default literal
+  counting and replace-all can still process large texts on the GUI thread;
+  broader performance work remains. Do not mark complete until verified. Full
+  offline suite: 594 passed, 2 skipped.
 - **TASK-021 — in progress:** AI > Review Spelling and Grammar presents
   current validated findings with explanations and selection controls. It
   rejects changed or overlapping selections, and applies selected corrections

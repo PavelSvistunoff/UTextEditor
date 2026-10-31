@@ -1,6 +1,6 @@
 """Compact find/replace controls for the active editor."""
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QKeySequence, QShortcut, QTextCursor, QTextDocument
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -15,9 +15,15 @@ from PySide6.QtWidgets import (
 
 
 class FindReplaceWidget(QWidget):
+    COUNT_BATCH_SIZE = 256
+
     def __init__(self, editor_provider, parent=None) -> None:
         super().__init__(parent)
         self.editor_provider = editor_provider
+        self._count_timer = QTimer(self)
+        self._count_timer.setSingleShot(True)
+        self._count_timer.timeout.connect(self._count_batch)
+        self._count_state = None
         self.find_edit = QLineEdit(self)
         self.find_edit.setPlaceholderText(self.tr("Find"))
         self.find_edit.setAccessibleName(self.tr("Find text"))
@@ -86,6 +92,11 @@ class FindReplaceWidget(QWidget):
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self.refresh()
+
+    def hideEvent(self, event) -> None:
+        self._count_timer.stop()
+        self._count_state = None
+        super().hideEvent(event)
 
     def find_next(self) -> bool:
         return self._find(backwards=False)
@@ -209,6 +220,8 @@ class FindReplaceWidget(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
+        self._count_timer.stop()
+        self._count_state = None
         editor = self.editor_provider()
         term = self.find_edit.text()
         if editor is None or not term:
@@ -216,5 +229,27 @@ class FindReplaceWidget(QWidget):
         elif self.case_sensitive.isChecked() and not self.whole_word.isChecked():
             count = editor.toPlainText().count(term)
         else:
-            count = len(self._matches(editor, term))
+            self._count_state = (editor, editor.revision, term, self._flags(), 0, 0)
+            self._count_batch()
+            return
         self.match_count.setText(self.tr("%n matches", None, count))
+
+    def _count_batch(self) -> None:
+        if self._count_state is None:
+            return
+        editor, revision, term, flags, position, count = self._count_state
+        if editor is not self.editor_provider() or editor.revision != revision:
+            self._count_state = None
+            return
+        document = editor.document()
+        for _ in range(self.COUNT_BATCH_SIZE):
+            cursor = document.find(term, position, flags)
+            if cursor.isNull() or cursor.selectionEnd() <= position:
+                self._count_state = None
+                self.match_count.setText(self.tr("%n matches", None, count))
+                return
+            position = cursor.selectionEnd()
+            count += 1
+        self._count_state = (editor, revision, term, flags, position, count)
+        self.match_count.setText(self.tr("Counting matches…"))
+        self._count_timer.start(0)
