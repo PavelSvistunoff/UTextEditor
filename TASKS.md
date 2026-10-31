@@ -853,7 +853,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [?] **TASK-033.03** — Detect missing or malformed translations.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-033.04** — Integrate checks into the developer workflow.  
+- [x] **TASK-033.04** — Integrate checks into the developer workflow.
+  Added localization CI on pushes/PRs/manual runs: catalog validation, explicit
+  extraction coverage and existing regression tests. Local commands pass; the
+  first hosted run remains to be observed after an authorized push.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [?] **TASK-033.05** — Document extraction, validation, and compilation.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

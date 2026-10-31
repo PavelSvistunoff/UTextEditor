@@ -1,6 +1,20 @@
 
 # Implementation progress
 
+- **TASK-033.04 — DONE (2026-10-31):** added
+  .github/workflows/localization.yml for push, pull request and manual runs
+  with read-only repository permissions, Python 3.12 and offscreen Qt. It
+  installs project test tools and Linux Qt runtime libraries, validates the
+  Ukrainian catalog, explicitly extracts/checks all marked UI sources, and
+  runs existing localization regressions. Local extraction: 897 marked strings,
+  coverage validation passed; localization suite: 11 passed; full offline
+  suite: 705 passed, 2 skipped; diff reviewed and whitespace check passed.
+  README/TASKS updated. Existing tests exercise malformed/missing translations,
+  placeholders, plurals, compiled lookup and source coverage; no redundant
+  workflow-mirroring unit test added. First hosted Ubuntu/Python 3.12 run
+  remains unobserved until commit/push; no commits or pushes made. This
+  completes workflow integration, not all localization/native acceptance.
+
 - **TASK-009.01 — preview labels (2026-10-31):** revision snapshots expose
   captured document titles through the domain model; note previews now use
   captured titles alongside stable IDs. Legacy documents without title

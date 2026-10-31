@@ -1,0 +1,33 @@
+name: Localization validation
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Qt runtime libraries
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0
+      - name: Install application and test tools
+        run: python -m pip install -e '.[test]'
+      - name: Validate source catalog entries
+        run: python tools/check_translations.py translations/utexteditor_uk.ts
+      - name: Check extracted source coverage
+        run: |
+          pyside6-lupdate app/ui/*.py -ts "$RUNNER_TEMP/utexteditor-extracted.ts"
+          python tools/check_translations.py translations/utexteditor_uk.ts --reference "$RUNNER_TEMP/utexteditor-extracted.ts"
+      - name: Verify localization regressions
+        run: python -m pytest -q tests/test_translation_validation.py
