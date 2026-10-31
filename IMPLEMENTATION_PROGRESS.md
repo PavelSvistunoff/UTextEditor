@@ -1,6 +1,15 @@
 
 # Implementation progress
 
+- **TASK-008.03 — PARTIAL (2026-10-31):** document-directory resolution
+  errors now produce diagnostics without hiding other readable snapshots.
+  Regression test_directory_resolution_failure_does_not_hide_valid_snapshots
+  covers OSError and RuntimeError (including path-resolution loop failures).
+  Recovery suite: 23 passed; full offline suite: 678 passed, 2 skipped.
+  README and task notes updated; diff check passed. Broader diagnosis and
+  native checks remain open. Previous symlink fix committed as f489b96;
+  push failed because GitHub HTTPS credentials are unavailable.
+
 - **TASK-008.03 — PARTIAL (2026-10-31):** symbolic-link snapshot files
   are now reported as invalid instead of being read as recovery entries.
   The shared validation also preserves them during retention and automatic

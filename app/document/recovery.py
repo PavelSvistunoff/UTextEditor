@@ -166,6 +166,9 @@ class RecoveryStore:
             except ValueError:
                 issues.append(RecoveryIssue(directory, "Recovery directory resolves outside the configured location."))
                 continue
+            except (OSError, RuntimeError) as exc:
+                issues.append(RecoveryIssue(directory, str(exc)))
+                continue
             try:
                 children = sorted(directory.iterdir())
                 snapshots = [path for path in children if fnmatch.fnmatchcase(path.name, "*.json")]

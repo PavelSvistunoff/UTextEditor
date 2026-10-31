@@ -285,3 +285,24 @@ def test_symbolic_link_snapshot_is_reported_and_preserved_by_automatic_cleanup(t
     store.discard()
     assert not entry.snapshot_path.is_symlink()
     assert external.read_bytes() == original
+
+
+@pytest.mark.parametrize("error_type", [OSError, RuntimeError])
+def test_directory_resolution_failure_does_not_hide_valid_snapshots(tmp_path, monkeypatch, error_type):
+    store = RecoveryStore(tmp_path / "recovery")
+    damaged = store.save("damaged", "preserved")
+    valid = store.save("valid", "readable")
+    original_resolve = Path.resolve
+
+    def failed_resolve(path, *args, **kwargs):
+        if path == damaged.snapshot_path.parent:
+            raise error_type("Cannot resolve recovery directory")
+        return original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", failed_resolve)
+    scan = store.scan()
+    assert scan.entries == (valid,)
+    assert len(scan.issues) == 1
+    assert scan.issues[0].snapshot_path == damaged.snapshot_path.parent
+    assert "Cannot resolve" in scan.issues[0].message
+    assert damaged.snapshot_path.exists()

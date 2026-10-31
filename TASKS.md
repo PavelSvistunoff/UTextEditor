@@ -225,7 +225,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
   Directory-listing failures now produce per-directory diagnostics while other
   readable snapshots remain recoverable. Root enumeration failures also return
   a diagnostic. Symbolic-link snapshots are diagnosed and preserved by automatic
-  cleanup; broader diagnosis remains incomplete.
+  cleanup. Directory-resolution errors also preserve access to other snapshots;
+  broader diagnosis remains incomplete.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-008.04** — Support selective recovery or export of valid content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
