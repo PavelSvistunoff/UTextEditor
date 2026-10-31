@@ -1712,8 +1712,7 @@ class MainWindow(QMainWindow):
         if not current():
             self._finish_auto_writer(
                 project,
-                "Auto-writer results were not applied because the project, settings, or an "
-                f"open document changed. Original snapshot: {result.snapshot_path}",
+                self.tr("Auto-writer results were not applied because the project, settings, or an open document changed. Original snapshot: {path}").format(path=result.snapshot_path),
                 outcome="discarded",
             )
             return
@@ -1736,9 +1735,7 @@ class MainWindow(QMainWindow):
         if self._auto_writer_activity is not None:
             self._auto_writer_activity.cancel = None
             self.ai_activity.set_detail(self._auto_writer_activity, AIActivityPanel.tr("Applying changes…"))
-        applying_message = (
-            "Auto-writer drafts are complete; applying snapshot-protected scene updates…"
-        )
+        applying_message = self.tr("Auto-writer drafts are complete; applying snapshot-protected scene updates…")
         self.statusBar().showMessage(applying_message)
         if self._auto_writer_progress_dialog is not None:
             self._auto_writer_progress_dialog.set_applying(applying_message)
@@ -1791,10 +1788,11 @@ class MainWindow(QMainWindow):
                 changed_buffers = True
         self._finish_auto_writer(
             project,
-            f"Auto-writer updated {len(persisted)} scenes. Originals are preserved in "
-            f"{result.snapshot_path}"
+            self.tr("Auto-writer updated {count} scenes. Originals are preserved in {path}").format(
+                count=len(persisted), path=result.snapshot_path
+            )
             + (
-                " An open scene changed during the update; its newer buffer was kept unsaved."
+                " " + self.tr("An open scene changed during the update; its newer buffer was kept unsaved.")
                 if changed_buffers
                 else ""
             ),
@@ -1807,8 +1805,7 @@ class MainWindow(QMainWindow):
         self._auto_writer_committing = False
         self._finish_auto_writer(
             project,
-            f"Auto-writer update did not finish cleanly: {error}. Verify project scene "
-            f"files before continuing; the original snapshot is at {result.snapshot_path}",
+            self.tr("Auto-writer update did not finish cleanly: {error}. Verify project scene files before continuing; the original snapshot is at {path}").format(error=error, path=result.snapshot_path),
             warning=True,
         )
 
@@ -1821,20 +1818,22 @@ class MainWindow(QMainWindow):
         self._auto_writer_cancel_event = None
         self._finish_auto_writer(
             project,
-            f"Auto-writer failed before applying scene changes: {error}. "
-            "Nothing was replaced; any pre-run revision snapshot is retained. "
-            "For a timeout, wait for the model to finish loading and try a smaller batch.",
+            self.tr("Auto-writer failed before applying scene changes: {error}. Nothing was replaced; any pre-run revision snapshot is retained. For a timeout, wait for the model to finish loading and try a smaller batch.").format(error=error),
             warning=settings_generation == self._settings_generation,
             outcome="failed",
         )
 
     def _show_auto_writer_progress(self, generation: int, message: str) -> None:
         if generation == self._auto_writer_generation and self._auto_writer_worker is not None:
+            match = re.fullmatch(r"Auto-writer generating scene (\d+) of (\d+): (.*)", message, re.DOTALL)
             if self._auto_writer_activity is not None:
-                match = re.fullmatch(r"Auto-writer generating scene (\d+) of (\d+): (.*)", message)
                 if match:
                     detail = format_qt(AIActivityPanel.tr("%1 of %2 completed — %3"), str(int(match[1]) - 1), match[2], match[3])
                     self.ai_activity.set_detail(self._auto_writer_activity, detail)
+            if match:
+                message = self.tr("Auto-writer generating scene {current} of {total}: {title}").format(
+                    current=match[1], total=match[2], title=match[3]
+                )
             self.statusBar().showMessage(message)
             if self._auto_writer_progress_dialog is not None:
                 self._auto_writer_progress_dialog.set_status(message)
@@ -1889,7 +1888,7 @@ class MainWindow(QMainWindow):
         self._auto_writer_worker = None
         self._finish_auto_writer(
             self.project,
-            "Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available.",
+            self.tr("Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available."),
             outcome="cancelling",
         )
 

@@ -316,6 +316,44 @@ def test_auto_writer_progress_ignores_older_request(application):
         window.close()
 
 
+def test_auto_writer_progress_and_failure_translate_details(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+    from app.ui.auto_writer_dialog import AutoWriterProgressDialog
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._auto_writer_progress_dialog = AutoWriterProgressDialog(window)
+    window._auto_writer_worker = object()
+    application.installTranslator(translator)
+    try:
+        window._show_auto_writer_progress(window._auto_writer_generation,
+                                          "Auto-writer generating scene 2 of 3: Місто")
+        assert window._auto_writer_progress_dialog.status.text() == "Автоматичне написання створює сцену 2 з 3: Місто"
+        messages = []
+        monkeypatch.setattr(window, "_finish_auto_writer", lambda project, message, **kwargs: messages.append(message))
+        window._auto_writer_failed(window._auto_writer_generation, window._settings_generation, None, "detail")
+        assert "detail" in messages[0] and "Нічого не замінено" in messages[0]
+        from unittest.mock import Mock
+        window._auto_writer_worker = Mock()
+        window.cancel_auto_writer()
+        assert "Змін до сцен не застосовано" in messages[1]
+    finally:
+        window._auto_writer_worker = None
+        window._auto_writer_progress_dialog.finish("Finished")
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_project_search_results_are_keyboard_accessible(application):
     from PySide6.QtGui import QAccessible
     from PySide6.QtTest import QTest

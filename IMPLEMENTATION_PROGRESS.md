@@ -458,7 +458,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   preserving paths and error details; runtime catalog tests cover feedback.
   Translation progress now localizes its status and field labels in the UI
   while preserving source titles and IDs and the service's progress API.
-  Full offline suite: 635 passed, 2 skipped.
+  Auto-writer progress, cancellation, stale-state, completion and failure
+  feedback now also uses Ukrainian templates, preserving scene titles, error
+  details and snapshot paths. Runtime tests cover progress and failure and
+  cancellation messages. Full offline suite: 641 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

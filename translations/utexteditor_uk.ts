@@ -681,6 +681,14 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available.</source><translation>Автоматичне написання скасовано. Змін до сцен не застосовано; може бути доступний знімок, створений перед запуском.</translation></message>
+    <message><source>Auto-writer results were not applied because the project, settings, or an open document changed. Original snapshot: {path}</source><translation>Результати автоматичного написання не застосовано, оскільки проєкт, налаштування або відкритий документ змінилися. Початковий знімок: {path}</translation></message>
+    <message><source>Auto-writer drafts are complete; applying snapshot-protected scene updates…</source><translation>Чернетки автоматичного написання готові; застосування змін сцен із захисним знімком…</translation></message>
+    <message><source>Auto-writer updated {count} scenes. Originals are preserved in {path}</source><translation>Автоматичне написання оновило сцен: {count}. Оригінали збережено в {path}</translation></message>
+    <message><source>An open scene changed during the update; its newer buffer was kept unsaved.</source><translation>Відкрита сцена змінилася під час оновлення; її новіший вміст залишено незбереженим.</translation></message>
+    <message><source>Auto-writer update did not finish cleanly: {error}. Verify project scene files before continuing; the original snapshot is at {path}</source><translation>Оновлення автоматичного написання завершилося з помилкою: {error}. Перш ніж продовжити, перевірте файли сцен проєкту; початковий знімок збережено в {path}</translation></message>
+    <message><source>Auto-writer failed before applying scene changes: {error}. Nothing was replaced; any pre-run revision snapshot is retained. For a timeout, wait for the model to finish loading and try a smaller batch.</source><translation>Автоматичне написання завершилося з помилкою до застосування змін сцен: {error}. Нічого не замінено; знімок редакції, створений перед запуском, збережено. Якщо час очікування минув, дочекайтеся завантаження моделі та спробуйте менший набір сцен.</translation></message>
+    <message><source>Auto-writer generating scene {current} of {total}: {title}</source><translation>Автоматичне написання створює сцену {current} з {total}: {title}</translation></message>
     <message><source>project title</source><translation>назва проєкту</translation></message>
     <message><source>Chapter title {name}</source><translation>Назва розділу {name}</translation></message>
     <message><source>Scene title {name}</source><translation>Назва сцени {name}</translation></message>
