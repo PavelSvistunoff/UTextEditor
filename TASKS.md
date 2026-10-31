@@ -75,6 +75,9 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 - [~] **TASK-001.04** — Coordinate pruning with Qt undo history.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.05** — Benchmark realistic long editing sessions.
+  History benchmark now accepts command/undo counts and checks branching after
+  undo; 100-command smoke and 10,000-command runs passed. The latter retained
+  10,001 states and 3,723,574 current Python-traced bytes; no bound established.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**

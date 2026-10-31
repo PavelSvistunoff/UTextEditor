@@ -1,6 +1,20 @@
 
 # Implementation progress
 
+- **TASK-001.05 — PARTIAL (2026-10-31 checkpoint):** configurable
+  --commands/--undo history benchmark now checks a branch edit after undo
+  as well as redo. Smoke run (100 commands/10 undo) passed: 101 states,
+  58,624 current Python-traced bytes; counts 100 → 90 → 100, branch 91
+  words/92 states. Focused goal/editor tests: 86 passed; full suite:
+  693 passed, 2 skipped; diff check passed. README/TASKS updated.
+  Long run completed: 1,001/5,001/10,001 states and
+  422,181/1,898,691/3,723,574 current Python-traced bytes at
+  1,000/5,000/10,000 commands (3.465/45.127/156.520 seconds).
+  Counts 10,000 → 9,000 → 10,000; branch 9,001 words/9,002 states.
+  This is synthetic and excludes native Qt allocations; no fixed bound
+  is established. Prior accounting fix committed as 7663cc4; benchmark work
+  remains uncommitted.
+
 - **TASK-001.03 — PARTIAL (2026-10-31):** Save As to an identity with
   persisted progress now preserves source checkpoints when that destination
   is not actively tracked. Each checkpoint retains the larger daily count
