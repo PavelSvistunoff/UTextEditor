@@ -1,6 +1,21 @@
 
 # Implementation progress
 
+- **TASK-031 — COMPLETE (2026-10-31):** reviewed existing NFC normalization,
+  script/common-word evidence, minimum alphabetic signal, distinct-word and
+  ambiguous-language fallbacks. Existing tests/language_corpus.py has 43 cases:
+  6 English, 8 Ukrainian, 29 intentionally Auto, including other languages,
+  short/mixed text, decomposed Unicode and repeated/digit-heavy input. Added
+  benchmarks/language_detection.py: current 43/43, always-Auto baseline 29/43,
+  zero unsupported confident guesses. No algorithm change warranted by these
+  cases; this is curated regression behavior, not population accuracy or an
+  estimate against a historical detector. Added 86 explicit-override cases
+  across both prompt types. Prompt suite: 135 passed; full offline suite:
+  794 passed, 2 skipped; diff reviewed and whitespace check passed. README
+  documents evaluation; all TASK-031 subtasks and acceptance checks reconciled.
+  Native/catalog checks N/A: no UI behavior or strings changed. Uncommitted;
+  no push attempted.
+
 - **TASK-033 — COMPLETE (2026-10-31):** acceptance audit verified checker
   completeness, Qt/named/indexed placeholder parity, malformed/duplicate/empty
   and plural errors, extracted source coverage, CLI nonzero exit/reporting,

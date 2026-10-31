@@ -47,7 +47,7 @@
 | TASK-028 | Improve manuscript export and PDF settings | partial |
 | TASK-029 | Add writing-goal history viewer | open |
 | TASK-030 | Improve character profile navigation | partial |
-| TASK-031 | Improve automatic language detection | partial |
+| TASK-031 | Improve automatic language detection | complete |
 | TASK-032 | Complete Ukrainian interface localization | partial |
 | TASK-033 | Add automated localization validation | complete |
 | TASK-034 | Perform accessibility audit and fixes | partial |
@@ -797,27 +797,34 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-031 — Improve automatic language detection
-**Priority:** Low · **Parent status:** partial
+**Priority:** Low · **Parent status:** complete
 
-- [?] **TASK-031.01** — Evaluate current script and common-word detection.  
+- [x] **TASK-031.01** — Evaluate current script and common-word detection.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-031.02** — Create a multilingual test corpus.  
+- [x] **TASK-031.02** — Create a multilingual test corpus.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-031.03** — Improve handling of short and ambiguous text.  
+- [x] **TASK-031.03** — Improve handling of short and ambiguous text.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-031.04** — Preserve explicit language overrides.  
+- [x] **TASK-031.04** — Preserve explicit language overrides.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-031.05** — Avoid unreliable confident classifications.  
+- [x] **TASK-031.05** — Avoid unreliable confident classifications.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Evidence: existing NFC/script/common-word detector and 43-case multilingual
+corpus verified. Offline language_detection.py reports 43/43 matches versus
+29/43 for the explicit always-Auto baseline; zero unsupported confident guesses
+on this curated corpus. Prompt overrides verified across all cases for both
+English/Ukrainian. This is regression evidence, not real-world accuracy.
+V2 native UI/catalog checks N/A: no UI or translated strings changed.
 
 **Parent acceptance gate (all must pass):**
 - Detection performance is measured against a baseline.
 - Ambiguous input falls back safely.
 - English and Ukrainian behavior does not regress.
 
-- [ ] **TASK-031.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-031.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-031.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [x] **TASK-031.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-032 — Complete Ukrainian interface localization

@@ -170,6 +170,8 @@ Recurring glossary: project — проєкт; chapter — розділ; scene �
 
 Writing-goal status refresh counts buffer words only for the active goal scope and skips those scans for paused or disabled goals. Writing-goal insertion counting scans tokens within the changed text span plus boundary context; unchanged text is compared in chunks to locate that span.
 
+For an offline language-detection evaluation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/language_detection.py`. It compares the curated regression corpus with an always-Auto baseline and reports unsupported confident guesses; these results are not real-world accuracy estimates.
+
 For performance investigation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/completion_context.py` for the completion-context microbenchmark, `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/editor_responsiveness.py` for editor operation median/maximum timings and peak process memory (where supported; `--sizes 100000 1000000 --repetitions 10` controls the workload; reads and opens remain single samples), or `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/writing_goal_history.py` for a synthetic editing, undo/redo and branch session. Pass `--commands 10000 --undo 1000` to increase the history length; allocation tracing can make long runs slow. These measurements are diagnostic, not portable pass/fail thresholds.
 
 ## Product direction

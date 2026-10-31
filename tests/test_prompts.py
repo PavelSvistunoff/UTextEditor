@@ -45,3 +45,10 @@ def test_multilingual_detection_corpus(text, expected):
 def test_explicit_language_override_remains_authoritative():
     assert "Language: Ukrainian." in completion_prompt("English text", "Ukrainian")
     assert "Language: English." in spellcheck_prompt("Український текст", "English")
+
+
+@pytest.mark.parametrize("text,expected", CASES)
+@pytest.mark.parametrize("language", ["English", "Ukrainian"])
+def test_explicit_override_wins_for_every_corpus_case(text, expected, language):
+    assert f"Language: {language}." in completion_prompt(text, language)
+    assert f"Language: {language}." in spellcheck_prompt(text, language)
