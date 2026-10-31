@@ -144,6 +144,8 @@ class RevisionHistoryDialog(QDialog):
                 sections.append(format_qt(self.tr("Path: %1 → %2"), change.old_path, change.new_path))
             if change.character_id is not None:
                 sections.append(format_qt(self.tr("Character ID: %1"), change.character_id))
+            if change.changed_fields:
+                sections.append(format_qt(self.tr("Changed manifest fields: %1"), ", ".join(change.changed_fields)))
             if change.kind == "title-changed":
                 sections.append(format_qt(self.tr("Title: %1 → %2"),
                                           change.old_title or self.tr("unknown"),

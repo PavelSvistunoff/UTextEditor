@@ -169,6 +169,8 @@ def test_comparison_reports_character_and_directed_relationship_metadata(tmp_pat
         ("removed", "removed", "character"), ("added", "added", "character"),
         ("same", "metadata-changed", "character"), ("rel", "metadata-changed", "relationship"),
     ]
+    assert changes[2].changed_fields == ("goals",)
+    assert changes[3].changed_fields == ("trust",)
     assert not store.compare(after, after).changes
 
 
@@ -187,6 +189,7 @@ def test_comparison_reports_scene_character_associations_by_stable_id(tmp_path) 
         ("scene", "association-removed", "removed"), ("scene", "association-added", "added"),
         ("scene", "association-changed", "same"),
     ]
+    assert changes[2].changed_fields == ("presence",)
     reordered = snapshot(list(reversed(before.structure["ungrouped_scenes"][0]["character_associations"])))
     assert not store.compare(before, reordered).changes
 

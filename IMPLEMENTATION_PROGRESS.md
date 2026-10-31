@@ -3,6 +3,16 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.04 — PARTIAL:** revision comparisons identify changed manifest
+  fields for character profiles, directed relationships and scene-character
+  associations, without displaying their values or portrait data. Modified
+  `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
+  `tests/test_revisions.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
+  suites: 162 passed; full offline suite: 666 passed, 2 skipped; Ukrainian
+  source catalog validation passed. Before-and-after metadata values, broader
+  structure comparisons, native accessibility review and
+  release catalog compilation remain outstanding.
 - **TASK-009.04 — PARTIAL:** the revision comparison now displays both old
   and new titles and stable IDs for renamed chapters, scenes and notes. Modified
   `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,

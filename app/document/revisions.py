@@ -46,6 +46,7 @@ class SceneChange:
     old_path: str | None = None
     new_path: str | None = None
     character_id: str | None = None
+    changed_fields: tuple[str, ...] = ()
 
     @property
     def item_id(self) -> str:
@@ -227,7 +228,9 @@ class RevisionStore:
                 for character_id in sorted(old_scene_chars.keys() & new_scene_chars.keys()):
                     if old_scene_chars[character_id] != new_scene_chars[character_id]:
                         changes.append(SceneChange(scene_id, "association-changed", old_title, new_title,
-                                                   character_id=character_id))
+                                                   character_id=character_id,
+                                                   changed_fields=_changed_fields(old_scene_chars[character_id],
+                                                                                  new_scene_chars[character_id])))
             if left.documents[scene_id] != right.documents[scene_id]:
                 diff = "".join(difflib.unified_diff(
                     left.documents[scene_id].splitlines(keepends=True),
@@ -293,7 +296,8 @@ class RevisionStore:
                 changes.append(SceneChange(item_id, "added", item_type=item_type))
             for item_id in sorted(old_records.keys() & new_records.keys()):
                 if old_records[item_id] != new_records[item_id]:
-                    changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type))
+                    changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type,
+                                               changed_fields=_changed_fields(old_records[item_id], new_records[item_id])))
         return RevisionComparison(tuple(changes))
 
     def delete(self, snapshot: str | Path | RevisionSnapshot, *, confirmed: bool = False) -> None:
@@ -345,6 +349,12 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _changed_fields(before: dict, after: dict) -> tuple[str, ...]:
+    missing = object()
+    return tuple(sorted(key for key in before.keys() | after.keys()
+                        if before.get(key, missing) != after.get(key, missing)))
 
 
 def _scene_associations(structure: object) -> dict[str, dict[str, dict]]:
