@@ -1,6 +1,16 @@
 
 # Implementation progress
 
+- **TASK-009.04 — PARTIAL (2026-10-31):** revision comparison reports
+  reference-note reordering among IDs present in both snapshots. Additions
+  and removals do not generate false moves. Moved-item labels expose stable
+  IDs, including duplicate titles, using existing translated strings. Added
+  domain and Qt regressions. Focused revision/UI suites: 172 passed; full
+  offline suite: 704 passed, 2 skipped; Ukrainian catalog validation and
+  diff check passed. README/TASKS updated and diff reviewed. Broader metadata
+  before/after values, restore/scheduling and native verification remain open.
+  Previous listing fix committed as c655e9a; new changes uncommitted.
+
 - **TASK-009.01 — listing/preview hardening (2026-10-31):** revision
   enumeration uses explicit directory listing so filesystem errors become
   diagnostics rather than an apparently empty history. Revision reads reject

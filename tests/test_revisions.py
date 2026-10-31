@@ -381,3 +381,19 @@ def test_symbolic_link_revision_is_reported_without_hiding_valid_snapshot(tmp_pa
     with pytest.raises(ValueError, match="symbolic link"):
         store.read(linked)
     assert linked.is_symlink() and external.exists()
+
+
+def test_reference_note_reordering_ignores_additions_and_removals(tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+
+    def snapshot(ids):
+        return store.create("Draft", structure={"notes": [
+            {"id": item, "title": "Same title", "type": "general"} for item in ids
+        ]}, scene_order=[], scene_titles={}, documents={item: "text" for item in ids})
+
+    before = snapshot(["removed", "one", "two"])
+    inserted = snapshot(["new", "one", "two"])
+    assert not [change for change in store.compare(before, inserted).changes if change.kind == "moved"]
+    reordered = snapshot(["new", "two", "one"])
+    moved = [change for change in store.compare(before, reordered).changes if change.kind == "moved"]
+    assert [(change.item_id, change.item_type) for change in moved] == [("one", "note"), ("two", "note")]

@@ -3270,3 +3270,13 @@ def test_recovery_inspection_includes_text_without_canonical_file(tmp_path, miss
     assert "Копія\ncaptured manuscript" in result
     assert not (tmp_path / "missing.txt").exists()
     assert store.scan().entries == (entry,)
+
+
+def test_revision_comparison_labels_moved_reference_note_with_stable_id(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((SceneChange(
+        "note-identity", "moved", "Same title", "Same title", item_type="note"
+    ),)))
+    assert "Reference Note Moved" in dialog.details.toPlainText()
+    assert "Item ID: note-identity" in dialog.details.toPlainText()
+    dialog.close()

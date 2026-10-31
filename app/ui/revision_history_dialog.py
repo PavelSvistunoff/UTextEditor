@@ -152,6 +152,8 @@ class RevisionHistoryDialog(QDialog):
                                           change.new_title or self.tr("unknown")))
                 if change.item_type != "project":
                     sections.append(format_qt(self.tr("Item ID: %1"), change.item_id))
+            if change.kind == "moved":
+                sections.append(format_qt(self.tr("Item ID: %1"), change.item_id))
             if change.diff:
                 sections.append(change.diff.rstrip())
         self.details.setPlainText("\n\n".join(sections))

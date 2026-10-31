@@ -81,7 +81,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - The status bar reports encoding and line ending, but these are not currently user-selectable.
 - The UI is minimal and has no toolbar. Recent standalone files and projects are listed separately.
 - Recovery handles the supported snapshot cases without overwriting changed canonical files, but full repair and diagnosis workflows for partial or corrupt recovery data remain incomplete.
-- Scheduled revision snapshots and revision-history restore controls are not yet available. Revision comparisons also flag added, removed or changed character profiles, directed relationships and scene-character associations by stable ID. For changed metadata they list the affected manifest field names without showing their before-and-after values; not all project-structure changes are covered.
+- Scheduled revision snapshots and revision-history restore controls are not yet available. Revision comparisons report reference-note reordering among shared notes without treating additions or removals as moves. Revision comparisons also flag added, removed or changed character profiles, directed relationships and scene-character associations by stable ID. For changed metadata they list the affected manifest field names without showing their before-and-after values; not all project-structure changes are covered.
 - Localization is an initial rollout, not yet a complete translation of every dialog and error/status path. Untranslated strings remain usable in English; the current catalogs cover common workflows listed above.
 
 ### Project format and local data

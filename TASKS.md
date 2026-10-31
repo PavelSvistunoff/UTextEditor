@@ -274,6 +274,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - [ ] **TASK-009.03** — Add selective restore.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-009.04** — Extend comparison to chapter, link, and project-structure changes.
+  Reference-note relative reordering is now reported without false moves from
+  additions/removals; moved items expose stable IDs using existing translations.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.05** — Add optional scheduled snapshots and retention policies.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

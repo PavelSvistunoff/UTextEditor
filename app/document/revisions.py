@@ -254,6 +254,11 @@ class RevisionStore:
 
         old_notes, new_notes = _note_records(left.structure), _note_records(right.structure)
         old_note_ids, new_note_ids = set(old_notes), set(new_notes)
+        common_note_ids = old_note_ids & new_note_ids
+        old_note_positions = {key: index for index, key in enumerate(
+            key for key in old_notes if key in common_note_ids)}
+        new_note_positions = {key: index for index, key in enumerate(
+            key for key in new_notes if key in common_note_ids)}
         for note_id in old_notes:
             if note_id not in new_note_ids:
                 changes.append(SceneChange(
@@ -271,6 +276,8 @@ class RevisionStore:
                 continue
             old_title, old_type = old_notes[note_id]
             new_title, new_type = new_notes[note_id]
+            if old_note_positions[note_id] != new_note_positions[note_id]:
+                changes.append(SceneChange(note_id, "moved", old_title, new_title, item_type="note"))
             if old_title != new_title:
                 changes.append(SceneChange(
                     note_id, "title-changed", old_title, new_title, item_type="note"
