@@ -5082,12 +5082,7 @@ class MainWindow(QMainWindow):
         document = editor.document_state
         if document.dirty:
             self.tabs.setCurrentIndex(index)
-            answer = QMessageBox.question(
-                self,
-                "Unsaved changes",
-                f"Save changes to {document.display_name}?",
-                QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
-            )
+            answer = self._ask_to_save_dirty_document(editor)
             if answer == QMessageBox.StandardButton.Cancel:
                 return
             if answer == QMessageBox.StandardButton.Save:
@@ -6607,10 +6602,12 @@ class MainWindow(QMainWindow):
         self._close_after_confirmed_quit()
 
     def _ask_to_save_dirty_document(self, editor) -> QMessageBox.StandardButton:
+        document = editor.document_state
+        name = document.display_name if document.path is not None else self.tr("Untitled")
         return QMessageBox.question(
             self,
-            "Unsaved changes",
-            f"Save changes to {editor.document_state.display_name}?",
+            self.tr("Unsaved changes"),
+            self.tr("Save changes to {name}?").format(name=name),
             QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
         )
 

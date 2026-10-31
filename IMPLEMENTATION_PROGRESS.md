@@ -380,7 +380,10 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   comparison labels, status and read-error wrappers are now translated without
   translating document text. Underlying restore errors and the wider audit
   still need localization; release catalog compilation remains outstanding.
-  Full offline suite: 587 passed, 2 skipped.
+  Closing a tab and quitting now share translated unsaved-document prompts,
+  including the untitled-document name; an offscreen test checks cancellation
+  with a temporarily compiled Ukrainian catalog. Full offline suite:
+  598 passed, 2 skipped.
 - **TASK-034 — in progress:** the spelling and Auto-writer review lists now
   expose keyboard-selection instructions through their accessibility
   descriptions. Offscreen tests inspect the Qt accessible interface and use

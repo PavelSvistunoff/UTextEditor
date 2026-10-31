@@ -576,6 +576,40 @@ def test_link_navigation_rechecks_selected_link_and_project(application, tmp_pat
     window.close()
 
 
+def test_close_and_quit_use_translated_unsaved_prompt(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved")
+    messages = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: messages.append(args) or QMessageBox.StandardButton.Cancel)
+    application.installTranslator(translator)
+    try:
+        window.close_tab(window.tabs.currentIndex())
+        assert editor.document_state.dirty and window.tabs.indexOf(editor) >= 0
+        assert window._ask_to_save_dirty_document(editor) == QMessageBox.StandardButton.Cancel
+        assert len(messages) == 2
+        for args in messages:
+            assert args[1] == "Незбережені зміни"
+            assert args[2] == "Зберегти зміни в документі Без назви?"
+    finally:
+        application.removeTranslator(translator)
+        editor.document_state.mark_saved()
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):

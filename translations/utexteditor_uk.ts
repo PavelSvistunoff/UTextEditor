@@ -681,6 +681,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Unsaved changes</source><translation>Незбережені зміни</translation></message>
+    <message><source>Save changes to {name}?</source><translation>Зберегти зміни в документі {name}?</translation></message>
     <message><source>Orphaned link ({item_id})</source><translation>Посилання без цілі ({item_id})</translation></message>
     <message><source>Navigate to:</source><translation>Перейти до:</translation></message>
     <message><source>The link is no longer available.</source><translation>Посилання більше недоступне.</translation></message>
