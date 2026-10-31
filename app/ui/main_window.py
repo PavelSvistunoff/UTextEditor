@@ -1008,18 +1008,18 @@ class MainWindow(QMainWindow):
         if editor is None:
             return
         operations = (
-            ("Like in the book", format_like_book),
-            ("Uppercase", lambda text: convert_case(text, "upper")),
-            ("lowercase", lambda text: convert_case(text, "lower")),
-            ("Title Case", lambda text: convert_case(text, "title")),
-            ("Indent Lines", indent_lines),
-            ("Outdent Lines", outdent_lines),
-            ("Trim Trailing Whitespace", trim_trailing_whitespace),
+            (self.tr("Like in the book"), format_like_book),
+            (self.tr("Uppercase"), lambda text: convert_case(text, "upper")),
+            (self.tr("lowercase"), lambda text: convert_case(text, "lower")),
+            (self.tr("Title Case"), lambda text: convert_case(text, "title")),
+            (self.tr("Indent Lines"), indent_lines),
+            (self.tr("Outdent Lines"), outdent_lines),
+            (self.tr("Trim Trailing Whitespace"), trim_trailing_whitespace),
         )
         label, accepted = QInputDialog.getItem(
             self,
-            "Format Whole Document",
-            "Choose a formatting operation for the entire document:",
+            self.tr("Format Whole Document"),
+            self.tr("Choose a formatting operation for the entire document:"),
             [title for title, _formatter in operations],
             0,
             False,
@@ -1634,7 +1634,7 @@ class MainWindow(QMainWindow):
                 if timer is not None and editor.document_state.dirty:
                     timer.start(self.settings.autosave_idle_ms)
         if warning:
-            QMessageBox.warning(self, "Project translation", message)
+            QMessageBox.warning(self, self.tr("Project translation"), message)
         else:
             self.statusBar().showMessage(message, 15000)
 
@@ -1846,7 +1846,7 @@ class MainWindow(QMainWindow):
                 if timer is not None and editor.document_state.dirty:
                     timer.start(self.settings.autosave_idle_ms)
         if warning:
-            QMessageBox.warning(self, "Auto-writer", message)
+            QMessageBox.warning(self, self.tr("Auto-writer"), message)
         else:
             self.statusBar().showMessage(message, 15000)
 
@@ -2314,7 +2314,7 @@ class MainWindow(QMainWindow):
         try:
             outline = dialog.outline()
         except ProjectError as exc:
-            QMessageBox.warning(self, "Invalid project outline", str(exc))
+            QMessageBox.warning(self, self.tr("Invalid project outline"), str(exc))
             return
         if project is not self.project or project_generation != self._project_generation:
             self.statusBar().showMessage("Project changed; the outline was not applied.", 6000)
@@ -2338,9 +2338,9 @@ class MainWindow(QMainWindow):
             return
         QMessageBox.warning(
             self,
-            "AI project setup failed",
-            f"Check that {self.provider.host} is reachable and model "
-            f"{self.provider.model} is available.\n\n{error}",
+            self.tr("AI project setup failed"),
+            self.tr("Check that {host} is reachable and model {model} is available.\n\n{error}").format(
+                host=self.provider.host, model=self.provider.model, error=error),
         )
 
     def cancel_project_setup(self) -> None:
@@ -5373,8 +5373,8 @@ class MainWindow(QMainWindow):
             return
         prompt, accepted = QInputDialog.getMultiLineText(
             self,
-            "Generate..",
-            "Describe what you want the AI to write:",
+            self.tr("Generate.."),
+            self.tr("Describe what you want the AI to write:"),
             "",
         )
         if not accepted or not prompt.strip():
@@ -5767,8 +5767,9 @@ class MainWindow(QMainWindow):
         self._set_project_analysis_active(False)
         QMessageBox.warning(
             self,
-            "Project analysis failed",
-            f"Check that {self.provider.host} is reachable and model {self.provider.model} is available.\n\n{error}",
+            self.tr("Project analysis failed"),
+            self.tr("Check that {host} is reachable and model {model} is available.\n\n{error}").format(
+                host=self.provider.host, model=self.provider.model, error=error),
         )
 
     def _set_project_analysis_active(self, active: bool) -> None:
@@ -5878,7 +5879,7 @@ class MainWindow(QMainWindow):
                 self.settings.save()
             except OSError as exc:
                 settings_saved = False
-                QMessageBox.warning(self, "Settings could not be saved", str(exc))
+                QMessageBox.warning(self, self.tr("Settings could not be saved"), str(exc))
             if settings_saved and self.settings.ui_language != previous_ui_language:
                 QMessageBox.information(
                     self,
@@ -5967,7 +5968,7 @@ class MainWindow(QMainWindow):
         if generation != self._settings_connection_generation:
             return
         if error:
-            dialog.connection_status.setText(f"Connection test failed: {error}")
+            dialog.connection_status.setText(self.tr("Connection test failed: {error}").format(error=error))
         else:
             dialog.set_connection_test_result(available, model)
 

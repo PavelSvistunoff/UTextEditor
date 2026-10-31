@@ -12,7 +12,7 @@ class ProjectView(QTreeWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setAccessibleName("Project navigation")
+        self.setAccessibleName(self.tr("Project navigation"))
         self.setHeaderHidden(True)
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setExpandsOnDoubleClick(True)

@@ -681,6 +681,19 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Like in the book</source><translation>Як у книзі</translation></message>
+    <message><source>Format Whole Document</source><translation>Форматувати весь документ</translation></message>
+    <message><source>Choose a formatting operation for the entire document:</source><translation>Виберіть дію форматування для всього документа:</translation></message>
+    <message><source>Invalid project outline</source><translation>Некоректний план проєкту</translation></message>
+    <message><source>AI project setup failed</source><translation>Не вдалося налаштувати проєкт із ШІ</translation></message>
+    <message><source>Check that {host} is reachable and model {model} is available.
+
+{error}</source><translation>Перевірте, чи доступна адреса {host} і модель {model}.
+
+{error}</translation></message>
+    <message><source>Describe what you want the AI to write:</source><translation>Опишіть, що має написати ШІ:</translation></message>
+    <message><source>Project analysis failed</source><translation>Не вдалося проаналізувати проєкт</translation></message>
+    <message><source>Connection test failed: {error}</source><translation>Не вдалося перевірити з’єднання: {error}</translation></message>
     <message><source>Daily writing goal progress</source><translation>Поступ до щоденної цілі письма</translation></message>
     <message><source>No daily goal</source><translation>Немає щоденної цілі</translation></message>
     <message><source>Set a daily goal before pausing it.</source><translation>Установіть щоденну ціль перед призупиненням.</translation></message>
@@ -1725,6 +1738,7 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>ProjectSetupDialog</name>
+    <message><source>Valid outline: {chapters} chapters, {scenes} empty scenes.</source><translation>Коректний план: розділів — {chapters}, порожніх сцен — {scenes}.</translation></message>
     <message>
         <location filename="../app/ui/project_setup_dialog.py" line="18"/>
         <source>Review AI project outline</source>
@@ -1748,6 +1762,7 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>ProjectView</name>
+    <message><source>Project navigation</source><translation>Навігація проєктом</translation></message>
     <message>
         <source>Open Associated Scene…</source>
         <translation>Відкрити пов’язану сцену…</translation>

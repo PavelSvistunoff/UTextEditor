@@ -58,7 +58,6 @@ class ProjectSetupDialog(QDialog):
             self.apply_button.setEnabled(False)
             return
         scene_count = sum(len(scenes) for _title, scenes in chapters)
-        self.validation.setText(
-            f"Valid outline: {len(chapters)} chapters, {scene_count} empty scenes."
-        )
+        self.validation.setText(self.tr("Valid outline: {chapters} chapters, {scenes} empty scenes.").format(
+            chapters=len(chapters), scenes=scene_count))
         self.apply_button.setEnabled(True)

@@ -943,6 +943,41 @@ def test_translated_debug_warning_and_status_accessibility(application, tmp_path
         application.removeTranslator(translator)
 
 
+def test_translated_whole_document_formatting_preserves_operation(application, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    editor.setPlainText("draft")
+
+    def choose(*args):
+        assert args[1] == "Форматувати весь документ"
+        return args[3][1], True
+
+    monkeypatch.setattr(QInputDialog, "getItem", choose)
+    application.installTranslator(translator)
+    try:
+        window._format_whole_document()
+        assert editor.toPlainText() == "DRAFT"
+        editor.undo()
+        assert editor.toPlainText() == "draft"
+    finally:
+        application.removeTranslator(translator)
+        editor.document_state.mark_saved()
+        window.close()
+
+
 def test_native_tab_shortcuts_switch_without_discarding_changes(application):
     from PySide6.QtTest import QTest
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
