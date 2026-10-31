@@ -1,6 +1,16 @@
 
 # Implementation progress
 
+- **TASK-006.05 — PARTIAL (2026-10-31):** goal status refresh no longer
+  recounts active/open scene buffers for new-word goals or paused/disabled
+  goals. Other scopes count only their required buffers. Three regressions
+  reject unnecessary count_words calls and verify label state. Editor suite:
+  59 passed; full suite: 697 passed, 2 skipped; after removing a redundant
+  action-label update, goal UI regressions: 16 passed. README/TASKS updated,
+  diff reviewed and whitespace check passed. Project membership traversal and
+  required scope counts remain synchronous; no overall latency bound claimed.
+  Previous token-scan optimization committed as 93b157f; new work uncommitted.
+
 - **TASK-006.05 — PARTIAL (2026-10-31):** writing-goal token scanning
   now visits the changed span plus two surrounding characters, preserving
   internal apostrophe/dash boundaries. Added exhaustive small-edit comparison

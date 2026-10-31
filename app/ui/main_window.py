@@ -828,14 +828,23 @@ class MainWindow(QMainWindow):
     def _refresh_writing_goal(self) -> None:
         if not hasattr(self, "_writing_goal_label"):
             return
+        self._writing_goal_pause_action.setText(
+            "Resume Daily Goal" if self.writing_goals.paused else "Pause Daily Goal"
+        )
+        if self.writing_goals.target == 0 or self.writing_goals.paused:
+            self._writing_goal_label.clear()
+            return
         editor = self.tabs.current_editor()
-        active_words = count_words(editor.toPlainText()) if editor is not None else 0
+        active_words = (count_words(editor.toPlainText())
+                        if editor is not None and self.writing_goals.scope == "active_scene" else 0)
         project_words = 0
         document_ids: set[str] = set()
         if self.project is not None:
             open_scenes: dict[str, str] = {}
             for tab_editor, binding in tuple(self._project_documents.items()):
-                if binding.project is self.project and binding.kind == "scene" and self.tabs.indexOf(tab_editor) >= 0:
+                if (self.writing_goals.scope == "project_manuscript"
+                        and binding.project is self.project and binding.kind == "scene"
+                        and self.tabs.indexOf(tab_editor) >= 0):
                     open_scenes[binding.item_id] = tab_editor.toPlainText()
             for scene in self.project.iter_scenes():
                 document_ids.add(
@@ -852,9 +861,6 @@ class MainWindow(QMainWindow):
             active_scene_words=active_words,
             project_words=project_words,
             document_ids=document_ids,
-        )
-        self._writing_goal_pause_action.setText(
-            "Resume Daily Goal" if self.writing_goals.paused else "Pause Daily Goal"
         )
         if progress is None:
             self._writing_goal_label.clear()

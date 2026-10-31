@@ -996,3 +996,18 @@ def test_goal_reconfiguration_preserves_counts_through_inactive_edits(applicatio
     editor.document_state.mark_saved()
     window._writing_goal_persist_timer.stop()
     window.close()
+
+
+@pytest.mark.parametrize("target,scope,paused", [(0, "active_scene", False), (10, "active_scene", True), (10, "new_words", False)])
+def test_goal_refresh_skips_unneeded_buffer_word_counts(application, target, scope, paused):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.configure(target, scope)
+    window.writing_goals.set_paused(paused)
+    with patch("app.ui.main_window.count_words", side_effect=AssertionError("Unexpected buffer scan")):
+        window._refresh_writing_goal()
+    if target == 0 or paused:
+        assert window._writing_goal_label.text() == ""
+    else:
+        assert "0/10" in window._writing_goal_label.text()
+    window.close()
