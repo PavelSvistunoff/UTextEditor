@@ -1,5 +1,5 @@
-"""In-process coordination for fingerprinted manuscript writes."""
+"""In-process coordination for fingerprinted document and manifest writes."""
 
-from threading import Lock
+from threading import RLock
 
-TEXT_WRITE_LOCK = Lock()
+TEXT_WRITE_LOCK = RLock()

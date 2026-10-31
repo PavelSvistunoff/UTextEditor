@@ -1,6 +1,14 @@
 
 # Implementation progress
 
+- **TASK-005.04 — PARTIAL (2026-10-31):** project manifest writes now use
+  the shared document write lock. The lock is reentrant so bulk workflows
+  can persist manifests while already holding it. Added
+  `test_manifest_and_standalone_saves_coordinate_in_process`; focused document
+  and project tests: 66 passed; full offline suite: 673 passed, 2 skipped.
+  README updated; diff whitespace check passed. Independent-process races
+  and native platform verification remain unresolved. No commits or pushes.
+
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
 - **TASK-001.03 — PARTIAL:** changing the target of an active new-words goal

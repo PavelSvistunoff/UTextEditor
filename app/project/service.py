@@ -1569,6 +1569,10 @@ class Project:
                 raise ProjectFormatError(f"Referenced path is not a regular file: {entry.path}")
 
     def _write_manifest(self) -> None:
+        with TEXT_WRITE_LOCK:
+            self._write_manifest_locked()
+
+    def _write_manifest_locked(self) -> None:
         self.manifest.validate()
         self._validate_manifest_paths()
         destination = validate_project_path(self.root, MANIFEST_NAME)

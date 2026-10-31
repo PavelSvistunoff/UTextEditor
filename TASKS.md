@@ -144,6 +144,8 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 - [?] **TASK-005.03** — Evaluate platform-appropriate coordination.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-005.04** — Implement a safe mitigation where practical.
+  Shared reentrant in-process coordination now covers standalone, project text,
+  and manifest saves (673 passed, 2 skipped); independent-process races remain.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-005.05** — Document residual risks.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

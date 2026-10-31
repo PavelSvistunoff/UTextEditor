@@ -631,6 +631,65 @@ def test_project_and_standalone_saves_coordinate_in_process(tmp_path, monkeypatc
     assert target.read_text(encoding="utf-8") == "project edit" and document.dirty
 
 
+def test_manifest_and_standalone_saves_coordinate_in_process(tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "project", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    target = project.manifest_path
+    manager = FileManager()
+    document = manager.open(target)
+    document.update_text("standalone edit")
+    replacing, release, second_started, second_read = (Event() for _ in range(4))
+    outcomes = {}
+    original_replace, original_read = os.replace, Path.read_bytes
+
+    def pause_replace(source, destination):
+        if current_thread().name == "project-save" and Path(destination) == target:
+            replacing.set()
+            if not release.wait(3):
+                raise TimeoutError("Project save was not released.")
+        return original_replace(source, destination)
+
+    def observe_read(path):
+        result = original_read(path)
+        if current_thread().name == "standalone-save" and path == target:
+            second_read.set()
+        return result
+
+    def project_save():
+        project.manifest.title = "Renamed"
+        project.save()
+        outcomes["project"] = "saved"
+
+    def standalone_save():
+        second_started.set()
+        try:
+            manager.save(document)
+        except ExternalChangeError:
+            outcomes["standalone"] = "conflict"
+        else:
+            outcomes["standalone"] = "saved"
+
+    monkeypatch.setattr(project_service.os, "replace", pause_replace)
+    monkeypatch.setattr(Path, "read_bytes", observe_read)
+    first = Thread(target=project_save, name="project-save")
+    second = Thread(target=standalone_save, name="standalone-save")
+    first.start()
+    try:
+        assert replacing.wait(2)
+        second.start()
+        assert second_started.wait(2)
+        assert not second_read.wait(0.5)
+    finally:
+        release.set()
+        first.join(3)
+        if second.ident is not None:
+            second.join(3)
+    assert not first.is_alive() and not second.is_alive()
+    assert outcomes == {"project": "saved", "standalone": "conflict"}
+    assert Project.open(project.root).manifest.title == "Renamed"
+    assert document.dirty
+
+
 def test_notes_links_orphans_and_separate_word_counts(tmp_path):
     project = Project.create(tmp_path / "project", "Novel")
     chapter = project.add_chapter("Chapter One")
