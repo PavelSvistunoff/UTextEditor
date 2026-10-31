@@ -45,14 +45,17 @@ def test_preview_updates_unsaved_buffer_without_modifying_it(app):
     panel.close()
 
 
-def test_large_document_is_not_rendered(app):
+def test_large_document_renders_a_bounded_prefix_without_modifying_text(app):
     editor = EditorWidget()
-    editor.setPlainText("x" * (MAX_MARKDOWN_CHARACTERS + 1))
+    source = "# Start\n\n" + "x" * (MAX_MARKDOWN_CHARACTERS - 10) + "😀END"
+    editor.setPlainText(source)
+    revision = editor.revision
     panel = MarkdownPreview()
     panel.set_editor(editor)
-    assert "too large" in panel.status.text()
-    assert not panel.timer.isActive()
-    assert panel.browser.toPlainText() == ""
+    wait_until(lambda: "only the beginning" in panel.status.text())
+    assert "Start" in panel.browser.toPlainText()
+    assert "END" not in panel.browser.toPlainText()
+    assert editor.toPlainText() == source and editor.revision == revision
     panel.close()
 
 

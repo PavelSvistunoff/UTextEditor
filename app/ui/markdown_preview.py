@@ -1,7 +1,7 @@
 """Bounded, read-only Markdown preview for an editor buffer."""
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt
-from PySide6.QtGui import QTextDocument
+from PySide6.QtGui import QTextCursor, QTextDocument
 from PySide6.QtWidgets import QLabel, QTextBrowser, QVBoxLayout, QWidget
 
 from .workers import FunctionWorker
@@ -61,26 +61,32 @@ class MarkdownPreview(QWidget):
         if self.editor is None:
             self.status.setText(self.tr("No active document."))
             return
-        if self.editor.document().characterCount() - 1 > MAX_MARKDOWN_CHARACTERS:
-            self.status.setText(self.tr("Document is too large to preview safely."))
-            return
         self.status.setText(self.tr("Updating preview…"))
         self.timer.start(300)
 
     def _render(self) -> None:
-        if (self.worker is not None or self.editor is None
-                or self.editor.document().characterCount() - 1 > MAX_MARKDOWN_CHARACTERS):
+        if self.worker is not None or self.editor is None:
             return
         editor = self.editor
         generation = self.generation
         revision = editor.revision
-        worker = FunctionWorker(render_markdown, editor.toPlainText())
+        truncated = editor.document().characterCount() - 1 > MAX_MARKDOWN_CHARACTERS
+        if truncated:
+            cursor = QTextCursor(editor.document())
+            cursor.setPosition(MAX_MARKDOWN_CHARACTERS, QTextCursor.MoveMode.KeepAnchor)
+            text = cursor.selectedText().replace("\u2029", "\n").replace("\u2028", "\n")
+        else:
+            text = editor.toPlainText()
+        worker = FunctionWorker(render_markdown, text)
         self.worker = worker
 
         def ready(html):
             if self.editor is editor and self.generation == generation and editor.revision == revision:
                 self.browser.setHtml(html)
-                self.status.setText(self.tr("Read-only preview; external resources are disabled."))
+                self.status.setText(
+                    self.tr("Preview shows only the beginning of this document; external resources are disabled.")
+                    if truncated else self.tr("Read-only preview; external resources are disabled.")
+                )
 
         def failed(_error):
             if self.generation == generation:

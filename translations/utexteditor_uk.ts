@@ -2057,6 +2057,7 @@
 </context>
 <context>
     <name>MarkdownPreview</name>
+    <message><source>Preview shows only the beginning of this document; external resources are disabled.</source><translation>Перегляд показує лише початок документа; зовнішні ресурси вимкнено.</translation></message>
     <message><source>Markdown preview</source><translation>Перегляд Markdown</translation></message>
     <message><source>No active document.</source><translation>Немає активного документа.</translation></message>
     <message><source>Document is too large to preview safely.</source><translation>Документ завеликий для безпечного перегляду.</translation></message>

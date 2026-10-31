@@ -240,11 +240,16 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
 - **TASK-027 — in progress:** View > Markdown Preview renders the active
   unsaved buffer in a read-only dock, debounces changes, checks captured
   revisions, blocks resource loading, and renders in a worker. Input and
-  rendered output are bounded; documents over 65,536 Qt text units are
-  explicitly declined. Tests cover stale renders, unsaved text, resource
+  rendered output are bounded; the initial version explicitly declined
+  documents over 65,536 Qt text units. Tests cover stale renders, unsaved text, resource
   blocking and the input limit. Large-document preview and responsiveness,
   compiled translations, and native accessibility review remain outstanding;
-  do not mark complete. Full offline suite: 506 passed, 2 skipped.
+  do not mark complete. Full offline suite: 506 passed, 2 skipped. Large
+  documents now render a clearly labeled prefix captured without copying the
+  entire buffer; the 65,536 Qt-unit input bound remains. A regression covers
+  a Unicode cutoff and preservation of the source buffer. Full offline suite:
+  568 passed, 2 skipped. Full-document preview, broader responsiveness and
+  native accessibility verification remain outstanding.
 - **TASK-028 — in progress:** PDF compilation now offers A5, A4 and Letter
   paper, an editable book title and an optional title-page author. Tests check
   actual page dimensions, author text, invalid sizes, and unsaved scene
