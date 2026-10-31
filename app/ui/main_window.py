@@ -45,7 +45,7 @@ from app.ai.validation import valid_suggestion
 from app.document.book_compiler import compile_book_pdf
 from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
-from app.document.export import ExportChapter, ExportScene, export_manuscript
+from app.document.export import ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source, export_manuscript
 from app.document.file_manager import ExternalChangeError, FileManager
 from app.document.merge import merge_text
 from app.document.recovery import RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
@@ -3654,7 +3654,8 @@ class MainWindow(QMainWindow):
         if not destination:
             return
         target = Path(destination)
-        if target.exists() and QMessageBox.question(
+        replace_existing = target.exists()
+        if replace_existing and QMessageBox.question(
             self,
             "Replace export",
             f"Replace the existing file {target}?",
@@ -3709,7 +3710,7 @@ class MainWindow(QMainWindow):
                     if chapter is not None:
                         selected_ids.update(scene.id for scene in chapter.scenes)
         selected_scene_ids = selected_ids or None
-        replace_existing = target.exists()
+        source_paths = self._project_export_sources(project)
         self._set_project_busy(True)
         worker = FunctionWorker(
             self._export_project_snapshot,
@@ -3724,6 +3725,7 @@ class MainWindow(QMainWindow):
             include_chapter_headings,
             include_scene_headings,
             separator,
+            source_paths,
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -3793,6 +3795,7 @@ class MainWindow(QMainWindow):
         ungrouped = [
             ExportScene(scene.id, scene.title) for scene in project.manifest.ungrouped_scenes
         ]
+        source_paths = self._project_export_sources(project)
         self._set_project_busy(True)
         worker = FunctionWorker(
             self._compile_project_book_snapshot,
@@ -3806,6 +3809,7 @@ class MainWindow(QMainWindow):
             page_size,
             author,
             include_scene_headings,
+            source_paths,
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -3831,7 +3835,9 @@ class MainWindow(QMainWindow):
         page_size="A5",
         author="",
         include_scene_headings=True,
+        source_paths=None,
     ):
+        ensure_destination_not_source(target, source_paths or MainWindow._project_export_sources(project))
         captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
         captured_scenes.extend(ungrouped)
         texts = {
@@ -3867,7 +3873,8 @@ class MainWindow(QMainWindow):
 
     def _project_book_compile_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)
-        QMessageBox.warning(self, self.tr("Book compilation failed"), str(error))
+        message = self.tr("Export destination is a project source file.") if isinstance(error, ExportSourceError) else str(error)
+        QMessageBox.warning(self, self.tr("Book compilation failed"), message)
 
     def _ask_export_options(self):
         dialog = QDialog(self)
@@ -3897,6 +3904,11 @@ class MainWindow(QMainWindow):
         )
 
     @staticmethod
+    def _project_export_sources(project):
+        return (project.manifest_path, *(project.root / item.path for item in project.iter_scenes()),
+                *(project.root / item.path for item in project.manifest.notes))
+
+    @staticmethod
     def _export_project_snapshot(
         project,
         chapters,
@@ -3909,7 +3921,9 @@ class MainWindow(QMainWindow):
         include_chapter_headings,
         include_scene_headings,
         separator,
+        source_paths=None,
     ):
+        ensure_destination_not_source(target, source_paths or MainWindow._project_export_sources(project))
         captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
         captured_scenes.extend(ungrouped)
         included_scene_ids = (
@@ -3945,7 +3959,8 @@ class MainWindow(QMainWindow):
 
     def _project_export_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)
-        QMessageBox.warning(self, "Export failed", str(error))
+        message = self.tr("Export destination is a project source file.") if isinstance(error, ExportSourceError) else str(error)
+        QMessageBox.warning(self, self.tr("Export failed"), message)
 
     def _scan_recovery(self) -> None:
         if self.recovery_store is None:

@@ -270,7 +270,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   workflow tests cover grouped and ungrouped scenes and unsaved text. Scene
   selection, chapter heading choices, preview, captured closed-scene contents,
   compiled translations and native PDF review remain outstanding. Full offline
-  suite: 571 passed, 2 skipped.
+  suite: 571 passed, 2 skipped. Both export workers now reject scene, note and
+  manifest destinations, including symbolic and hard links. Text export retains
+  the overwrite decision made at confirmation, so a destination created later
+  is not replaced without approval. Tests cover both safeguards; filesystem
+  changes can still race the source-path check. Full offline suite: 576 passed,
+  2 skipped.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene

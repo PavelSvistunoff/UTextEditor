@@ -1607,6 +1607,47 @@ def test_export_workers_use_captured_scene_list(application, tmp_path):
     pdf.close()
 
 
+def test_export_workers_reject_project_source_destinations(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="keep scene")
+    note = project.add_note("Note", content="keep note")
+    scene_path = project.root / scene.path
+    note_path = project.root / note.path
+    hardlink = tmp_path / "linked.md"
+    hardlink.hardlink_to(scene_path)
+    symlink = tmp_path / "linked-note.md"
+    symlink.symlink_to(note_path)
+    for target in (scene_path, note_path, project.manifest_path, hardlink, symlink):
+        before = target.read_bytes()
+        with pytest.raises(ValueError, match="project source"):
+            MainWindow._export_project_snapshot(project, [], [ExportScene(scene.id, scene.title)],
+                {}, target, "markdown", True, None, True, True, "\n\n")
+        with pytest.raises(ValueError, match="project source"):
+            MainWindow._compile_project_book_snapshot(project, "Book", [],
+                [ExportScene(scene.id, scene.title)], {}, target, True)
+        assert target.read_bytes() == before
+
+
+def test_export_does_not_replace_file_created_after_confirmation_check(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    project.add_scene("Scene", content="manuscript")
+    target = tmp_path / "export.md"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_args: (str(target), "Markdown (*.md)"))
+    def choose_options():
+        target.write_text("created meanwhile", encoding="utf-8")
+        return True, True, "\n\n"
+    monkeypatch.setattr(window, "_ask_export_options", choose_options)
+    errors = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_args: errors.append(_args[-1]))
+    window.export_project()
+    wait_until(lambda: bool(errors), application)
+    assert target.read_text(encoding="utf-8") == "created meanwhile"
+    window.close()
+
+
 def test_revision_history_dialog_loads_and_compares_snapshots(
     application, tmp_path
 ):

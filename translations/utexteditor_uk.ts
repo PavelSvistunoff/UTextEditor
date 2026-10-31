@@ -675,6 +675,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Export destination is a project source file.</source><translation>Файл призначення експорту є вихідним файлом проєкту.</translation></message>
+    <message><source>Export failed</source><translation>Не вдалося експортувати</translation></message>
     <message><source>Compile book as PDF</source><translation>Створити книгу PDF</translation></message>
     <message><source>PDF book (*.pdf)</source><translation>Книга PDF (*.pdf)</translation></message>
     <message><source>Replace compiled book</source><translation>Замінити створену книгу</translation></message>

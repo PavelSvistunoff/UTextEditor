@@ -21,6 +21,25 @@ class ExportChapter:
     scenes: tuple[ExportScene, ...]
 
 
+class ExportSourceError(ValueError):
+    """The destination identifies a source belonging to the project."""
+
+
+def ensure_destination_not_source(destination: str | Path, sources: Sequence[Path]) -> None:
+    """Reject a destination naming a source path or an existing hard link to one."""
+    target = Path(destination)
+    resolved_target = target.resolve()
+    for source in sources:
+        if resolved_target == source.resolve():
+            raise ExportSourceError("Export destination is a project source file.")
+        try:
+            same_file = target.samefile(source)
+        except FileNotFoundError:
+            same_file = False
+        if same_file:
+            raise ExportSourceError("Export destination is a project source file.")
+
+
 def render_manuscript(
     chapters: Sequence[ExportChapter],
     ungrouped_scenes: Sequence[ExportScene],
