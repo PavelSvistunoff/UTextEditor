@@ -1888,10 +1888,12 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
     monkeypatch.setattr(
         "app.ui.main_window.OllamaClient.check_connection", lambda _self: True
     )
-    monkeypatch.setattr(MainWindow, "_ask_pdf_options", lambda _self, title: (title, "An Author", "A4", False))
+    monkeypatch.setattr(MainWindow, "_ask_pdf_options", lambda _self, title: (title, "An Author", "A4", False, {scene.id}))
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
     scene = project.add_scene("Opening", chapter_id=chapter.id, content="saved text")
+    omitted = project.add_scene("Omitted", chapter_id=chapter.id, content="not exported")
+    (project.root / omitted.path).unlink()
     target = tmp_path / "compiled-book.pdf"
     monkeypatch.setattr(
         QFileDialog,
@@ -1940,10 +1942,26 @@ def test_compile_book_uses_unsaved_scene_buffer_without_changing_project(
     assert "current unsaved text" in content
     assert "An Author" in content
     assert "Opening" not in content
+    assert "Omitted" not in content and "not exported" not in content
     assert pdf.pagePointSize(0).width() > 590
     assert "\r\nsaved text\r\n" not in content
     assert project.read_scene(scene.id) == "saved text"
     editor.document_state.mark_saved()
+    window.close()
+
+
+def test_pdf_selection_is_discarded_if_project_changes_during_options(application, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="text")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    def stale_options(_title):
+        window._project_generation += 1
+        return "Novel", "", "A5", True, {scene.id}
+    monkeypatch.setattr(window, "_ask_pdf_options", stale_options)
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_args: pytest.fail("stale selection used"))
+    window.compile_project_book()
     window.close()
 
 

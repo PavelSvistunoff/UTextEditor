@@ -3743,17 +3743,18 @@ class MainWindow(QMainWindow):
         project = self.project
         if project is None:
             return
+        generation = self._project_generation
         options = self._ask_pdf_options(project.manifest.title)
-        if options is None:
+        if options is None or self.project is not project or self._project_generation != generation:
             return
-        book_title, author, page_size, include_scene_headings = options
+        book_title, author, page_size, include_scene_headings, selected_scene_ids = options
         destination, _selected_filter = QFileDialog.getSaveFileName(
             self,
             self.tr("Compile book as PDF"),
             str(project.root / f"{project.manifest.title}.pdf"),
             self.tr("PDF book (*.pdf)"),
         )
-        if not destination:
+        if not destination or self.project is not project or self._project_generation != generation:
             return
         target = Path(destination)
         replace_existing = False
@@ -3773,6 +3774,7 @@ class MainWindow(QMainWindow):
             if (
                 binding.project is project
                 and binding.kind == "scene"
+                and binding.item_id in selected_scene_ids
                 and self.tabs.indexOf(editor) >= 0
             ):
                 open_text[binding.item_id] = editor.toPlainText()
@@ -3784,16 +3786,21 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         ) != QMessageBox.StandardButton.Yes:
             return
+        if self.project is not project or self._project_generation != generation:
+            return
 
         chapters = [
             ExportChapter(
                 chapter.title,
-                tuple(ExportScene(scene.id, scene.title) for scene in chapter.scenes),
+                tuple(ExportScene(scene.id, scene.title) for scene in chapter.scenes
+                      if scene.id in selected_scene_ids),
             )
             for chapter in project.manifest.chapters
+            if not chapter.scenes or any(scene.id in selected_scene_ids for scene in chapter.scenes)
         ]
         ungrouped = [
             ExportScene(scene.id, scene.title) for scene in project.manifest.ungrouped_scenes
+            if scene.id in selected_scene_ids
         ]
         source_paths = self._project_export_sources(project)
         self._set_project_busy(True)
@@ -3861,11 +3868,16 @@ class MainWindow(QMainWindow):
         )
 
     def _ask_pdf_options(self, title: str):
-        dialog = PdfOptionsDialog(title, self)
+        project = self.project
+        scenes = [(scene.id, f"{chapter.title} — {scene.title} [{scene.id}]")
+                  for chapter in project.manifest.chapters for scene in chapter.scenes]
+        scenes.extend((scene.id, f"{self.tr('Ungrouped')} — {scene.title} [{scene.id}]")
+                      for scene in project.manifest.ungrouped_scenes)
+        dialog = PdfOptionsDialog(title, self, scenes=scenes)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return None
         return (dialog.title.text().strip(), dialog.author.text().strip(),
-                dialog.page_size.currentText(), dialog.scene_headings.isChecked())
+                dialog.page_size.currentText(), dialog.scene_headings.isChecked(), dialog.selected_scene_ids())
 
     def _project_book_compiled(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)

@@ -2078,6 +2078,8 @@
 </context>
 <context>
     <name>PdfOptionsDialog</name>
+    <message><source>Scenes to include</source><translation>Сцени для включення</translation></message>
+    <message><source>Scenes to include (unchecked scenes are omitted):</source><translation>Сцени для включення (непозначені сцени буде пропущено):</translation></message>
     <message><source>Include scene headings</source><translation>Додавати заголовки сцен</translation></message>
     <message><source>Book PDF options</source><translation>Параметри книги PDF</translation></message>
     <message><source>Title</source><translation>Назва</translation></message>

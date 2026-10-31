@@ -1,10 +1,12 @@
 """Title-page and paper options for compiling a book."""
 
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout,
+                               QLabel, QLineEdit, QListWidget, QListWidgetItem, QVBoxLayout)
 
 
 class PdfOptionsDialog(QDialog):
-    def __init__(self, title: str, parent=None) -> None:
+    def __init__(self, title: str, parent=None, *, scenes=()) -> None:
         super().__init__(parent)
         self.setWindowTitle(self.tr("Book PDF options"))
         self.title = QLineEdit(title, self)
@@ -13,6 +15,13 @@ class PdfOptionsDialog(QDialog):
         self.page_size.addItems(["A5", "A4", "Letter"])
         self.scene_headings = QCheckBox(self.tr("Include scene headings"), self)
         self.scene_headings.setChecked(True)
+        self.scenes = QListWidget(self)
+        self.scenes.setAccessibleName(self.tr("Scenes to include"))
+        for scene_id, label in scenes:
+            item = QListWidgetItem(label, self.scenes)
+            item.setData(Qt.ItemDataRole.UserRole, scene_id)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked)
         form = QFormLayout()
         form.addRow(self.tr("Title"), self.title)
         form.addRow(self.tr("Author"), self.author)
@@ -27,4 +36,11 @@ class PdfOptionsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(self.scene_headings)
+        layout.addWidget(QLabel(self.tr("Scenes to include (unchecked scenes are omitted):"), self))
+        layout.addWidget(self.scenes)
         layout.addWidget(buttons)
+
+    def selected_scene_ids(self) -> set[str]:
+        return {self.scenes.item(index).data(Qt.ItemDataRole.UserRole)
+                for index in range(self.scenes.count())
+                if self.scenes.item(index).checkState() == Qt.CheckState.Checked}

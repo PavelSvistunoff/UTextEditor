@@ -169,6 +169,14 @@ def test_pdf_options_require_a_title_and_default_to_a5(application):
     assert ok.isEnabled()
 
 
+def test_pdf_options_select_scenes_by_stable_id(application):
+    dialog = PdfOptionsDialog("Novel", scenes=[("one", "Chapter A — Scene [one]"),
+                                               ("two", "Chapter B — Scene [two]")])
+    assert dialog.selected_scene_ids() == {"one", "two"}
+    dialog.scenes.item(1).setCheckState(Qt.CheckState.Unchecked)
+    assert dialog.selected_scene_ids() == {"one"}
+
+
 def test_pdf_can_omit_scene_headings_from_contents_and_body(application, tmp_path):
     from PySide6.QtPdf import QPdfDocument
 

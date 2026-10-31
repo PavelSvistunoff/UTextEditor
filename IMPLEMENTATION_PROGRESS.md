@@ -275,7 +275,13 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   the overwrite decision made at confirmation, so a destination created later
   is not replaced without approval. Tests cover both safeguards; filesystem
   changes can still race the source-path check. Full offline suite: 576 passed,
-  2 skipped.
+  2 skipped. PDF options now list scenes with chapter context and stable IDs;
+  unchecked scenes are omitted without being read, and only selected unsaved
+  buffers are included. A stale project generation cancels the selection.
+  Tests cover duplicate labels, omitted unreadable scenes and stale options.
+  Preview, chapter-heading options, captured closed-scene contents, compiled
+  translations and native review remain outstanding. Full offline suite:
+  578 passed, 2 skipped.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene
