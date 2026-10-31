@@ -3,6 +3,14 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.01 — DONE:** snapshot previews now provide previous/next pages
+  over all captured scene and note text, retaining a 32,768-character display
+  bound per page. Selecting a different snapshot resets the page. Modified
+  `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, `README.md`, and `TASKS.md`. Focused
+  revision and project UI suites: 150 passed; full offline suite: 652 passed,
+  2 skipped. Ukrainian source catalog validation passed. Native accessibility checks and release catalog
+  compilation remain outstanding.
 - **TASK-009.01 — PARTIAL:** selecting one revision shows a read-only preview
   of scene and note contents, capped at 32,768 characters and labeled when
   truncated. A selection generation prevents older asynchronous comparisons

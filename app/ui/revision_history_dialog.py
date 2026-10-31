@@ -40,8 +40,15 @@ class RevisionHistoryDialog(QDialog):
         self.delete_button = QPushButton(self.tr("Delete Selected…"), self)
         self.delete_button.setEnabled(False)
         self.delete_button.clicked.connect(self._request_deletion)
+        self.previous_page = QPushButton(self.tr("Previous Page"), self)
+        self.next_page = QPushButton(self.tr("Next Page"), self)
+        self.previous_page.setEnabled(False)
+        self.next_page.setEnabled(False)
+        self.previous_page.clicked.connect(lambda: self._change_preview_page(-1))
+        self.next_page.clicked.connect(lambda: self._change_preview_page(1))
+        self._preview_page = 0
         self.details = QTextEdit(self)
-        self.details.setAccessibleName(self.tr("Revision comparison"))
+        self.details.setAccessibleName(self.tr("Revision preview and comparison"))
         self.details.setReadOnly(True)
 
         content = QHBoxLayout()
@@ -51,6 +58,8 @@ class RevisionHistoryDialog(QDialog):
         controls.addWidget(self.status, 1)
         controls.addWidget(self.compare_button)
         controls.addWidget(self.delete_button)
+        controls.addWidget(self.previous_page)
+        controls.addWidget(self.next_page)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self.accept)
@@ -128,27 +137,56 @@ class RevisionHistoryDialog(QDialog):
     def _selection_changed(self) -> None:
         self.selection_generation += 1
         self._update_compare_enabled()
+        self._preview_page = 0
+        self._show_preview()
+
+    def _change_preview_page(self, direction: int) -> None:
+        self._preview_page = max(0, self._preview_page + direction)
+        self._show_preview()
+
+    def _show_preview(self) -> None:
         selected = self.snapshots.selectedItems()
         if len(selected) != 1:
+            self.previous_page.setEnabled(False)
+            self.next_page.setEnabled(False)
             self.details.clear()
             return
         snapshot = selected[0].data(Qt.ItemDataRole.UserRole)
         parts = []
-        remaining = self.PREVIEW_LIMIT
-        ordered = list(snapshot.scene_order)
+        skip = self._preview_page * self.PREVIEW_LIMIT
+        remaining = self.PREVIEW_LIMIT + 1
         scene_ids = set(snapshot.scene_order)
-        ordered.extend(item_id for item_id in snapshot.documents if item_id not in scene_ids)
-        for item_id in ordered:
-            title = snapshot.scene_titles.get(item_id, item_id)
-            header = f"{title[:remaining]} [{item_id[:remaining]}]\n"
-            text = snapshot.documents[item_id]
-            chunk = (header + text[:remaining] + "\n\n")[:remaining]
+        def sections():
+            for item_id in snapshot.scene_order:
+                yield snapshot.scene_titles.get(item_id, item_id)
+                yield " ["
+                yield item_id
+                yield "]\n"
+                yield snapshot.documents[item_id]
+                yield "\n\n"
+            for item_id, text in snapshot.documents.items():
+                if item_id not in scene_ids:
+                    yield item_id
+                    yield " ["
+                    yield item_id
+                    yield "]\n"
+                    yield text
+                    yield "\n\n"
+
+        for section in sections():
+            if skip >= len(section):
+                skip -= len(section)
+                continue
+            chunk = section[skip:skip + remaining]
+            skip = 0
             parts.append(chunk)
             remaining -= len(chunk)
-            if remaining <= 0:
-                parts.append(self.tr("Preview truncated; additional snapshot content is not shown."))
+            if remaining == 0:
                 break
-        self.details.setPlainText("".join(parts))
+        preview = "".join(parts)
+        self.previous_page.setEnabled(self._preview_page > 0)
+        self.next_page.setEnabled(len(preview) > self.PREVIEW_LIMIT)
+        self.details.setPlainText(preview[:self.PREVIEW_LIMIT])
 
     def _request_deletion(self) -> None:
         selected = self.snapshots.selectedItems()

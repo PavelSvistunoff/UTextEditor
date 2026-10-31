@@ -2692,7 +2692,7 @@ def test_revision_history_dialog_loads_and_compares_snapshots(
     window.close()
 
 
-def test_revision_history_previews_selected_snapshot_with_limit(application, tmp_path):
+def test_revision_history_previews_all_snapshot_content_in_bounded_pages(application, tmp_path):
     store = RevisionStore(tmp_path / "revisions")
     snapshot = store.create("Draft", structure={}, scene_order=["scene"],
                             scene_titles={"scene": "Opening"},
@@ -2702,8 +2702,14 @@ def test_revision_history_previews_selected_snapshot_with_limit(application, tmp
     dialog.snapshots.item(0).setSelected(True)
     preview = dialog.details.toPlainText()
     assert "Opening [scene]" in preview and "draft " in preview
-    assert "Preview truncated" in preview and "unshown" not in preview
+    assert "unshown" not in preview
+    assert not dialog.previous_page.isEnabled() and dialog.next_page.isEnabled()
     assert dialog.details.isReadOnly()
+    dialog.next_page.click()
+    assert "unshown" in dialog.details.toPlainText()
+    assert dialog.previous_page.isEnabled() and not dialog.next_page.isEnabled()
+    dialog.previous_page.click()
+    assert dialog.details.toPlainText() == preview
     assert snapshot.documents["note"] == "unshown"
     dialog.close()
 

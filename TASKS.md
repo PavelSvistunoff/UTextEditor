@@ -231,7 +231,7 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 ### TASK-009 — Implement revision snapshot management
 **Priority:** High · **Parent status:** open
 
-- [~] **TASK-009.01** — Add snapshot preview.
+- [x] **TASK-009.01** — Add snapshot preview.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-009.02** — Add confirmed snapshot deletion.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
