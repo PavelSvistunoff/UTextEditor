@@ -2067,6 +2067,7 @@
 </context>
 <context>
     <name>PdfOptionsDialog</name>
+    <message><source>Include scene headings</source><translation>Додавати заголовки сцен</translation></message>
     <message><source>Book PDF options</source><translation>Параметри книги PDF</translation></message>
     <message><source>Title</source><translation>Назва</translation></message>
     <message><source>Author</source><translation>Автор</translation></message>

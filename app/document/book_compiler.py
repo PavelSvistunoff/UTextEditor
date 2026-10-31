@@ -35,6 +35,7 @@ def compile_book_pdf(
     replace_existing: bool = False,
     page_size: str = "A5",
     author: str = "",
+    include_scene_headings: bool = True,
 ) -> Path:
     """Write a PDF with a title page, ordered chapters, and page numbers."""
     target = Path(destination)
@@ -48,7 +49,8 @@ def compile_book_pdf(
         raise TypeError("Author must be text.")
 
     _validate_scenes(chapters, ungrouped_scenes, scene_texts)
-    document = _build_document(title, chapters, ungrouped_scenes, scene_texts, author=author)
+    document = _build_document(title, chapters, ungrouped_scenes, scene_texts, author=author,
+                               include_scene_headings=include_scene_headings)
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
@@ -106,6 +108,7 @@ def _build_document(
     scene_texts: Mapping[str, str],
     *,
     author: str = "",
+    include_scene_headings: bool = True,
 ) -> QTextDocument:
     document = QTextDocument()
     document.setDefaultFont(QFont("Georgia", 11))
@@ -134,12 +137,14 @@ def _build_document(
             _block_format(),
             _char_format(12, bold=True),
         )
-        for scene in chapter.scenes:
-            _insert_block(cursor, scene.title, _block_format(), _char_format(10))
+        if include_scene_headings:
+            for scene in chapter.scenes:
+                _insert_block(cursor, scene.title, _block_format(), _char_format(10))
     if ungrouped_scenes:
         _insert_block(cursor, "Additional Scenes", _block_format(), _char_format(12, bold=True))
-        for scene in ungrouped_scenes:
-            _insert_block(cursor, scene.title, _block_format(), _char_format(10))
+        if include_scene_headings:
+            for scene in ungrouped_scenes:
+                _insert_block(cursor, scene.title, _block_format(), _char_format(10))
     if not chapters and not ungrouped_scenes:
         _insert_block(cursor, "No scenes in this project.", _block_format(), _char_format(10))
 
@@ -149,7 +154,7 @@ def _build_document(
         heading_format.setBottomMargin(30)
         _insert_block(cursor, chapter.title, heading_format, _char_format(20, bold=True))
         for scene in chapter.scenes:
-            _insert_scene(cursor, scene, scene_texts[scene.scene_id])
+            _insert_scene(cursor, scene, scene_texts[scene.scene_id], include_scene_headings)
 
     if ungrouped_scenes:
         heading_format = _block_format(Qt.AlignmentFlag.AlignHCenter)
@@ -157,15 +162,16 @@ def _build_document(
         heading_format.setBottomMargin(24)
         _insert_block(cursor, "Additional Scenes", heading_format, _char_format(20, bold=True))
         for scene in ungrouped_scenes:
-            _insert_scene(cursor, scene, scene_texts[scene.scene_id])
+            _insert_scene(cursor, scene, scene_texts[scene.scene_id], include_scene_headings)
     return document
 
 
-def _insert_scene(cursor: QTextCursor, scene: ExportScene, text: str) -> None:
-    heading_format = _block_format(Qt.AlignmentFlag.AlignHCenter)
-    heading_format.setTopMargin(12)
-    heading_format.setBottomMargin(12)
-    _insert_block(cursor, scene.title, heading_format, _char_format(13, bold=True))
+def _insert_scene(cursor: QTextCursor, scene: ExportScene, text: str, include_heading: bool) -> None:
+    if include_heading:
+        heading_format = _block_format(Qt.AlignmentFlag.AlignHCenter)
+        heading_format.setTopMargin(12)
+        heading_format.setBottomMargin(12)
+        _insert_block(cursor, scene.title, heading_format, _char_format(13, bold=True))
 
     body_format = _block_format(Qt.AlignmentFlag.AlignLeft)
     body_format.setLineHeight(

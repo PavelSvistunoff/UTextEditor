@@ -260,7 +260,12 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   manifest again. A regression covers later-added unreadable scenes and unsaved
   buffers. Closed scene contents are still read in the worker and a complete
   captured-content review remains outstanding. Full offline suite: 569 passed,
-  2 skipped.
+  2 skipped. PDF options now allow scene headings to be omitted from both the
+  contents and manuscript, retaining them by default. PDF extraction and Qt
+  workflow tests cover grouped and ungrouped scenes and unsaved text. Scene
+  selection, chapter heading choices, preview, captured closed-scene contents,
+  compiled translations and native PDF review remain outstanding. Full offline
+  suite: 571 passed, 2 skipped.
 - **TASK-030 — in progress:** the long Story and Background and personality
   forms now scroll in smaller profile windows; an offscreen test covers access
   to their last fields and unchanged staged-save behavior. Character-to-scene

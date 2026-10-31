@@ -3744,7 +3744,7 @@ class MainWindow(QMainWindow):
         options = self._ask_pdf_options(project.manifest.title)
         if options is None:
             return
-        book_title, author, page_size = options
+        book_title, author, page_size, include_scene_headings = options
         destination, _selected_filter = QFileDialog.getSaveFileName(
             self,
             "Compile book as PDF",
@@ -3805,6 +3805,7 @@ class MainWindow(QMainWindow):
             replace_existing,
             page_size,
             author,
+            include_scene_headings,
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
@@ -3829,6 +3830,7 @@ class MainWindow(QMainWindow):
         replace_existing,
         page_size="A5",
         author="",
+        include_scene_headings=True,
     ):
         captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
         captured_scenes.extend(ungrouped)
@@ -3849,13 +3851,15 @@ class MainWindow(QMainWindow):
             replace_existing=replace_existing,
             page_size=page_size,
             author=author,
+            include_scene_headings=include_scene_headings,
         )
 
     def _ask_pdf_options(self, title: str):
         dialog = PdfOptionsDialog(title, self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return None
-        return dialog.title.text().strip(), dialog.author.text().strip(), dialog.page_size.currentText()
+        return (dialog.title.text().strip(), dialog.author.text().strip(),
+                dialog.page_size.currentText(), dialog.scene_headings.isChecked())
 
     def _project_book_compiled(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)

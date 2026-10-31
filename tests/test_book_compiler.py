@@ -161,11 +161,28 @@ def test_pdf_options_require_a_title_and_default_to_a5(application):
     dialog = PdfOptionsDialog("Novel")
     ok = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.StandardButton.Ok)
     assert dialog.page_size.currentText() == "A5"
+    assert dialog.scene_headings.isChecked()
     assert ok.isEnabled()
     dialog.title.setText("  ")
     assert not ok.isEnabled()
     dialog.title.setText("New title")
     assert ok.isEnabled()
+
+
+def test_pdf_can_omit_scene_headings_from_contents_and_body(application, tmp_path):
+    from PySide6.QtPdf import QPdfDocument
+
+    path = tmp_path / "without-scene-headings.pdf"
+    compile_book_pdf(path, "Novel", [ExportChapter("Chapter", (ExportScene("s", "Hidden scene title"),))],
+                     [ExportScene("u", "Hidden ungrouped title")],
+                     {"s": "Chapter prose", "u": "Ungrouped prose"}, include_scene_headings=False)
+    pdf = QPdfDocument(application)
+    pdf.load(str(path))
+    text = "\n".join(pdf.getAllText(i).text() for i in range(pdf.pageCount()))
+    assert "Hidden scene title" not in text
+    assert "Hidden ungrouped title" not in text
+    assert "Chapter prose" in text and "Ungrouped prose" in text
+    assert "Chapter" in text
 
 
 def test_failed_book_compilation_preserves_existing_destination(
