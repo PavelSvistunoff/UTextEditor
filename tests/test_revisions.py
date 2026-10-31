@@ -347,3 +347,37 @@ def test_revision_history_orders_capture_times_by_instant(tmp_path):
     snapshots, issues = store.list_snapshots()
     assert not issues
     assert [snapshot.snapshot_id for snapshot in snapshots] == [later.snapshot_id, earlier.snapshot_id]
+
+
+def test_revision_directory_listing_failure_is_reported_and_preserves_snapshots(tmp_path, monkeypatch):
+    from pathlib import Path
+    store = RevisionStore(tmp_path / "revisions")
+    snapshot = create_snapshot(store, order=[], titles={}, documents={})
+    original = Path.iterdir
+
+    def denied(path):
+        if path == store.root:
+            raise PermissionError("Cannot list revision directory")
+        return original(path)
+
+    monkeypatch.setattr(Path, "iterdir", denied)
+    snapshots, issues = store.list_snapshots()
+    assert not snapshots
+    assert len(issues) == 1 and issues[0].snapshot_path == store.root
+    assert "Cannot list" in issues[0].message
+    assert snapshot.snapshot_path.exists()
+
+
+def test_symbolic_link_revision_is_reported_without_hiding_valid_snapshot(tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+    valid = create_snapshot(store, order=[], titles={}, documents={})
+    external = tmp_path / "external.json"
+    external.write_bytes(valid.snapshot_path.read_bytes())
+    linked = store.root / "linked.json"
+    linked.symlink_to(external)
+    snapshots, issues = store.list_snapshots()
+    assert snapshots == (valid,)
+    assert len(issues) == 1 and "symbolic link" in issues[0].message
+    with pytest.raises(ValueError, match="symbolic link"):
+        store.read(linked)
+    assert linked.is_symlink() and external.exists()

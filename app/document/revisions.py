@@ -115,7 +115,11 @@ class RevisionStore:
             return (), ()
         snapshots: list[RevisionSnapshot] = []
         issues: list[RevisionIssue] = []
-        for path in sorted(self.root.glob("*.json")):
+        try:
+            paths = sorted(path for path in self.root.iterdir() if path.suffix == ".json")
+        except OSError as exc:
+            return (), (RevisionIssue(self.root, str(exc)),)
+        for path in paths:
             try:
                 snapshots.append(self.read(path))
             except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
@@ -125,6 +129,8 @@ class RevisionStore:
 
     def read(self, snapshot: str | Path | RevisionSnapshot) -> RevisionSnapshot:
         path = snapshot.snapshot_path if isinstance(snapshot, RevisionSnapshot) else Path(snapshot)
+        if path.is_symlink():
+            raise ValueError("Revision snapshot must not be a symbolic link.")
         with path.open("r", encoding="utf-8") as stream:
             payload = json.load(stream)
         if not isinstance(payload, dict) or payload.get("format_version") != self.FORMAT_VERSION:

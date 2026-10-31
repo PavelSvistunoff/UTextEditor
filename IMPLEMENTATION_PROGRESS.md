@@ -1,6 +1,17 @@
 
 # Implementation progress
 
+- **TASK-009.01 — listing/preview hardening (2026-10-31):** revision
+  enumeration uses explicit directory listing so filesystem errors become
+  diagnostics rather than an apparently empty history. Revision reads reject
+  symbolic links, preserving valid companion entries and linked/external files.
+  Added focused listing-failure and symlink regressions. Revision tests:
+  21 passed; full offline suite: 702 passed, 2 skipped; diff reviewed and
+  whitespace check passed. README/TASKS updated. This pre-read symlink check
+  does not exclude concurrent path replacement. Native verification and
+  broader revision restore/scheduling remain open. Prior chronology change
+  committed as 67f8152; new work remains uncommitted.
+
 - **TASK-009.01 — chronology hardening (2026-10-31):** revision reads
   validate timezone-aware capture timestamps and listing sorts by instant
   rather than timestamp text. Regression tests cover invalid and timezone-free
