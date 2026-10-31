@@ -2001,6 +2001,7 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>RevisionHistoryDialog</name>
+    <message><source>Preview truncated; additional snapshot content is not shown.</source><translation>Попередній перегляд скорочено; додатковий вміст знімка не показано.</translation></message>
     <message><source>Delete Selected…</source><translation>Видалити вибране…</translation></message>
     <message><source>Delete revision snapshot</source><translation>Видалити знімок редакції</translation></message>
     <message><source>Delete snapshot ‘%1’ captured at %2? This cannot be undone.</source><translation>Видалити знімок «%1», створений %2? Цю дію неможливо скасувати.</translation></message>

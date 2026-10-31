@@ -2692,6 +2692,41 @@ def test_revision_history_dialog_loads_and_compares_snapshots(
     window.close()
 
 
+def test_revision_history_previews_selected_snapshot_with_limit(application, tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+    snapshot = store.create("Draft", structure={}, scene_order=["scene"],
+                            scene_titles={"scene": "Opening"},
+                            documents={"scene": "draft " + "x" * 40000, "note": "unshown"})
+    dialog = RevisionHistoryDialog()
+    dialog.set_snapshots((snapshot,), ())
+    dialog.snapshots.item(0).setSelected(True)
+    preview = dialog.details.toPlainText()
+    assert "Opening [scene]" in preview and "draft " in preview
+    assert "Preview truncated" in preview and "unshown" not in preview
+    assert dialog.details.isReadOnly()
+    assert snapshot.documents["note"] == "unshown"
+    dialog.close()
+
+
+def test_stale_revision_comparison_does_not_replace_selected_preview(application, tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    store = RevisionStore(project.root / ".utexteditor" / "revisions")
+    snapshot = store.create("Draft", structure={}, scene_order=["scene"],
+                            scene_titles={"scene": "Opening"}, documents={"scene": "Preview"})
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    dialog = RevisionHistoryDialog(window)
+    dialog.show()
+    dialog.set_snapshots((snapshot,), ())
+    old_generation = dialog.selection_generation
+    dialog.snapshots.item(0).setSelected(True)
+    window._revision_comparison_finished(dialog, project, RevisionComparison(()), old_generation)
+    assert "Preview" in dialog.details.toPlainText()
+    dialog.close()
+    window.close()
+
+
 def test_revision_history_deletion_requires_confirmation(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening", content="Manuscript")

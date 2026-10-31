@@ -19,11 +19,13 @@ from app.i18n import format_qt
 
 
 class RevisionHistoryDialog(QDialog):
+    PREVIEW_LIMIT = 32768
     compare_requested = Signal(object, object)
     delete_requested = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self.selection_generation = 0
         self.setWindowTitle(self.tr("Revision snapshots"))
         self.resize(760, 460)
 
@@ -31,7 +33,7 @@ class RevisionHistoryDialog(QDialog):
         self.snapshots = QListWidget(self)
         self.snapshots.setAccessibleName(self.tr("Revision snapshots"))
         self.snapshots.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
-        self.snapshots.itemSelectionChanged.connect(self._update_compare_enabled)
+        self.snapshots.itemSelectionChanged.connect(self._selection_changed)
         self.compare_button = QPushButton(self.tr("Compare Selected"), self)
         self.compare_button.setEnabled(False)
         self.compare_button.clicked.connect(self._request_comparison)
@@ -122,6 +124,31 @@ class RevisionHistoryDialog(QDialog):
     def _update_compare_enabled(self) -> None:
         self.compare_button.setEnabled(len(self.snapshots.selectedItems()) == 2)
         self.delete_button.setEnabled(len(self.snapshots.selectedItems()) == 1)
+
+    def _selection_changed(self) -> None:
+        self.selection_generation += 1
+        self._update_compare_enabled()
+        selected = self.snapshots.selectedItems()
+        if len(selected) != 1:
+            self.details.clear()
+            return
+        snapshot = selected[0].data(Qt.ItemDataRole.UserRole)
+        parts = []
+        remaining = self.PREVIEW_LIMIT
+        ordered = list(snapshot.scene_order)
+        scene_ids = set(snapshot.scene_order)
+        ordered.extend(item_id for item_id in snapshot.documents if item_id not in scene_ids)
+        for item_id in ordered:
+            title = snapshot.scene_titles.get(item_id, item_id)
+            header = f"{title[:remaining]} [{item_id[:remaining]}]\n"
+            text = snapshot.documents[item_id]
+            chunk = (header + text[:remaining] + "\n\n")[:remaining]
+            parts.append(chunk)
+            remaining -= len(chunk)
+            if remaining <= 0:
+                parts.append(self.tr("Preview truncated; additional snapshot content is not shown."))
+                break
+        self.details.setPlainText("".join(parts))
 
     def _request_deletion(self) -> None:
         selected = self.snapshots.selectedItems()

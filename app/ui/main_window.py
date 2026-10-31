@@ -4604,26 +4604,27 @@ class MainWindow(QMainWindow):
     ) -> None:
         if project is not self.project or not dialog.isVisible():
             return
+        generation = dialog.selection_generation
         worker = FunctionWorker(store.compare, before, after)
         self._track_worker(worker)
         worker.signals.finished.connect(
             lambda comparison: self._revision_comparison_finished(
-                dialog, project, comparison
+                dialog, project, comparison, generation
             ),
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
-            lambda error: self._revision_comparison_failed(dialog, project, error),
+            lambda error: self._revision_comparison_failed(dialog, project, error, generation),
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
 
-    def _revision_comparison_failed(self, dialog, project, error) -> None:
-        if project is self.project and dialog.isVisible():
+    def _revision_comparison_failed(self, dialog, project, error, generation) -> None:
+        if project is self.project and dialog.isVisible() and generation == dialog.selection_generation:
             dialog.show_error(f"Could not compare snapshots: {error}")
 
-    def _revision_comparison_finished(self, dialog, project, comparison) -> None:
-        if project is self.project and dialog.isVisible():
+    def _revision_comparison_finished(self, dialog, project, comparison, generation) -> None:
+        if project is self.project and dialog.isVisible() and generation == dialog.selection_generation:
             dialog.show_comparison(comparison)
 
     @staticmethod

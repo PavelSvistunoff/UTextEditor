@@ -3,6 +3,16 @@
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
+- **TASK-009.01 — PARTIAL:** selecting one revision shows a read-only preview
+  of scene and note contents, capped at 32,768 characters and labeled when
+  truncated. A selection generation prevents older asynchronous comparisons
+  from replacing the current preview. Modified `app/ui/revision_history_dialog.py`,
+  `app/ui/main_window.py`, `tests/test_project_ui.py`,
+  `translations/utexteditor_uk.ts`, `README.md`, and `TASKS.md`. Focused
+  revision and project UI suites: 150 passed; full offline suite: 652 passed,
+  2 skipped. Ukrainian source catalog validation passed. Full access to
+  content beyond the preview limit, native
+  accessibility verification, and release catalog compilation remain.
 - **TASK-009.02 — DONE:** the revision history dialog now offers confirmed
   deletion of a single selected snapshot in a worker. The store revalidates
   the captured digest and rejects symlinks before deletion; project text is
