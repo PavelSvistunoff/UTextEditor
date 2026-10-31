@@ -72,6 +72,10 @@ def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     assert translator.translate("MainWindow", "Open failed") == "Не вдалося відкрити"
     assert translator.translate("MainWindow", "Opening {title}…").format(title="Сцена") == "Відкриття: Сцена…"
     assert translator.translate("MainWindow", "Document could not be opened") == "Не вдалося відкрити документ"
+    assert translator.translate("EditorWidget", 'Replace "{original}" with "{replacement}"').format(
+        original="помлка", replacement="помилка"
+    ) == 'Замінити "помлка" на "помилка"'
+    assert translator.translate("EditorWidget", "Ignore") == "Ігнорувати"
 
 
 def test_extracted_sources_match_ukrainian_catalog(tmp_path):

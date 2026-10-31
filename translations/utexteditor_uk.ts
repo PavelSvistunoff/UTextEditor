@@ -2,6 +2,11 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="uk_UA">
 <context>
+    <name>EditorWidget</name>
+    <message><source>Replace "{original}" with "{replacement}"</source><translation>Замінити "{original}" на "{replacement}"</translation></message>
+    <message><source>Ignore</source><translation>Ігнорувати</translation></message>
+</context>
+<context>
     <name>AIContextDisclosure</name>
     <message>
         <source>AI context and destination</source>

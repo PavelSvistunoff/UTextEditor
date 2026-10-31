@@ -291,8 +291,10 @@ class EditorWidget(QPlainTextEdit):
         menu = self.createStandardContextMenu()
         if suggestion is not None:
             menu.addSeparator()
-            replace = menu.addAction(f'Replace "{suggestion.original_text}" with "{suggestion.replacement}"')
-            ignore = menu.addAction("Ignore")
+            replace = menu.addAction(self.tr('Replace "{original}" with "{replacement}"').format(
+                original=suggestion.original_text, replacement=suggestion.replacement
+            ))
+            ignore = menu.addAction(self.tr("Ignore"))
             chosen = menu.exec(event.globalPos())
             if chosen is replace:
                 self.replace_spell_suggestion(suggestion)
