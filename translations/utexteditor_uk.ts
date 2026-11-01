@@ -681,6 +681,8 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Preview before exporting</source><translation>Попередній перегляд перед експортом</translation></message>
+    <message><source>Export preview discarded because the project or an open scene changed.</source><translation>Попередній перегляд експорту відхилено, оскільки проєкт або відкрита сцена змінилися.</translation></message>
     <message><source>Search limit for open documents reached; this document was not searched.</source><translation>Досягнуто обмеження пошуку у відкритих документах; цей документ пропущено.</translation></message>
     <message><source>Untitled document; no canonical file.</source><translation>Документ без назви; основного файлу немає.</translation></message>
     <message><source>Canonical file is missing.</source><translation>Основний файл відсутній.</translation></message>
@@ -2552,5 +2554,13 @@ Text is sent to the configured Ollama destination:
     <message><source>Requests can contain document text. This debug history is kept only in memory.</source><translation>Запити можуть містити текст документа. Ця історія діагностики зберігається лише в пам’яті.</translation></message>
     <message><source>Copy</source><translation>Копіювати</translation></message>
     <message><source>Clear</source><translation>Очистити</translation></message>
+</context>
+<context>
+    <name>ExportPreviewDialog</name>
+    <message><source>Preview manuscript export</source><translation>Попередній перегляд експорту рукопису</translation></message>
+    <message><source>Review the captured export. Export writes this version without saving source documents.</source><translation>Перегляньте зафіксований результат експорту. Експорт запише цю версію без збереження вихідних документів.</translation></message>
+    <message><source>Captured manuscript export</source><translation>Зафіксований результат експорту рукопису</translation></message>
+    <message><source>Only the beginning is displayed; export includes the entire captured manuscript.</source><translation>Показано лише початок; експорт міститиме весь зафіксований рукопис.</translation></message>
+    <message><source>Export</source><translation>Експортувати</translation></message>
 </context>
 </TS>

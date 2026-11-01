@@ -108,7 +108,7 @@ def export_manuscript(
     target = Path(destination)
     if target.exists() and not replace_existing:
         raise FileExistsError(f"Export destination already exists: {target}")
-    content = normalize_line_endings(render_manuscript(
+    content = render_manuscript(
         chapters,
         ungrouped_scenes,
         scene_texts,
@@ -117,7 +117,18 @@ def export_manuscript(
         include_chapter_headings=include_chapter_headings,
         include_scene_headings=include_scene_headings,
         separator=separator,
-    ))
+    )
+    return write_rendered_manuscript(target, content, replace_existing=replace_existing)
+
+
+def write_rendered_manuscript(
+    destination: str | Path, content: str, *, replace_existing: bool = False,
+) -> Path:
+    """Write an already captured/rendered export without reading source documents."""
+    target = Path(destination)
+    if target.exists() and not replace_existing:
+        raise FileExistsError(f"Export destination already exists: {target}")
+    content = normalize_line_endings(content)
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
     temporary = Path(temporary_name)

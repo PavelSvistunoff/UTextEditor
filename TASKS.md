@@ -841,18 +841,23 @@ for representative native GUI latency and bounded HTML installation timings.
 ### TASK-028 — Improve manuscript export and PDF settings
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-028.01** — Add export preview.  
+- [x] **TASK-028.01** — Add export preview.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-028.02** — Add selectable page sizes.  
+- [x] **TASK-028.02** — Add selectable page sizes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-028.03** — Add title-page metadata.  
+- [x] **TASK-028.03** — Add title-page metadata.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-028.04** — Add heading and scene-selection options.  
+- [x] **TASK-028.04** — Add heading and scene-selection options.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-028.05** — Preserve existing Markdown/plain-text export.  
+- [x] **TASK-028.05** — Preserve existing Markdown/plain-text export.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-028.06** — Improve PDF layout configuration.  
+- [x] **TASK-028.06** — Improve PDF layout configuration.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Markdown/plain-text export now offers an optional captured preview with explicit
+Export/Cancel and bounded display. This is not a PDF page preview. Existing
+PDF paper/title/heading/selection controls are verified in
+`docs/export-verification.md`; native/catalog V2 remains open.
 
 **Parent acceptance gate (all must pass):**
 - Export uses a captured document state.
@@ -861,9 +866,9 @@ for representative native GUI latency and bounded HTML installation timings.
 - Existing files require overwrite confirmation.
 - PDF output is tested for pagination and layout.
 
-- [ ] **TASK-028.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-028.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-028.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-028.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-029 — Add writing-goal history viewer

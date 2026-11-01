@@ -2635,6 +2635,92 @@ def test_recent_projects_menu_tracks_successful_opens_and_routes_selection(
     window.close()
 
 
+@pytest.mark.parametrize("decision", ["export", "cancel", "edit", "project", "source-alias"])
+def test_export_preview_writes_only_reviewed_capture_and_preserves_sources(application, tmp_path, monkeypatch, decision):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="Saved scene")
+    closed = project.add_scene("Closed", content="Captured closed scene")
+    project.add_note("Note", content="Excluded note")
+    source_path = project.root / scene.path
+    target = tmp_path / "export.md"
+    target.write_text("Previous export", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.ai_enabled = False
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Unsaved scene")
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *_args: (str(target), "Markdown (*.md)"))
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_args: QMessageBox.StandardButton.Ok)
+    monkeypatch.setattr(window, "_ask_export_options", lambda: (False, False, "\n\n", True))
+    reviewed = []
+
+    def review(dialog):
+        reviewed.append(dialog.preview.toPlainText())
+        assert dialog.preview.isReadOnly()
+        assert target.read_text(encoding="utf-8") == "Previous export"
+        if decision == "edit":
+            editor.insertPlainText("New edit ")
+        elif decision == "project":
+            window._project_generation += 1
+        elif decision == "source-alias":
+            target.unlink()
+            target.hardlink_to(source_path)
+        elif decision == "export":
+            (project.root / closed.path).write_text("Later disk version", encoding="utf-8")
+        return QDialog.DialogCode.Rejected if decision == "cancel" else QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.ExportPreviewDialog.exec", review)
+    window.export_project()
+    wait_until(lambda: bool(reviewed) and not window._project_busy, application)
+    assert reviewed == ["Unsaved scene\n\nCaptured closed scene"]
+    expected = reviewed[0] if decision == "export" else "Saved scene" if decision == "source-alias" else "Previous export"
+    assert target.read_text(encoding="utf-8") == expected
+    assert source_path.read_text(encoding="utf-8") == "Saved scene"
+    assert editor.document_state.dirty
+    assert editor.toPlainText() == ("New edit Unsaved scene" if decision == "edit" else "Unsaved scene")
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_export_preview_bounds_display_and_labels_omitted_tail(application):
+    from PySide6.QtWidgets import QLabel
+    from app.ui.export_preview_dialog import ExportPreviewDialog
+
+    content = "😀" * ExportPreviewDialog.PREVIEW_LIMIT + "tail"
+    dialog = ExportPreviewDialog(content)
+    assert dialog.preview.toPlainText() == content[:ExportPreviewDialog.PREVIEW_LIMIT]
+    assert "tail" not in dialog.preview.toPlainText()
+    assert any("Only the beginning" in label.text() for label in dialog.findChildren(QLabel))
+    dialog.close()
+
+
+def test_export_preview_writes_complete_capture_beyond_display_limit(application, tmp_path, monkeypatch):
+    from app.ui.export_preview_dialog import ExportPreviewDialog
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    target = tmp_path / "export.txt"
+    content = "prose\n" * ExportPreviewDialog.PREVIEW_LIMIT + "ENDING"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    def accept(dialog):
+        assert not target.exists()
+        assert "ENDING" not in dialog.preview.toPlainText()
+        return QDialog.DialogCode.Accepted
+    monkeypatch.setattr(ExportPreviewDialog, "exec", accept)
+    window._set_project_busy(True)
+    window._review_project_export(project, window._project_generation, {}, target,
+                                  False, (project.manifest_path,), content)
+    wait_until(lambda: not window._project_busy, application)
+    assert target.read_bytes() == content.encode("utf-8")
+    window.close()
+
+
 def test_selected_scene_export_does_not_read_unselected_scene(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")

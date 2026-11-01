@@ -46,7 +46,8 @@ from app.ai.validation import valid_suggestion
 from app.document.book_compiler import compile_book_pdf
 from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
-from app.document.export import ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source, export_manuscript
+from app.document.export import (ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source,
+                                 export_manuscript, render_manuscript, write_rendered_manuscript)
 from app.document.file_manager import ExternalChangeError, FileManager
 from app.document.merge import merge_text
 from app.document.encoding import has_binary_controls
@@ -104,6 +105,8 @@ from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
+from .export_preview_dialog import ExportPreviewDialog
+from .editor_widget import EditorWidget
 from .auto_writer_review_dialog import AutoWriterReviewDialog
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
@@ -3839,7 +3842,8 @@ class MainWindow(QMainWindow):
         options = self._ask_export_options()
         if options is None or self.project is not project or self._project_generation != generation:
             return
-        include_chapter_headings, include_scene_headings, separator = options
+        include_chapter_headings, include_scene_headings, separator = options[:3]
+        preview_requested = len(options) > 3 and options[3]
         selected_ids: set[str] = set()
         if self.project_view is not None:
             for item in self.project_view.selectedItems():
@@ -3855,6 +3859,9 @@ class MainWindow(QMainWindow):
                     if chapter is not None:
                         selected_ids.update(scene.id for scene in chapter.scenes)
         selected_scene_ids = selected_ids or None
+        editor_states = {editor: (editor.revision, binding.item_id) for editor, binding in self._project_documents.items()
+                         if binding.project is project and binding.kind == "scene"
+                         and self.tabs.indexOf(editor) >= 0}
         open_text: dict[str, str] = {}
         unsaved = False
         for editor, binding in tuple(self._project_documents.items()):
@@ -3904,10 +3911,15 @@ class MainWindow(QMainWindow):
             include_scene_headings,
             separator,
             source_paths,
+            preview_only=preview_requested,
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
-            lambda path, project=project: self._project_export_finished(project, path),
+            lambda result, project=project: (
+                self._review_project_export(project, generation, editor_states, target,
+                                            replace_existing, source_paths, result)
+                if preview_requested else self._project_export_finished(project, result)
+            ),
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
@@ -4079,9 +4091,11 @@ class MainWindow(QMainWindow):
         scene_headings = QCheckBox(self.tr("Include scene headings"), dialog)
         scene_headings.setChecked(True)
         separator = QCheckBox(self.tr("Use scene-break separators (---)"), dialog)
+        preview = QCheckBox(self.tr("Preview before exporting"), dialog)
         layout.addWidget(chapter_headings)
         layout.addWidget(scene_headings)
         layout.addWidget(separator)
+        layout.addWidget(preview)
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             dialog,
@@ -4095,6 +4109,7 @@ class MainWindow(QMainWindow):
             chapter_headings.isChecked(),
             scene_headings.isChecked(),
             "\n\n---\n\n" if separator.isChecked() else "\n\n",
+            preview.isChecked(),
         )
 
     @staticmethod
@@ -4116,6 +4131,8 @@ class MainWindow(QMainWindow):
         include_scene_headings,
         separator,
         source_paths=None,
+        *,
+        preview_only=False,
     ):
         ensure_destination_not_source(target, source_paths or MainWindow._project_export_sources(project))
         captured_scenes = [scene for chapter in chapters for scene in chapter.scenes]
@@ -4134,6 +4151,13 @@ class MainWindow(QMainWindow):
             for scene in captured_scenes
             if scene.scene_id in included_scene_ids
         }
+        if preview_only:
+            return normalize_line_endings(render_manuscript(
+                chapters, ungrouped, texts, format=format_name,
+                selected_scene_ids=selected_scene_ids,
+                include_chapter_headings=include_chapter_headings,
+                include_scene_headings=include_scene_headings, separator=separator,
+            ))
         return export_manuscript(
             target,
             chapters,
@@ -4146,6 +4170,43 @@ class MainWindow(QMainWindow):
             include_scene_headings=include_scene_headings,
             separator=separator,
         )
+
+    def _review_project_export(
+        self, project: Project, generation: int,
+        editor_states: dict[EditorWidget, tuple[int, str]], target: Path,
+        replace_existing: bool, source_paths: tuple[Path, ...], content: str,
+    ) -> None:
+        def current() -> bool:
+            current_editors = {editor: (editor.revision, binding.item_id)
+                               for editor, binding in self._project_documents.items()
+                               if binding.project is project and binding.kind == "scene"
+                               and self.tabs.indexOf(editor) >= 0}
+            return (project is self.project and generation == self._project_generation
+                    and current_editors == editor_states)
+
+        if not current():
+            self._set_project_busy(False)
+            self.statusBar().showMessage(self.tr("Export preview discarded because the project or an open scene changed."), 6000)
+            return
+        dialog = ExportPreviewDialog(content, self)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        if not accepted or not current():
+            self._set_project_busy(False)
+            if accepted:
+                self.statusBar().showMessage(self.tr("Export preview discarded because the project or an open scene changed."), 6000)
+            return
+        worker = FunctionWorker(self._write_reviewed_export, target, content, replace_existing, source_paths)
+        self._track_worker(worker)
+        worker.signals.finished.connect(lambda path: self._project_export_finished(project, path), Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(lambda error: self._project_export_failed(project, error), Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
+
+    @staticmethod
+    def _write_reviewed_export(
+        target: Path, content: str, replace_existing: bool, source_paths: tuple[Path, ...],
+    ) -> Path:
+        ensure_destination_not_source(target, source_paths)
+        return write_rendered_manuscript(target, content, replace_existing=replace_existing)
 
     def _project_export_finished(self, project: Project, path: Path) -> None:
         self._set_project_busy(False)

@@ -233,7 +233,9 @@ network read may continue until data arrives or the connection times out.
 9. **Improve manuscript export and PDF options** (medium effort). Existing
    Markdown/plain-text export supports scene subsets; PDF now offers paper
    size, title-page title and author, optional chapter and scene headings, and scene selection.
-   Consider a preview. Acceptance: use a captured buffer
+   Markdown/plain-text export now offers an optional bounded read-only preview
+   of the captured output before explicit Export/Cancel; PDF page preview is
+   still unavailable. Acceptance: use a captured buffer
    state, show omissions and unsaved content, preserve source files, and retain
    explicit replacement confirmation. Page-numbered contents and stable
    pagination need dedicated PDF testing across platforms.

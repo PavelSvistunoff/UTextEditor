@@ -1,5 +1,22 @@
 # Implementation progress
 
+- **TASK-028.01–.06/V1 — preview implemented / existing options verified
+  (2026-11-01):** optional Markdown/plain-text preview renders in a worker,
+  displays a read-only bounded prefix with an explicit truncation notice, and
+  writes the complete captured version only after Export. Cancel/stale open
+  scene/project checks preserve the destination; write-stage alias validation
+  protects source files. Shared atomic UTF-8/LF persistence now accepts rendered
+  text without rereading sources. Seven regressions cover captured output,
+  cancellation, changed buffers/project, post-preview source hard link, Unicode
+  display bounds and complete tail output. Focused export/PDF/catalog suites:
+  52 passed; full offline suite: 876 passed, 2 skipped. Ukrainian source validator,
+  extraction/temporary compilation and whitespace checks pass; final diff
+  reviewed. README/TASKS/UNIMPLEMENTED_FEATURES and docs/export-verification.md
+  updated. No generated release catalogs changed. Native/catalog V2 and
+  cross-platform PDF review remain; no PDF page preview or overall memory bound
+  is claimed. Markdown checkpoint committed as `569ba0d`; original staged
+  artifacts preserved. No push attempted.
+
 - **TASK-027.01/.02/.04/.05/V1 — verified (2026-11-01):** reviewed active
   unsaved-buffer preview, 64 Ki UTF-16 prefix, one render worker, stale-result
   guards, read-only output and disabled external/local resources. Strengthened
