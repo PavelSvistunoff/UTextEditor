@@ -753,16 +753,20 @@ partial for native/catalog checks and shared filesystem limitations.
 ### TASK-025 — Add optional streaming AI previews
 **Priority:** Low · **Parent status:** partial
 
-- [?] **TASK-025.01** — Add optional Ollama streaming support.  
+- [x] **TASK-025.01** — Add optional Ollama streaming support.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-025.02** — Update workers to consume streamed output.  
+- [x] **TASK-025.02** — Update workers to consume streamed output.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-025.03** — Display provisional tokens incrementally.  
+- [x] **TASK-025.03** — Display provisional tokens incrementally.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-025.04** — Bound partial-output memory.  
+- [x] **TASK-025.04** — Bound partial-output memory.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-025.05** — Support cancellation and stale-result rejection.  
+- [x] **TASK-025.05** — Support cancellation and stale-result rejection.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Numbered tickets verified in `docs/streaming-preview-verification.md`; parent
+remains partial for native/catalog V2 checks. Cancellation may wait for an
+in-flight network read or timeout.
 
 **Parent acceptance gate (all must pass):**
 - Partial output never automatically enters the manuscript.
@@ -770,9 +774,9 @@ partial for native/catalog checks and shared filesystem limitations.
 - Cancellation leaves existing content unchanged.
 - Non-streaming behavior remains supported.
 
-- [ ] **TASK-025.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-025.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-025.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-025.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-026 — Improve inline completion display

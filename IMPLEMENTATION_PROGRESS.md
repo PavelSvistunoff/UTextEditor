@@ -1,5 +1,16 @@
 # Implementation progress
 
+- **TASK-025.01–.05/V1 — verified (2026-11-01):** inspected optional provider
+  streaming, worker chunk queue/timer, provisional/final separate reviews,
+  cumulative output bounds and cancellation/stale guards. Evidence in
+  docs/streaming-preview-verification.md; nine focused tests passed, last full
+  suite on unchanged runtime 868 passed, 2 skipped. No redundant tests or
+  behavior/string changes; README accurate. TASKS updated; diff reviewed,
+  whitespace check passed. Native/catalog V2 pending; blocked network reads may
+  finish before cancellation, and live server compatibility is not inferred.
+  Auto-writer audit committed as `a8116d6`; original staged artifacts retained.
+  No push attempted.
+
 - **TASK-024.01–.05/V1 — verified (2026-11-01):** reviewed staged per-scene
   previews, stable-ID checkbox selection, explicit Apply/Cancel, dependency
   warning after partial rejection, captured-state guards and snapshot-protected
