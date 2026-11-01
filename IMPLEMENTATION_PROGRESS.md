@@ -1,5 +1,36 @@
 # Implementation progress
 
+- **TASK-018.01–.05/V1 — VERIFIED (2026-11-01):** reviewed Project/AI
+  grouping, retained handler/shortcut table, disabled-action explanations and
+  existing shared navigation. docs/menu-organization-verification.md records
+  evidence and the decision to retain submenus without adding a command picker.
+  Focused menu tests: 4 passed, 220 deselected; full offline suite on unchanged
+  code: 845 passed, 2 skipped. README already accurate; no product/translation
+  changes or redundant tests. Diff reviewed; whitespace check passed. All
+  numbered tickets/V1 verified; parent remains partial for required manual
+  accessibility/native shortcut review and release-catalog V2 checks.
+  Recent-file fix/audit committed as `a6729b6`. No push attempted.
+
+- **Latest continuation checkpoint (2026-11-01):** implementation is tested
+  with 845 passed / 2 skipped; original staged `.DS_Store` and bytecode are
+  preserved and excluded from every scoped commit. Subsequent navigation
+  audits after the earlier checkpoint: Quick Open `5f8f797`, related-item
+  navigation `e8776d8`, tab navigation `ab51d1f`, and recent files `a6729b6`.
+  TASK-012, TASK-013, TASK-015, TASK-017 and TASK-018 numbered tickets are
+  verified, but their parents retain V2 native/catalog requirements. TASK-016
+  .05 is still partial. No native accessibility or cross-platform filesystem
+  verification has been claimed. No generated release catalogs were changed.
+  The overall backlog is still incomplete: earliest open work remains
+  TASK-001's reachable-history bound/active-identity collision/stress gate;
+  TASK-005/.007's independent-writer race; broader TASK-008 diagnosis;
+  TASK-009 restore/safety snapshots/comparison/scheduling; TASK-010 backup;
+  and TASK-011 encoding/line-ending/large-file safety. TASK-019 and later
+  inherited UI tickets still need acceptance reconciliation or implementation
+  as appropriate. Continue from these gaps, preserving completed evidence;
+  do not truncate Qt undo, weaken conflict checks or promote native gates on
+  offscreen tests. No requested implementation has been declared globally
+  complete, and no push has been attempted.
+
 - **TASK-017.01–.05/V1 — VERIFIED; path failure fix (2026-11-01):**
   reviewed separate ten-path settings list, common open worker/reuse, missing
   feedback, clear persistence and paths-only records. Initial/completed open

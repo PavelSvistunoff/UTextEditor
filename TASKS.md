@@ -542,15 +542,15 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-018 — Improve menu organization
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-018.01** — Review Project and AI menus.  
+- [x] **TASK-018.01** — Review Project and AI menus.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-018.02** — Group related actions logically.  
+- [x] **TASK-018.02** — Group related actions logically.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-018.03** — Consider submenus or a command picker.  
+- [x] **TASK-018.03** — Consider submenus or a command picker.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-018.04** — Preserve existing actions and shortcuts.  
+- [x] **TASK-018.04** — Preserve existing actions and shortcuts.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-018.05** — Explain unavailable context-dependent actions.  
+- [x] **TASK-018.05** — Explain unavailable context-dependent actions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -559,7 +559,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - No shortcut conflicts are introduced.
 - Manual accessibility review is documented.
 
-- [ ] **TASK-018.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-018.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  All numbered tickets verified in docs/menu-organization-verification.md.
+  Manual accessibility/shortcut review and release catalogs remain V2, so
+  parent acceptance stays partial.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-018.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
