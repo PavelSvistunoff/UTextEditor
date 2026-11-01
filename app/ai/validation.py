@@ -81,6 +81,20 @@ def parse_suggestions(payload: str | list[dict[str, Any]], source: str, revision
 
 
 def valid_suggestion(suggestion: Suggestion, text: str, revision: int) -> bool:
+    # Dataclass annotations do not validate provider-created instances. Check
+    # their shape before slicing, sorting or passing replacements into Qt.
+    if (
+        not isinstance(suggestion, Suggestion)
+        or isinstance(suggestion.start, bool) or not isinstance(suggestion.start, int)
+        or isinstance(suggestion.end, bool) or not isinstance(suggestion.end, int)
+        or not 0 <= suggestion.start < suggestion.end <= len(text)
+        or not isinstance(suggestion.replacement, str) or len(suggestion.replacement) > 2000
+        or not isinstance(suggestion.type, str)
+        or not isinstance(suggestion.explanation, str) or len(suggestion.explanation) > 1000
+        or not isinstance(suggestion.original_text, str)
+        or not isinstance(suggestion.source_text, str)
+    ):
+        return False
     raw = text[suggestion.start:suggestion.end]
     original = suggestion.original_text
     if suggestion.type == "spelling":

@@ -1,5 +1,19 @@
 # Implementation progress
 
+- **TASK-021.01–.05/V1 — verified; typed response validation (2026-11-01):**
+  typed Suggestion objects now receive range/type/length checks before sorting
+  or editor use, matching JSON replacement/explanation bounds. Malformed typed
+  responses previously could bypass those checks or raise on sorting. Fourteen
+  malformed-field regressions and a count/order/length/overlap boundary test
+  retain valid companion findings. Existing review tests cover explicit
+  selection, cancellation, stale/overlapping rejection, emoji and one-step undo.
+  Focused service/AI/workflow/accessibility/editor suites: 149 passed; full
+  offline suite: 867 passed, 2 skipped. README/TASKS and
+  docs/spelling-review-verification.md updated; diff reviewed, whitespace check
+  passed. No new controls or Qt strings. Native keyboard/screen-reader and
+  release-catalog V2 remain open; parent stays partial. Navigation history fix
+  committed as `5ccc181`; original staged artifacts preserved. No push attempted.
+
 - **TASK-019.01–.05/V1 — verified; path failure fix (2026-11-01):**
   Back/Forward now skips OSError/RuntimeError while verifying a project path.
   Two path-failure regressions and four stale-target cases cover edited,

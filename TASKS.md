@@ -634,16 +634,20 @@ release catalog verification. Offscreen Qt tests do not replace that review.
 ### TASK-021 — Implement batch spelling and grammar review
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-021.01** — Collect validated spelling and grammar findings.  
+- [x] **TASK-021.01** — Collect validated spelling and grammar findings.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-021.02** — Present them in a navigable review dialog.  
+- [x] **TASK-021.02** — Present them in a navigable review dialog.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-021.03** — Show explanations and proposed corrections.  
+- [x] **TASK-021.03** — Show explanations and proposed corrections.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-021.04** — Allow individual selection and rejection.  
+- [x] **TASK-021.04** — Allow individual selection and rejection.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-021.05** — Apply accepted edits as one undoable operation.  
+- [x] **TASK-021.05** — Apply accepted edits as one undoable operation.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Typed provider suggestions now receive field/range/length validation before
+sorting, matching the JSON safety bounds. Verification evidence is recorded in
+`docs/spelling-review-verification.md`; parent remains partial for V2.
 
 **Parent acceptance gate (all must pass):**
 - Cancel leaves text unchanged.
@@ -651,9 +655,9 @@ release catalog verification. Offscreen Qt tests do not replace that review.
 - Model output is validated before application.
 - Undo restores the original document.
 
-- [ ] **TASK-021.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-021.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-021.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-021.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-022 — Implement AI context preview and controls

@@ -1,5 +1,7 @@
 """Spellcheck service with revision-aware validation."""
 
+from dataclasses import replace
+
 from .models import Suggestion
 from .provider import AIProvider
 from .validation import parse_suggestions, valid_suggestion
@@ -18,20 +20,13 @@ class SpellcheckService:
         else:
             return []
 
+        candidates = [replace(item, revision=revision) for item in suggestions]
+        candidates = [item for item in candidates if valid_suggestion(item, text, revision)]
         validated: list[Suggestion] = []
-        for suggestion in sorted(suggestions, key=lambda item: (item.start, item.end))[:200]:
-            revisioned = Suggestion(
-                suggestion.start,
-                suggestion.end,
-                suggestion.replacement,
-                suggestion.type,
-                suggestion.explanation,
-                suggestion.original_text,
-                revision,
-                suggestion.source_text,
-            )
-            if valid_suggestion(revisioned, text, revision):
-                if validated and revisioned.start < validated[-1].end:
-                    continue
-                validated.append(revisioned)
+        for suggestion in sorted(candidates, key=lambda item: (item.start, item.end)):
+            if validated and suggestion.start < validated[-1].end:
+                continue
+            validated.append(suggestion)
+            if len(validated) == 200:
+                break
         return validated
