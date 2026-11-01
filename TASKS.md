@@ -412,15 +412,15 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-013 — Implement Quick Open
 **Priority:** High · **Parent status:** partial
 
-- [?] **TASK-013.01** — Add a keyboard-accessible Quick Open dialog.  
+- [x] **TASK-013.01** — Add a keyboard-accessible Quick Open dialog.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-013.02** — Search scene, chapter, note, and character names.  
+- [x] **TASK-013.02** — Search scene, chapter, note, and character names.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-013.03** — Include character aliases.  
+- [x] **TASK-013.03** — Include character aliases.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-013.04** — Display item type and chapter context.  
+- [x] **TASK-013.04** — Display item type and chapter context.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-013.05** — Use stable IDs when opening selected items.  
+- [x] **TASK-013.05** — Use stable IDs when opening selected items.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -429,7 +429,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Existing unsaved tabs are preserved.
 - Keyboard navigation works.
 
-- [ ] **TASK-013.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-013.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  All numbered tickets verified by code review and six focused Qt tests;
+  evidence is in docs/quick-open-verification.md. Parent remains partial
+  pending V2 release-catalog/native keyboard/accessibility verification.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-013.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.

@@ -1,5 +1,16 @@
 # Implementation progress
 
+- **TASK-013.01–.05/V1 — VERIFIED (2026-11-01):** inspected Ctrl+P action,
+  immutable item capture, casefold filtering, type/chapter/ID labels, aliases,
+  stale project guard and shared document-opening path. Added named acceptance
+  evidence to docs/quick-open-verification.md. Focused Quick Open Qt tests:
+  6 passed, 149 deselected; full suite on unchanged implementation: 841 passed,
+  2 skipped. No new behavior/strings; existing README is accurate. Diff reviewed
+  and whitespace check passed; no redundant tests added for this audit.
+  Numbered tickets/V1 complete; parent remains partial for V2 release catalog
+  and native keyboard/screen-reader verification. Performance audit/checkpoint
+  committed as `3332f66`. No push attempted; staged artifacts preserved.
+
 - **TASK-006.V1 / V2 — DONE (2026-11-01 audit):** mapped numbered tickets
   and parent criteria to benchmark scripts, named correctness tests, measured
   evidence and native limitations in docs/gui-latency-evaluation.md. .01/.02
