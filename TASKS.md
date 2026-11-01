@@ -217,9 +217,15 @@ remain unverified.
 - Performance regressions can be detected.
 - UI behavior and correctness are preserved.
 
-- [ ] **TASK-006.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-006.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  Acceptance matrix, named regressions and reproducible context baseline are
+  in docs/gui-latency-evaluation.md. .01/.02 verified; .03/.04/.05 and parent
+  remain partial for native/representative workloads and unresolved bounds.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-006.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [x] **TASK-006.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
+  UI/catalog checks N/A: internal optimizations and benchmarks introduce no
+  controls or Qt strings. Native performance checks remain .03/.04; they
+  are not waived by this UI-specific N/A.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-007 — Implement external file conflict resolution

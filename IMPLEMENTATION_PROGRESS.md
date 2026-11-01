@@ -1,5 +1,37 @@
 # Implementation progress
 
+- **TASK-006.V1 / V2 — DONE (2026-11-01 audit):** mapped numbered tickets
+  and parent criteria to benchmark scripts, named correctness tests, measured
+  evidence and native limitations in docs/gui-latency-evaluation.md. .01/.02
+  remain complete; .03/.04/.05 and parent remain partial. Re-ran reproducible
+  completion-context baseline: prior/current 0.0581/0.0002 seconds per 100
+  calls, 2,504,082/4,041 peak traced bytes, with equal sample output. This is
+  a microbenchmark, not overall application speed. Latest full offline suite
+  on unchanged implementation: 841 passed, 2 skipped; earlier focused editor/
+  goal suite: 96 passed. Documentation diff reviewed; whitespace check passed.
+  UI/catalog checks N/A: no new controls or Qt strings. Native performance
+  remains .03/.04, not waived. Search-budget checkpoint is `f805da5`.
+
+- **Resume checkpoint (2026-11-01):** this run verified starting commit
+  `39ae121`, then committed Qt-history pruning (`9ce6082`), callback-latency
+  tooling (`9337b37`), save audit (`5dca14c`), recovery statuses (`1501132`),
+  revision comparison chronology (`62a2553`), search safety/audit (`e8031f9`)
+  and aggregate search capture bounds (`f805da5`). Current implementation has
+  841 passing offline tests, 2 skipped live tests; Ukrainian source validation
+  and temporary-catalog runtime/extraction checks pass. No push requested or
+  attempted. Initial staged `.DS_Store` and bytecode changes remain untouched.
+  The entire TASKS.md backlog is NOT complete. Earliest remaining work is
+  TASK-001.02/.03/.05 (bound reachable metadata without truncating Qt undo,
+  preserve actively tracked identity collisions, then stress validation).
+  TASK-005/.007 still share the independent-writer final-check overwrite race;
+  no broader guarantee may be claimed. Further feasible work includes broader
+  TASK-008 diagnosis, TASK-009 selective/safety restore and richer metadata
+  comparison/scheduling, TASK-010 backup, TASK-011 encoding/line-ending/large-
+  file safety, and the remaining UI verification queue. Native screen-reader,
+  filesystem and release-catalog checks remain explicitly open. TASK-012's
+  numbered tickets are verified; its parent still awaits V2. Do not redo the
+  completed investigations/benchmarks merely because their parents are partial.
+
 - **TASK-012.06 — DONE within documented bounds (2026-11-01):** capped
   total open-buffer copies at 8 Mi UTF-16 units using Qt counts before copying.
   Omitted buffers carry a translated reason and never fall back to stale disk

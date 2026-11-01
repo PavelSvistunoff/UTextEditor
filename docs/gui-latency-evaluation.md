@@ -42,3 +42,25 @@ no specified ordering relative to all other event sources. These measurements
 do not establish a supported file-size limit, bounded undo metadata or a
 responsiveness guarantee. TASK-006 remains partial for those broader checks.
 There are no new product strings or controls to localize or verify natively.
+
+## Acceptance reconciliation — TASK-006.V1 / V2
+
+Reviewed 2026-11-01 against all three benchmark scripts, completion context,
+goal accounting/status refresh and their regression tests.
+
+| Ticket / criterion | Verified evidence and boundary |
+| --- | --- |
+| .01 opening, typing, cursor, search and word counts | `editor_responsiveness.py` measures each operation. .01 is complete as an offline operation benchmark; early-match search and single open/read/save samples are explicit limitations. |
+| .02 goals and context | The editor benchmark enables new-word tracking and measures context construction; `writing_goal_history.py` separately checks counts through independent commands, undo/redo and branching. .02 is complete; this does not establish bounded history. |
+| .03 GUI latency and memory | Ready Qt callback samples and cumulative native-process RSS are recorded above; Python history allocation measurements are in IMPLEMENTATION_PROGRESS. Partial: native input/paint latency and memory-pressure behavior are unverified. |
+| .04 repeatable representative sizes | CLI sizes/repetitions and 100K/1M/5M/10M character workloads are documented here and in `large-file-evaluation.md`. Partial: synthetic ASCII paragraphs are not representative of every language, line shape, project or long editing session. |
+| .05 optimize confirmed bottlenecks | Bounded context construction, changed-span token scans and skipping unnecessary goal word counts are implemented. `test_context_clamps_cursor_and_honours_character_limit`, `test_context_honours_paragraph_boundaries_at_and_across_window_edge`, `test_bounded_token_scan_matches_full_scan_for_boundary_edits` and `test_goal_refresh_skips_unneeded_buffer_word_counts` guard correctness. Partial: reachable history and required GUI counting remain unbounded/synchronous. |
+| Baseline and post-change measurements | `completion_context.py` retains the prior implementation, checks equal output for its sample and measures both approaches on five million characters. A fresh 100-call run measured prior/current 0.0581/0.0002 seconds and 2,504,082/4,041 peak Python-traced bytes. These isolate context construction, not overall GUI speed. Prior GUI/goal measurements and their limitations remain in IMPLEMENTATION_PROGRESS. |
+| Detect regressions and preserve correctness | The repeatable workloads, timing/allocation reports and source-byte assertions provide diagnostics; offline context, goal, editor and file tests verify behavior. There is no portable timing pass/fail threshold or complete application responsiveness guarantee. |
+
+V1 is complete as an acceptance reconciliation; it does not complete the
+partial numbered tickets or parent. V2's release-catalog and native keyboard/
+accessibility checks are N/A for this task's internal optimizations and benchmark
+tooling: no UI controls or translation sources were added. Native performance
+verification remains an explicit .03/.04 requirement, not an exemption obtained
+by marking V2 N/A. TASK-001's reachable-history bound is still separate work.
