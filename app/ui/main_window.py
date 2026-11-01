@@ -4904,16 +4904,16 @@ class MainWindow(QMainWindow):
     def _open_document_path(self, path: str) -> None:
         try:
             resolved = Path(path).resolve()
+            for index in range(self.tabs.count()):
+                existing = self.tabs.widget(index)
+                if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
+                    self.tabs.setCurrentIndex(index)
+                    if existing not in self._project_documents:
+                        self._remember_recent_file(resolved)
+                    return
         except (OSError, RuntimeError) as exc:
             QMessageBox.warning(self, self.tr("Open failed"), str(exc))
             return
-        for index in range(self.tabs.count()):
-            existing = self.tabs.widget(index)
-            if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
-                self.tabs.setCurrentIndex(index)
-                if existing not in self._project_documents:
-                    self._remember_recent_file(resolved)
-                return
         worker = FunctionWorker(self.file_manager.open, path)
         self._track_worker(worker)
         worker.signals.finished.connect(self._opened_document, Qt.ConnectionType.QueuedConnection)
@@ -4925,12 +4925,16 @@ class MainWindow(QMainWindow):
         if self._closing_confirmed:
             return
         if document.path is not None:
-            resolved = document.path.resolve()
-            for index in range(self.tabs.count()):
-                existing = self.tabs.widget(index)
-                if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
-                    self.tabs.setCurrentIndex(index)
-                    return
+            try:
+                resolved = document.path.resolve()
+                for index in range(self.tabs.count()):
+                    existing = self.tabs.widget(index)
+                    if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
+                        self.tabs.setCurrentIndex(index)
+                        return
+            except (OSError, RuntimeError) as exc:
+                QMessageBox.warning(self, self.tr("Open failed"), str(exc))
+                return
         self.tabs.add_document(document)
         if document.path is not None:
             self._remember_recent_file(document.path)

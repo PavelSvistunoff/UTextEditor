@@ -20,7 +20,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 
 - Native PySide6 desktop window with File, Edit, Search, View, Project, Writing, AI, and Settings menus. Project and AI actions are grouped by workflow; recovery is available in File.
 - New, open, save, and Save As for UTF-8 text files; unsaved-change prompts on close.
-- File > Open Recent File lists up to ten recently opened or saved standalone files. It stores paths only, reuses open tabs, reports missing files, and can clear the list independently of recent projects.
+- File > Open Recent File lists up to ten recently opened or saved standalone files. It stores paths only, reuses open tabs, reports missing or unverifiable paths, and can clear the list independently of recent projects. A path-verification failure during opening leaves existing tabs and unsaved text intact.
 - File reads and writes run in background workers; saves replace files atomically where supported.
 - File > Review External Changes compares the saved base, disk version, and open buffer. It offers an editable merge proposal, reload, or Save Elsewhere. Staging a merge does not itself save it; the disk is checked again before staging and on the next save.
 - Multiple document tabs with per-document text, dirty state, and modified-tab markers.

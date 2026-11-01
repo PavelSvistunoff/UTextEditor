@@ -1,5 +1,19 @@
 # Implementation progress
 
+- **TASK-017.01–.05/V1 — VERIFIED; path failure fix (2026-11-01):**
+  reviewed separate ten-path settings list, common open worker/reuse, missing
+  feedback, clear persistence and paths-only records. Initial/completed open
+  handlers now catch path-resolution errors while checking duplicates instead
+  of allowing exceptions to escape Qt callbacks. Four regressions cover
+  OSError/RuntimeError for requested/existing paths at both stages, preserving
+  dirty tabs and both source files. Focused recent-file/settings tests:
+  7 passed, 169 deselected; full offline suite: 845 passed, 2 skipped.
+  README/TASKS and docs/recent-files-verification.md updated; existing Open
+  failed translations reused. Diff reviewed; whitespace check passed. All
+  numbered tickets/V1 complete; parent remains partial for V2 release catalog
+  and native checks. Tab audit committed as `ab51d1f`. No push attempted;
+  unrelated staged artifacts preserved.
+
 - **TASK-016.01–.04/V1 — VERIFIED (2026-11-01):** reviewed QTabWidget
   built-in navigation, shared searchable picker, modified/path/project labels,
   editor identity selection and delegated closing. Evidence is in

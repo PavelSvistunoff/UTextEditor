@@ -512,15 +512,17 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-017 — Add recent standalone documents
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-017.01** — Add a recent-file list separate from recent projects.  
+- [x] **TASK-017.01** — Add a recent-file list separate from recent projects.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-017.02** — Reopen files using existing document-opening logic.  
+- [x] **TASK-017.02** — Reopen files using existing document-opening logic.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-017.03** — Handle missing or moved files.  
+- [x] **TASK-017.03** — Handle missing or moved files.
+  Missing and path-resolution failures are reported without replacing dirty
+  tabs, including failures while checking duplicates after a worker read.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-017.04** — Add a clear-history action.  
+- [x] **TASK-017.04** — Add a clear-history action.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-017.05** — Store paths only, not document content.  
+- [x] **TASK-017.05** — Store paths only, not document content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -529,7 +531,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Unsaved buffers remain safe.
 - Recent-file history can be cleared.
 
-- [ ] **TASK-017.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-017.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  All numbered tickets verified; evidence and path-failure regressions are
+  recorded in docs/recent-files-verification.md. Parent remains partial for
+  V2 release-catalog/native keyboard/accessibility checks.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-017.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.

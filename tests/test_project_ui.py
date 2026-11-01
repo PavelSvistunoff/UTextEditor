@@ -1444,6 +1444,45 @@ def test_recent_files_reopen_deduplicate_report_missing_and_clear(application, t
     window.close()
 
 
+@pytest.mark.parametrize("failure", [OSError, RuntimeError])
+@pytest.mark.parametrize("failing_tab_path", [False, True])
+def test_recent_file_path_verification_failure_preserves_unsaved_tabs(
+    application, tmp_path, monkeypatch, failure, failing_tab_path,
+):
+    original_path = tmp_path / "original.txt"
+    target = tmp_path / "target.txt"
+    original_path.write_text("saved", encoding="utf-8")
+    target.write_text("target", encoding="utf-8")
+    loaded = FileManager().open(target)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    editor.document_state.path = original_path
+    editor.setPlainText("unsaved")
+    original_resolve = Path.resolve
+
+    def failed_resolve(path, *args, **kwargs):
+        if path == (original_path if failing_tab_path else target):
+            raise failure("open tab path is unavailable")
+        return original_resolve(path, *args, **kwargs)
+
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    with monkeypatch.context() as resolving:
+        resolving.setattr(Path, "resolve", failed_resolve)
+        window._open_document_path(str(target))
+        # Also cover a path becoming unverifiable while a worker was reading.
+        window._opened_document(loaded)
+    assert len(warnings) == 2
+    assert all("path is unavailable" in args[2] for args in warnings)
+    assert window.tabs.count() == 1 and window.tabs.current_editor() is editor
+    assert editor.toPlainText() == "unsaved" and editor.document_state.dirty
+    assert original_path.read_text(encoding="utf-8") == "saved"
+    assert target.read_text(encoding="utf-8") == "target"
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_project_tree_counts_and_project_scene_save_are_integrated(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     chapter = project.add_chapter("Chapter One")
