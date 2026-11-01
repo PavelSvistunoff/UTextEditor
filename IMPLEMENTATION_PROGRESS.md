@@ -1,5 +1,21 @@
 # Implementation progress
 
+- **TASK-012.01–.05/.07/V1 — VERIFIED; file-read fixes (2026-11-01):**
+  traced service, dock, captured unsaved buffers and generation/digest-checked
+  navigation. docs/project-search-verification.md maps acceptance to named
+  service/UI tests. Search now shares binary-control detection with ordinary
+  project reads and uses nonblocking opens plus regular-file verification to
+  reject POSIX FIFOs rather than wait for a writer. Seven new regressions
+  preserve good companion matches and source contents. Focused search/project
+  UI suites: 170 passed; full offline suite: 836 passed, 2 skipped. Diff
+  reviewed; whitespace check passed. README/TASKS updated. No controls or Qt
+  source strings changed; dynamic errors retain existing localization limits.
+  .06 remains partial: total captured open-buffer text is not budgeted and
+  regular-filesystem reads are not interruptible. V2 release-catalog/native
+  keyboard/screen-reader verification remains open. Revision chronology
+  checkpoint committed as `62a2553`; ready for scoped search commit.
+  No push attempted; unrelated staged artifacts preserved.
+
 - **TASK-009.01 — comparison chronology fix (2026-11-01):** domain listing
   already orders timezone-aware instants, but the dialog still ordered the
   two selected snapshots lexically. It now parses their validated timestamps

@@ -367,19 +367,22 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-012 — Implement project-wide full-text search
 **Priority:** High · **Parent status:** partial
 
-- [?] **TASK-012.01** — Search scenes, chapters where applicable, and reference notes.  
+- [x] **TASK-012.01** — Search scenes, chapters where applicable, and reference notes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-012.02** — Include open unsaved document buffers.  
+- [x] **TASK-012.02** — Include open unsaved document buffers.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-012.03** — Provide a persistent results panel.  
+- [x] **TASK-012.03** — Provide a persistent results panel.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-012.04** — Display document title, excerpt, and match location.  
+- [x] **TASK-012.04** — Display document title, excerpt, and match location.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-012.05** — Navigate directly to selected results.  
+- [x] **TASK-012.05** — Navigate directly to selected results.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-012.06** — Support cancellation and bounded resource usage.  
+- [~] **TASK-012.06** — Support cancellation and bounded resource usage.
+  Cooperative cancellation, per-file/result/error limits and POSIX FIFO
+  rejection are verified. Capturing all eligible open buffers has no total
+  memory budget; blocking regular-filesystem I/O is not interruptible.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-012.07** — Report unreadable files.  
+- [x] **TASK-012.07** — Report unreadable files.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -389,7 +392,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Search does not modify project files.
 - Large-project and cancellation tests pass.
 
-- [ ] **TASK-012.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-012.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  Named service/UI tests and remaining resource/native limits are recorded in
+  docs/project-search-verification.md. Numbered .01–.05/.07 are verified;
+  .06 and parent remain partial. No existing UI was rebuilt.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-012.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.

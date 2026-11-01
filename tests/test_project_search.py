@@ -40,6 +40,33 @@ def test_search_limits_results_and_honours_cancellation(tmp_path, monkeypatch):
         search_project(tmp_path, (doc,), "")
 
 
+@pytest.mark.parametrize("control", ["\x00", "\x01", "\x08", "\x0e", "\x1f", "\x7f"])
+def test_search_reports_binary_controls_without_hiding_valid_documents(tmp_path, control):
+    binary = tmp_path / "binary.txt"
+    binary.write_text("word" + control, encoding="utf-8")
+    documents = (SearchDocument("scene", "bad", "Bad", "binary.txt"),
+                 SearchDocument("note", "good", "Good", "good.txt", "Привіт word\t😀"))
+    result = search_project(tmp_path, documents, "word")
+    assert [match.id for match in result.matches] == ["good"]
+    assert len(result.errors) == 1 and "binary data" in result.errors[0]
+    assert binary.read_text(encoding="utf-8") == "word" + control
+
+
+def test_search_reports_a_fifo_instead_of_waiting_for_its_writer(tmp_path):
+    import os
+
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("Named pipes are unavailable")
+    path = tmp_path / "pipe.txt"
+    os.mkfifo(path)
+    documents = (SearchDocument("scene", "pipe", "Pipe", "pipe.txt"),
+                 SearchDocument("note", "good", "Good", "good.txt", "word"))
+    result = search_project(tmp_path, documents, "word")
+    assert [match.id for match in result.matches] == ["good"]
+    assert len(result.errors) == 1 and "not a regular file" in result.errors[0]
+    assert not result.cancelled and not result.limited
+
+
 def test_multiline_query_counts_following_line_correctly(tmp_path):
     doc = SearchDocument("scene", "s", "Scene", "scene.txt", "a\nb\na\nb")
     result = search_project(tmp_path, (doc,), "a\nb")

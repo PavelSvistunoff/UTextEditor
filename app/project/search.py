@@ -2,8 +2,12 @@
 
 from dataclasses import dataclass
 import hashlib
+import os
 from pathlib import Path
+import stat
 from threading import Event
+
+from app.document.encoding import has_binary_controls
 
 from .model import ProjectError
 from .paths import validate_project_path
@@ -69,12 +73,15 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
                 if len(text.encode("utf-8")) > MAX_DOCUMENT_BYTES:
                     raise ValueError("Document exceeds the search size limit")
             else:
-                with path.open("rb") as stream:
+                descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0))
+                with os.fdopen(descriptor, "rb") as stream:
+                    if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                        raise ValueError("Document is not a regular file")
                     raw = stream.read(MAX_DOCUMENT_BYTES + 1)
                 if len(raw) > MAX_DOCUMENT_BYTES:
                     raise ValueError("Document exceeds the search size limit")
                 text = raw.decode("utf-8")
-                if "\x00" in text:
+                if has_binary_controls(text):
                     raise ValueError("Document contains binary data")
                 text = text.replace("\r\n", "\n").replace("\r", "\n")
         except (OSError, UnicodeError, ValueError, ProjectError) as exc:
