@@ -1,5 +1,19 @@
 # Implementation progress
 
+- **TASK-023.01–.05/V1 — verified (2026-11-01):** reviewed side-by-side
+  captured originals/translations, title/text rows with stable IDs, explicit
+  all-batch Apply/Cancel, generation/editor guards and transaction revalidation.
+  docs/translation-review-verification.md maps acceptance to named tests.
+  Focused translation tests: 12 passed; last full suite on unchanged runtime
+  code: 868 passed, 2 skipped. Existing tests cover cancellation, invalid output,
+  conflict rejection, CRLF/IDs/paths/links and byte-exact late-failure rollback.
+  No runtime/string change or redundant tests; existing README accurate.
+  TASKS updated; diff reviewed and whitespace check passed. Parent remains
+  partial for V2 native/catalog checks and shared TASK-005 independent-writer
+  race; crash/rollback-failure atomicity is not claimed. Context-provenance
+  checkpoint committed as `511d967`. Original staged artifacts preserved;
+  no push attempted.
+
 - **TASK-022.01–.06/V1 — verified (2026-11-01):** traced captured destination,
   exact context/provenance, optional preview, note exclusions, automatic-context
   setting and first-use disclosure. Added one combined real-capture regression

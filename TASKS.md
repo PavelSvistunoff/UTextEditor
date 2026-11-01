@@ -694,16 +694,20 @@ partial for native/catalog V2 checks.
 ### TASK-023 — Add AI translation batch review
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-023.01** — Show original and translated content side by side.  
+- [x] **TASK-023.01** — Show original and translated content side by side.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-023.02** — Include translated titles and text.  
+- [x] **TASK-023.02** — Include translated titles and text.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-023.03** — Allow per-item navigation.  
+- [x] **TASK-023.03** — Allow per-item navigation.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-023.04** — Require explicit Apply or Cancel.  
+- [x] **TASK-023.04** — Require explicit Apply or Cancel.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-023.05** — Revalidate project state before applying.  
+- [x] **TASK-023.05** — Revalidate project state before applying.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Numbered tickets are verified in `docs/translation-review-verification.md`.
+Native/catalog checks and the shared independent-writer race remain open;
+parent remains partial.
 
 **Parent acceptance gate (all must pass):**
 - IDs, paths, links, and line endings are preserved.
@@ -711,9 +715,9 @@ partial for native/catalog V2 checks.
 - Apply remains all-or-nothing.
 - Translation failures do not partially modify project data.
 
-- [ ] **TASK-023.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-023.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-023.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-023.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-024 — Improve AI scene draft review
