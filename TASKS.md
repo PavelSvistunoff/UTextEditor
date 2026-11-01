@@ -293,6 +293,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
   capture timestamps are diagnosed without hiding valid snapshots. Directory
   enumeration failures and symbolic-link snapshots are also diagnosed. Note
   previews use captured titles plus stable IDs, with legacy ID fallback.
+  The comparison dialog now also orders selected snapshots by instant rather
+  than timestamp text; an offscreen regression covers differing UTC offsets.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-009.02** — Add confirmed snapshot deletion.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

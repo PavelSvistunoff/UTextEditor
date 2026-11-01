@@ -1,5 +1,7 @@
 """Review and compare local project revision snapshots."""
 
+from datetime import datetime
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDialog,
@@ -247,7 +249,7 @@ class RevisionHistoryDialog(QDialog):
                 selected[0].data(Qt.ItemDataRole.UserRole),
                 selected[1].data(Qt.ItemDataRole.UserRole),
             ),
-            key=lambda snapshot: snapshot.captured_at,
+            key=lambda snapshot: datetime.fromisoformat(snapshot.captured_at),
         )
         self.compare_button.setEnabled(False)
         self.status.setText(self.tr("Comparing snapshots…"))

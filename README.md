@@ -94,6 +94,8 @@ Recovery data is stored locally in the operating system's UTextEditor applicatio
 
 The recovery chooser's details show each readable snapshot's capture timestamp and the canonical file's status at inspection: unchanged from the saved disk version, changed, missing, newly appeared, unreadable, or unknown. Untitled snapshots are identified separately. Diagnosis runs in the scan worker and hashes regular files in chunks; an unreadable canonical file does not prevent recovering its snapshot. These statuses are advisory; restoring checks the disk again.
 
+Revision history and the before/after comparison both order snapshots by their capture instant, including timestamps with different timezone offsets.
+
 Save conflict checks run both before and after staging standalone files, project text, and project manifests. Standalone, project text, and project manifest writes are serialized with one another within the application process. This does not lock out independent processes: an edit between the final check and atomic replacement can still be overwritten. The [save-coordination evaluation](docs/save-coordination.md) records why advisory locking alone does not close that race.
 
 Exports use UTF-8 without a byte-order mark and normalize line endings to LF. Export and snapshot creation do not save source documents or clear their dirty state.

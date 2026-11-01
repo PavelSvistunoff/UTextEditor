@@ -1,5 +1,17 @@
 # Implementation progress
 
+- **TASK-009.01 — comparison chronology fix (2026-11-01):** domain listing
+  already orders timezone-aware instants, but the dialog still ordered the
+  two selected snapshots lexically. It now parses their validated timestamps
+  before ordering, preserving before/after direction across differing offsets.
+  Added signal-path regression for 12:00+02:00 versus 11:00Z. Focused revision/
+  project UI suites: 175 passed; full offline suite: 829 passed, 2 skipped.
+  Diff reviewed; whitespace check passed. README/TASKS updated. No strings or
+  controls changed; catalog/native accessibility checks N/A for this ordering
+  correction. Restore, richer comparison and scheduling remain open. Recovery
+  checkpoint committed as `1501132`; ready for scoped chronology commit.
+  No push attempted; unrelated staged artifacts preserved.
+
 - **TASK-008.01 — DONE (2026-11-01):** recovery scans now capture per-snapshot
   canonical-file status in the worker: untitled, missing, appeared, unchanged,
   changed, unknown or unreadable. Chooser details show status and capture time

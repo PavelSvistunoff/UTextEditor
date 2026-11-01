@@ -2754,6 +2754,26 @@ def test_revision_history_previews_all_snapshot_content_in_bounded_pages(applica
     dialog.close()
 
 
+def test_revision_comparison_orders_selected_snapshots_by_instant(application, tmp_path):
+    from dataclasses import replace
+
+    store = RevisionStore(tmp_path / "revisions")
+    earlier = store.create("Earlier", structure={}, scene_order=[], scene_titles={}, documents={})
+    later = store.create("Later", structure={}, scene_order=[], scene_titles={}, documents={})
+    # Lexical order puts the later UTC instant first.
+    earlier = replace(earlier, captured_at="2026-10-31T12:00:00+02:00")
+    later = replace(later, captured_at="2026-10-31T11:00:00+00:00")
+    dialog = RevisionHistoryDialog()
+    dialog.set_snapshots((later, earlier), ())
+    comparisons = []
+    dialog.compare_requested.connect(lambda before, after: comparisons.append((before, after)))
+    dialog.snapshots.item(0).setSelected(True)
+    dialog.snapshots.item(1).setSelected(True)
+    dialog.compare_button.click()
+    assert comparisons == [(earlier, later)]
+    dialog.close()
+
+
 def test_stale_revision_comparison_does_not_replace_selected_preview(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     store = RevisionStore(project.root / ".utexteditor" / "revisions")
