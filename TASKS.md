@@ -953,25 +953,30 @@ V2 native UI/catalog checks N/A: no UI or translated strings changed.
 ### TASK-032 — Complete Ukrainian interface localization
 **Priority:** High · **Parent status:** partial
 
-- [?] **TASK-032.01** — Audit all UI strings.  
+- [~] **TASK-032.01** — Audit all UI strings.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-032.02** — Migrate untranslated strings into Qt translation mechanisms.  
+- [~] **TASK-032.02** — Migrate untranslated strings into Qt translation mechanisms.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-032.03** — Complete Ukrainian Qt Linguist catalogs.  
+- [~] **TASK-032.03** — Complete Ukrainian Qt Linguist catalogs.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-032.04** — Include dialogs, errors, confirmations, and status messages.  
+- [~] **TASK-032.04** — Include dialogs, errors, confirmations, and status messages.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-032.05** — Preserve placeholders and formatting.  
+- [x] **TASK-032.05** — Preserve placeholders and formatting.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Source extraction, placeholder checks and temporary compilation pass, including
+new export-preview strings. Automated literal candidates were reviewed; raw
+service errors and release/native workflows remain incomplete. Evidence and
+limits are in `docs/localization-accessibility-checkpoint.md`.
 
 **Parent acceptance gate (all must pass):**
 - All supported UI workflows have Ukrainian translations.
 - No unintended English fallback remains in the audited scope.
 - Document content and AI prompts are not translated implicitly.
 
-- [ ] **TASK-032.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-032.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-032.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-032.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-033 — Add automated localization validation
@@ -1012,18 +1017,23 @@ release asset updates and native localization audit remain TASK-032/TASK-034.
 ### TASK-034 — Perform accessibility audit and fixes
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-034.01** — Audit keyboard-only workflows.  
+- [~] **TASK-034.01** — Audit keyboard-only workflows.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-034.02** — Check accessible names and descriptions.  
+- [~] **TASK-034.02** — Check accessible names and descriptions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-034.03** — Review focus order and modal dialogs.  
+- [~] **TASK-034.03** — Review focus order and modal dialogs.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-034.04** — Verify behavior under system palettes.  
+- [~] **TASK-034.04** — Verify behavior under system palettes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-034.05** — Test with screen readers on supported platforms.  
+- [ ] **TASK-034.05** — Test with screen readers on supported platforms.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-034.06** — Fix identified barriers.  
+- [~] **TASK-034.06** — Fix identified barriers.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Offscreen keyboard/name/focus/palette evidence and outstanding manual coverage
+are recorded in `docs/localization-accessibility-checkpoint.md`. No native
+screen-reader audit was performed; numbered tickets and parent remain open
+or partial as indicated.
 
 **Parent acceptance gate (all must pass):**
 - Core workflows are keyboard-accessible.
@@ -1031,9 +1041,9 @@ release asset updates and native localization audit remain TASK-032/TASK-034.
 - Automated tests cover testable accessibility behavior.
 - Manual verification results and limitations are documented.
 
-- [ ] **TASK-034.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-034.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-034.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-034.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-035 — Evaluate and implement selected interface extensions

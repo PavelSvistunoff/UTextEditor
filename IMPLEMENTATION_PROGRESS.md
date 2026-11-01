@@ -1,5 +1,35 @@
 # Implementation progress
 
+- **Continuation checkpoint (2026-11-01):** latest implementation commit is
+  `61750de`; full offline suite 879 passed, 2 skipped; diff/whitespace checks
+  pass. This run verified starting `d6f7d86`, then committed revision metadata
+  values `2c2a9c5`, navigation guards `5ccc181`, typed spellcheck validation
+  `1272d00`, context provenance `511d967`, translation audit `42d3048`,
+  Auto-writer audit `a8116d6`, streaming audit `58fedca`, inline-copy removal
+  `cea8691`, Markdown capture verification `569ba0d`, captured export preview
+  `ae3f1c6` and exact untouched-profile preservation `61750de`. Original staged
+  .DS_Store/bytecode are preserved; no push attempted. No global completion is
+  claimed. Next implementation gaps remain TASK-001 reachable-history bounds
+  and active identity collisions; TASK-005/.007 independent-writer race;
+  broader recovery diagnosis; revision selective/safety restore and scheduling;
+  portable backup; encoding/line-ending selection and large-file safety;
+  TASK-029 history viewer. TASK-027.03 and TASK-030.03 retain native latency/
+  all-field focus requirements. Native/accessibility/release catalog checks in
+  UI V2 remain open. Do not redo completed audits or silently truncate Qt undo.
+
+- **TASK-032/034.V1 — evidence reconciled (2026-11-01):** nine AST string
+  candidates reviewed as data/autonyms/translated compositions within the
+  tool's narrow scope; Ukrainian source has 956 records and source validation,
+  extraction, temporary compilation and placeholder checks pass. Raw service
+  error details and release/native workflows remain incomplete. Existing Qt
+  keyboard/name/focus/palette tests and a read-only profile name probe are
+  recorded in docs/localization-accessibility-checkpoint.md. No native screen-
+  reader work claimed. .032.05 verified; other numbered localization/accessibility
+  tickets remain partial/open and both parents/V2 remain partial. No runtime,
+  translation or redundant test change for this reconciliation; README accurate.
+  Last full suite on unchanged implementation: 879 passed, 2 skipped. Diff
+  reviewed and whitespace check passed. Original staged artifacts preserved.
+
 - **TASK-030.01/.02/.04/.05/V1 — verified; untouched-profile preservation
   (2026-11-01):** Save no longer silently normalizes untouched profile text or
   reparses unchanged structured values that contain line breaks/delimiters.
