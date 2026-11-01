@@ -1,5 +1,18 @@
 # Implementation progress
 
+- **TASK-005.V1 / V2 — DONE (2026-11-01 audit):** reviewed shared RLock,
+  standalone/project text and manifest save paths and named failure/concurrency
+  tests. Added acceptance matrix to docs/save-coordination.md; .01/.02/.03/.05
+  remain verified, .04 and parent remain partial. The green suite deliberately
+  reproduces an independent writer's edit being overwritten after the final
+  check; it must not be reported as cross-process safety. UI/catalog/native
+  accessibility checks N/A: coordination introduces no UI/strings. Native
+  filesystem/multi-process verification remains open. Focused document/project
+  suite: 79 passed; last full suite on unchanged implementation: 817 passed,
+  2 skipped. Documentation diff reviewed; whitespace check passed. No redundant
+  tests added. Benchmark checkpoint committed as `9337b37`; ready for scoped
+  audit commit. No push attempted; unrelated staged artifacts preserved.
+
 - **TASK-006.03 — PARTIAL (2026-11-01):** added ready Qt callback delay
   probes during idle and typing with new-word tracking. Ten samples at
   100K/1M/5M characters completed, with byte-verified saves; typing callback

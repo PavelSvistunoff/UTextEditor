@@ -173,9 +173,15 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 - Atomic replacement and recovery behavior remain correct.
 - Remaining cross-process limitations are documented.
 
-- [ ] **TASK-005.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-005.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  Acceptance matrix and named regressions: docs/save-coordination.md. .01,
+  .02, .03 and .05 verified; .04 and parent remain partial because the suite
+  explicitly reproduces the independent-writer final-check overwrite window.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-005.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [x] **TASK-005.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
+  N/A for UI/catalog checks: coordination changes no GUI or strings. Native
+  filesystem and multi-process guarantees remain unverified as documented;
+  this does not complete the parent or TASK-007.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-006 — Benchmark large-document responsiveness
