@@ -812,16 +812,20 @@ whole-document copy. Parent remains partial for native/catalog V2 checks.
 ### TASK-027 — Implement Markdown preview
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-027.01** — Add a Markdown preview for the active document.  
+- [x] **TASK-027.01** — Add a Markdown preview for the active document.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-027.02** — Support unsaved buffer content.  
+- [x] **TASK-027.02** — Support unsaved buffer content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-027.03** — Update preview when appropriate without blocking typing.  
+- [~] **TASK-027.03** — Update preview when appropriate without blocking typing.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-027.04** — Keep preview read-only.  
+- [x] **TASK-027.04** — Keep preview read-only.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-027.05** — Avoid unsafe external-resource loading.  
+- [x] **TASK-027.05** — Avoid unsafe external-resource loading.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Bounded-prefix/background-render/stale-result tests pass; .03 remains partial
+for representative native GUI latency and bounded HTML installation timings.
+`docs/markdown-preview-verification.md` records evidence and limits.
 
 **Parent acceptance gate (all must pass):**
 - Preview reflects current text.
@@ -829,9 +833,9 @@ whole-document copy. Parent remains partial for native/catalog V2 checks.
 - Large documents do not freeze the UI.
 - Feature works without Ollama.
 
-- [ ] **TASK-027.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-027.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-027.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-027.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-028 — Improve manuscript export and PDF settings

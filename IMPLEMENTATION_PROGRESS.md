@@ -1,5 +1,16 @@
 # Implementation progress
 
+- **TASK-027.01/.02/.04/.05/V1 — verified (2026-11-01):** reviewed active
+  unsaved-buffer preview, 64 Ki UTF-16 prefix, one render worker, stale-result
+  guards, read-only output and disabled external/local resources. Strengthened
+  the existing large-prefix regression to fail on a whole-buffer copy during
+  capture. Four focused tests passed; full offline suite: 869 passed, 2 skipped.
+  TASKS/docs/markdown-preview-verification.md updated; README already accurate.
+  Diff reviewed and whitespace check passed. No runtime/string changes. .03
+  remains partial for native/pathological-markup capture and HTML-installation
+  latency; parent and V2 native/catalog gates remain partial. Inline-copy fix
+  committed as `cea8691`; original staged artifacts retained. No push attempted.
+
 - **TASK-026.01–.05/V1 — verified; bounded visibility check (2026-11-01):**
   ghost placement now asks QTextCursor.atBlockEnd instead of copying the entire
   document and its suffix. A many-paragraph Unicode regression fails if display

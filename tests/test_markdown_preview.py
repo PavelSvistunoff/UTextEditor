@@ -45,14 +45,16 @@ def test_preview_updates_unsaved_buffer_without_modifying_it(app):
     panel.close()
 
 
-def test_large_document_renders_a_bounded_prefix_without_modifying_text(app):
+def test_large_document_renders_a_bounded_prefix_without_modifying_text(app, monkeypatch):
     editor = EditorWidget()
     source = "# Start\n\n" + "x" * (MAX_MARKDOWN_CHARACTERS - 10) + "😀END"
     editor.setPlainText(source)
     revision = editor.revision
     panel = MarkdownPreview()
-    panel.set_editor(editor)
-    wait_until(lambda: "only the beginning" in panel.status.text())
+    with monkeypatch.context() as bounded:
+        bounded.setattr(editor, "toPlainText", lambda: pytest.fail("Preview copied the complete large document"))
+        panel.set_editor(editor)
+        wait_until(lambda: "only the beginning" in panel.status.text())
     assert "Start" in panel.browser.toPlainText()
     assert "END" not in panel.browser.toPlainText()
     assert editor.toPlainText() == source and editor.revision == revision
