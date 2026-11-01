@@ -1,5 +1,18 @@
 # Implementation progress
 
+- **TASK-009.04 — captured metadata values (2026-11-01):** verified starting
+  HEAD `d6f7d86` and original staged artifacts. Character, directed-relationship
+  and scene-association comparisons now provide deterministic Unicode JSON
+  diffs for additions/removals/changes through the existing read-only display.
+  Missing keys differ from null; source snapshots and live projects are not
+  changed. Extended domain/UI regressions plus one new Unicode/immutability
+  regression pass: revision module 23 passed; revision/UI suite before the
+  extra domain test 181 passed; full offline suite 846 passed, 2 skipped.
+  README/TASKS updated; diff reviewed and whitespace check passed. No new UI
+  controls or translatable strings; no catalog change required for raw manifest
+  data. Native review and remaining structure/restore/scheduling requirements
+  stay open; TASK-009.04 and parent remain partial. No push attempted.
+
 - **TASK-018.01–.05/V1 — VERIFIED (2026-11-01):** reviewed Project/AI
   grouping, retained handler/shortcut table, disabled-action explanations and
   existing shared navigation. docs/menu-organization-verification.md records

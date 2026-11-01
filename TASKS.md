@@ -309,6 +309,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - [~] **TASK-009.04** — Extend comparison to chapter, link, and project-structure changes.
   Reference-note relative reordering is now reported without false moves from
   additions/removals; moved items expose stable IDs using existing translations.
+  Character, directed-relationship and scene-association changes now include
+  deterministic Unicode JSON diffs of captured values, including additions and
+  removals. Missing fields remain distinct from explicit null. Broader structure
+  coverage and native review remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.05** — Add optional scheduled snapshots and retention policies.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

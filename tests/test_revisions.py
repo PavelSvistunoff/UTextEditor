@@ -171,7 +171,35 @@ def test_comparison_reports_character_and_directed_relationship_metadata(tmp_pat
     ]
     assert changes[2].changed_fields == ("goals",)
     assert changes[3].changed_fields == ("trust",)
+    assert '-    "leave"' in changes[2].diff
+    assert '+    "stay"' in changes[2].diff
+    assert '-  "trust": 1' in changes[3].diff
+    assert '+  "trust": 2' in changes[3].diff
+    assert '-  "full_name": "Mira"' in changes[0].diff
+    assert '+  "full_name": "Mira"' in changes[1].diff
     assert not store.compare(after, after).changes
+
+
+def test_metadata_diff_preserves_unicode_missing_values_and_captured_snapshots(tmp_path) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+    def snapshot(record):
+        return store.create("Draft", structure={"characters": [record]},
+                            scene_order=[], scene_titles={}, documents={})
+
+    before = snapshot({"id": "mira", "full_name": "Міра", "portrait": None})
+    after = snapshot({"full_name": "Міра", "id": "mira", "goals": ["<stay>", "leave\nlater"]})
+    captured = [path.read_bytes() for path in (before.snapshot_path, after.snapshot_path)]
+    change, = store.compare(before, after).changes
+    assert change.changed_fields == ("goals", "portrait")
+    assert '-  "portrait": null' in change.diff
+    assert '+    "<stay>"' in change.diff
+    assert '"leave\\nlater"' in change.diff
+    assert '"Міра"' in change.diff
+    assert "\\u041c" not in change.diff
+    assert change.diff == store.compare(before, after).changes[0].diff
+    assert [path.read_bytes() for path in (before.snapshot_path, after.snapshot_path)] == captured
+    assert before.structure["characters"][0]["portrait"] is None
+    assert "portrait" not in after.structure["characters"][0]
 
 
 def test_comparison_reports_scene_character_associations_by_stable_id(tmp_path) -> None:
@@ -190,6 +218,10 @@ def test_comparison_reports_scene_character_associations_by_stable_id(tmp_path) 
         ("scene", "association-changed", "same"),
     ]
     assert changes[2].changed_fields == ("presence",)
+    assert '-  "presence": "present"' in changes[2].diff
+    assert '+  "presence": "mentioned"' in changes[2].diff
+    assert '-  "character_id": "removed"' in changes[0].diff
+    assert '+  "character_id": "added"' in changes[1].diff
     reordered = snapshot(list(reversed(before.structure["ungrouped_scenes"][0]["character_associations"])))
     assert not store.compare(before, reordered).changes
 

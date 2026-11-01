@@ -243,14 +243,18 @@ class RevisionStore:
                 old_scene_chars, new_scene_chars = old_associations[scene_id], new_associations[scene_id]
                 for character_id in sorted(old_scene_chars.keys() - new_scene_chars.keys()):
                     changes.append(SceneChange(scene_id, "association-removed", old_title, new_title,
-                                               character_id=character_id))
+                                               character_id=character_id,
+                                               diff=_metadata_diff(old_scene_chars[character_id], None, character_id)))
                 for character_id in sorted(new_scene_chars.keys() - old_scene_chars.keys()):
                     changes.append(SceneChange(scene_id, "association-added", old_title, new_title,
-                                               character_id=character_id))
+                                               character_id=character_id,
+                                               diff=_metadata_diff(None, new_scene_chars[character_id], character_id)))
                 for character_id in sorted(old_scene_chars.keys() & new_scene_chars.keys()):
                     if old_scene_chars[character_id] != new_scene_chars[character_id]:
                         changes.append(SceneChange(scene_id, "association-changed", old_title, new_title,
                                                    character_id=character_id,
+                                                   diff=_metadata_diff(old_scene_chars[character_id],
+                                                                       new_scene_chars[character_id], character_id),
                                                    changed_fields=_changed_fields(old_scene_chars[character_id],
                                                                                   new_scene_chars[character_id])))
             if left.documents[scene_id] != right.documents[scene_id]:
@@ -320,12 +324,15 @@ class RevisionStore:
             old_records = _metadata_records(left.structure, field)
             new_records = _metadata_records(right.structure, field)
             for item_id in sorted(old_records.keys() - new_records.keys()):
-                changes.append(SceneChange(item_id, "removed", item_type=item_type))
+                changes.append(SceneChange(item_id, "removed", item_type=item_type,
+                                           diff=_metadata_diff(old_records[item_id], None, item_id)))
             for item_id in sorted(new_records.keys() - old_records.keys()):
-                changes.append(SceneChange(item_id, "added", item_type=item_type))
+                changes.append(SceneChange(item_id, "added", item_type=item_type,
+                                           diff=_metadata_diff(None, new_records[item_id], item_id)))
             for item_id in sorted(old_records.keys() & new_records.keys()):
                 if old_records[item_id] != new_records[item_id]:
                     changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type,
+                                               diff=_metadata_diff(old_records[item_id], new_records[item_id], item_id),
                                                changed_fields=_changed_fields(old_records[item_id], new_records[item_id])))
         return RevisionComparison(tuple(changes))
 
@@ -378,6 +385,18 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _metadata_diff(before: dict | None, after: dict | None, item_id: str) -> str:
+    """Compare captured manifest values as deterministic, readable JSON data."""
+    def lines(record: dict | None) -> list[str]:
+        if record is None:
+            return []
+        return (json.dumps(record, ensure_ascii=False, sort_keys=True, indent=2) + "\n").splitlines(keepends=True)
+
+    return "".join(difflib.unified_diff(
+        lines(before), lines(after), fromfile=f"-/{item_id}", tofile=f"+/{item_id}",
+    ))
 
 
 def _changed_fields(before: dict, after: dict) -> tuple[str, ...]:
