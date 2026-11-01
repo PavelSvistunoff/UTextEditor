@@ -457,15 +457,15 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-015 — Implement related-item navigation
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-015.01** — Navigate between linked notes and associated scenes.  
+- [x] **TASK-015.01** — Navigate between linked notes and associated scenes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-015.02** — Navigate from character profiles to related scenes.  
+- [x] **TASK-015.02** — Navigate from character profiles to related scenes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-015.03** — Distinguish explicit associations from text mentions.  
+- [x] **TASK-015.03** — Distinguish explicit associations from text mentions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-015.04** — Provide a convenient return path.  
+- [x] **TASK-015.04** — Provide a convenient return path.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-015.05** — Protect unsaved profile edits.  
+- [x] **TASK-015.05** — Protect unsaved profile edits.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -473,7 +473,10 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Navigation does not create new metadata relationships.
 - Unsaved changes are never silently discarded.
 
-- [ ] **TASK-015.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-015.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  Existing link/association/profile workflows and eight focused Qt tests are
+  mapped in docs/related-navigation-verification.md. All numbered tickets
+  verified; parent remains partial for V2 release-catalog/native checks.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-015.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.

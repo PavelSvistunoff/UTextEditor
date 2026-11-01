@@ -1,5 +1,16 @@
 # Implementation progress
 
+- **TASK-015.01–.05/V1 — VERIFIED (2026-11-01):** traced directed links,
+  explicit scene associations, separate mention search, profile hide/return,
+  and staged-save guards for character/relationship changes and write failures.
+  docs/related-navigation-verification.md maps acceptance to named tests.
+  Focused Qt tests: 8 passed, 147 deselected; full suite on unchanged code:
+  841 passed, 2 skipped. No behavior/strings changed; existing README remains
+  accurate. Documentation diff reviewed; whitespace check passed. No redundant
+  tests added. Numbered tickets/V1 complete; parent remains partial for V2
+  release-catalog/native checks. Quick Open audit committed as `5f8f797`.
+  No push attempted; unrelated staged artifacts preserved.
+
 - **TASK-013.01–.05/V1 — VERIFIED (2026-11-01):** inspected Ctrl+P action,
   immutable item capture, casefold filtering, type/chapter/ID labels, aliases,
   stale project guard and shared document-opening path. Added named acceptance
