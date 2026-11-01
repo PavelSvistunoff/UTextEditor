@@ -1926,6 +1926,40 @@ def test_character_profile_dialog_keeps_edits_pending_until_save(application, mo
     dialog.close()
 
 
+@pytest.mark.parametrize("edit", ["none", "motivation", "background"])
+def test_profile_save_preserves_untouched_structured_values_exactly(application, edit):
+    from copy import deepcopy
+    from app.project import Character, CharacterGoal, CharacterKnowledge
+    from app.project.model import character_to_mapping
+
+    original = Character(
+        id="00000000-0000-4000-8000-000000000001", full_name="Mara",
+        display_name="  Mara Venn  ", aliases=["first\nsecond", ""], role="",
+        description="  A description.\n\n", primary_motivation="  Leave town.  ",
+        background={"history": "  Formative history.\n", "age": ""},
+        personality={"traits": ["", "two\nlines"], "fears": []},
+        goals=[CharacterGoal("Choose | a side", notes="first\nsecond")],
+        knowledge=[CharacterKnowledge("knows", "first\nsecond")],
+        arc={"initial_state": "first\nsecond"}, desires=["  peace  ", ""],
+    )
+    expected = deepcopy(original)
+    character_to_mapping(original)
+    dialog = CharacterDialog(original)
+    if edit == "motivation":
+        dialog.motivation.setPlainText("New motivation")
+        expected.primary_motivation = "New motivation"
+    elif edit == "background":
+        dialog.background_fields["age"].setPlainText("30")
+        expected.background["age"] = "30"
+    dialog._accept()
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert dialog.character == expected
+    assert character_to_mapping(dialog.character) == character_to_mapping(expected)
+    assert original.primary_motivation == "  Leave town.  "
+    assert original.background["age"] == ""
+    dialog.close()
+
+
 def test_character_profile_long_forms_scroll_and_preserve_fields(application):
     from PySide6.QtWidgets import QScrollArea, QTabWidget
     from app.project import Character

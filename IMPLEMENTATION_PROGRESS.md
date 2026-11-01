@@ -1,5 +1,21 @@
 # Implementation progress
 
+- **TASK-030.01/.02/.04/.05/V1 — verified; untouched-profile preservation
+  (2026-11-01):** Save no longer silently normalizes untouched profile text or
+  reparses unchanged structured values that contain line breaks/delimiters.
+  Initial widget text and captured values identify actual edits; untouched
+  dictionary keys/empty values and structured records round-trip exactly.
+  Three regressions validate serializable profiles with no edits, a motivation
+  edit and a single background edit; source profiles stay unchanged. Focused
+  character/profile domain/UI tests: 55 passed; full offline suite: 879 passed,
+  2 skipped. README/TASKS/docs/character-profile-verification.md updated; diff
+  reviewed and whitespace check passed. No controls/strings changed. .03 and
+  parent/V2 remain partial for all-field native small-window keyboard/focus,
+  screen-reader and release-catalog review. Existing offscreen profile fields
+  all exposed nonempty Qt accessibility names in a read-only probe; this does
+  not establish native assistive-technology behavior. Export preview committed
+  as `ae3f1c6`; original staged artifacts retained. No push attempted.
+
 - **TASK-028.01–.06/V1 — preview implemented / existing options verified
   (2026-11-01):** optional Markdown/plain-text preview renders in a worker,
   displays a read-only bounded prefix with an explicit truncation notice, and

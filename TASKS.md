@@ -893,25 +893,30 @@ PDF paper/title/heading/selection controls are verified in
 ### TASK-030 — Improve character profile navigation
 **Priority:** Low · **Parent status:** partial
 
-- [?] **TASK-030.01** — Review Story and Background field organization.  
+- [x] **TASK-030.01** — Review Story and Background field organization.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-030.02** — Improve scrolling and grouping.  
+- [x] **TASK-030.02** — Improve scrolling and grouping.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-030.03** — Ensure usability in small windows.  
+- [~] **TASK-030.03** — Ensure usability in small windows.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-030.04** — Add navigation to related scenes.  
+- [x] **TASK-030.04** — Add navigation to related scenes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-030.05** — Preserve directed relationships and existing profile data.  
+- [x] **TASK-030.05** — Preserve directed relationships and existing profile data.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Saving now retains exact captured values for untouched fields, avoiding
+whitespace normalization and lossy reparsing of multiline/delimited values.
+`docs/character-profile-verification.md` records named tests. .03 remains
+partial for all-field native keyboard/focus review in small windows; V2 open.
 
 **Parent acceptance gate (all must pass):**
 - Every field remains keyboard-accessible.
 - Existing values round-trip unchanged.
 - Navigating away does not discard unsaved edits.
 
-- [ ] **TASK-030.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-030.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-030.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-030.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-031 — Improve automatic language detection

@@ -177,6 +177,8 @@ class CharacterDialog(QDialog):
         self.scene_button.clicked.connect(self.scene_requested.emit)
         layout.addWidget(self.scene_button)
         layout.addWidget(buttons)
+        self._original_character = deepcopy(character)
+        self._initial_fields = self.profile_fields()
 
     def profile_fields(self) -> dict[str, str]:
         return {key: (widget.text() if isinstance(widget, QLineEdit) else widget.toPlainText())
@@ -303,7 +305,7 @@ class CharacterDialog(QDialog):
             if (values := _lines(widget.toPlainText()))
         }
         self.character.goals = []
-        for line in _lines(self.goals.toPlainText()):
+        for line in self._changed_lines("goals", self.goals):
             parts = [part.strip() for part in line.split("|", 3)]
             status = parts[1] if len(parts) > 1 and parts[1] else "active"
             try:
@@ -318,7 +320,7 @@ class CharacterDialog(QDialog):
             self.character.goals.append(CharacterGoal(parts[0], status, priority, notes))
         self.character.personality["traits"] = _lines(self.traits.toPlainText())
         self.character.knowledge = []
-        for line in _lines(self.knowledge.toPlainText()):
+        for line in self._changed_lines("knowledge", self.knowledge):
             kind, separator, statement = line.partition(":")
             if not separator or kind.strip() not in CHARACTER_KNOWLEDGE_KINDS or not statement.strip():
                 QMessageBox.warning(self, self.tr("Invalid knowledge entry"), self.tr("Use a supported category followed by ': ' and a statement."))
@@ -326,14 +328,35 @@ class CharacterDialog(QDialog):
                 return
             self.character.knowledge.append(CharacterKnowledge(kind.strip(), statement.strip()))
         self.character.arc = {}
-        for line in _lines(self.arc.toPlainText()):
+        for line in self._changed_lines("arc", self.arc):
             field, separator, value = line.partition(":")
             if not separator or field.strip() not in CHARACTER_ARC_FIELDS or not value.strip():
                 QMessageBox.warning(self, self.tr("Invalid arc note"), self.tr("Use a supported arc field followed by ': ' and a value."))
                 self.arc.setFocus()
                 return
             self.character.arc[field.strip()] = value.strip()
+        self._preserve_unchanged_fields()
         self.accept()
+
+    def _changed_lines(self, key: str, widget: QPlainTextEdit) -> list[str]:
+        text = widget.toPlainText()
+        return _lines(text) if text != self._initial_fields[key] else []
+
+    def _preserve_unchanged_fields(self) -> None:
+        """Do not normalize or reparse captured values the author did not edit."""
+        for key, text in self.profile_fields().items():
+            if text != self._initial_fields[key]:
+                continue
+            if key == "traits" or key.startswith(("background_", "personality_")):
+                group, field = ("personality", "traits") if key == "traits" else key.split("_", 1)
+                captured = getattr(self._original_character, group)
+                target = getattr(self.character, group)
+                if field in captured:
+                    target[field] = deepcopy(captured[field])
+                else:
+                    target.pop(field, None)
+            else:
+                setattr(self.character, key, deepcopy(getattr(self._original_character, key)))
 
 
 def _lines(value: str) -> list[str]:
