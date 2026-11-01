@@ -1,5 +1,17 @@
 # Implementation progress
 
+- **TASK-022.01–.06/V1 — verified (2026-11-01):** traced captured destination,
+  exact context/provenance, optional preview, note exclusions, automatic-context
+  setting and first-use disclosure. Added one combined real-capture regression
+  for dirty scene/note buffers, note truncation and omission, read-only preview,
+  no-send cancellation and unchanged canonical files. Focused context/disclosure
+  tests: 20 passed; full offline suite: 868 passed, 2 skipped. TASKS and
+  docs/completion-context-verification.md updated; existing README accurate.
+  Diff reviewed and whitespace check passed. No runtime/translation changes;
+  numbered tickets/V1 verified, parent/V2 native/catalog checks remain partial.
+  Spelling validation committed as `1272d00`; original staged artifacts retained.
+  No push attempted.
+
 - **TASK-021.01–.05/V1 — verified; typed response validation (2026-11-01):**
   typed Suggestion objects now receive range/type/length checks before sorting
   or editor use, matching JSON replacement/explanation bounds. Malformed typed

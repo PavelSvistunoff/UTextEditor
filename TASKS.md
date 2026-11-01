@@ -663,18 +663,22 @@ sorting, matching the JSON safety bounds. Verification evidence is recorded in
 ### TASK-022 — Implement AI context preview and controls
 **Priority:** High · **Parent status:** partial
 
-- [?] **TASK-022.01** — Show the configured AI destination.  
+- [x] **TASK-022.01** — Show the configured AI destination.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-022.02** — Summarize included document and project context.  
+- [x] **TASK-022.02** — Summarize included document and project context.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-022.03** — Identify unsaved buffers and truncation.  
+- [x] **TASK-022.03** — Identify unsaved buffers and truncation.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-022.04** — Allow excluding reference notes.  
+- [x] **TASK-022.04** — Allow excluding reference notes.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-022.05** — Allow disabling automatic project context.  
+- [x] **TASK-022.05** — Allow disabling automatic project context.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-022.06** — Avoid interrupting every completion request.  
+- [x] **TASK-022.06** — Avoid interrupting every completion request.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Captured context/provenance, cancellation, note controls and disclosure guards
+are verified in `docs/completion-context-verification.md`. Parent remains
+partial for native/catalog V2 checks.
 
 **Parent acceptance gate (all must pass):**
 - Preview corresponds to the captured request.
@@ -682,9 +686,9 @@ sorting, matching the JSON safety bounds. Verification evidence is recorded in
 - Unassociated characters are not implicitly included.
 - No document content is transmitted without required disclosure.
 
-- [ ] **TASK-022.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-022.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-022.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-022.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-023 — Add AI translation batch review

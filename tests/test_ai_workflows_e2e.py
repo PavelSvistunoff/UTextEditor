@@ -145,6 +145,47 @@ def test_reviewed_completion_sends_exact_displayed_context(window, tmp_path, mon
     wait_until(lambda: window._completion_worker is None)
 
 
+def test_review_labels_unsaved_truncated_and_omitted_notes_without_sending(window, tmp_path, monkeypatch):
+    project = Project.create(tmp_path / "review-provenance", "Novel")
+    scene = project.add_scene("Scene", content="Saved scene")
+    note = project.add_note("Reference", content="Saved reference")
+    project.add_note("Omitted", content="Not included")
+    window._project_opened(project)
+    window.settings.autosave_enabled = False
+    window._open_project_document("note", note.id)
+    wait_until(lambda: window.tabs.count() == 2)
+    note_editor = window.tabs.current_editor()
+    note_editor.setPlainText("Unsaved reference " + "x" * 10000)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 3)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("Unsaved scene")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    window._completion_timer.stop()
+    calls, summaries = [], []
+    monkeypatch.setattr(window.provider, "complete", lambda *args, **kwargs: calls.append(args) or "")
+
+    def review(dialog):
+        summaries.extend(label.text() for label in dialog.findChildren(QLabel))
+        text = dialog.context.toPlainText()
+        assert "Unsaved reference" in text and "Unsaved scene" in text
+        assert "Saved reference" not in text and "Not included" not in text
+        assert dialog.context.isReadOnly()
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr("app.ui.main_window.CompletionContextDialog.exec", review)
+    window.request_completion(review=True)
+    wait_until(lambda: bool(summaries))
+    wait_until(lambda: window._completion_worker is None)
+    assert any("The document has unsaved changes." in text for text in summaries)
+    assert any("Reference (unsaved buffer, truncated)" in text for text in summaries)
+    assert any("Notes omitted by the context limit: 1" in text for text in summaries)
+    assert calls == []
+    assert project.read_scene(scene.id) == "Saved scene"
+    assert project.read_note(note.id) == "Saved reference"
+    assert editor.document_state.dirty and note_editor.document_state.dirty
+
+
 def test_reviewed_completion_does_not_send_if_closed_note_changes(window, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "changed-note", "Novel")
     scene = project.add_scene("Scene", content="Draft")
