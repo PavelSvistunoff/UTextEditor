@@ -38,6 +38,46 @@ def test_recovery_comparison_formats_localized_errors_and_empty_results(tmp_path
     assert MainWindow._compare_recovery_entries((), *args) == "Немає копій"
 
 
+def test_recovery_chooser_displays_captured_disk_status_in_ukrainian(application, tmp_path):
+    import subprocess
+    import sys
+    from PySide6.QtCore import QTranslator
+
+    compiler = Path(sys.executable).parent / "pyside6-lrelease"
+    if not compiler.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    catalog = tmp_path / "uk.qm"
+    subprocess.run([str(compiler), "translations/utexteditor_uk.ts", "-qm", str(catalog)],
+                   check=True, capture_output=True)
+    translator = QTranslator()
+    assert translator.load(str(catalog))
+    canonical = tmp_path / "draft.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "unsaved manuscript", canonical_path=canonical)
+    canonical.write_text("external edit", encoding="utf-8")
+    scan = store.scan()
+    # Display uses worker-captured status, even if disk subsequently changes.
+    canonical.unlink()
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    application.installTranslator(translator)
+    try:
+        with patch.object(RecoveryStore, "inspect_canonical_file", side_effect=AssertionError("GUI disk inspection")):
+            window._recovery_scan_finished(scan)
+        details = window._recovery_dialog.detailedText()
+        assert str(canonical) in details and entry.captured_at in details
+        assert "Знімок відновлення доступний для читання" in details
+        assert "Основний файл змінено" in details
+        assert "перевіряється знову" in details
+        assert "unsaved manuscript" not in details
+        assert entry.snapshot_path.is_file() and not canonical.exists()
+    finally:
+        window._recovery_dialog.close()
+        application.removeTranslator(translator)
+        window.close()
+
+
 @pytest.fixture(scope="module")
 def application():
     return QApplication.instance() or QApplication([])

@@ -7,6 +7,92 @@ from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictErro
 from app.document.file_manager import FileManager
 
 
+@pytest.mark.parametrize("state", ["untitled", "unchanged", "changed", "missing", "appeared", "unreadable"])
+def test_scan_reports_canonical_status_without_invalidating_recoverable_text(tmp_path, state):
+    canonical = tmp_path / "draft.txt"
+    if state not in {"untitled", "appeared"}:
+        canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "unsaved text", canonical_path=None if state == "untitled" else canonical)
+    if state in {"changed", "appeared"}:
+        canonical.write_text("external edit", encoding="utf-8")
+    elif state in {"missing", "unreadable"}:
+        canonical.unlink()
+        if state == "unreadable":
+            canonical.mkdir()
+    snapshot_bytes = entry.snapshot_path.read_bytes()
+    scan = store.scan()
+    assert not scan.issues
+    assert scan.entries == (entry,)
+    assert len(scan.file_statuses) == 1
+    status = scan.file_statuses[0]
+    assert status.snapshot_id == entry.snapshot_id and status.state == state
+    assert bool(status.detail) == (state == "unreadable")
+    assert entry.snapshot_path.read_bytes() == snapshot_bytes
+    if state in {"changed", "appeared"}:
+        assert canonical.read_text(encoding="utf-8") == "external edit"
+
+
+def test_recovery_inspection_permission_failure_preserves_valid_snapshot(tmp_path, monkeypatch):
+    import os
+
+    canonical = tmp_path / "draft.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "recoverable", canonical_path=canonical)
+    original_open = os.open
+
+    def denied(path, *args, **kwargs):
+        if Path(path) == canonical:
+            raise PermissionError("permission denied for diagnosis")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", denied)
+    scan = store.scan()
+    assert scan.entries == (entry,) and not scan.issues
+    assert scan.file_statuses[0].state == "unreadable"
+    assert "permission denied" in scan.file_statuses[0].detail
+
+
+def test_recovery_status_is_advisory_and_restore_rechecks_disk(tmp_path):
+    canonical = tmp_path / "draft.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    store.save("doc", "unsaved", canonical_path=canonical)
+    scan = store.scan()
+    assert scan.file_statuses[0].state == "unchanged"
+    canonical.write_text("later edit", encoding="utf-8")
+    with pytest.raises(RecoveryConflictError, match="changed"):
+        store.restore(scan.entries[0])
+    assert canonical.read_text(encoding="utf-8") == "later edit"
+
+
+def test_recovery_status_with_unknown_saved_digest_does_not_claim_unchanged(tmp_path):
+    from dataclasses import replace
+
+    canonical = tmp_path / "draft.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    entry = RecoveryStore(tmp_path / "recovery").save("doc", "unsaved", canonical_path=canonical)
+    assert RecoveryStore.inspect_canonical_file(replace(entry, canonical_digest=None)).state == "unknown"
+
+
+def test_recovery_diagnosis_rejects_fifo_without_waiting_for_a_writer(tmp_path):
+    import os
+
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("Named pipes are unavailable")
+    canonical = tmp_path / "draft.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "recoverable", canonical_path=canonical)
+    canonical.unlink()
+    os.mkfifo(canonical)
+    scan = store.scan()
+    assert scan.entries == (entry,)
+    assert scan.file_statuses[0].state == "unreadable"
+    assert "not a regular file" in scan.file_statuses[0].detail
+
+
 def test_recovery_snapshot_is_local_and_restores_as_dirty_without_writing_source(tmp_path: Path) -> None:
     canonical = tmp_path / "draft.txt"
     canonical.write_text("saved", encoding="utf-8")

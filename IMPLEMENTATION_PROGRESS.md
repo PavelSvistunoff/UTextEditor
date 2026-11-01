@@ -1,5 +1,22 @@
 # Implementation progress
 
+- **TASK-008.01 — DONE (2026-11-01):** recovery scans now capture per-snapshot
+  canonical-file status in the worker: untitled, missing, appeared, unchanged,
+  changed, unknown or unreadable. Chooser details show status and capture time
+  using English/Ukrainian source strings. Diagnosis hashes regular files in
+  1 MiB chunks; nonblocking POSIX opens avoid waiting on a replaced FIFO.
+  Canonical read failures preserve valid snapshots. Eleven regressions cover
+  states, permissions, non-regular paths, unknown digests, subsequent disk
+  changes and temporary-catalog runtime labels; display uses captured status,
+  with an explicit advisory notice and unchanged restore conflict checks.
+  Focused recovery/project UI/localization suites: 213 passed; full offline
+  suite: 828 passed, 2 skipped. Ukrainian catalog validation passed; diff
+  reviewed and whitespace check passed. README/TASKS updated. Release compiled
+  assets untouched; native keyboard/screen-reader review remains outstanding.
+  Broader corrupt-data diagnosis/repair and parent acceptance remain open.
+  Save audit checkpoint committed as `5dca14c`; ready for scoped recovery
+  commit. Unrelated staged files preserved; no push attempted.
+
 - **TASK-005.V1 / V2 — DONE (2026-11-01 audit):** reviewed shared RLock,
   standalone/project text and manifest save paths and named failure/concurrency
   tests. Added acceptance matrix to docs/save-coordination.md; .01/.02/.03/.05

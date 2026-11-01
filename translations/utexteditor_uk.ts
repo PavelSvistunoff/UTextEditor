@@ -681,6 +681,16 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Untitled document; no canonical file.</source><translation>Документ без назви; основного файлу немає.</translation></message>
+    <message><source>Canonical file is missing.</source><translation>Основний файл відсутній.</translation></message>
+    <message><source>Canonical file could not be read.</source><translation>Не вдалося прочитати основний файл.</translation></message>
+    <message><source>Canonical file appeared after capture.</source><translation>Основний файл з’явився після створення знімка.</translation></message>
+    <message><source>Saved disk version is unknown.</source><translation>Збережена версія на диску невідома.</translation></message>
+    <message><source>Canonical file matches the saved disk version.</source><translation>Основний файл відповідає збереженій версії на диску.</translation></message>
+    <message><source>Canonical file changed since the saved disk version.</source><translation>Основний файл змінено порівняно зі збереженою версією на диску.</translation></message>
+    <message><source>Disk status not checked.</source><translation>Стан файлу на диску не перевірено.</translation></message>
+    <message><source>Readable recovery snapshot. At inspection: {status}</source><translation>Знімок відновлення доступний для читання. На час перевірки: {status}</translation></message>
+    <message><source>Disk status can change after inspection; restoring checks the canonical file again.</source><translation>Стан файлу на диску може змінитися після перевірки; під час відновлення основний файл перевіряється знову.</translation></message>
     <message><source>Could not delete revision snapshot: {error}</source><translation>Не вдалося видалити знімок редакції: {error}</translation></message>
     <message><source>Auto-writer cancelled. No scene changes were applied; a pre-run snapshot may be available.</source><translation>Автоматичне написання скасовано. Змін до сцен не застосовано; може бути доступний знімок, створений перед запуском.</translation></message>
     <message><source>Auto-writer results were not applied because the project, settings, or an open document changed. Original snapshot: {path}</source><translation>Результати автоматичного написання не застосовано, оскільки проєкт, налаштування або відкритий документ змінилися. Початковий знімок: {path}</translation></message>

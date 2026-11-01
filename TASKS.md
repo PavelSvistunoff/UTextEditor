@@ -254,7 +254,13 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-008 — Improve recovery diagnosis
 **Priority:** High · **Parent status:** open
 
-- [~] **TASK-008.01** — Show per-document recovery status and timestamps.
+- [x] **TASK-008.01** — Show per-document recovery status and timestamps.
+  Scan workers capture canonical-file state (unchanged, changed, missing,
+  appeared, unreadable, unknown, or untitled); chooser details show it with
+  each capture timestamp in English/Ukrainian. Hashing uses bounded chunks
+  and rejects non-regular files. Status is advisory and restore rechecks disk.
+  Domain and temporary-catalog UI regressions pass; broader diagnosis,
+  release catalog and native verification remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-008.02** — Identify incomplete or corrupt recovery entries.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

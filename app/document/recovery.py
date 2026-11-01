@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import stat
 from pathlib import Path
 import tempfile
 from typing import Iterable
@@ -40,9 +41,17 @@ class RecoveryIssue:
 
 
 @dataclass(frozen=True)
+class RecoveryFileStatus:
+    snapshot_id: str
+    state: str
+    detail: str = ""
+
+
+@dataclass(frozen=True)
 class RecoveryScan:
     entries: tuple[RecoveryEntry, ...]
     issues: tuple[RecoveryIssue, ...]
+    file_statuses: tuple[RecoveryFileStatus, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -187,7 +196,39 @@ class RecoveryStore:
                         path, "Unfinished recovery write; it may still be in progress.", True
                     ))
         entries.sort(key=lambda entry: datetime.fromisoformat(entry.captured_at), reverse=True)
-        return RecoveryScan(tuple(entries), tuple(issues))
+        return RecoveryScan(
+            tuple(entries), tuple(issues),
+            tuple(self.inspect_canonical_file(entry) for entry in entries),
+        )
+
+    @staticmethod
+    def inspect_canonical_file(entry: RecoveryEntry) -> RecoveryFileStatus:
+        """Describe disk state at inspection; restore must still check it again.
+
+        Hash in chunks so diagnosis does not allocate another whole manuscript.
+        A missing or inaccessible canonical file does not invalidate a snapshot.
+        """
+        if entry.canonical_path is None:
+            return RecoveryFileStatus(entry.snapshot_id, "untitled")
+        digest = hashlib.sha256()
+        try:
+            descriptor = os.open(entry.canonical_path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0))
+            with os.fdopen(descriptor, "rb") as stream:
+                if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                    raise OSError("Canonical path is not a regular file.")
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        except FileNotFoundError:
+            return RecoveryFileStatus(entry.snapshot_id, "missing")
+        except OSError as exc:
+            return RecoveryFileStatus(entry.snapshot_id, "unreadable", str(exc))
+        if not entry.canonical_existed:
+            state = "appeared"
+        elif entry.canonical_digest is None:
+            state = "unknown"
+        else:
+            state = "unchanged" if digest.hexdigest() == entry.canonical_digest else "changed"
+        return RecoveryFileStatus(entry.snapshot_id, state)
 
     def discard(self, entries: Iterable[RecoveryEntry] | None = None) -> None:
         targets = ([entry.snapshot_path for entry in entries] if entries is not None else

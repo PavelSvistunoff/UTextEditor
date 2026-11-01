@@ -4171,10 +4171,26 @@ class MainWindow(QMainWindow):
         if not scan.entries and not scan.issues:
             self.statusBar().showMessage(self.tr("No recovery data found."), 4000)
             return
-        details = [
-            f"{entry.document_id} — {entry.canonical_path or self.tr('Untitled')} — {entry.captured_at}"
-            for entry in scan.entries
-        ]
+        status_labels = {
+            "untitled": self.tr("Untitled document; no canonical file."),
+            "missing": self.tr("Canonical file is missing."),
+            "unreadable": self.tr("Canonical file could not be read."),
+            "appeared": self.tr("Canonical file appeared after capture."),
+            "unknown": self.tr("Saved disk version is unknown."),
+            "unchanged": self.tr("Canonical file matches the saved disk version."),
+            "changed": self.tr("Canonical file changed since the saved disk version."),
+        }
+        file_statuses = {status.snapshot_id: status for status in scan.file_statuses}
+        details = []
+        for entry in scan.entries:
+            status = file_statuses.get(entry.snapshot_id)
+            description = status_labels.get(status.state if status else "", self.tr("Disk status not checked."))
+            if status is not None and status.detail:
+                description += f" ({status.detail})"
+            details.append(
+                f"{entry.document_id} — {entry.canonical_path or self.tr('Untitled')} — {entry.captured_at}\n"
+                + self.tr("Readable recovery snapshot. At inspection: {status}").format(status=description)
+            )
         details.extend(
             self.tr("Unreadable recovery entry: {path} ({message})").format(
                 path=issue.snapshot_path,
@@ -4182,6 +4198,9 @@ class MainWindow(QMainWindow):
                          if issue.incomplete_write else issue.message),
             )
             for issue in scan.issues
+        )
+        details.append(
+            self.tr("Disk status can change after inspection; restoring checks the canonical file again.")
         )
         details.append(
             self.tr("Recovery snapshots are captured every 30 seconds while documents are dirty; "
