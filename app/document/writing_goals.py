@@ -182,11 +182,18 @@ class WritingGoalTracker:
         self._replace_document_progress(document_id, counts)
         return added
 
-    def discard_unreachable_history(self, document_id: str) -> None:
-        """Retain only the current state after the editor clears its undo stack."""
+    def discard_unreachable_history(
+        self, document_id: str, *, keep_undo: bool = False, keep_redo: bool = False,
+    ) -> None:
+        """Discard checkpoints in directions the editor can no longer reach."""
         if document_id in self._histories:
             states, index = self._histories[document_id]
-            self._histories[document_id] = ([states[index]], 0)
+            if not keep_redo:
+                del states[index + 1:]
+            if not keep_undo:
+                del states[:index]
+                index = 0
+            self._histories[document_id] = (states, index)
 
     def count_new_words(self, document_ids: set[str] | tuple[str, ...] | list[str], *, local_date: str | None = None) -> int:
         today = local_date or self.local_date()

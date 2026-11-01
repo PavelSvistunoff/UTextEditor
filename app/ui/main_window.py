@@ -719,6 +719,13 @@ class MainWindow(QMainWindow):
         editor.document().undoCommandAdded.connect(
             lambda editor=editor: setattr(editor, "_goal_undo_command_added", True)
         )
+        # Clearing Qt's stacks need not change the text. Defer inspection until
+        # undo/redo and their content signals have finished updating the tracker.
+        history_timer = QTimer(editor)
+        history_timer.setSingleShot(True)
+        history_timer.timeout.connect(lambda: self._prune_writing_goal_history(editor))
+        editor.document().undoAvailable.connect(lambda _available: history_timer.start(0))
+        editor.document().redoAvailable.connect(lambda _available: history_timer.start(0))
         editor.escape_pressed.connect(self._handle_editor_escape)
         editor.content_changed.connect(self.schedule_completion)
         editor.content_changed.connect(lambda editor=editor: self._markdown_changed(editor))
@@ -825,6 +832,23 @@ class MainWindow(QMainWindow):
         editor._goal_redo_available = document.isRedoAvailable()
         self._schedule_writing_goal_persist()
         self._refresh_writing_goal()
+
+    def _prune_writing_goal_history(self, editor) -> None:
+        if self.tabs.indexOf(editor) < 0:
+            return
+        document = editor.document()
+        document_id = getattr(editor, "_writing_goal_document_id", None)
+        if isinstance(document_id, str):
+            self.writing_goals.discard_unreachable_history(
+                document_id,
+                keep_undo=document.isUndoAvailable(),
+                keep_redo=document.isRedoAvailable(),
+            )
+        if not document.isUndoAvailable():
+            editor._goal_undo_merge_active = False
+        editor._goal_undo_command_added = False
+        editor._goal_undo_steps = document.availableUndoSteps()
+        editor._goal_redo_available = document.isRedoAvailable()
 
     def _refresh_writing_goal(self) -> None:
         if not hasattr(self, "_writing_goal_label"):

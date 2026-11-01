@@ -1,5 +1,17 @@
-
 # Implementation progress
+
+- **TASK-001.04 — DONE (2026-11-01):** verified last checkpoint
+  `39ae121` with 32 document tests. Existing staged `.DS_Store` and bytecode
+  changes are unrelated and preserved. Qt availability signals now schedule a
+  coalesced, deferred pruning check; clearing either or both stacks or disabling
+  undo releases only unreachable goal checkpoints even without a text change.
+  Closed tabs are ignored. Six offscreen regressions cover both directions,
+  preserved text/counts, subsequent edits, undo and redo. Focused goal/editor
+  suites: 96 passed; full offline suite: 817 passed, 2 skipped. Diff reviewed;
+  whitespace check passed. README/TASKS updated. No new UI strings or native
+  UI changes; localization/native checks N/A for this internal lifecycle fix.
+  Reachable history remains unbounded (TASK-001.02); identity collisions and
+  long-session acceptance remain open. Ready for scoped commit.
 
 - **TASK-005.03 — DONE (2026-10-31):** evaluated process-local locking,
   POSIX advisory locking, cooperative sidecars, Windows byte-range locking,

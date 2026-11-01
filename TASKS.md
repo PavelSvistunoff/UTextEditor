@@ -72,7 +72,12 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   preserve checkpoints, with no new-word credit for inactive edits; bounded
   history and actively tracked identity collisions remain outstanding.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-001.04** — Coordinate pruning with Qt undo history.
+- [x] **TASK-001.04** — Coordinate pruning with Qt undo history.
+  Merged commands are compacted; deferred Qt availability checks now release
+  unreachable checkpoints after either or both stacks are cleared without a
+  text change, including disabling undo. Remaining-direction undo/redo and
+  daily counts are covered by offscreen regressions. Reachable history is
+  still unbounded (TASK-001.02); this ticket does not impose an undo limit.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.05** — Benchmark realistic long editing sessions.
   History benchmark now accepts command/undo counts and checks branching after

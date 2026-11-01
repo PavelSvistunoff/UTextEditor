@@ -899,6 +899,85 @@ def test_writing_goal_releases_states_when_qt_clears_undo_history(application: Q
     window.close()
 
 
+@pytest.mark.parametrize("undo_first", [False, True])
+@pytest.mark.parametrize("disable_undo", [False, True])
+def test_goal_prunes_cleared_stacks_without_text_change(application, undo_first, disable_undo):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(100, "new_words")
+    document_id = editor._writing_goal_document_id
+    editor.insertPlainText("one two")
+    if undo_first:
+        editor.undo()
+    application.processEvents()
+    # Reaching the oldest state must retain the available redo checkpoint.
+    assert len(window.writing_goals._histories[document_id][0]) == 2
+    text = editor.toPlainText()
+    count = window.writing_goals.count_new_words({document_id})
+    if disable_undo:
+        editor.document().setUndoRedoEnabled(False)
+    else:
+        editor.document().clearUndoRedoStacks()
+    application.processEvents()
+    states, index = window.writing_goals._histories[document_id]
+    assert len(states) == 1 and index == 0
+    assert editor.toPlainText() == text
+    assert window.writing_goals.count_new_words({document_id}) == count
+    editor.document().setUndoRedoEnabled(True)
+    editor.insertPlainText(" next")
+    assert window.writing_goals.count_new_words({document_id}) == count + 1
+    editor.undo()
+    application.processEvents()
+    assert editor.toPlainText() == text
+    assert window.writing_goals.count_new_words({document_id}) == count
+    editor.redo()
+    application.processEvents()
+    assert window.writing_goals.count_new_words({document_id}) == count + 1
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+@pytest.mark.parametrize("clear_undo", [False, True])
+def test_goal_prunes_one_cleared_stack_and_preserves_other_direction(application, clear_undo):
+    from PySide6.QtGui import QTextDocument
+
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    window.writing_goals.configure(100, "new_words")
+    document_id = editor._writing_goal_document_id
+    for text in ("one ", "two ", "three "):
+        cursor = editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText(text)
+        cursor.endEditBlock()
+    editor.undo()
+    application.processEvents()
+    assert window.writing_goals.count_new_words({document_id}) == 2
+    stack = QTextDocument.Stacks.UndoStack if clear_undo else QTextDocument.Stacks.RedoStack
+    editor.document().clearUndoRedoStacks(stack)
+    application.processEvents()
+    states, index = window.writing_goals._histories[document_id]
+    assert len(states) == (2 if clear_undo else 3)
+    assert index == (0 if clear_undo else 2)
+    assert editor.toPlainText() == "one two "
+    if clear_undo:
+        editor.redo()
+        assert window.writing_goals.count_new_words({document_id}) == 3
+        editor.undo()
+    else:
+        editor.undo()
+        assert window.writing_goals.count_new_words({document_id}) == 1
+        editor.redo()
+    application.processEvents()
+    assert window.writing_goals.count_new_words({document_id}) == 2
+    editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
 def test_writing_goal_long_merged_typing_session_has_two_states(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()

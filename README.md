@@ -168,7 +168,7 @@ The small English catalog supplies Qt numerus forms; ordinary English text remai
 
 Recurring glossary: project — проєкт; chapter — розділ; scene — сцена; character — персонаж; reference note — довідкова нотатка; revision snapshot — знімок редакції; recovery — відновлення; inline completion — продовження тексту; continuity check — перевірка узгодженості; Auto-writer — автоматичне написання; writing goal — ціль письма.
 
-Writing-goal status refresh counts buffer words only for the active goal scope and skips those scans for paused or disabled goals. Writing-goal insertion counting scans tokens within the changed text span plus boundary context; unchanged text is compared in chunks to locate that span.
+Writing-goal status refresh counts buffer words only for the active goal scope and skips those scans for paused or disabled goals. Writing-goal insertion counting scans tokens within the changed text span plus boundary context; unchanged text is compared in chunks to locate that span. Clearing either Qt undo/redo stack also releases the corresponding unreachable goal checkpoints, even when the text does not change; checkpoints in the other direction remain available.
 
 For an offline language-detection evaluation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/language_detection.py`. It compares the curated regression corpus with an always-Auto baseline and reports unsupported confident guesses; these results are not real-world accuracy estimates.
 
