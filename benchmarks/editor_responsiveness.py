@@ -15,9 +15,11 @@ import tempfile
 import time
 from pathlib import Path
 from unittest.mock import patch
+from collections.abc import Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QApplication
 
@@ -33,6 +35,31 @@ def elapsed_ms(operation, repetitions=1):
         start = time.perf_counter()
         operation()
         samples.append((time.perf_counter() - start) * 1000)
+    return f"median {statistics.median(samples):.2f}/max {max(samples):.2f}"
+
+
+def queued_callback_delay_ms(operation: Callable[[], object], repetitions: int) -> str:
+    """Measure how long a ready Qt callback waits behind synchronous GUI work.
+
+    Use a local event loop per sample so queued editor work can also run. This
+    measures a zero-timer callback, not native paint/input or network latency.
+    """
+    samples = []
+    for _ in range(repetitions):
+        loop = QEventLoop()
+        timer = QTimer()
+        timer.setSingleShot(True)
+
+        def delivered() -> None:
+            samples.append((time.perf_counter() - started) * 1000)
+            loop.quit()
+
+        timer.timeout.connect(delivered)
+        started = time.perf_counter()
+        timer.start(0)
+        operation()
+        if timer.isActive():
+            loop.exec()
     return f"median {statistics.median(samples):.2f}/max {max(samples):.2f}"
 
 
@@ -66,6 +93,10 @@ def main():
             search_ms = elapsed_ms(lambda: editor.document().find("forgotten"), args.repetitions)
             words_ms = elapsed_ms(lambda: count_words(editor.toPlainText()), args.repetitions)
             context_ms = elapsed_ms(lambda: build_context(editor.toPlainText(), size // 2), args.repetitions)
+            idle_delay_ms = queued_callback_delay_ms(lambda: None, args.repetitions)
+            typing_delay_ms = queued_callback_delay_ms(
+                lambda: editor.insertPlainText(" word"), args.repetitions,
+            )
             save_ms = elapsed_ms(lambda: window.file_manager.save(editor.document_state))
             if path.read_bytes() != editor.toPlainText().encode("utf-8"):
                 raise AssertionError("Saved benchmark text differs from the editor buffer.")
@@ -76,6 +107,8 @@ def main():
                   f"typing {typing_ms} ms, cursor {cursor_ms} ms, search {search_ms} ms, "
                   f"word count {words_ms} ms, context {context_ms} ms, file save {save_ms} ms; "
                   f"process peak RSS {memory}")
+            print(f"  Ready Qt callback delay ({args.repetitions} samples): "
+                  f"idle {idle_delay_ms} ms; typing with new-word tracking {typing_delay_ms} ms")
             editor.document_state.mark_saved()
         window.close()
         app.processEvents()

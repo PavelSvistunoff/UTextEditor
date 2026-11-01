@@ -192,6 +192,10 @@ remain unverified.
 - [x] **TASK-006.02** — Include writing-goal tracking and AI context construction.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-006.03** — Measure GUI-thread latency and memory usage.
+  The benchmark now measures ready zero-timer callback delays during idle and
+  typing with new-word tracking, alongside cumulative RSS. Ten-sample
+  100K/1M/5M results and limitations are in docs/gui-latency-evaluation.md.
+  Native input/paint latency and representative project workloads remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-006.04** — Establish representative document sizes and repeatable benchmarks.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

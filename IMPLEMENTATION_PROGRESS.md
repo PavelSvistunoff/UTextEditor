@@ -1,5 +1,19 @@
 # Implementation progress
 
+- **TASK-006.03 — PARTIAL (2026-11-01):** added ready Qt callback delay
+  probes during idle and typing with new-word tracking. Ten samples at
+  100K/1M/5M characters completed, with byte-verified saves; typing callback
+  maxima 2.22/3.86/10.62 ms and cumulative peak RSS
+  130,023,424/151,977,984/321,372,160 bytes. Reproduction, workload and
+  event-loop/native limitations are in docs/gui-latency-evaluation.md.
+  Focused editor/goal suites: 96 passed; full offline suite: 817 passed,
+  2 skipped. Diff reviewed and whitespace check passed. Direct benchmark
+  assertions validate generated output; no hardware-sensitive timing test.
+  No product UI/strings changed; native/catalog checks N/A for tooling.
+  TASK-006 remains partial for native latency, project workloads and bounds.
+  TASK-001.04 checkpoint committed as `9ce6082`; unrelated staged files
+  remain preserved. Ready for scoped benchmark commit; no push attempted.
+
 - **TASK-001.04 — DONE (2026-11-01):** verified last checkpoint
   `39ae121` with 32 document tests. Existing staged `.DS_Store` and bytecode
   changes are unrelated and preserved. Qt availability signals now schedule a
