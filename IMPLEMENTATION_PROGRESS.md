@@ -1,5 +1,17 @@
 # Implementation progress
 
+- **TASK-024.01–.05/V1 — verified (2026-11-01):** reviewed staged per-scene
+  previews, stable-ID checkbox selection, explicit Apply/Cancel, dependency
+  warning after partial rejection, captured-state guards and snapshot-protected
+  selected transaction. docs/auto-writer-review-verification.md maps named
+  regressions for selection/stale/cancel, line endings, late rollback and
+  generation failure. Focused Auto-writer/review tests: 15 passed; last full
+  suite on unchanged code: 868 passed, 2 skipped. No runtime/string changes or
+  redundant tests; README accurate. TASKS updated; diff reviewed, whitespace
+  check passed. Native/catalog V2 and shared filesystem race remain open;
+  parent stays partial. Translation audit committed as `42d3048`; original
+  staged artifacts preserved. No push attempted.
+
 - **TASK-023.01–.05/V1 — verified (2026-11-01):** reviewed side-by-side
   captured originals/translations, title/text rows with stable IDs, explicit
   all-batch Apply/Cancel, generation/editor guards and transaction revalidation.

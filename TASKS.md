@@ -723,16 +723,21 @@ parent remains partial.
 ### TASK-024 — Improve AI scene draft review
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-024.01** — Add per-scene draft review for Auto-writer output.  
+- [x] **TASK-024.01** — Add per-scene draft review for Auto-writer output.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-024.02** — Display generated text separately from committed manuscript content.  
+- [x] **TASK-024.02** — Display generated text separately from committed manuscript content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-024.03** — Support accept, reject, and review navigation.  
+- [x] **TASK-024.03** — Support accept, reject, and review navigation.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-024.04** — Define how partial acceptance affects batch consistency.  
+- [x] **TASK-024.04** — Define how partial acceptance affects batch consistency.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-024.05** — Protect existing scene content.  
+- [x] **TASK-024.05** — Protect existing scene content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Numbered tickets verified in `docs/auto-writer-review-verification.md`.
+Selected drafts commit together; later drafts are not regenerated after earlier
+ones are rejected, and review warns about that dependency. Parent remains
+partial for native/catalog checks and shared filesystem limitations.
 
 **Parent acceptance gate (all must pass):**
 - Rejected drafts do not modify scenes.
@@ -740,9 +745,9 @@ parent remains partial.
 - Stale project state is detected.
 - Failed batches do not leave unintended partial changes.
 
-- [ ] **TASK-024.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-024.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-024.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-024.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-025 — Add optional streaming AI previews
