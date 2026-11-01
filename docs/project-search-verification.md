@@ -29,16 +29,31 @@ already-blocked regular-file or network-filesystem read. POSIX nonblocking FIFO
 handling is regression-tested; Windows/network filesystem semantics need native
 verification.
 
-**.06 remains partial:** MainWindow can capture many eligible open buffers
-before starting the worker. The total copied text and descriptor list scale
-with open tabs/project size; per-document limits are not an aggregate budget.
-The current benchmark/tests do not establish GUI capture latency or a fixed
-memory bound for a large open project. Additional cancellation/capture budgeting
-must preserve unsaved-buffer precedence and report omissions explicitly.
+The initial V1 audit found no aggregate open-text capture budget. That gap is
+now fixed: MainWindow uses Qt's existing UTF-16 character counts before copying
+each buffer, with a shared 8 Mi-unit allowance across tabs. Python string
+payloads require at most four bytes per unit (up to 32 MiB across these copies,
+excluding object/container overhead, the original editor buffers and worker
+temporaries). An oversized or over-budget buffer is represented by an omission,
+not a disk fallback. The worker reports its title/path and the reason while
+continuing with other files. The service omission regression and both ASCII/
+emoji cases of `test_project_search_bounds_total_open_buffer_capture` verify
+no copy for omitted buffers, exact-budget inclusion, preserved unsaved text,
+unchanged disk content and no stale-disk matches.
+Oversized caller-supplied text is rejected by its existing length before UTF-8
+encoding, avoiding an additional oversized allocation at the service boundary;
+both descriptor and buffer input paths have a focused regression.
 
-Numbered .01–.05 and .07 are verified; V1 is complete. Parent acceptance remains
-partial for .06 and V2 release-catalog/native keyboard/screen-reader checks.
+Descriptor/omission metadata still scales with project size and tab count;
+this is a text-payload budget, not a fixed total process-memory or GUI-latency
+guarantee. Capturing buffers remains synchronous and tab-order based. Earlier
+tabs, including standalone files, can use the allowance before later project
+tabs; those omissions are explicit. Search captures are transient, not persisted.
+
+All numbered tickets and V1 are verified within the stated resource and
+cooperative-cancellation boundaries. Parent acceptance remains partial for V2
+release-catalog/native keyboard/screen-reader checks.
 Offscreen arrow/Enter and Qt accessibility tests are useful evidence but do
-not establish native assistive-technology behavior. No controls or Qt source
-strings were added by the file-reading fix; existing dynamic filesystem/error
-details retain their current localization limitations.
+not establish native assistive-technology behavior. No controls were added;
+the new omission explanation has English/Ukrainian source strings. Existing
+dynamic filesystem/error details retain their current localization limitations.

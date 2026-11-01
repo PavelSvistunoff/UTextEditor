@@ -681,6 +681,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Search limit for open documents reached; this document was not searched.</source><translation>Досягнуто обмеження пошуку у відкритих документах; цей документ пропущено.</translation></message>
     <message><source>Untitled document; no canonical file.</source><translation>Документ без назви; основного файлу немає.</translation></message>
     <message><source>Canonical file is missing.</source><translation>Основний файл відсутній.</translation></message>
     <message><source>Canonical file could not be read.</source><translation>Не вдалося прочитати основний файл.</translation></message>

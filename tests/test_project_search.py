@@ -131,6 +131,37 @@ def test_oversized_open_buffer_does_not_fall_back_to_disk(tmp_path):
     assert len(result.errors) == 1 and "size limit" in result.errors[0]
 
 
+@pytest.mark.parametrize("in_descriptor", [False, True])
+def test_oversized_text_is_rejected_before_allocating_encoded_copy(tmp_path, monkeypatch, in_descriptor):
+    from app.project import search
+
+    class OversizedText(str):
+        def encode(self, *args, **kwargs):
+            pytest.fail("oversized text was encoded")
+
+    monkeypatch.setattr(search, "MAX_DOCUMENT_BYTES", 4)
+    text = OversizedText("oversized text")
+    document = SearchDocument("scene", "s", "Scene", "scene.txt", text if in_descriptor else None)
+    buffers = None if in_descriptor else {tmp_path / "scene.txt": text}
+    result = search_project(tmp_path, (document,), "text", open_buffers=buffers)
+    assert not result.matches
+    assert len(result.errors) == 1 and "size limit" in result.errors[0]
+
+
+def test_omitted_open_buffer_does_not_search_stale_disk_content(tmp_path):
+    from app.project.search import OmittedSearchBuffer
+
+    path = tmp_path / "scene.txt"
+    path.write_text("disk match", encoding="utf-8")
+    document = SearchDocument("scene", "s", "Scene", "scene.txt")
+    result = search_project(tmp_path, (document,), "match", open_buffers={
+        path: OmittedSearchBuffer("capture budget exhausted"),
+    })
+    assert not result.matches
+    assert len(result.errors) == 1 and "capture budget exhausted" in result.errors[0]
+    assert path.read_text(encoding="utf-8") == "disk match"
+
+
 def test_search_bounds_long_query_excerpt(tmp_path):
     query = "x" * 10000
     doc = SearchDocument("scene", "s", "Scene", "scene.txt", "before " + query + " after")

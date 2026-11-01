@@ -377,10 +377,12 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-012.05** — Navigate directly to selected results.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-012.06** — Support cancellation and bounded resource usage.
+- [x] **TASK-012.06** — Support cancellation and bounded resource usage.
   Cooperative cancellation, per-file/result/error limits and POSIX FIFO
-  rejection are verified. Capturing all eligible open buffers has no total
-  memory budget; blocking regular-filesystem I/O is not interruptible.
+  rejection are verified. Open text capture is capped at 8 Mi UTF-16 units
+  across tabs; omitted buffers are reported without disk fallback. Descriptor
+  metadata still scales with project/tab count, and already-blocked regular-
+  filesystem I/O is not interruptible. Native verification remains V2.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-012.07** — Report unreadable files.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
@@ -394,8 +396,9 @@ keyboard/screen-reader checks and release translation compilation remain open.
 
 - [x] **TASK-012.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   Named service/UI tests and remaining resource/native limits are recorded in
-  docs/project-search-verification.md. Numbered .01–.05/.07 are verified;
-  .06 and parent remain partial. No existing UI was rebuilt.
+  docs/project-search-verification.md. All numbered tickets are verified,
+  including .06's aggregate text-capture budget. Parent remains partial
+  pending V2. No existing UI was rebuilt.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-012.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.

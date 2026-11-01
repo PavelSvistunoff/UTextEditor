@@ -610,6 +610,42 @@ def test_project_search_does_not_copy_certainly_oversized_buffer(application, tm
     window.close()
 
 
+@pytest.mark.parametrize("first_text", ["unsaved word", "😀 word"])
+def test_project_search_bounds_total_open_buffer_capture(application, tmp_path, monkeypatch, first_text):
+    project = Project.create(tmp_path / "novel", "Novel")
+    first = project.add_scene("First", content="disk only")
+    second = project.add_scene("Second", content="disk word")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    window._open_project_document("scene", first.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    first_editor = window.tabs.current_editor()
+    first_editor.setPlainText(first_text)
+    window._open_project_document("scene", second.id)
+    wait_until(lambda: window.tabs.count() == 3, application)
+    second_editor = window.tabs.current_editor()
+    second_editor.setPlainText("another word")
+    monkeypatch.setattr("app.ui.main_window.MAX_OPEN_BUFFER_UTF16_UNITS",
+                        first_editor.document().characterCount() - 1)
+    window.show_project_search()
+    panel = window._project_search_panel
+    with patch.object(second_editor, "toPlainText", side_effect=AssertionError("omitted buffer copied")):
+        panel.search_requested.emit("word")
+    wait_until(lambda: window._project_search_cancel is None, application)
+    assert panel.results.count() == 1
+    assert "First" in panel.results.item(0).text()
+    assert "limit for open documents" in panel.status.text() and "Second" in panel.status.text()
+    assert first_editor.toPlainText() == first_text
+    assert second_editor.toPlainText() == "another word"
+    assert project.read_scene(first.id) == "disk only"
+    assert project.read_scene(second.id) == "disk word"
+    for editor in (first_editor, second_editor):
+        editor.document_state.mark_saved()
+    window.close()
+
+
 def test_quick_open_filters_aliases_and_distinguishes_duplicate_names(application):
     from app.ui.quick_open_dialog import QuickOpenDialog, QuickOpenItem
     items = (QuickOpenItem("scene", "scene-1", "Shared", "Chapter One"),

@@ -1,5 +1,24 @@
 # Implementation progress
 
+- **TASK-012.06 — DONE within documented bounds (2026-11-01):** capped
+  total open-buffer copies at 8 Mi UTF-16 units using Qt counts before copying.
+  Omitted buffers carry a translated reason and never fall back to stale disk
+  text. The service also rejects certainly oversized text before encoding it.
+  Five new regressions cover descriptor/buffer allocation rejection, omission,
+  exact budget boundaries for ASCII/emoji, preserved source files and unsaved
+  buffers, and continuing other matches. Focused search/project UI/localization
+  suites: 199 passed; full offline suite: 841 passed, 2 skipped. Ukrainian
+  source validation passed; diff reviewed and whitespace check passed.
+  README/TASKS/search verification updated. All numbered TASK-012 tickets
+  verified; parent remains partial pending release-catalog/native V2 checks.
+  Captured text is bounded, not total process memory: descriptor metadata scales
+  with tabs/project size, capture remains synchronous and blocked regular-file
+  reads are not interruptible. Earlier tabs can consume the allowance first;
+  omissions are explicit. Prior search checkpoint committed as `e8031f9`.
+  Ready for scoped budget commit. TASK-006 acceptance reconciliation text is
+  drafted separately in docs/gui-latency-evaluation.md for the next checkpoint.
+  No push attempted; unrelated staged artifacts preserved.
+
 - **TASK-012.01–.05/.07/V1 — VERIFIED; file-read fixes (2026-11-01):**
   traced service, dock, captured unsaved buffers and generation/digest-checked
   navigation. docs/project-search-verification.md maps acceptance to named

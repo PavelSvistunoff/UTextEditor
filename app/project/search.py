@@ -16,6 +16,14 @@ MAX_DOCUMENT_BYTES = 4 * 1024 * 1024
 MAX_MATCHES = 1000
 MAX_ERRORS = 100
 MAX_ERROR_LENGTH = 1024
+# Qt counts UTF-16 units without copying text. Cap all captured open-buffer
+# text together; Python string storage needs at most four bytes per unit.
+MAX_OPEN_BUFFER_UTF16_UNITS = 8 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class OmittedSearchBuffer:
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -49,8 +57,9 @@ class SearchResult:
 
 
 def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str,
-                   cancel: Event | None = None, open_buffers: dict[Path, str | None] | None = None) -> SearchResult:
-    """Search literal text; a None buffer marks an oversized open document."""
+                   cancel: Event | None = None,
+                   open_buffers: dict[Path, str | OmittedSearchBuffer | None] | None = None) -> SearchResult:
+    """Search literal text; omitted/oversized buffers never fall back to disk."""
     if not query:
         raise ValueError("Search text cannot be empty.")
     buffers = {path.resolve(): text for path, text in (open_buffers or {}).items()}
@@ -68,9 +77,11 @@ def search_project(root: Path, documents: tuple[SearchDocument, ...], query: str
             if item.text is None and path in buffers and buffers[path] is None:
                 raise ValueError("Document exceeds the search size limit")
             open_text = item.text if item.text is not None else buffers.get(path)
+            if isinstance(open_text, OmittedSearchBuffer):
+                raise ValueError(open_text.reason)
             if open_text is not None:
                 text = open_text
-                if len(text.encode("utf-8")) > MAX_DOCUMENT_BYTES:
+                if len(text) > MAX_DOCUMENT_BYTES or len(text.encode("utf-8")) > MAX_DOCUMENT_BYTES:
                     raise ValueError("Document exceeds the search size limit")
             else:
                 descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0))
