@@ -1,5 +1,16 @@
 # Implementation progress
 
+- **TASK-016.01–.04/V1 — VERIFIED (2026-11-01):** reviewed QTabWidget
+  built-in navigation, shared searchable picker, modified/path/project labels,
+  editor identity selection and delegated closing. Evidence is in
+  docs/tab-navigation-verification.md. Focused Qt tests: 3 passed,
+  217 deselected; preceding shared Quick Open tests: 6 passed; last full suite
+  on unchanged code: 841 passed, 2 skipped. No behavior/strings changed;
+  README already accurate. Diff reviewed; whitespace check passed. No redundant
+  tests added. .05/V2 and parent remain partial: offscreen Ctrl+Tab tests are
+  not native OS/accessibility verification. Related-navigation audit committed
+  as `e8776d8`. No push attempted; staged artifacts preserved.
+
 - **TASK-015.01–.05/V1 — VERIFIED (2026-11-01):** traced directed links,
   explicit scene associations, separate mention search, profile hide/return,
   and staged-save guards for character/relationship changes and write failures.

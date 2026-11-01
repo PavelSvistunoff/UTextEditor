@@ -484,15 +484,17 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-016 — Improve tab navigation
 **Priority:** Medium · **Parent status:** partial
 
-- [?] **TASK-016.01** — Add next/previous-tab navigation.  
+- [x] **TASK-016.01** — Add next/previous-tab navigation.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-016.02** — Add a searchable list of open tabs.  
+- [x] **TASK-016.02** — Add a searchable list of open tabs.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-016.03** — Display project context and modified-state indicators.  
+- [x] **TASK-016.03** — Display project context and modified-state indicators.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-016.04** — Handle duplicate filenames.  
+- [x] **TASK-016.04** — Handle duplicate filenames.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-016.05** — Verify native Qt shortcuts.  
+- [~] **TASK-016.05** — Verify native Qt shortcuts.
+  Offscreen Ctrl+Tab/Ctrl+Shift+Tab tests pass; actual native OS shortcut and
+  assistive-technology verification remains outstanding.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
@@ -500,7 +502,9 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Closing tabs uses existing unsaved-change handling.
 - Tab switching works with keyboard only.
 
-- [ ] **TASK-016.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-016.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
+  .01–.04 verified; evidence and remaining .05/V2 native checks are recorded
+  in docs/tab-navigation-verification.md. Parent remains partial.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
 - [ ] **TASK-016.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
