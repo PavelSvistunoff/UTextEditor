@@ -1,5 +1,17 @@
 # Implementation progress
 
+- **TASK-026.01–.05/V1 — verified; bounded visibility check (2026-11-01):**
+  ghost placement now asks QTextCursor.atBlockEnd instead of copying the entire
+  document and its suffix. A many-paragraph Unicode regression fails if display
+  checks call toPlainText and verifies accepted/rejected placement preserves
+  text/revision. Focused completion tests: 11 passed; full offline suite:
+  869 passed, 2 skipped. docs/inline-completion-verification.md records why the
+  complete single-line ghost/safe-rejection policy is retained instead of adding
+  a popup or hiding accepted text by elision. README/TASKS updated; diff reviewed
+  and whitespace check passed. No new controls/strings; native/catalog V2 still
+  pending, parent partial. Broader latency remains TASK-006. Streaming audit
+  committed as `58fedca`; original staged artifacts retained. No push attempted.
+
 - **TASK-025.01–.05/V1 — verified (2026-11-01):** inspected optional provider
   streaming, worker chunk queue/timer, provisional/final separate reviews,
   cumulative output bounds and cancellation/stale guards. Evidence in

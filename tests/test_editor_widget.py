@@ -145,6 +145,23 @@ def test_completion_does_not_cover_existing_text(application: QApplication) -> N
     assert editor.has_completion
 
 
+def test_completion_visibility_does_not_copy_the_entire_document(application: QApplication, monkeypatch) -> None:
+    editor = EditorWidget()
+    editor.setPlainText(("Earlier paragraph.\n" * 10000) + "😀 End.")
+    editor.moveCursor(QTextCursor.MoveOperation.End)
+    revision, position = editor.revision, editor.textCursor().position()
+    with monkeypatch.context() as bounded:
+        bounded.setattr(editor, "toPlainText", lambda: pytest.fail("Completion visibility copied the document"))
+        editor.show_completion(" More.", revision, position)
+        assert editor.has_completion
+        editor.moveCursor(QTextCursor.MoveOperation.StartOfBlock)
+        editor.show_completion(" More.", revision, editor.textCursor().position())
+        assert not editor.has_completion
+    assert editor.revision == revision
+    assert editor.toPlainText().endswith("😀 End.")
+    editor.close()
+
+
 def test_completion_is_invalidated_when_selection_changes_without_moving_cursor(application: QApplication) -> None:
     editor = EditorWidget()
     editor.setPlainText("Hello")

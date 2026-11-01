@@ -133,11 +133,9 @@ class EditorWidget(QPlainTextEdit):
         cursor = self.textCursor()
         if not text.strip() or "\n" in text or "\r" in text or cursor.hasSelection() or revision != self._revision or position != cursor.position():
             return
-        source = self.toPlainText()
-        suffix = source[qt_position_to_python_index(source, position):]
         # Painting at the cursor would cover any remaining text in this block,
         # including text on a wrapped visual line.
-        if suffix.partition("\n")[0]:
+        if not cursor.atBlockEnd():
             return
         text = self._completion_text_for_cursor(text, cursor)
         if not self._completion_fits(text, cursor):

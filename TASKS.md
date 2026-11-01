@@ -782,16 +782,21 @@ in-flight network read or timeout.
 ### TASK-026 — Improve inline completion display
 **Priority:** Low · **Parent status:** partial
 
-- [?] **TASK-026.01** — Investigate readable alternatives for long suggestions.  
+- [x] **TASK-026.01** — Investigate readable alternatives for long suggestions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-026.02** — Consider multiline and mid-line completion previews.  
+- [x] **TASK-026.02** — Consider multiline and mid-line completion previews.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-026.03** — Handle suggestions exceeding viewport width.  
+- [x] **TASK-026.03** — Handle suggestions exceeding viewport width.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-026.04** — Preserve explicit acceptance via Tab.  
+- [x] **TASK-026.04** — Preserve explicit acceptance via Tab.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-026.05** — Retain safe rejection when a suggestion cannot be represented.  
+- [x] **TASK-026.05** — Retain safe rejection when a suggestion cannot be represented.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Investigation retains a single-line ghost with safe rejection instead of
+adding a popup; evidence/design tradeoff is in
+`docs/inline-completion-verification.md`. Block-end detection now avoids a
+whole-document copy. Parent remains partial for native/catalog V2 checks.
 
 **Parent acceptance gate (all must pass):**
 - Normal typing is never blocked.
@@ -799,9 +804,9 @@ in-flight network read or timeout.
 - Cursor and selection behavior remain correct.
 - Small-window and multiline cases are tested.
 
-- [ ] **TASK-026.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-026.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-026.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-026.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-027 — Implement Markdown preview
