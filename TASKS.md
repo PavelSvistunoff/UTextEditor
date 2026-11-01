@@ -574,25 +574,29 @@ keyboard/screen-reader checks and release translation compilation remain open.
 ### TASK-019 — Implement navigation history
 **Priority:** Low · **Parent status:** partial
 
-- [?] **TASK-019.01** — Add bounded Back and Forward navigation history.  
+- [x] **TASK-019.01** — Add bounded Back and Forward navigation history.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-019.02** — Record explicit scene, note, and search-result jumps.  
+- [x] **TASK-019.02** — Record explicit scene, note, and search-result jumps.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-019.03** — Restore cursor position when safe.  
+- [x] **TASK-019.03** — Restore cursor position when safe.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-019.04** — Skip deleted or stale destinations.  
+- [x] **TASK-019.04** — Skip deleted or stale destinations.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [?] **TASK-019.05** — Keep history session-local.  
+- [x] **TASK-019.05** — Keep history session-local.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+
+Verification evidence and remaining native/catalog gates are recorded in
+`docs/navigation-history-verification.md`. Path-resolution failures are skipped
+without changing dirty buffers. Parent remains partial for V2.
 
 **Parent acceptance gate (all must pass):**
 - Normal typing does not create history entries.
 - Unsaved buffers are preserved.
 - Removed targets are handled gracefully.
 
-- [ ] **TASK-019.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.  
+- [x] **TASK-019.V1** — Reconcile implementation with the parent acceptance criteria and record which numbered subtasks are already satisfied.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [ ] **TASK-019.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
+- [ ] **TASK-019.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-020 — Improve Find and Replace

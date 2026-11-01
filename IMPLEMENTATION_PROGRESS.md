@@ -1,5 +1,17 @@
 # Implementation progress
 
+- **TASK-019.01–.05/V1 — verified; path failure fix (2026-11-01):**
+  Back/Forward now skips OSError/RuntimeError while verifying a project path.
+  Two path-failure regressions and four stale-target cases cover edited,
+  closed, removed and relinked destinations, unchanged history during typing,
+  retained dirty buffers and unchanged source files. Focused history tests:
+  8 passed; full offline suite: 852 passed, 2 skipped. README/TASKS and
+  docs/navigation-history-verification.md updated. Diff reviewed and whitespace
+  check passed. Existing translated feedback reused; no new controls/strings.
+  Parent remains partial for native shortcut/accessibility and release-catalog
+  V2 checks. Revision-value comparison committed as `2c2a9c5`. Original staged
+  artifacts preserved; no push attempted.
+
 - **TASK-009.04 — captured metadata values (2026-11-01):** verified starting
   HEAD `d6f7d86` and original staged artifacts. Character, directed-relationship
   and scene-association comparisons now provide deterministic Unicode JSON

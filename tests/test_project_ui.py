@@ -507,6 +507,80 @@ def test_navigation_history_restores_project_search_selections(application, tmp_
     window.close()
 
 
+@pytest.mark.parametrize("error", [OSError("unavailable path"), RuntimeError("symlink loop")])
+def test_navigation_history_skips_unverifiable_project_path(application, tmp_path, error):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    original = window.tabs.current_editor()
+    original.setPlainText("unsaved standalone")
+    window._record_navigation()
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved scene")
+    editor.moveCursor(editor.textCursor().MoveOperation.Start)
+    window._record_navigation()
+    editor.moveCursor(editor.textCursor().MoveOperation.End)
+    window._record_navigation()
+    with patch.object(Path, "resolve", side_effect=error):
+        window._navigate_history(-1)
+    assert window.tabs.current_editor() is original
+    assert editor.toPlainText() == "unsaved scene"
+    assert original.toPlainText() == "unsaved standalone"
+    assert editor.document_state.dirty and original.document_state.dirty
+    assert project.read_scene(scene.id) == "original"
+    for buffer in (editor, original):
+        buffer.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("stale", ["edited", "closed", "removed", "relinked"])
+def test_navigation_history_skips_stale_targets_without_recording_typing(application, tmp_path, stale):
+    from app.document.document import Document
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    source_path = project.root / scene.path
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    original = window.tabs.current_editor()
+    original.setPlainText("keep these words")
+    window._record_navigation()
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    target = window.tabs.current_editor()
+    last = window.tabs.add_document(Document.from_text("last buffer"))
+    window._record_navigation()
+    points = tuple(window._navigation_history.points)
+    if stale == "edited":
+        target.insertPlainText("changed ")
+    elif stale == "closed":
+        window.tabs.removeTab(window.tabs.indexOf(target))
+    elif stale == "removed":
+        project.remove_scene(scene.id)
+    else:
+        replacement = project.root / "manuscript" / "replacement.txt"
+        replacement.write_text("replacement", encoding="utf-8")
+        project.relink_scene(scene.id, "manuscript/replacement.txt")
+    assert tuple(window._navigation_history.points) == points
+    window._navigate_history(-1)
+    assert window.tabs.current_editor() is original
+    assert original.toPlainText() == "keep these words"
+    assert last.toPlainText() == "last buffer"
+    assert source_path.read_text(encoding="utf-8") == "original"
+    if stale == "relinked":
+        assert replacement.read_text(encoding="utf-8") == "replacement"
+    for buffer in (original, target, last):
+        buffer.document_state.mark_saved()
+    window.close()
+
+
 @pytest.mark.parametrize("changed", [False, True])
 def test_project_search_opens_closed_note_and_checks_disk_snapshot(application, tmp_path, changed):
     project = Project.create(tmp_path / "novel", "Novel")

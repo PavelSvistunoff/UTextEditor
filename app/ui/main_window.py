@@ -5488,7 +5488,11 @@ class MainWindow(QMainWindow):
                 except ProjectError:
                     return False
                 path = editor.document_state.path
-                if path is None or path.resolve() != (self.project.root / item.path).resolve():
+                try:
+                    matches_path = path is not None and path.resolve() == (self.project.root / item.path).resolve()
+                except (OSError, RuntimeError):
+                    return False
+                if not matches_path:
                     return False
             cursor = editor.textCursor()
             cursor.setPosition(point.anchor)
