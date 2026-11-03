@@ -37,6 +37,30 @@ associations are part of the version-1 YAML manifest. Scene-focused AI requests
 must use `character_context.py` and include only explicitly associated
 profiles; planning may use its compact project-level motivation summary.
 
+## Logical task batches and continuation
+
+When a user assigns work from `TASKS.md`, prefer **one bounded logical batch of 1–4 closely related atomic subtasks within a single parent TASK** per Codex run, unless the user explicitly requests a different scope. This replaces the default of exactly one atomic subtask per run; it does **not** authorize implementing the entire backlog or unrelated parent tasks. For high-risk data-integrity, migration, or cross-platform changes, use a smaller batch (often one subtask).
+
+1. Before coding, read the parent TASK, the candidate subtasks, their dependencies and acceptance criteria, the latest checkpoint, relevant README sections, code and tests. Choose 1–4 subtasks that share context and can be verified within the available execution budget. Record the exact IDs and why they belong together. If scope is uncertain, choose the smaller batch.
+2. Create a criterion-by-criterion checklist for **each selected subtask** and the relevant parent acceptance gate. Inspect existing implementation before assuming a checkbox represents missing code.
+3. Implement and verify iteratively. Continue within the selected batch while safe, feasible work remains; do not stop merely because one implementation step or focused test passed. Diagnose failures and try reasonable alternatives without weakening manuscript safety guarantees.
+4. Run focused tests after relevant changes. Run the full offscreen suite at the end of a logical batch when practical, and earlier when risk warrants. Never claim tests, native checks, or platform verification that were not actually performed.
+5. Update each selected subtask status independently. Mark `[x]` only when its entire done-when gate is verified; otherwise retain `[~]`, `[ ]`, or `[?]` as appropriate. Mark the parent complete only when all child subtasks and its parent acceptance gate pass. Do not mark unselected subtasks complete without evidence.
+6. Preserve unrelated worktree changes. Do not automatically move to another parent TASK or exceed the selected batch just because time remains.
+7. Before ending, put a concise, resumable checkpoint at the top of `IMPLEMENTATION_PROGRESS.md` if any selected work remains incomplete or parent acceptance is still pending. Keep the checkpoint focused (roughly 10–20 lines where feasible); link to detailed evidence instead of copying long logs.
+8. Report an outcome **for every selected subtask**: `COMPLETE`, `BLOCKED`, or `CHECKPOINT`, and report the parent status separately. A batch is `COMPLETE` only when every selected subtask is complete; this does not imply the parent is complete.
+
+Stopping with an unfinished selected subtask is justified only by a specific external decision/dependency, missing tool/permission/platform, unacceptable data-safety risk, or exhausted execution/context budget. A difficult bug or failed test alone is not a blocker. On the next run for the same assignment, verify the checkpoint against the current branch and resume the unfinished selected subtask(s) before selecting new work, unless the user changes priorities.
+
+### Minimal checkpoint fields
+
+- Parent TASK, selected subtask IDs, per-subtask outcome, and separate parent status.
+- Acceptance criteria satisfied, outstanding, or unverified, with brief evidence.
+- Files changed and branch/commit if known; preserve unrelated work.
+- Exact focused/full test commands and results; tests and manual checks not run.
+- Concrete blocker (or `none`), next smallest safe action, and resume command.
+- Whether to resume the current batch or await a newly assigned batch.
+
 ## Change workflow
 
 1. Read the relevant README requirements and the owning implementation/tests.
