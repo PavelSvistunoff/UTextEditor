@@ -1,5 +1,19 @@
 # Implementation progress
 
+## TASK-001.02 rekey snapshot sharing (2026-11-13)
+
+- **.02: CHECKPOINT; parent TASK-001: open.** Rekeying an editor to an
+  identity with existing progress now retains shared prior-day snapshot data
+  while applying the destination's per-day minimum. Regression covers both
+  sides of the minimum during undo and redo. Reachable checkpoint count remains
+  unbounded; the parent memory and stress gates are still open.
+- Changed `app/document/writing_goals.py`, `tests/test_writing_goals.py`,
+  `README.md`, `TASKS.md`, and this checkpoint on `codex/task-continuation`.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py tests/test_writing_goal_benchmark.py`: 123 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 920 passed, 2 skipped. Native checks not run.
+- Next: resume .02; evaluate bounded storage for all reachable Qt undo states,
+  including responsive failure handling, before attempting .03/.05 gates.
+  Resume: `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+
 ## TASK-001.02 reset snapshot sharing (2026-11-13)
 
 - **.02: CHECKPOINT; parent TASK-001: open.** Daily reset now preserves

@@ -50,6 +50,23 @@ class _DailyCounts(Mapping[str, int]):
         result.count = self.count
         return result
 
+    def with_floor(
+        self, floor: Mapping[str, int],
+        bases: dict[tuple[int, str], tuple[dict[str, int], dict[str, int]]],
+    ) -> "_DailyCounts":
+        key = (id(self.base), self.day)
+        if key not in bases:
+            merged = dict(self.base)
+            for day, count in floor.items():
+                if day != self.day:
+                    merged[day] = max(merged.get(day, 0), count)
+            bases[key] = (self.base, merged)
+        result = object.__new__(_DailyCounts)
+        result.base = bases[key][1]
+        result.day = self.day
+        result.count = max(self.count, floor.get(self.day, 0))
+        return result
+
 
 class WritingGoalTracker:
     """Track current-count goals and daily inserted words without touching prose."""
@@ -185,14 +202,18 @@ class WritingGoalTracker:
         if preserve_history and history is not None:
             states, index = history
             if destination_counts:
-                merged_counts: dict[int, dict[str, int]] = {}
+                merged_counts: dict[int, Mapping[str, int]] = {}
+                merged_bases: dict[tuple[int, str], tuple[dict[str, int], dict[str, int]]] = {}
                 for position, (fingerprint, counts) in enumerate(states):
                     key = id(counts)
                     if key not in merged_counts:
-                        merged = dict(counts)
-                        for day, count in destination_counts.items():
-                            merged[day] = max(merged.get(day, 0), count)
-                        merged_counts[key] = merged
+                        if isinstance(counts, _DailyCounts):
+                            merged_counts[key] = counts.with_floor(destination_counts, merged_bases)
+                        else:
+                            merged = dict(counts)
+                            for day, count in destination_counts.items():
+                                merged[day] = max(merged.get(day, 0), count)
+                            merged_counts[key] = merged
                     states[position] = (fingerprint, merged_counts[key])
             self._histories[new_id] = (states, index)
             self._current_text[new_id] = text

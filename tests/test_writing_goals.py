@@ -387,6 +387,27 @@ def test_rekey_existing_destination_keeps_larger_progress_through_undo():
     assert "untitled" not in tracker._histories
 
 
+def test_rekey_destination_floor_retains_shared_history_and_daily_counts():
+    tracker = WritingGoalTracker(100, "new_words", progress={
+        "2026-10-16": {"source": 4, "saved": 7},
+        "2026-10-17": {"saved": 20},
+    })
+    tracker.attach("source", "")
+    for number in range(1, 31):
+        tracker.record_text("source", " word" * number, local_date="2026-10-17")
+    assert tracker.rekey_document("source", "saved", " word" * 30)
+    states, _ = tracker._histories["saved"]
+    assert all(snapshot.base is states[1][1].base for _, snapshot in states[1:])
+    tracker.record_text("saved", " word" * 29, undo=True, local_date="2026-10-17")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-16") == 7
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-17") == 29
+    for number in range(28, 9, -1):
+        tracker.record_text("saved", " word" * number, undo=True, local_date="2026-10-17")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-17") == 20
+    tracker.record_text("saved", " word" * 11, redo=True, local_date="2026-10-17")
+    assert tracker.count_new_words({"saved"}, local_date="2026-10-17") == 20
+
+
 def test_rekey_changed_text_attaches_fresh_checkpoint_without_counting_it():
     tracker = WritingGoalTracker(100, "new_words")
     tracker.attach("untitled", "")
