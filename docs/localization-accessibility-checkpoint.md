@@ -88,3 +88,11 @@ Opening a malformed manifest now shows a translated category and original detail
 `test_invalid_project_open_is_localized_and_preserves_active_project` reproduces
 a model validation error and checks active project, dirty buffer and busy reset.
 Native Ukrainian and remaining project/AI categories are still unverified.
+
+## AI network failures — TASK-032.04
+
+`test_ai_failure_localization_preserves_diagnostics_and_rejects_stale_results`
+uses a real OllamaClient failure with mocked networking. Packaged Ukrainian
+generation/completion messages preserve diagnostics, including `%1`, and dirty
+manuscript text. Stale request and settings generations preserve prior UI status.
+Other AI workflows and native Ukrainian operation remain to be audited.

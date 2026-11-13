@@ -38,6 +38,50 @@ def test_recovery_comparison_formats_localized_errors_and_empty_results(tmp_path
     assert MainWindow._compare_recovery_entries((), *args) == "Немає копій"
 
 
+@pytest.mark.parametrize("operation,expected", [
+    ("generation", "Не вдалося згенерувати"),
+    ("completion", "Не вдалося"),
+])
+@pytest.mark.parametrize("stale", [None, "request", "settings"])
+def test_ai_failure_localization_preserves_diagnostics_and_rejects_stale_results(
+    application, monkeypatch, operation, expected, stale,
+):
+    from urllib.error import URLError
+    from app.ai.ollama_client import OllamaClient, OllamaError
+    from app.i18n import install_translation
+
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved manuscript")
+    def unavailable_endpoint(*args, **kwargs):
+        raise URLError("offline %1")
+
+    monkeypatch.setattr("app.ai.ollama_client.request.urlopen", unavailable_endpoint)
+    with pytest.raises(OllamaError) as raised:
+        OllamaClient().generate("test")
+    generation = window._generate_generation if operation == "generation" else window._completion_generation
+    settings_generation = window._settings_generation
+    window.status.showMessage("previous status")
+    previous_ai_status = window.ai_status
+    _, translator = install_translation(application, "uk")
+    try:
+        handler = window._generation_failed if operation == "generation" else window._completion_failed
+        handler(raised.value, generation + (stale == "request"), settings_generation + (stale == "settings"))
+        if stale:
+            assert window.status.currentMessage() == "previous status"
+            assert window.ai_status == previous_ai_status
+        else:
+            assert expected in window.status.currentMessage()
+            assert str(raised.value) in window.status.currentMessage()
+            assert window.ai_status == "AI: Error"
+        assert editor.toPlainText() == "unsaved manuscript" and editor.document_state.dirty
+    finally:
+        application.removeTranslator(translator)
+        editor.document_state.mark_saved()
+        window.close()
+
+
 def test_invalid_project_open_is_localized_and_preserves_active_project(application, tmp_path, monkeypatch):
     from app.i18n import install_translation
     from app.project import Manifest, ProjectFormatError

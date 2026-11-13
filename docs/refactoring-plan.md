@@ -51,6 +51,8 @@ checks separately; offscreen tests cannot establish native behavior.
 3. **AI** — inspect provider, Ollama client, validation, prompts and services.
    Gate: offline tests, untrusted output validation, disclosure and unchanged
    provider protocol; retain worker-based invocation and stale-response guards.
+   Generation/completion failure handlers reviewed: localized wrappers and stale
+   guards are present; preserve their operation-specific checks and messages.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

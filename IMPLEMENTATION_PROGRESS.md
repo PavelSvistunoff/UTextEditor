@@ -7,6 +7,23 @@
 
 
 
+## TASK-032.04 checkpoint — AI failure audit
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
+- Generation/completion failure handlers reviewed; existing localized wrappers
+  and request/settings guards retained. No production refactor warranted here.
+- Six regressions use a real OllamaClient failure with mocked network, checking
+  packaged Ukrainian, exact details, stale status and dirty manuscript safety.
+- Focused UI/provider/i18n/translation tests: 250 passed; full offscreen suite:
+  963 passed, 2 skipped. `git diff --check` passed.
+- Clean Code review: deterministic failure injection, no network service needed,
+  no domain/API/undo change; other AI workflows and repository audit incomplete.
+- Native Ukrainian UI/accessibility and live Ollama not tested; branch `main`.
+- Files: UI tests, TASKS, refactoring plan and localization/progress evidence.
+- Next: remaining project/path errors and character/project AI workflow failures.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — invalid project format
 
 - TASK-032.04: **CHECKPOINT**; TASK-032 parent partial; native .V2 remains open.
