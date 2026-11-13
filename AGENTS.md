@@ -2,15 +2,13 @@
 
 ## Documentation entry points and authority
 
-1. `AGENTS.md` — execution policy, safety, verification, and checkpoint contract (this file).
-2. `TASKS.md` — **only active implementation backlog**; select exact remaining subtask IDs and parent acceptance gates here. Completed IDs are intentionally removed, not forgotten.
-3. `IMPLEMENTATION_PROGRESS.md` — newest-first execution evidence and resume checkpoints; **read the first current checkpoint**, then consult older entries only for the selected task. Old checkpoints are historical, not current blockers.
-4. `README.md` — current shipped behavior and product scope; `SPEC.md` — detailed requirements and acceptance background, including historical/future scope.
-5. `UNIMPLEMENTED_FEATURES.md` — limitations, risks and optional proposals, **not** a second execution queue. `README.uk.md` contains legacy specification sections; defer to the current English README on status disagreements.
+1. [TASKS.md](TASKS.md) is the executable **unfinished** backlog; select exact subtask IDs and gates, not a historical parent title.
+2. [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) is the latest resume pointer; historical checkpoints and dated [docs/](docs/) verification notes are evidence, not active instructions.
+3. [README.md](README.md) describes shipped behavior; [SPEC.md](SPEC.md) is the detailed contract; [README.uk.md](README.uk.md) is a Ukrainian user overview.
+4. [UNIMPLEMENTED_FEATURES.md](UNIMPLEMENTED_FEATURES.md) is an inventory of risks/proposals **not** automatically approved for implementation.
+5. Inspect the checked-out code and tests before assuming an open ticket means absent code. Older attached Markdown snapshots may predate the repository.
 
-**Fast start:** check `git status --short` and branch; read the `TASKS.md` summary and selected parent; read the top `IMPLEMENTATION_PROGRESS.md` checkpoint and any linked task evidence; inspect code/tests; implement a bounded batch; verify; update backlog and checkpoint. Do not scan the entire progress archive before every batch.
-
-**User-authorized multi-task runs:** if the user's current request explicitly authorizes completing the whole backlog, the 1–4 subtask limit applies **per batch**, not to the entire run. Finish/checkpoint each batch before selecting the next parent; respect time, tools, safety and genuine external blockers. Otherwise stop at the assigned parent/batch.
+**Fast start:** `git status --short` → selected IDs → latest checkpoint → owning code/tests → bounded batch → focused/full tests → short checkpoint.
 
 ## Project
 
@@ -51,27 +49,12 @@ profiles; planning may use its compact project-level motivation summary.
 
 ## Logical task batches and continuation
 
-When a user assigns work from `TASKS.md`, prefer **one bounded logical batch of 1–4 closely related atomic subtasks within a single parent TASK** per Codex run, unless the user explicitly requests a different scope. This replaces the default of exactly one atomic subtask per run; it does **not** authorize implementing the entire backlog or unrelated parent tasks. For high-risk data-integrity, migration, or cross-platform changes, use a smaller batch (often one subtask).
-
-1. Before coding, read the parent TASK, the candidate subtasks, their dependencies and acceptance criteria, the latest checkpoint, relevant README sections, code and tests. Choose 1–4 subtasks that share context and can be verified within the available execution budget. Record the exact IDs and why they belong together. If scope is uncertain, choose the smaller batch.
-2. Create a criterion-by-criterion checklist for **each selected subtask** and the relevant parent acceptance gate. Inspect existing implementation before assuming a checkbox represents missing code.
-3. Implement and verify iteratively. Continue within the selected batch while safe, feasible work remains; do not stop merely because one implementation step or focused test passed. Diagnose failures and try reasonable alternatives without weakening manuscript safety guarantees.
-4. Run focused tests after relevant changes. Run the full offscreen suite at the end of a logical batch when practical, and earlier when risk warrants. Never claim tests, native checks, or platform verification that were not actually performed.
-5. Update each selected subtask status independently. Mark `[x]` only when its entire done-when gate is verified; otherwise retain `[~]`, `[ ]`, or `[?]` as appropriate. Mark the parent complete only when all child subtasks and its parent acceptance gate pass. Do not mark unselected subtasks complete without evidence.
-6. Preserve unrelated worktree changes. Do not automatically move to another parent TASK or exceed the selected batch just because time remains.
-7. Before ending, put a concise, resumable checkpoint at the top of `IMPLEMENTATION_PROGRESS.md` if any selected work remains incomplete or parent acceptance is still pending. Keep the checkpoint focused (roughly 10–20 lines where feasible); link to detailed evidence instead of copying long logs.
-8. Report an outcome **for every selected subtask**: `COMPLETE`, `BLOCKED`, or `CHECKPOINT`, and report the parent status separately. A batch is `COMPLETE` only when every selected subtask is complete; this does not imply the parent is complete.
-
-Stopping with an unfinished selected subtask is justified only by a specific external decision/dependency, missing tool/permission/platform, unacceptable data-safety risk, or exhausted execution/context budget. A difficult bug or failed test alone is not a blocker. On the next run for the same assignment, verify the checkpoint against the current branch and resume the unfinished selected subtask(s) before selecting new work, unless the user changes priorities.
-
-### Minimal checkpoint fields
-
-- Parent TASK, selected subtask IDs, per-subtask outcome, and separate parent status.
-- Acceptance criteria satisfied, outstanding, or unverified, with brief evidence.
-- Files changed and branch/commit if known; preserve unrelated work.
-- Exact focused/full test commands and results; tests and manual checks not run.
-- Concrete blocker (or `none`), next smallest safe action, and resume command.
-- Whether to resume the current batch or await a newly assigned batch.
+- Prefer one high-risk ticket, or **1–4 related subtasks of one parent**, in a bounded batch. Whole-backlog authorization permits **sequential checked batches** and never justifies skipped gates.
+- Write criterion-by-criterion preconditions, failure and stale-state tests for each selected ticket. Investigate existing implementation first and preserve unrelated worktree changes.
+- Run focused tests, then the full offscreen suite where practical. Only direct native tests can close native .V2 gates; without the platform report `BLOCKED`, not `COMPLETE`.
+- Report per-subtask `COMPLETE`, `CHECKPOINT` or `BLOCKED` and the separate parent status. Complete parents only when every acceptance criterion is met.
+- If work remains, prepend a 10–20-line checkpoint: selected IDs, outcomes, criteria, changed files/branch, test commands/results, skipped/native checks, blockers and exact resume command.
+- Do not jump to unrelated parent tasks, truncate Qt undo to meet memory goals, or claim arbitrary-writer save safety.
 
 ## Change workflow
 
