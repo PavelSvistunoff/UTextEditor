@@ -58,6 +58,9 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   A direct tracker reproduction confirms rekeying into an active destination
   replaces its tracked text and checkpoints; a per-editor identity design is
   still needed to preserve both histories.
+  A UI regression test verifies that Save As to an already-open file is
+  rejected and preserves both tabs' progress through undo and redo. This guard
+  does not resolve arbitrary tracker identity collisions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.05** — Benchmark realistic long editing sessions.
   History benchmark now accepts command/undo counts and checks branching after

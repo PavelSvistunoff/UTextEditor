@@ -911,6 +911,35 @@ def test_daily_new_words_goal_tracks_typing_undo_and_redo(application: QApplicat
     window.close()
 
 
+def test_save_as_open_file_preserves_both_writing_goal_histories(application, tmp_path, monkeypatch):
+    path = tmp_path / "open.txt"
+    path.write_text("", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.configure(10, "new_words")
+    first = window.tabs.add_document(Document.from_text("", path))
+    second = window.tabs.new_document()
+    first.insertPlainText("first")
+    second.insertPlainText("second words")
+    first_id, second_id = first._writing_goal_document_id, second._writing_goal_document_id
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    result = []
+
+    assert not window._save_editor(second, callback=result.append, target=path)
+    assert result == [False]
+    assert second._writing_goal_document_id == second_id
+    assert path.read_text(encoding="utf-8") == ""
+    for editor, identity, count in ((first, first_id, 1), (second, second_id, 2)):
+        assert window.writing_goals.count_new_words({identity}) == count
+        editor.undo()
+        assert window.writing_goals.count_new_words({identity}) == 0
+        editor.redo()
+        assert window.writing_goals.count_new_words({identity}) == count
+        editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
 def test_writing_goal_does_not_credit_undo_after_history_reattachment(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()

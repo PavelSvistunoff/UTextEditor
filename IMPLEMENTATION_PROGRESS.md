@@ -1,5 +1,59 @@
 # Implementation progress
 
+## TASK-001.03 continuation review (2026-11-13)
+
+- **.03: CHECKPOINT; parent TASK-001: open.** Batch: .03 alone, because
+  tracker identity and undo history affect stored progress. Existing pause,
+  reset, rekey and rejected Save As cases pass; active identity collisions
+  and correct aggregation across independent live editors remain unresolved.
+- Parent gate: existing focused goal tests pass; bounded memory, stress gate
+  and complete undo/redo correctness remain unverified. No code changed.
+- `_record_writing_goal_text` derives the persistent identity again rather
+  than using an independent editor key; project aggregation enumerates stable
+  scene identities. A solution must update both paths and preserve persisted
+  progress, reset/clear, closing tabs and the already-completed save path.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py -k 'rekey or save_as_open_file_preserves_both_writing_goal_histories or paused_edits or reset'`:
+  13 passed, 97 deselected. Full suite and native checks not run in this review.
+- Branch `codex/task-continuation`, HEAD `71396cf`; existing uncommitted
+  changes and staged generated files preserved. `git diff --check` passed.
+- Next: resume .03; design separate editor history keys and stable persisted
+  identities, then cover collisions, project aggregation, reset and undo/redo.
+  Resume: `rg -n '_goal_document_id|_attach_writing_goal_document|rekey_document' app tests`.
+
+## TASK-001.03 continuation checkpoint (2026-11-13)
+
+- **.03: CHECKPOINT; parent TASK-001: open.** Existing Save As guard and
+  unused-destination rekey tests pass; active tracker identity collisions and
+  bounded reachable history remain unresolved. No implementation changed.
+- `_attach_writing_goal_document` also runs after a successful save and when
+  binding an open file to a project. Raising on collision there without a UI
+  recovery design can interrupt a completed save or project binding. Separate
+  live-editor history identities from persisted progress before changing it.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py -k 'rekey or save_as_open_file_preserves_both_writing_goal_histories'`: 7 passed, 103 deselected. Full suite and native checks not run in this continuation.
+- Prior uncommitted changes and staged generated files preserved. Branch
+  `codex/task-continuation`; HEAD `71396cf`. Git metadata is read-only in this
+  environment; local commits cannot be created here.
+- Next: resume .03 with a per-editor history/persistent identity design and
+  tests for collision, project aggregation, reset and undo/redo. Resume command:
+  `rg -n 'rekey_document|_goal_document_id|_attach_writing_goal_document' app tests`.
+
+## TASK-001.03 checkpoint (2026-11-13)
+
+- **.03: CHECKPOINT; parent TASK-001: open.** Save As to an already-open file
+  is rejected without modifying disk, and both tabs retain correct progress
+  through undo and redo, verified by a new UI regression test. Direct tracker
+  rekeying into an active destination can still destroy its history; bounded
+  undo metadata and the parent memory gate remain outstanding.
+- Changed `tests/test_editor_widget.py`, `TASKS.md` and this checkpoint on
+  `codex/task-continuation`; unrelated staged generated files are untouched.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_editor_widget.py -k 'save_as_open_file_preserves_both_writing_goal_histories'`:
+  1 passed, 72 deselected. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  909 passed, 2 skipped. Native checks not run.
+- `git diff --check` passed. Commit attempt `git commit --only -m 'Test writing goal history on rejected Save As' -- TASKS.md IMPLEMENTATION_PROGRESS.md tests/test_editor_widget.py` failed: sandbox denies creation of `.git/index.lock`. Changes remain uncommitted; unrelated staged files remain untouched.
+- Next: design separate live editor histories and persistent document identity
+  aggregation, including collision, reset and project progress tests; resume
+  TASK-001.03. Resume command: `rg -n 'rekey_document|_goal_document_id' app tests`.
+
 ## TASK-001.03 / .05 checkpoint (2026-11-13)
 
 - **.03: CHECKPOINT; .05: CHECKPOINT; parent TASK-001: open.** A direct
