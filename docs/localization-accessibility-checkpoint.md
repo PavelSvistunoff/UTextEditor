@@ -13,6 +13,13 @@ tests now compare packaged and freshly compiled translations for every source
 entry and representative plural numbers. Native UI and screen-reader checks
 remain outstanding; this update does not complete the localization audit.
 
+
+## TASK-032.04 — missing standalone file (2026-11-13)
+
+A real `FileManager.open` failure now receives a translated missing-file category
+while preserving the original system error and path, including `%1` in a filename.
+The packaged Ukrainian catalog is covered by `test_missing_document_error_includes_translated_category_and_original_details`; existing recent-file tests cover dirty-buffer preservation. Other service errors and native Ukrainian workflows remain open.
+
 ## TASK-032
 
 - .01 partial: audit_ui_strings.py reports nine selected-Qt-API candidates. They

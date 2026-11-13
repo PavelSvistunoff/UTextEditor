@@ -5,6 +5,22 @@
 
 
 
+
+## TASK-032.04 checkpoint — missing file localization
+
+- TASK-032.04: **CHECKPOINT**; TASK-032 parent remains partial; .V2 native gate open.
+- Real missing standalone file receives translated category with original error
+  and filename retained, including placeholder-like text. Other errors unchanged.
+- Regression failed before change; i18n/translation focused tests: 42 passed.
+- Full offscreen suite: 952 passed, 2 skipped; catalog extraction/reference check
+  and English/Ukrainian lrelease succeeded; packaged parity tested.
+- Existing recent-file tests verify unsaved text survives missing-file failure.
+- Native Ukrainian UI/accessibility and live Ollama were not tested.
+- Files: `app/ui/main_window.py`, `tests/test_i18n.py`, Ukrainian TS/QM,
+  README, TASKS and localization/refactoring evidence; branch `main`.
+- Next: audit remaining typed save-conflict, project and AI error categories.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## TASK-030.03 checkpoint — profile keyboard traversal
 
 - TASK-030.03: **CHECKPOINT**; parent TASK-030 remains partial; .V2 native gate open.

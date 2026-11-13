@@ -1,5 +1,19 @@
 # Refactoring progress
 
+## 2026-11-13 — TASK-032.04 missing-file category
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
+- `app/ui/main_window.py` wraps typed missing-file errors in a translated category
+  and retains exact system details; other error types preserve their prior paths.
+- Regression with a real missing file and `%1` in its name failed before fix;
+  i18n/translation suite: 42 passed; full offscreen suite: 952 passed, 2 skipped.
+- Source extraction/reference validation and both catalog compilations succeeded;
+  packaged catalog parity covered by tests. Native Ukrainian UI not checked.
+- Clean Code review: formatting uses existing placeholder helper, domain and UI
+  boundaries preserved; no new dependencies, stale-state or persistence changes.
+- Next: typed save conflict, project and AI errors; broader refactoring incomplete.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## 2026-11-13 — TASK-030.03 keyboard traversal
 
 - TASK-030.03: **CHECKPOINT**; TASK-030 parent partial; native .V2 remains open.

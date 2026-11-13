@@ -5036,6 +5036,8 @@ class MainWindow(QMainWindow):
         self._open_document_path(path)
 
     def _document_open_error_message(self, error: Exception) -> str:
+        if isinstance(error, FileNotFoundError):
+            return format_qt(self.tr("File not found: %1"), str(error))
         if isinstance(error, BinaryTextError):
             return self.tr("This file contains binary data and cannot be opened as UTF-8 text.")
         if isinstance(error, UnicodeDecodeError):

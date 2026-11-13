@@ -63,6 +63,26 @@ def test_document_open_errors_are_translated_without_masking_other_errors(applic
         application.removeTranslator(translator)
 
 
+def test_missing_document_error_includes_translated_category_and_original_details(application, tmp_path):
+    from app.document.file_manager import FileManager
+
+    path = tmp_path / "missing %1.txt"
+    with pytest.raises(FileNotFoundError) as raised:
+        FileManager().open(path)
+    language, translator = install_translation(application, "uk")
+    assert language == "uk"
+    try:
+        class Context:
+            tr = staticmethod(MainWindow.tr)
+
+        message = MainWindow._document_open_error_message(Context(), raised.value)
+        assert "Файл не знайдено" in message
+        assert str(raised.value) in message
+        assert str(path) in message
+    finally:
+        application.removeTranslator(translator)
+
+
 def test_ukrainian_catalog_translations_and_placeholders_are_complete():
     catalog = Path(__file__).parents[1] / "translations" / "utexteditor_uk.ts"
     root = ET.parse(catalog).getroot()

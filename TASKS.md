@@ -435,7 +435,8 @@ partial for all-field native keyboard/focus review in small windows; V2 open.
 
 Source extraction, placeholder checks and release catalog compilation pass;
 automated tests compare packaged translations against freshly compiled sources.
-Standalone open errors for invalid UTF-8 and binary content are translated.
+Standalone open errors for invalid UTF-8, binary content and missing files are
+translated; missing-file diagnostics retain the original system detail and path.
 Automated literal candidates were reviewed; other raw service errors and native
 workflows remain incomplete. Evidence and limits are in
 `docs/localization-accessibility-checkpoint.md`.
