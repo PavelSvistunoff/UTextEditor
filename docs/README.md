@@ -6,6 +6,9 @@
 
 - [Clean Code guidelines for Codex](clean-code-codex.md) — naming, focused functions, clear boundaries, error handling, tests and scoped refactoring for Python/PySide6.
 
+- [Repository refactoring acceptance](refactoring-audit.md) — per-module dispositions, changes, tests and retained risks.
+- [Refactoring plan](refactoring-plan.md) and [progress](refactoring-progress.md) — completed batches and verification history.
+
 ## Data integrity and performance
 
 - [Save coordination](save-coordination.md) — in-process lock guarantee, cross-process overwrite race and platform trade-offs.

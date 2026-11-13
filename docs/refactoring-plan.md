@@ -1,109 +1,54 @@
 # Repository refactoring plan
 
-Status: **in progress**. This is an initial, prioritized inventory, not a
-claim that every source file and test has been reviewed. The repository has
-123 tracked Python files. Review each remaining file and its tests before
-deciding whether a change is warranted; add concrete findings here as they
-are established. Avoid changes solely to satisfy a size metric.
-
-## Final execution batches
-
-- R1 document: separate revision project/chapter/scene/note/link/profile comparison
-  responsibilities; retain verification reads and exact change ordering. Add a
-  cross-category ordering regression before extraction. Reuse one Unicode word
-  token rule for project counts and undo-aware inserted-word tracking.
-- R2 project/AI: review every module and tests; simplify demonstrated duplication
-  only. Keep distinct transaction, parser and output-limit policies explicit.
-- R3 UI: move non-widget recovery preparation out of MainWindow behind its existing
-  API, preserving captured localized messages, worker execution and stale guards.
-- R4 settings/startup/tools/tests: inspect remaining modules; remove confirmed dead
-  imports and leave platform/default/public-entry behavior intact. Record per-file
-  dispositions and unresolved risks in docs/refactoring-audit.md.
-- Each batch: focused tests, full offscreen where practical, diff review, scoped
-  commit excluding existing staged bytecode. Completion means reviewed findings
-  resolved or explicitly justified, not an arbitrary function-size target.
+Status: **COMPLETE**. The final audit covers 135 Python files across all six
+planned inventories. Findings were resolved or explicitly retained with reasons;
+completion does not mean that every class must be rewritten or shortened.
+See [per-file audit and acceptance report](refactoring-audit.md) for dispositions,
+verification and residual risks, and [progress](refactoring-progress.md) for the
+sequential implementation checkpoints.
 
 ## Shared completion gates
 
-For each package, inspect every module and its callers/tests for responsibility,
-duplication, naming, nesting, coupling, error handling, dead code and missing
-coverage. Record findings or an explicit rationale for leaving code alone.
-Before risky edits capture normal, failure and stale-state behavior in tests;
-preserve APIs, data formats, dirty buffers, undo and transaction semantics.
-Run focused tests, the full offline suite where practical, and `git diff --check`.
-Review the Clean Code checklist in `docs/clean-code-codex.md`. Document native
-checks separately; offscreen tests cannot establish native behavior.
+- [x] Review responsibilities, duplication, names/side effects, nesting, coupling,
+  UI/domain/file separation, errors, dead code and coverage in every package.
+- [x] Preserve public call shapes, YAML/IDs, dirty text, Undo/Redo, conflict guards,
+  transactional rollback, worker dispatch, stale-response and explicit AI consent.
+- [x] Characterize risky changes before extraction; separate actual behavior fixes.
+- [x] Run focused/full offline tests, direct native subset and diff review.
+- [x] Record each module's disposition and accepted limitations; update README.
 
-## Priority and investigation queue
+## Final package outcomes
 
-1. **Document** — `app/document/encoding.py`: repeated counting and manual
-   character scanning obscure the line-ending tie rule; test mixed endings and
-   preserve the first-occurrence tie break. Initial change completed in `be1cc15`.
-   `file_manager.py`: duplicated digest checks now share a rule while retaining
-   both checks and their distinct diagnostics; verify removed/changed sources,
-   staging cleanup, dirty state and the documented independent-writer race.
-   `export.py` and `book_compiler.py`: shared scene ID and text validation;
-   selection and the distinct validation order are covered by regressions.
-   `recovery.py`: save and snapshot parsing now use the same project-item
-   identity predicate, with damaged snapshot preservation tested. Initial review
-   of `revisions.py` confirmed that scanning a FIFO named `.json` blocks; a
-   separate fix rejects non-regular revision files with a bounded regression.
-   `writing_goals.py`: shared undo/redo checkpoint restoration without copying
-   or truncating reachable history. Reachable undo metadata can still grow with editing history.
-   Audit `file_manager.py`, `recovery.py`, `revisions.py`, `writing_goals.py`,
-   `merge.py`, export/compiler and remaining modules with their corresponding
-   tests. Risk: external-write conflicts, rollback, data loss and undo; do not
-   claim protection from arbitrary concurrent writers or prune Qt undo.
-2. **Project** — inspect `service.py` (large transaction/orchestration surface),
-   `model.py`, paths, search, translation, auto-writer and remaining modules.
-   Character serialization mapping is now readable; inspect remaining model
-   validation and establish responsibility and duplication findings before extraction.
-   Character map unknown-key checks now share the existing manifest rule;
-   sorted diagnostics are covered for background, personality and arc.
-   Gate: stable IDs/YAML compatibility, conflict checks and rollback tests.
-   `translation.py` scene capture is shared while retaining traversal order.
-   Auto-writer rollback previously suppressed temporary-file unlink errors;
-   separate behavior fix reports remaining temporary files and preserves the
-   rollback diagnostic, with failure injection.
-3. **AI** — inspect provider, Ollama client, validation, prompts and services.
-   Gate: offline tests, untrusted output validation, disclosure and unchanged
-   provider protocol; retain worker-based invocation and stale-response guards.
-   Generation/completion failure handlers reviewed: localized wrappers and stale
-   guards are present; preserve their operation-specific checks and messages.
-   Project open/mutation warnings now share typed project error presentation;
-   real path rejection and malformed-manifest cases retain diagnostic details.
-   Text/PDF export errors share source-protection and typed project presentation;
-   both callback routes are covered for source, format, path and system failures.
-   Character scene-search failures reuse typed project presentation; explicit
-   stale-project/generation guards are covered for each error category.
-   Character profile export errors reuse the same categories, with cancellation
-   and failure tests. `export_project_character` export filesystem
-   work has moved to a worker using a captured profile; stale project/generation
-   success/failure feedback and fsync failures are tested.
-   Project-analysis context heading now uses one translated template rather than
-   concatenation; source labels/model output remain captured data, tested verbatim.
-   Revision load/compare failure messages use translated templates and explicit
-   guards; visibility, project identity and selection-generation behavior tested.
-   Project search success/failure callbacks share request completion/context checks;
-   obsolete callbacks retain newer search state and error details are localized.
-   Project-document open failure routes share project error presentation and
-   captured generation checks; new-open and existing-tab workers are tested.
-   Revision creation shares completion cleanup/context checks; name-prompt state
-   changes and success/failure worker feedback are covered by regressions.
-   Recovery worker explanations now use UI-captured immutable message values;
-   legacy helper defaults remain English. Binary/UTF-8 categories retain original
-   diagnostics; data-preserving regressions cover all newly changed paths.
-4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
-   editor and each dialog, together with UI and end-to-end tests. Extract only
-   cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,
-   asynchronous generations and undo; native accessibility remains unverified.
-5. **Settings and startup** — inspect `settings/settings.py`, `main.py`,
-   logging and i18n with their tests. Preserve defaults, persistence and startup
-   diagnostics; distinguish confirmed dead code from external/public entry points.
-6. **Tests and other Python modules** — inspect every test, benchmark and tool
-   for misleading assertions, duplication and stale/dead code. Keep tests focused
-   on observable behavior and preserve useful failure diagnostics.
+| Batch / package | Outcome and acceptance |
+| --- | --- |
+| R1 `app/document/` | COMPLETE: revision categories and common positions separated; duplicate snapshot byte writes and Unicode token rule shared. Existing encoding/export/recovery/undo safeguards retained. Ordering and injected-write-failure regressions pass. |
+| R2 `app/project/` | COMPLETE: project-bound saves, recovery identity resolution, summaries, captured export and project revision assembly moved to explicit owners. Goal/knowledge parsing clarified; manifest and distinct transactional policies retained deliberately. Stable-ID/YAML/conflict/rollback tests pass. |
+| R2 `app/ai/` | COMPLETE: shared JSON fence and Ollama generation payload rules; planning and analysis removed from window. Strict schema/evidence validation, context limits, consent and provider protocol preserved; offline tests pass. |
+| R3 `app/ui/` | COMPLETE: domain workers delegated through existing static APIs, terminal activity handlers named, confirmed unused imports removed. Widget-specific state, review, focus and generation guards stay in UI. Native focus/activity/new-tab acceptance passes. |
+| R4 `app/settings/` | COMPLETE: persistence/defaults/host/recency policies reviewed with tests. Different file/project path normalization retained for compatibility; no speculative settings abstraction. |
+| R4 `app/main.py`, i18n/logging | COMPLETE: composition-root and optional-setup diagnostics retained; native translator lifecycle already verified. Package/script startup behavior remains. |
+| R4 tests/tools/benchmarks | COMPLETE: every Python test/support/tool inventoried, pure worker cases moved out of UI tests, new meaningful regressions added. All five standalone probes run; misleading zero-exit Qt traceback led to separate B1 fix. |
 
-Completion requires all six inventories, resolved or justified findings, and
-documented checks. Existing backlog/native gates in `TASKS.md` remain separate;
-this refactoring does not implicitly complete them or authorize new features.
+## Separate behavior fix
+
+B1: tab selection can emit status callbacks before editor_created attaches goal
+tracking. All three goal-scope regressions failed before the fix. Goal refresh
+now waits for attachment without altering tab signals, undo or manuscript data.
+This is isolated in commit `561aa49`, after the pure refactoring commits.
+
+## Evidence and accepted risks
+
+Final full offscreen: **1117 passed, 2 skipped** (live Ollama opt-in cases).
+Final native Cocoa: **39 passed**. Catalog reference validation and
+`git diff --check` pass. Benchmarks are small smoke workloads, not general
+performance guarantees. Python 3.12/other OSes, VoiceOver speech and actual OS
+appearance transitions were not executed in this run.
+
+MainWindow remains an orchestration surface; Project remains a persistence
+aggregate. Distinct write/transaction policies and reachable undo metadata are
+retained for correctness. In-process conflict protection is not a guarantee
+against arbitrary independent writers. These are argued dispositions, not
+unreviewed queue items; details are in the final audit.
+
+The unfinished TASKS.md backlog remains empty. New product proposals require a
+separate selection; none were implicitly authorized by closing this refactoring.

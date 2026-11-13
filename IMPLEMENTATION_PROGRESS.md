@@ -1,5 +1,25 @@
 # Implementation progress — current resume pointer
 
+## Repository refactoring — COMPLETE
+
+- All six inventories in docs/refactoring-plan.md are closed; 135 Python files reviewed.
+- Per-file dispositions, findings and retained designs: docs/refactoring-audit.md.
+- R1: revision comparisons, snapshot byte writes and Unicode word rules clarified/shared.
+- R2/R3: project and AI worker rules moved out of MainWindow; old call APIs retained.
+- R4: settings/startup/tools/tests reviewed; distinct compatibility policies retained.
+- Separate B1 lifecycle fix: three new goal-tab regressions failed before correction.
+- Branch: main; scoped commits 1da9e0a, 2a232fb, 62cd994; behavior fix 561aa49.
+- Final full command: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`.
+- Final full result: 1117 passed, 2 skipped in 115.92s; skipped cases require live Ollama.
+- Native Cocoa focus/activity/goal-tab command: same pytest with `QT_QPA_PLATFORM=cocoa`,
+  tests/test_dialog_focus.py tests/test_ai_activity.py and the new goal-tab test: 39 passed.
+- All five standalone probes ran; final editor smoke has no traceback; no broad performance claim.
+- Fresh translation extraction: 970 messages; reference validation passed; diff check passed.
+- Safety/Clean Code checklist reviewed; no dependency, undo, YAML or stale-guard changes.
+- Existing staged pyc and DS_Store changes preserved and excluded from scoped commits.
+- VoiceOver, OS appearance transitions, Python 3.12 and other OSes not newly verified.
+- No planned refactoring batch or current TASKS.md ticket remains to resume.
+
 ## Current backlog — completed localization acceptance
 
 - TASK-032.01/.02/.04: **COMPLETE**; TASK-034.03 already **COMPLETE**.
