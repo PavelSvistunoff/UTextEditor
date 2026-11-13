@@ -30,6 +30,6 @@ implementation is covered by the full 868-passed/2-skipped suite.
 
 No behavior, strings or redundant tests changed; existing README accurate.
 Numbered tickets/V1 verified. Parent/V2 remain partial for native shortcuts,
-screen-reader and release-catalog verification; shared TASK-005 independent-writer
+screen-reader and release-catalog verification; the shared independent-writer
 race and rollback/crash limitations remain. No claim of cross-process transaction
 isolation or automatic consistency repair after partial draft acceptance.

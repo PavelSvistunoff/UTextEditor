@@ -19,9 +19,6 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 | Parent | Scope | Documented state |
 |---|---|---|
 | TASK-001 | Fix writing-goal history memory growth | open |
-| TASK-005 | Investigate and mitigate save race conditions | partial |
-| TASK-007 | Implement external file conflict resolution | partial |
-| TASK-008 | Improve recovery diagnosis | partial |
 | TASK-012 | Implement project-wide full-text search | partial |
 | TASK-013 | Implement Quick Open | partial |
 | TASK-015 | Implement related-item navigation | partial |
@@ -70,66 +67,6 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 - Undo/redo does not produce incorrect daily counts.
 - Existing writing-goal tests pass.
 - New stress and regression tests pass.
-
-### TASK-005 — Investigate and mitigate save race conditions
-**Priority:** High · **Parent status:** partial
-
-Evidence: [docs/save-coordination.md](docs/save-coordination.md).
-
-- [~] **TASK-005.04** — Implement a safe mitigation where practical.
-  Shared reentrant in-process coordination now covers standalone, project text,
-  and manifest saves. A window also rejects concurrent tab saves to the same
-  resolved destination while the first worker is pending, releasing the
-  reservation on success or failure. Pending open results for that destination
-  are discarded with retry feedback; independent-process races remain.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-
-**Parent acceptance gate (all must pass):**
-- Concurrent modifications are detected or safely coordinated within the supported guarantee.
-- No silent overwrite occurs in tested conflict scenarios.
-- Atomic replacement and recovery behavior remain correct.
-- Remaining cross-process limitations are documented.
-
-- [~] **TASK-005.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  Later save/open coordination added UI messages. Ukrainian source validation
-  and temporary compilation pass; release catalog and native keyboard and
-  accessibility checks remain outstanding, as do native filesystem and
-  multi-process guarantees.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
-
-### TASK-007 — Implement external file conflict resolution
-Audit: version display, explicit reload/save-elsewhere/merge, cancellation and
-stale-review protection are verified. Saves recheck staged disk state; the
-independent-process final-check-to-replace race remains (TASK-005). Native
-keyboard/screen-reader checks and release translation compilation remain open.
-**Priority:** High · **Parent status:** partial
-
-- [~] **TASK-007.05** — Recheck disk state before writing.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-
-**Parent acceptance gate (all must pass):**
-- Conflicting content is never overwritten silently.
-- Three-way merge conflicts are clearly identified.
-- Cancellation preserves all versions.
-- Concurrent-change tests pass.
-
-- [ ] **TASK-007.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
-
-### TASK-008 — Improve recovery diagnosis
-**Priority:** High · **Parent status:** partial
-
-Remaining: the no-silent-overwrite gate depends on the independent-writer race
-in TASK-005/007. Recovery UI release catalog and native verification also
-remain outstanding; see `IMPLEMENTATION_PROGRESS.md` for completed evidence.
-
-- [ ] **TASK-008.V2** — Verify the recovery UI with the release catalog and on a native platform, including keyboard and accessibility behavior.
-
-**Parent acceptance gate (all must pass):**
-- Partial recovery sets can be inspected.
-- Invalid entries do not prevent recovery of valid entries.
-- Canonical files are never silently overwritten.
-- Unrecoverable data is clearly identified.
 
 ### TASK-012 — Implement project-wide full-text search
 **Priority:** High · **Parent status:** partial
@@ -477,11 +414,9 @@ or partial as indicated.
 
 ## Cross-cutting execution priorities
 
-1. **Safety first:** TASK-005 and TASK-007 share the unresolved cross-process overwrite race; implement a defined coordination guarantee before declaring either complete.
-2. **Memory:** TASK-001 needs measured bounds; do not truncate Qt undo silently.
-3. **Recovery safety:** TASK-008 requires failure-mode tests before new UI polish.
-4. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
-5. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.
+1. **Memory:** TASK-001 needs measured bounds; do not truncate Qt undo silently.
+2. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
+3. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.
 
 ## Completion record template
 

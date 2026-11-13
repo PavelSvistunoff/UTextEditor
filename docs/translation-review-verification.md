@@ -32,6 +32,6 @@ Twelve focused translation tests pass; the unchanged implementation is covered
 by the full 868-passed/2-skipped suite. No runtime behavior, strings or redundant
 tests added for this audit; README already describes the workflow. All numbered
 tickets/V1 verified; parent/V2 stay partial for native keyboard/screen-reader
-and release-catalog checks. TASK-005's independent-process final-check race also
+and release-catalog checks. The independent-process final-check race also
 applies here. The tested transaction rollback is not a guarantee against process
 crashes, rollback I/O failure or uncooperative concurrent writers.

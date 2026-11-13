@@ -183,22 +183,6 @@ network read may continue until data arrives or the connection times out.
    scene association boundaries and do not expose other characters implicitly.
    This complements the first-use disclosure gap above; it adds UI complexity
    and must avoid interrupting every keystroke.
-2. **Complete external file conflict protection** (medium/high effort).
-   The review flow shows the saved base, current disk version, and open buffer,
-   with reload, save elsewhere, or a reviewed merge. The disk is checked again
-   after review and before replacement, but an independent process can still
-   change it between the final check and replacement. A supported coordination
-   guarantee and cross-platform verification remain necessary before claiming
-   that conflicts cannot be overwritten silently.
-4. **Improve recovery triage** (medium/high effort). Extend the existing scan,
-   comparison, relocation, and restore choices with clearer per-document status,
-   timestamps and readable corruption details. A readable snapshot can be selected for recovery; parseable version-1 entries
-   with damaged metadata can open their text as a new unsaved document. Export
-   and recovery from malformed JSON or unsupported formats need further work. Acceptance: damaged entries remain available for diagnosis;
-   no repair or discard occurs without explicit action, and canonical files
-   changed on disk are never overwritten silently. Partial or corrupt snapshots
-   may not contain enough data to recover; the UI must say so.
-
 ### Medium priority
 
 5. **Extend project-wide search** (medium/high effort). Add matching options

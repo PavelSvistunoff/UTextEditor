@@ -5,16 +5,13 @@
 - Removed eight previously completed parent tasks and 132 completed subtasks
   from `TASKS.md`; their historical evidence remains in this file, verification
   documents and Git history. At that checkpoint, open/partial subtasks and
-  parent acceptance gates were preserved. TASK-008.V2 makes an existing native-
-  verification gap explicit; it is not a new claim of completion. Stable
-  task IDs are retained.
+  parent acceptance gates were preserved. Stable task IDs are retained.
 - Updated `README.uk.md` where its current-state claims conflicted with
   `README.md`, including the save-race limitation and implemented AI review,
   disclosure and navigation features.
 - Documentation-only change: tests not run. Checked backlog preservation, local
   evidence links and `git diff --check`. Native checks not performed.
-- Resume another open backlog task; independent TASK-005/007 save
-  coordination remains unresolved.
+- Resume another open backlog task.
 
 ## TASK-029.05 and parent complete (2026-11-13)
 
@@ -70,83 +67,6 @@
   inventing past data; implement confirmed removal of local progress while
   clearing undo/redo checkpoints. Resume .02 before selecting further work.
 
-## TASK-008.03 completed (2026-11-13)
-
-- **TASK-008.03: COMPLETE; parent TASK-008: partial.** Scans report damaged
-  and incomplete entries while preserving valid snapshots. Parseable version-1
-  entries with invalid metadata offer explicit recovery of captured text into
-  a new unsaved document; metadata and canonical paths are not trusted. Invalid
-  JSON and unsupported formats cannot be recovered by this method. Parent's
-  absolute no-silent-overwrite gate remains affected by the independently
-  reproduced final-check race in TASK-005/007.
-- Changed `app/document/recovery.py`, `app/ui/main_window.py`, recovery/UI
-  tests, `README.md`, `UNIMPLEMENTED_FEATURES.md`, Ukrainian source catalog,
-  `TASKS.md`, and this file on `codex/task-continuation`. Existing staged
-  artifacts remain unrelated. Native UI/accessibility checks not run.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_recovery.py tests/test_project_ui.py -k 'recovery or fifo_snapshot'`:
-  56 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
-  886 passed, 2 skipped. Ukrainian source validation and temporary `pyside6-lrelease`
-  compilation passed. Next: continue independent tasks; revisit parent after
-  the external-writer guarantee is resolved.
-
-## TASK-008.03 checkpoint (2026-11-13)
-
-- **TASK-008.03: CHECKPOINT; parent TASK-008: open.** Non-regular snapshot
-  candidates are diagnosed without blocking the recovery scan or automatic
-  cleanup; valid snapshots remain accessible and the damaged entry is retained.
-  Broader damaged-entry diagnosis and the full parent acceptance gate remain.
-- Changed `app/document/recovery.py`, `tests/test_recovery.py`, `README.md`,
-  `TASKS.md`, and this checkpoint on `codex/task-continuation`; existing staged
-  generated files remain unrelated. The new raw diagnostic is in English,
-  consistent with existing service-error details; localization remains open.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_recovery.py`:
-  38 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
-  884 passed, 2 skipped. The FIFO regression runs in a subprocess with timeout;
-  it skips where FIFOs are unavailable. Native cross-platform checks not run.
-- Blocker: none for further diagnosis. Next: inspect how damaged metadata and
-  readable text can be presented without changing canonical files; resume .03
-  using `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_recovery.py tests/test_project_ui.py`.
-
-## TASK-005.04 / V2 checkpoint (2026-11-13)
-
-- **.04: CHECKPOINT; V2: BLOCKED; parent TASK-005: partial.** A standalone
-  or project open result for a destination with a pending Save As no longer
-  creates a second tab; the status bar asks the user to retry. Tests preserve
-  the unsaved buffer and cover retry after a failed save. The independent-writer
-  final-check race remains; its platform/coordination limits are documented in
-  `docs/save-coordination.md`.
-- V2 was reopened because these changes add interface messages. Ukrainian
-  source validation and temporary `.qm` compilation pass; native keyboard and
-  accessibility verification and a release catalog are outstanding.
-- Changed `app/ui/main_window.py`, `tests/test_project_ui.py`, `README.md`,
-  `translations/utexteditor_uk.ts`, `TASKS.md`, `docs/save-coordination.md`, and
-  this file on `codex/task-continuation`; pre-existing staged artifacts retained.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_ui.py -k 'open_result_is_not_installed or concurrent_save_as or binding_open_file'`:
-  8 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
-  883 passed, 2 skipped. `tools/check_translations.py translations/utexteditor_uk.ts`
-  passed; `.venv/bin/pyside6-lrelease translations/utexteditor_uk.ts -qm /private/tmp/utexteditor-task005-uk.qm` passed.
-- Next: continue independent backlog work; resume .04 when a cross-platform
-  competing-version guarantee can be demonstrated, and V2 with native review.
-
-## TASK-005.04 checkpoint (2026-11-13)
-
-- **TASK-005.04: CHECKPOINT; parent TASK-005: partial.** Concurrent tab saves
-  to the same resolved destination are rejected until the first worker finishes;
-  failure releases the reservation, preserving both buffers. Autosave reports
-  the conflict without a modal dialog. Independent-process final-check races
-  remain unresolved; see `docs/save-coordination.md`.
-- Changed `app/ui/main_window.py`, `tests/test_project_ui.py`, `README.md`,
-  `translations/utexteditor_uk.ts`, `TASKS.md`, and this checkpoint on branch
-  `codex/task-continuation`. Existing staged generated artifacts are unrelated.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_ui.py -k 'concurrent_save_as or standalone_repeated_saves or save_as_tracks'`:
-  4 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
-  881 passed, 2 skipped. Catalog: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/check_translations.py translations/utexteditor_uk.ts` passed.
-- Native UI/catalog release checks and cross-platform independent-writer
-  verification not run. Next: investigate opening a destination while its
-  Save As worker is pending and a safe independent-writer coordination design;
-  resume TASK-005.04, preserving conflict checks and atomic replacement. This
-  run stops at an execution-budget checkpoint, not a completed parent gate.
-
 ## Codex batch checkpoint format (newest checkpoint first)
 
 For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subtask `COMPLETE`/`BLOCKED`/`CHECKPOINT`, parent status, acceptance evidence, files changed, exact tests run/not run, blockers, and the next safe step with resume command. Keep the latest checkpoint concise (about 10–20 lines where practical). Resume unfinished selected subtasks on the next run for the same assignment. Completing the batch does not imply the parent task or backlog is complete.
@@ -161,8 +81,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   `ae3f1c6` and exact untouched-profile preservation `61750de`. Original staged
   .DS_Store/bytecode are preserved; no push attempted. No global completion is
   claimed. Next implementation gaps remain TASK-001 reachable-history bounds
-  and active identity collisions; TASK-005/.007 independent-writer race;
-  broader recovery diagnosis;
+  and active identity collisions;
   TASK-029 history viewer. TASK-027.03 and TASK-030.03 retain native latency/
   all-field focus requirements. Native/accessibility/release catalog checks in
   UI V2 remain open. Do not redo completed audits or silently truncate Qt undo.
@@ -268,7 +187,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   conflict rejection, CRLF/IDs/paths/links and byte-exact late-failure rollback.
   No runtime/string change or redundant tests; existing README accurate.
   TASKS updated; diff reviewed and whitespace check passed. Parent remains
-  partial for V2 native/catalog checks and shared TASK-005 independent-writer
+  partial for V2 native/catalog checks and the independent-writer
   race; crash/rollback-failure atomicity is not claimed. Context-provenance
   checkpoint committed as `511d967`. Original staged artifacts preserved;
   no push attempted.
@@ -334,7 +253,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   verification has been claimed. No generated release catalogs were changed.
   The overall backlog is still incomplete: earliest open work remains
   TASK-001's reachable-history bound/active-identity collision/stress gate;
-  TASK-005/.007's independent-writer race; broader TASK-008 diagnosis;
   TASK-019 and later
   inherited UI tickets still need acceptance reconciliation or implementation
   as appropriate. Continue from these gaps, preserving completed evidence;
@@ -401,9 +319,9 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   The entire TASKS.md backlog is NOT complete. Earliest remaining work is
   TASK-001.02/.03/.05 (bound reachable metadata without truncating Qt undo,
   preserve actively tracked identity collisions, then stress validation).
-  TASK-005/.007 still share the independent-writer final-check overwrite race;
-  no broader guarantee may be claimed. Further feasible work includes broader
-  TASK-008 diagnosis and the remaining UI verification queue. Native screen-reader,
+  The independent-writer final-check overwrite race remains; no broader
+  guarantee may be claimed. Further work includes the UI verification queue.
+  Native screen-reader,
   filesystem and release-catalog checks remain explicitly open. TASK-012's
   numbered tickets are verified; its parent still awaits V2. Do not redo the
   completed investigations/benchmarks merely because their parents are partial.
@@ -443,35 +361,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   No push attempted; unrelated staged artifacts preserved.
 
 
-- **TASK-008.01 — DONE (2026-11-01):** recovery scans now capture per-snapshot
-  canonical-file status in the worker: untitled, missing, appeared, unchanged,
-  changed, unknown or unreadable. Chooser details show status and capture time
-  using English/Ukrainian source strings. Diagnosis hashes regular files in
-  1 MiB chunks; nonblocking POSIX opens avoid waiting on a replaced FIFO.
-  Canonical read failures preserve valid snapshots. Eleven regressions cover
-  states, permissions, non-regular paths, unknown digests, subsequent disk
-  changes and temporary-catalog runtime labels; display uses captured status,
-  with an explicit advisory notice and unchanged restore conflict checks.
-  Focused recovery/project UI/localization suites: 213 passed; full offline
-  suite: 828 passed, 2 skipped. Ukrainian catalog validation passed; diff
-  reviewed and whitespace check passed. README/TASKS updated. Release compiled
-  assets untouched; native keyboard/screen-reader review remains outstanding.
-  Broader corrupt-data diagnosis/repair and parent acceptance remain open.
-  Save audit checkpoint committed as `5dca14c`; ready for scoped recovery
-  commit. Unrelated staged files preserved; no push attempted.
 
-- **TASK-005.V1 / V2 — DONE (2026-11-01 audit):** reviewed shared RLock,
-  standalone/project text and manifest save paths and named failure/concurrency
-  tests. Added acceptance matrix to docs/save-coordination.md; .01/.02/.03/.05
-  remain verified, .04 and parent remain partial. The green suite deliberately
-  reproduces an independent writer's edit being overwritten after the final
-  check; it must not be reported as cross-process safety. UI/catalog/native
-  accessibility checks N/A: coordination introduces no UI/strings. Native
-  filesystem/multi-process verification remains open. Focused document/project
-  suite: 79 passed; last full suite on unchanged implementation: 817 passed,
-  2 skipped. Documentation diff reviewed; whitespace check passed. No redundant
-  tests added. Benchmark checkpoint committed as `9337b37`; ready for scoped
-  audit commit. No push attempted; unrelated staged artifacts preserved.
 
 
 - **TASK-001.04 — DONE (2026-11-01):** verified last checkpoint
@@ -487,18 +377,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   Reachable history remains unbounded (TASK-001.02); identity collisions and
   long-session acceptance remain open. Ready for scoped commit.
 
-- **TASK-005.03 — DONE (2026-10-31):** evaluated process-local locking,
-  POSIX advisory locking, cooperative sidecars, Windows byte-range locking,
-  repeat fingerprints and atomic replacement. Added subprocess regression
-  test_posix_advisory_lock_does_not_exclude_uncooperative_writer: a separate
-  interpreter writes successfully while LOCK_EX is held; skips without fcntl.
-  docs/save-coordination.md records evidence, primary Python/Microsoft API
-  references, the decision not to misrepresent advisory locking as a race fix,
-  and native/cross-process follow-up requirements. Focused document suite:
-  32 passed; full suite: 811 passed, 2 skipped; diff reviewed and whitespace
-  check passed. README/TASKS updated. This completes evaluation only;
-  TASK-005.04 and parent independent-writer acceptance remain incomplete.
-  No product behavior or UI changed. Changes uncommitted; no push attempted.
 
 
 
@@ -614,95 +492,14 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   README/TASKS updated. Scope/enable transitions and bounded history remain
   outstanding. Changes are uncommitted; no push attempted.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** recovery inspection now includes
-  captured text for untitled snapshots and snapshots without a canonical file,
-  using existing localized labels and the existing UI truncation notice.
-  Updated localized comparison assertions and added
-  test_recovery_inspection_includes_text_without_canonical_file (two cases).
-  Focused recovery/domain/UI tests: 42 passed; full suite: 685 passed, 2 skipped.
-  README and TASKS updated; diff check passed. No new UI strings. Pagination,
-  damaged-content extraction and native verification remain open. Prior path
-  validation fix committed as 6afc551; no push requested this turn.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** empty and NUL-containing
-  canonical/project paths in recovery snapshots now produce invalid-entry
-  diagnostics. Automatic retention and cleanup preserve these damaged entries.
-  Added test_invalid_recovery_paths_are_diagnosed_and_preserved with four
-  path/field cases and a valid companion snapshot. Recovery tests: 27 passed;
-  full offline suite: 683 passed, 2 skipped; diff check passed. README and
-  TASKS updated. Damaged-content extraction and native checks remain open.
-  Prior comparison notice committed as 2995d88; no push requested this turn.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** recovery comparisons now label
-  the existing 6,000-character per-entry truncation, with Ukrainian translation.
-  Added test_recovery_comparison_labels_truncated_diff_without_changing_snapshot
-  covering long and short comparisons and preservation of snapshot/source text.
-  Focused recovery UI tests: 13 passed; full suite: 679 passed, 2 skipped.
-  Ukrainian catalog validation and diff check passed. README/TASKS updated.
-  Full comparison pagination, release catalog compilation and native checks
-  remain outstanding. Prior fix committed as b75a4c4; push failed because
-  GitHub HTTPS credentials are unavailable.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** document-directory resolution
-  errors now produce diagnostics without hiding other readable snapshots.
-  Regression test_directory_resolution_failure_does_not_hide_valid_snapshots
-  covers OSError and RuntimeError (including path-resolution loop failures).
-  Recovery suite: 23 passed; full offline suite: 678 passed, 2 skipped.
-  README and task notes updated; diff check passed. Broader diagnosis and
-  native checks remain open. Previous symlink fix committed as f489b96;
-  push failed because GitHub HTTPS credentials are unavailable.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** symbolic-link snapshot files
-  are now reported as invalid instead of being read as recovery entries.
-  The shared validation also preserves them during retention and automatic
-  saved-document cleanup. A regression verifies that explicit discard removes
-  the link while leaving its external target intact. Recovery suite: 21 passed;
-  full offline suite: 676 passed, 2 skipped; diff check passed. README and
-  TASKS updated. This is a pre-read check, not protection against concurrent
-  symlink replacement; native platform checks remain outstanding. Previous
-  root diagnostic fix committed as feaed34; push failed due to unavailable
-  GitHub HTTPS credentials.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** failure to enumerate the recovery
-  root now returns a root-level diagnostic instead of aborting the scan.
-  Added test_unreadable_recovery_root_is_reported_without_deleting_data.
-  Focused recovery suite: 20 passed; full offline suite: 675 passed, 2 skipped.
-  README and TASKS updated; diff check passed. Broader recovery diagnosis and
-  native verification remain outstanding. Previous directory scan fix committed
-  as aaae439; push to origin/main failed because GitHub HTTPS credentials are
-  unavailable.
 
-- **TASK-008.03 — PARTIAL (2026-10-31):** recovery scanning reports a
-  directory-listing failure and continues with other snapshot directories.
-  Uses explicit directory enumeration because glob can suppress filesystem
-  errors. Added test_unreadable_directory_does_not_hide_other_recovery_snapshots;
-  recovery tests: 19 passed; full offline suite: 674 passed, 2 skipped.
-  README and TASKS updated; diff whitespace check passed. Existing UI displays
-  the diagnostic through its translated wrapper; OS error text remains as
-  supplied by the filesystem. Broader diagnosis/native checks remain open.
-  Prior conflict-resolution audit committed as b337586.
 
-- **TASK-007.V1 — DONE (2026-10-31 audit):** reviewed FileManager.save,
-  MainWindow.review_external_changes and merge_text. TASK-007.01–.04 are
-  verified by test_conflict_dialog_displays_versions_and_proposal,
-  test_conflict_review_stages_merge_and_rechecks_disk_on_save,
-  test_conflict_review_cancel_reload_and_stale_buffer,
-  test_conflict_review_save_elsewhere_or_reject_unresolved_markers and
-  test_conflict_review_rejects_disk_change_during_review. Focused merge,
-  document and project UI suites: 172 passed. No runtime changes in this audit;
-  previous full suite: 673 passed, 2 skipped. TASK-007.05 remains partial:
-  disk checks precede replacement but cannot exclude independent writers.
-  Native keyboard/accessibility checks on supported platforms and release
-  catalog compilation remain open. TASKS.md reconciled; no duplicate feature
-  implementation. Manifest coordination committed as 5760925.
 
-- **TASK-005.04 — PARTIAL (2026-10-31):** project manifest writes now use
-  the shared document write lock. The lock is reentrant so bulk workflows
-  can persist manifests while already holding it. Added
-  `test_manifest_and_standalone_saves_coordinate_in_process`; focused document
-  and project tests: 66 passed; full offline suite: 673 passed, 2 skipped.
-  README updated; diff whitespace check passed. Independent-process races
-  and native platform verification remain unresolved. No commits or pushes.
 
 ## Atomic-plan audit and recovery preservation (2026-10-31)
 
@@ -738,59 +535,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   is a single synthetic append-heavy run. Mixed edits, longer sessions and
   native memory measurements remain outstanding; this does not establish a
   bound or solve TASK-001.02.
-- **TASK-005.04 — PARTIAL:** standalone saves and project text writes now
-  share an in-process lock over fingerprint checks and replacement, including
-  project bulk text updates. Threaded regressions cover two standalone saves
-  and a project save racing a standalone save. Modified
-  `app/document/file_manager.py`, `app/document/write_lock.py`,
-  `app/project/service.py`, `tests/test_document.py`,
-  `tests/test_project_domain.py`, and `README.md`. Focused document, project
-  and translation suites: 71 passed; full offline suite: 665 passed, 2 skipped.
-  Independent-process coordination remains outstanding, as does coordination
-  with separate project manifest writes.
-- **TASK-008.02 — DONE:** recovery scans now report unfinished atomic-write
-  temporary files as well as malformed snapshots. The report says a write may
-  still be in progress; automatic retention and document cleanup preserve
-  these files, and confirmed discard removes them. Modified
-  `app/document/recovery.py`, `app/ui/main_window.py`,
-  `translations/utexteditor_uk.ts`, `tests/test_recovery.py`, `README.md`, and
-  `TASKS.md`. Focused recovery and project UI suites: 155 passed; full offline
-  suite: 648 passed, 2 skipped. Ukrainian source catalog validation passed.
-  Incomplete files are diagnostic only;
-  extracting intact content, native accessibility checks, and release catalog
-  compilation remain outstanding.
-- **TASK-005.02 — DONE:** added
-  `test_separate_process_edit_after_final_check_exposes_save_race` in
-  `tests/test_document.py`. A subprocess writes between the final check and
-  replacement, demonstrating that its edit is currently overwritten. This
-  assertion records a known defect and must change when coordination is fixed.
-  Focused document and project-domain suites: 63 passed; full offline suite:
-  646 passed, 2 skipped. Independent-process coordination remains outstanding.
-- **TASK-008.04 — DONE:** the recovery dialog can restore one selected
-  readable snapshot, including an older version, via the existing conflict-safe
-  background restore. Updated `app/ui/main_window.py`,
-  `translations/utexteditor_uk.ts`, `tests/test_project_ui.py`, `README.md`,
-  `TASKS.md`, and `UNIMPLEMENTED_FEATURES.md`. Focused recovery and project UI
-  suites: 154 passed; full offline suite: 647 passed, 2 skipped. Ukrainian
-  source catalog validation passed. Invalid snapshots remain
-  diagnostic only; release catalog compilation and native accessibility
-  verification remain outstanding.
-- **TASK-005.01 and TASK-005.05 — DONE (audit):** inspected
-  `app/document/file_manager.py` and `app/project/service.py`. Both recheck
-  after staging; project text writes also use a process-local lock. Separate
-  process staging tests in `tests/test_document.py` and
-  `tests/test_project_domain.py` cover conflicts. README documents the final
-  check-to-replace race with independent writers. TASK-005.04 remains partial:
-  those checks cannot prevent a change after the last check. No native
-  cross-platform coordination verification was performed.
-- **TASK-008.02 — PARTIAL:** recovery scan now reports malformed or
-  timezone-free capture timestamps and orders valid timestamps by instant,
-  preventing a damaged timestamp from selecting the wrong latest snapshot.
-  The invalid file remains available for diagnosis, but its text cannot yet
-  be selectively recovered in the UI. Modified `app/document/recovery.py`,
-  `tests/test_recovery.py`, `README.md`, `TASKS.md`, and this file. Focused
-  recovery and project UI suites: 153 passed. Full offline suite: 645 passed,
-  2 skipped. Further incomplete-set diagnosis and selective recovery remain.
 - **TASK-001.01 — DONE:** reviewed `WritingGoalTracker.record_text` and the
   Qt undo integration in `MainWindow._record_writing_goal_text` against
   `test_history_keeps_one_text_copy_and_tracks_undo_branch_across_days` and
@@ -799,17 +543,8 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   separately reachable commands still each retain metadata. TASK-001.02 and
   .04 remain partial; bounding them safely needs a design that preserves Qt
   undo and redo semantics.
-- **TASK-008.05 — DONE:** automatic retention and saved-document cleanup now
-  preserve unreadable, invalid, and unsupported-version recovery snapshots;
-  confirmed explicit discard can still remove them. Modified
-  `app/document/recovery.py`, `tests/test_recovery.py`, `README.md`, and
-  `TASKS.md`. `tests/test_recovery.py`: 14 passed; full offline suite: 642
-  passed, 2 skipped. Damaged snapshots can
-  accumulate until explicitly discarded; recovery diagnosis and selective
-  recovery remain incomplete.
 - **Audit queue:** complete the remaining atomic status audit; prioritize
-  TASK-005 save coordination, TASK-007 conflict protection, TASK-008 recovery
-  diagnosis before performance and UX.
+  remaining performance and UX work.
   Other inherited statuses remain unverified. Native screen-reader and
   platform checks require a suitable GUI environment.
 
@@ -843,29 +578,6 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   event-loop responsiveness. The full offline suite passed: 409 passed,
   2 skipped (`QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1
   .venv/bin/python -m pytest -q`).
-- **TASK-005 — in progress:** standalone saves, project text saves, and
-  project manifest saves recheck the disk after staging. Separate-process
-  regression tests cover edits during staging. A separate-process edit injected
-  immediately after the last check is still overwritten: no portable atomic
-  compare-and-replace or independent-editor lock is in place. Do not mark this
-  task complete until a supported coordination guarantee is implemented and
-  cross-platform verification is performed. The full offline suite after this
-  mitigation passed: 424 passed, 2 skipped (`QT_QPA_PLATFORM=offscreen
-  PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`).
-- **TASK-007 — in progress:** fixed the standalone save callback to retain the
-  newly written disk fingerprint, including after Save As. A Qt regression
-  test exercises two saves followed by an external edit and verifies that the
-  conflict preserves the buffer and disk. File > Review External Changes now
-  presents saved, disk, and buffer versions alongside an editable conservative
-  merge proposal for standalone and project files. Reload and merge are
-  undoable, Save Elsewhere uses the existing save flow, and the disk is
-  rechecked after review and on save. Tests cover cancellation, stale buffers
-  and disk, unresolved markers, reload, Save Elsewhere, and project and
-  standalone files. The Ukrainian source catalog has been updated; its
-  compiled catalog remains to be rebuilt through the project's release
-  process. The residual cross-process race means the no-silent-overwrite
-  acceptance criterion is not yet fully met; do not mark this task complete.
-  Full offline suite: 444 passed, 2 skipped.
 - **TASK-012 — in progress:** added a bounded, cancellable literal search
   service for captured scene and note descriptors. Open buffer snapshots take
   precedence over disk, unreadable, binary, or oversized files are reported,
