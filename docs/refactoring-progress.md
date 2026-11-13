@@ -1,5 +1,22 @@
 # Refactoring progress
 
+## Repository completion run — R1 document batch
+
+- R1: COMPLETE; repository audit/extraction batches R2–R4 remain in progress.
+- Baseline full offscreen: 1093 passed, 2 skipped (118.43s).
+- Revision comparison now delegates project/chapter/scene/note/link/profile rules;
+  common-item position calculation shares the same insertion/removal semantics.
+- Recovery/revision snapshot staging shares durable byte writing behind old methods.
+- Unicode word tokens share one owner; project count_words import API retained.
+- Added pre-extraction cross-category order and fsync/replace failure regressions.
+- Focused document/export/compiler/project/goals corpus: 268 passed; final
+  revised comparison/recovery/goals/project subset: 183 passed.
+- No save-conflict, YAML, Undo/Redo, retention or transaction policy changes.
+- Clean Code review: intent/ownership/errors/safety/tests/diff/report checked.
+- Native GUI not rerun for this domain-only batch; staged pyc/DS_Store preserved.
+- Next: finish project/AI extraction and UI worker-boundary verification.
+- Resume: `git status --short && cat docs/refactoring-plan.md`.
+
 ## Current backlog — completed localization acceptance
 
 - TASK-032.01/.02/.04: **COMPLETE**; TASK-034.03 already **COMPLETE**.

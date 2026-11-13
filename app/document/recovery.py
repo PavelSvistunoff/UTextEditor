@@ -7,9 +7,10 @@ import json
 import os
 import stat
 from pathlib import Path
-import tempfile
 from typing import Iterable
 from uuid import uuid4
+
+from .snapshot_write import write_snapshot_bytes
 import difflib
 import fnmatch
 
@@ -410,17 +411,4 @@ class RecoveryStore:
 
     @staticmethod
     def _atomic_write(target: Path, payload: bytes) -> None:
-        descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
-        temporary = Path(temporary_name)
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(payload)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(temporary, target)
-        except BaseException:
-            try:
-                temporary.unlink(missing_ok=True)
-            except OSError:
-                pass
-            raise
+        write_snapshot_bytes(target, payload)

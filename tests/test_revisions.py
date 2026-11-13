@@ -530,3 +530,65 @@ def test_reference_note_reordering_ignores_additions_and_removals(tmp_path):
     reordered = snapshot(["new", "two", "one"])
     moved = [change for change in store.compare(before, reordered).changes if change.kind == "moved"]
     assert [(change.item_id, change.item_type) for change in moved] == [("one", "note"), ("two", "note")]
+
+
+def test_comparison_preserves_order_across_all_changed_item_categories(tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+
+    def snapshot(label, note_type):
+        return store.create(
+            label,
+            structure={
+                "title": label,
+                "chapters": [{"id": "chapter", "title": label, "scenes": [
+                    {"id": "scene", "title": label, "path": "scene.txt"},
+                ]}],
+                "ungrouped_scenes": [],
+                "notes": [{"id": "note", "title": label, "type": note_type, "path": "note.txt"}],
+                "links": [] if label == "Before" else [{"source_id": "note", "target_id": "scene"}],
+                "characters": [{"id": "character", "full_name": label}],
+            },
+            scene_order=["scene"], scene_titles={"scene": label},
+            documents={"scene": label, "note": label},
+        )
+
+    before, after = snapshot("Before", "general"), snapshot("After", "research")
+    changes = store.compare(before, after).changes
+
+    assert [(change.item_type, change.kind) for change in changes] == [
+        ("project", "title-changed"), ("chapter", "title-changed"),
+        ("scene", "title-changed"), ("scene", "text-changed"),
+        ("note", "title-changed"), ("note", "type-changed"), ("note", "text-changed"),
+        ("link", "added"), ("character", "metadata-changed"),
+    ]
+    assert before.documents == {"scene": "Before", "note": "Before"}
+    assert after.documents == {"scene": "After", "note": "After"}
+
+
+@pytest.mark.parametrize("store_kind", ["revision", "recovery"])
+@pytest.mark.parametrize("failure_step", ["fsync", "replace"])
+def test_snapshot_write_failure_preserves_prior_snapshot_and_removes_staging(
+    tmp_path, monkeypatch, store_kind, failure_step,
+):
+    from app.document.recovery import RecoveryStore
+
+    store = RevisionStore(tmp_path / "snapshots") if store_kind == "revision" else RecoveryStore(tmp_path / "snapshots")
+
+    def capture(text):
+        if store_kind == "revision":
+            return create_snapshot(store, order=["scene"], titles={"scene": "Scene"}, documents={"scene": text})
+        return store.save("document", text)
+
+    previous = capture("Original snapshot")
+    original_bytes = previous.snapshot_path.read_bytes()
+
+    def fail(*args):
+        raise OSError("Injected snapshot write failure")
+
+    monkeypatch.setattr(os, failure_step, fail)
+    with pytest.raises(OSError, match="Injected snapshot write failure"):
+        capture("New unsaved manuscript")
+
+    assert previous.snapshot_path.read_bytes() == original_bytes
+    assert list(store.root.rglob("*.json")) == [previous.snapshot_path]
+    assert not list(store.root.rglob("*.tmp"))

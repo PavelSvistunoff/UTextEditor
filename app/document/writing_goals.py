@@ -7,11 +7,10 @@ from itertools import chain
 import json
 import os
 from pathlib import Path
-import re
 import tempfile
 from typing import Iterator, Mapping
 
-_WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
+from .word_count import WORD_PATTERN as _WORD
 _SCOPES = {"active_scene", "project_manuscript", "new_words"}
 
 

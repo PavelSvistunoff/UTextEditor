@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import re
 import hashlib
-import tempfile
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,7 +15,6 @@ from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 
 from .model import (
-    FORMAT_VERSION,
     MANIFEST_NAME,
     NOTE_TYPES,
     Chapter,
@@ -28,8 +26,6 @@ from .model import (
     ProjectPathError,
     Scene,
     Character,
-    CharacterGoal,
-    CharacterKnowledge,
     CharacterRelationship,
     CharacterStateChange,
     SceneCharacterAssociation,
@@ -40,8 +36,8 @@ from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
 from app.document.encoding import has_binary_controls
 from app.document.write_lock import TEXT_WRITE_LOCK
+from app.document.word_count import count_words
 
-_WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
 _PROJECT_TEXT_WRITE_LOCK = TEXT_WRITE_LOCK
 
 
@@ -77,10 +73,6 @@ class WordCount:
     count: int
     complete: bool
 
-
-def count_words(text: str) -> int:
-    """Count non-empty Unicode letter/digit runs with internal apostrophes/hyphens."""
-    return len(_WORD.findall(text))
 
 
 class Project:

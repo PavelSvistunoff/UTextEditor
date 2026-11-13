@@ -6,6 +6,23 @@ claim that every source file and test has been reviewed. The repository has
 deciding whether a change is warranted; add concrete findings here as they
 are established. Avoid changes solely to satisfy a size metric.
 
+## Final execution batches
+
+- R1 document: separate revision project/chapter/scene/note/link/profile comparison
+  responsibilities; retain verification reads and exact change ordering. Add a
+  cross-category ordering regression before extraction. Reuse one Unicode word
+  token rule for project counts and undo-aware inserted-word tracking.
+- R2 project/AI: review every module and tests; simplify demonstrated duplication
+  only. Keep distinct transaction, parser and output-limit policies explicit.
+- R3 UI: move non-widget recovery preparation out of MainWindow behind its existing
+  API, preserving captured localized messages, worker execution and stale guards.
+- R4 settings/startup/tools/tests: inspect remaining modules; remove confirmed dead
+  imports and leave platform/default/public-entry behavior intact. Record per-file
+  dispositions and unresolved risks in docs/refactoring-audit.md.
+- Each batch: focused tests, full offscreen where practical, diff review, scoped
+  commit excluding existing staged bytecode. Completion means reviewed findings
+  resolved or explicitly justified, not an arbitrary function-size target.
+
 ## Shared completion gates
 
 For each package, inspect every module and its callers/tests for responsibility,

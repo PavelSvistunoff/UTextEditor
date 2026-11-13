@@ -8,9 +8,10 @@ import json
 import os
 from pathlib import Path
 import stat
-import tempfile
-from typing import Mapping, Sequence
+from typing import Iterable, Mapping, Sequence
 from uuid import uuid4
+
+from .snapshot_write import write_snapshot_bytes
 
 
 @dataclass(frozen=True)
@@ -181,199 +182,16 @@ class RevisionStore:
         return self._to_snapshot(payload, path)
 
     def compare(self, before: RevisionSnapshot, after: RevisionSnapshot) -> RevisionComparison:
+        # Re-read both snapshots before comparing; caller-held metadata is not trusted.
         left, right = self.read(before), self.read(after)
-        old_ids, new_ids = set(left.scene_order), set(right.scene_order)
-        common = old_ids & new_ids
-        old_common_order = [scene_id for scene_id in left.scene_order if scene_id in common]
-        new_common_order = [scene_id for scene_id in right.scene_order if scene_id in common]
-        old_positions = {scene_id: index for index, scene_id in enumerate(old_common_order)}
-        new_positions = {scene_id: index for index, scene_id in enumerate(new_common_order)}
-        changes: list[SceneChange] = []
-        if isinstance(left.structure, dict) and isinstance(right.structure, dict):
-            old_project_title = left.structure.get("title")
-            new_project_title = right.structure.get("title")
-            if (isinstance(old_project_title, str) and isinstance(new_project_title, str)
-                    and old_project_title != new_project_title):
-                changes.append(SceneChange("project", "title-changed", old_project_title,
-                                           new_project_title, item_type="project"))
-            # Legacy snapshots may lack these fields, so only compare fields
-            # explicitly captured in both snapshots.
-            shared_fields = {key for key in ("project_id", "format_version")
-                             if key in left.structure and key in right.structure}
-            old_metadata = {key: left.structure[key] for key in shared_fields}
-            new_metadata = {key: right.structure[key] for key in shared_fields}
-            if old_metadata != new_metadata:
-                changes.append(SceneChange(
-                    "project", "metadata-changed", item_type="project",
-                    diff=_metadata_diff(old_metadata, new_metadata, "project"),
-                    changed_fields=_changed_fields(old_metadata, new_metadata),
-                ))
-        old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
-        old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
-        stable_parent_ids = {key for key in common if key in old_parents and key in new_parents
-                             and old_parents[key] == new_parents[key]}
-        old_sibling_positions: dict[str, int] = {}
-        new_sibling_positions: dict[str, int] = {}
-        for order, parents, positions in ((left.scene_order, old_parents, old_sibling_positions),
-                                          (right.scene_order, new_parents, new_sibling_positions)):
-            counts: dict[str | None, int] = {}
-            for key in order:
-                if key in stable_parent_ids:
-                    parent = parents[key]
-                    positions[key] = counts.get(parent, 0)
-                    counts[parent] = positions[key] + 1
-        old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
-        old_associations = _scene_associations(left.structure)
-        new_associations = _scene_associations(right.structure)
-        old_chapter_ids, new_chapter_ids = set(old_chapters), set(new_chapters)
-        common_chapters = old_chapter_ids & new_chapter_ids
-        old_chapter_order = [key for key in old_chapters if key in common_chapters]
-        new_chapter_order = [key for key in new_chapters if key in common_chapters]
-        old_chapter_positions = {key: index for index, key in enumerate(old_chapter_order)}
-        new_chapter_positions = {key: index for index, key in enumerate(new_chapter_order)}
-        for chapter_id, title in old_chapters.items():
-            if chapter_id not in new_chapter_ids:
-                changes.append(SceneChange(chapter_id, "removed", title, item_type="chapter"))
-        for chapter_id, title in new_chapters.items():
-            if chapter_id not in old_chapter_ids:
-                changes.append(SceneChange(chapter_id, "added", new_title=title, item_type="chapter"))
-        for chapter_id in old_chapters:
-            if chapter_id not in common_chapters:
-                continue
-            old_title, new_title = old_chapters[chapter_id], new_chapters[chapter_id]
-            if old_chapter_positions[chapter_id] != new_chapter_positions[chapter_id]:
-                changes.append(SceneChange(chapter_id, "moved", old_title, new_title, item_type="chapter"))
-            if old_title != new_title:
-                changes.append(SceneChange(chapter_id, "title-changed", old_title, new_title, item_type="chapter"))
-        for scene_id in left.scene_order:
-            if scene_id not in new_ids:
-                changes.append(SceneChange(scene_id, "removed", left.scene_titles.get(scene_id)))
-        for scene_id in right.scene_order:
-            if scene_id not in old_ids:
-                changes.append(SceneChange(scene_id, "added", new_title=right.scene_titles.get(scene_id)))
-        for scene_id in left.scene_order:
-            if scene_id not in common:
-                continue
-            old_title, new_title = left.scene_titles.get(scene_id), right.scene_titles.get(scene_id)
-            moved = (old_sibling_positions[scene_id] != new_sibling_positions[scene_id]
-                     if scene_id in stable_parent_ids else
-                     (old_positions[scene_id] != new_positions[scene_id]
-                      if scene_id not in old_parents or scene_id not in new_parents else False))
-            if moved:
-                changes.append(SceneChange(scene_id, "moved", old_title, new_title))
-            if (scene_id in old_parents and scene_id in new_parents
-                    and old_parents[scene_id] != new_parents[scene_id]):
-                changes.append(SceneChange(
-                    scene_id, "chapter-changed", old_title, new_title,
-                    old_chapter_id=old_parents[scene_id], new_chapter_id=new_parents[scene_id],
-                ))
-            if old_title != new_title:
-                changes.append(SceneChange(scene_id, "title-changed", old_title, new_title))
-            if scene_id in old_paths and scene_id in new_paths and old_paths[scene_id] != new_paths[scene_id]:
-                changes.append(SceneChange(scene_id, "path-changed", old_title, new_title,
-                                           old_path=old_paths[scene_id], new_path=new_paths[scene_id]))
-            if scene_id in old_associations and scene_id in new_associations:
-                old_scene_chars, new_scene_chars = old_associations[scene_id], new_associations[scene_id]
-                for character_id in sorted(old_scene_chars.keys() - new_scene_chars.keys()):
-                    changes.append(SceneChange(scene_id, "association-removed", old_title, new_title,
-                                               character_id=character_id,
-                                               diff=_metadata_diff(old_scene_chars[character_id], None, character_id)))
-                for character_id in sorted(new_scene_chars.keys() - old_scene_chars.keys()):
-                    changes.append(SceneChange(scene_id, "association-added", old_title, new_title,
-                                               character_id=character_id,
-                                               diff=_metadata_diff(None, new_scene_chars[character_id], character_id)))
-                for character_id in sorted(old_scene_chars.keys() & new_scene_chars.keys()):
-                    if old_scene_chars[character_id] != new_scene_chars[character_id]:
-                        changes.append(SceneChange(scene_id, "association-changed", old_title, new_title,
-                                                   character_id=character_id,
-                                                   diff=_metadata_diff(old_scene_chars[character_id],
-                                                                       new_scene_chars[character_id], character_id),
-                                                   changed_fields=_changed_fields(old_scene_chars[character_id],
-                                                                                  new_scene_chars[character_id])))
-            if left.documents[scene_id] != right.documents[scene_id]:
-                diff = _text_diff(
-                    left.documents[scene_id],
-                    right.documents[scene_id],
-                    f"{old_title or scene_id} (before)",
-                    f"{new_title or scene_id} (after)",
-                )
-                changes.append(SceneChange(scene_id, "text-changed", old_title, new_title, diff))
-
-        old_notes, new_notes = _note_records(left.structure), _note_records(right.structure)
-        old_note_ids, new_note_ids = set(old_notes), set(new_notes)
-        common_note_ids = old_note_ids & new_note_ids
-        old_note_positions = {key: index for index, key in enumerate(
-            key for key in old_notes if key in common_note_ids)}
-        new_note_positions = {key: index for index, key in enumerate(
-            key for key in new_notes if key in common_note_ids)}
-        for note_id in old_notes:
-            if note_id not in new_note_ids:
-                changes.append(SceneChange(
-                    note_id, "removed", old_notes[note_id][0], item_type="note",
-                    old_note_type=old_notes[note_id][1],
-                ))
-        for note_id in new_notes:
-            if note_id not in old_note_ids:
-                changes.append(SceneChange(
-                    note_id, "added", new_title=new_notes[note_id][0], item_type="note",
-                    new_note_type=new_notes[note_id][1],
-                ))
-        for note_id in old_notes:
-            if note_id not in new_note_ids:
-                continue
-            old_title, old_type = old_notes[note_id]
-            new_title, new_type = new_notes[note_id]
-            if old_note_positions[note_id] != new_note_positions[note_id]:
-                changes.append(SceneChange(note_id, "moved", old_title, new_title, item_type="note"))
-            if old_title != new_title:
-                changes.append(SceneChange(
-                    note_id, "title-changed", old_title, new_title, item_type="note"
-                ))
-            if old_type != new_type:
-                changes.append(SceneChange(
-                    note_id, "type-changed", old_title, new_title, item_type="note",
-                    old_note_type=old_type, new_note_type=new_type,
-                ))
-            if note_id in old_paths and note_id in new_paths and old_paths[note_id] != new_paths[note_id]:
-                changes.append(SceneChange(note_id, "path-changed", old_title, new_title, item_type="note",
-                                           old_path=old_paths[note_id], new_path=new_paths[note_id]))
-            if left.documents.get(note_id) != right.documents.get(note_id):
-                old_text, new_text = left.documents.get(note_id), right.documents.get(note_id)
-                diff = _text_diff(
-                    old_text or "",
-                    new_text or "",
-                    f"{old_title or note_id} (before)",
-                    f"{new_title or note_id} (after)",
-                )
-                changes.append(SceneChange(
-                    note_id, "text-changed", old_title, new_title, diff, item_type="note"
-                ))
-        old_links, new_links = _link_records(left.structure), _link_records(right.structure)
-        for source_id, target_id in sorted(old_links - new_links):
-            changes.append(SceneChange(f"{source_id} → {target_id}", "removed", item_type="link"))
-        for source_id, target_id in sorted(new_links - old_links):
-            changes.append(SceneChange(f"{source_id} → {target_id}", "added", item_type="link"))
-        for field, item_type in (("characters", "character"), ("character_relationships", "relationship")):
-            old_records = _metadata_records(left.structure, field)
-            new_records = _metadata_records(right.structure, field)
-            common_records = old_records.keys() & new_records.keys()
-            old_positions = {key: index for index, key in enumerate(
-                key for key in old_records if key in common_records)}
-            new_positions = {key: index for index, key in enumerate(
-                key for key in new_records if key in common_records)}
-            for item_id in sorted(old_records.keys() - new_records.keys()):
-                changes.append(SceneChange(item_id, "removed", item_type=item_type,
-                                           diff=_metadata_diff(old_records[item_id], None, item_id)))
-            for item_id in sorted(new_records.keys() - old_records.keys()):
-                changes.append(SceneChange(item_id, "added", item_type=item_type,
-                                           diff=_metadata_diff(None, new_records[item_id], item_id)))
-            for item_id in sorted(old_records.keys() & new_records.keys()):
-                if old_positions[item_id] != new_positions[item_id]:
-                    changes.append(SceneChange(item_id, "moved", item_type=item_type))
-                if old_records[item_id] != new_records[item_id]:
-                    changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type,
-                                               diff=_metadata_diff(old_records[item_id], new_records[item_id], item_id),
-                                               changed_fields=_changed_fields(old_records[item_id], new_records[item_id])))
+        changes = [
+            *_compare_project_metadata(left, right),
+            *_compare_chapters(left, right),
+            *_compare_scenes(left, right),
+            *_compare_notes(left, right),
+            *_compare_links(left, right),
+            *_compare_profiles(left, right),
+        ]
         return RevisionComparison(tuple(changes))
 
     def delete(self, snapshot: str | Path | RevisionSnapshot, *, confirmed: bool = False) -> None:
@@ -411,20 +229,7 @@ class RevisionStore:
 
     @staticmethod
     def _atomic_write(target: Path, payload: bytes) -> None:
-        descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
-        temporary = Path(temporary_name)
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(payload)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(temporary, target)
-        except BaseException:
-            try:
-                temporary.unlink(missing_ok=True)
-            except OSError:
-                pass
-            raise
+        write_snapshot_bytes(target, payload)
 
 
 def _text_diff(before: str, after: str, before_label: str, after_label: str) -> str:
@@ -570,3 +375,223 @@ def _note_records(structure: object) -> dict[str, tuple[str | None, str | None]]
                 note_type if isinstance(note_type, str) else None,
             )
     return records
+
+
+def _compare_project_metadata(left: RevisionSnapshot, right: RevisionSnapshot) -> list[SceneChange]:
+    changes: list[SceneChange] = []
+    if isinstance(left.structure, dict) and isinstance(right.structure, dict):
+        old_project_title = left.structure.get("title")
+        new_project_title = right.structure.get("title")
+        if (isinstance(old_project_title, str) and isinstance(new_project_title, str)
+                and old_project_title != new_project_title):
+            changes.append(SceneChange("project", "title-changed", old_project_title,
+                                       new_project_title, item_type="project"))
+        # Legacy snapshots may lack these fields, so only compare fields
+        # explicitly captured in both snapshots.
+        shared_fields = {key for key in ("project_id", "format_version")
+                         if key in left.structure and key in right.structure}
+        old_metadata = {key: left.structure[key] for key in shared_fields}
+        new_metadata = {key: right.structure[key] for key in shared_fields}
+        if old_metadata != new_metadata:
+            changes.append(SceneChange(
+                "project", "metadata-changed", item_type="project",
+                diff=_metadata_diff(old_metadata, new_metadata, "project"),
+                changed_fields=_changed_fields(old_metadata, new_metadata),
+            ))
+    return changes
+
+
+def _compare_chapters(left: RevisionSnapshot, right: RevisionSnapshot) -> list[SceneChange]:
+    changes: list[SceneChange] = []
+    old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
+    old_chapter_ids, new_chapter_ids = set(old_chapters), set(new_chapters)
+    common_chapters = old_chapter_ids & new_chapter_ids
+    old_chapter_positions = _common_positions(old_chapters, common_chapters)
+    new_chapter_positions = _common_positions(new_chapters, common_chapters)
+    for chapter_id, title in old_chapters.items():
+        if chapter_id not in new_chapter_ids:
+            changes.append(SceneChange(chapter_id, "removed", title, item_type="chapter"))
+    for chapter_id, title in new_chapters.items():
+        if chapter_id not in old_chapter_ids:
+            changes.append(SceneChange(chapter_id, "added", new_title=title, item_type="chapter"))
+    for chapter_id in old_chapters:
+        if chapter_id not in common_chapters:
+            continue
+        old_title, new_title = old_chapters[chapter_id], new_chapters[chapter_id]
+        if old_chapter_positions[chapter_id] != new_chapter_positions[chapter_id]:
+            changes.append(SceneChange(chapter_id, "moved", old_title, new_title, item_type="chapter"))
+        if old_title != new_title:
+            changes.append(SceneChange(chapter_id, "title-changed", old_title, new_title, item_type="chapter"))
+    return changes
+
+
+def _compare_scenes(left: RevisionSnapshot, right: RevisionSnapshot) -> list[SceneChange]:
+    changes: list[SceneChange] = []
+    old_ids, new_ids = set(left.scene_order), set(right.scene_order)
+    common = old_ids & new_ids
+    old_positions = _common_positions(left.scene_order, common)
+    new_positions = _common_positions(right.scene_order, common)
+    old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
+    stable_parent_ids = {key for key in common if key in old_parents and key in new_parents
+                         and old_parents[key] == new_parents[key]}
+    old_sibling_positions: dict[str, int] = {}
+    new_sibling_positions: dict[str, int] = {}
+    for order, parents, positions in ((left.scene_order, old_parents, old_sibling_positions),
+                                      (right.scene_order, new_parents, new_sibling_positions)):
+        counts: dict[str | None, int] = {}
+        for key in order:
+            if key in stable_parent_ids:
+                parent = parents[key]
+                positions[key] = counts.get(parent, 0)
+                counts[parent] = positions[key] + 1
+    old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
+    old_associations = _scene_associations(left.structure)
+    new_associations = _scene_associations(right.structure)
+    for scene_id in left.scene_order:
+        if scene_id not in new_ids:
+            changes.append(SceneChange(scene_id, "removed", left.scene_titles.get(scene_id)))
+    for scene_id in right.scene_order:
+        if scene_id not in old_ids:
+            changes.append(SceneChange(scene_id, "added", new_title=right.scene_titles.get(scene_id)))
+    for scene_id in left.scene_order:
+        if scene_id not in common:
+            continue
+        old_title, new_title = left.scene_titles.get(scene_id), right.scene_titles.get(scene_id)
+        moved = (old_sibling_positions[scene_id] != new_sibling_positions[scene_id]
+                 if scene_id in stable_parent_ids else
+                 (old_positions[scene_id] != new_positions[scene_id]
+                  if scene_id not in old_parents or scene_id not in new_parents else False))
+        if moved:
+            changes.append(SceneChange(scene_id, "moved", old_title, new_title))
+        if (scene_id in old_parents and scene_id in new_parents
+                and old_parents[scene_id] != new_parents[scene_id]):
+            changes.append(SceneChange(
+                scene_id, "chapter-changed", old_title, new_title,
+                old_chapter_id=old_parents[scene_id], new_chapter_id=new_parents[scene_id],
+            ))
+        if old_title != new_title:
+            changes.append(SceneChange(scene_id, "title-changed", old_title, new_title))
+        if scene_id in old_paths and scene_id in new_paths and old_paths[scene_id] != new_paths[scene_id]:
+            changes.append(SceneChange(scene_id, "path-changed", old_title, new_title,
+                                       old_path=old_paths[scene_id], new_path=new_paths[scene_id]))
+        if scene_id in old_associations and scene_id in new_associations:
+            old_scene_chars, new_scene_chars = old_associations[scene_id], new_associations[scene_id]
+            for character_id in sorted(old_scene_chars.keys() - new_scene_chars.keys()):
+                changes.append(SceneChange(scene_id, "association-removed", old_title, new_title,
+                                           character_id=character_id,
+                                           diff=_metadata_diff(old_scene_chars[character_id], None, character_id)))
+            for character_id in sorted(new_scene_chars.keys() - old_scene_chars.keys()):
+                changes.append(SceneChange(scene_id, "association-added", old_title, new_title,
+                                           character_id=character_id,
+                                           diff=_metadata_diff(None, new_scene_chars[character_id], character_id)))
+            for character_id in sorted(old_scene_chars.keys() & new_scene_chars.keys()):
+                if old_scene_chars[character_id] != new_scene_chars[character_id]:
+                    changes.append(SceneChange(scene_id, "association-changed", old_title, new_title,
+                                               character_id=character_id,
+                                               diff=_metadata_diff(old_scene_chars[character_id],
+                                                                   new_scene_chars[character_id], character_id),
+                                               changed_fields=_changed_fields(old_scene_chars[character_id],
+                                                                              new_scene_chars[character_id])))
+        if left.documents[scene_id] != right.documents[scene_id]:
+            diff = _text_diff(
+                left.documents[scene_id],
+                right.documents[scene_id],
+                f"{old_title or scene_id} (before)",
+                f"{new_title or scene_id} (after)",
+            )
+            changes.append(SceneChange(scene_id, "text-changed", old_title, new_title, diff))
+    return changes
+
+
+def _compare_notes(left: RevisionSnapshot, right: RevisionSnapshot) -> list[SceneChange]:
+    changes: list[SceneChange] = []
+    old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
+    old_notes, new_notes = _note_records(left.structure), _note_records(right.structure)
+    old_note_ids, new_note_ids = set(old_notes), set(new_notes)
+    common_note_ids = old_note_ids & new_note_ids
+    old_note_positions = _common_positions(old_notes, common_note_ids)
+    new_note_positions = _common_positions(new_notes, common_note_ids)
+    for note_id in old_notes:
+        if note_id not in new_note_ids:
+            changes.append(SceneChange(
+                note_id, "removed", old_notes[note_id][0], item_type="note",
+                old_note_type=old_notes[note_id][1],
+            ))
+    for note_id in new_notes:
+        if note_id not in old_note_ids:
+            changes.append(SceneChange(
+                note_id, "added", new_title=new_notes[note_id][0], item_type="note",
+                new_note_type=new_notes[note_id][1],
+            ))
+    for note_id in old_notes:
+        if note_id not in new_note_ids:
+            continue
+        old_title, old_type = old_notes[note_id]
+        new_title, new_type = new_notes[note_id]
+        if old_note_positions[note_id] != new_note_positions[note_id]:
+            changes.append(SceneChange(note_id, "moved", old_title, new_title, item_type="note"))
+        if old_title != new_title:
+            changes.append(SceneChange(
+                note_id, "title-changed", old_title, new_title, item_type="note"
+            ))
+        if old_type != new_type:
+            changes.append(SceneChange(
+                note_id, "type-changed", old_title, new_title, item_type="note",
+                old_note_type=old_type, new_note_type=new_type,
+            ))
+        if note_id in old_paths and note_id in new_paths and old_paths[note_id] != new_paths[note_id]:
+            changes.append(SceneChange(note_id, "path-changed", old_title, new_title, item_type="note",
+                                       old_path=old_paths[note_id], new_path=new_paths[note_id]))
+        if left.documents.get(note_id) != right.documents.get(note_id):
+            old_text, new_text = left.documents.get(note_id), right.documents.get(note_id)
+            diff = _text_diff(
+                old_text or "",
+                new_text or "",
+                f"{old_title or note_id} (before)",
+                f"{new_title or note_id} (after)",
+            )
+            changes.append(SceneChange(
+                note_id, "text-changed", old_title, new_title, diff, item_type="note"
+            ))
+    return changes
+
+
+def _compare_links(left: RevisionSnapshot, right: RevisionSnapshot) -> list[SceneChange]:
+    changes: list[SceneChange] = []
+    old_links, new_links = _link_records(left.structure), _link_records(right.structure)
+    for source_id, target_id in sorted(old_links - new_links):
+        changes.append(SceneChange(f"{source_id} → {target_id}", "removed", item_type="link"))
+    for source_id, target_id in sorted(new_links - old_links):
+        changes.append(SceneChange(f"{source_id} → {target_id}", "added", item_type="link"))
+    return changes
+
+
+def _compare_profiles(left: RevisionSnapshot, right: RevisionSnapshot) -> list[SceneChange]:
+    changes: list[SceneChange] = []
+    for field, item_type in (("characters", "character"), ("character_relationships", "relationship")):
+        old_records = _metadata_records(left.structure, field)
+        new_records = _metadata_records(right.structure, field)
+        common_records = old_records.keys() & new_records.keys()
+        old_positions = _common_positions(old_records, common_records)
+        new_positions = _common_positions(new_records, common_records)
+        for item_id in sorted(old_records.keys() - new_records.keys()):
+            changes.append(SceneChange(item_id, "removed", item_type=item_type,
+                                       diff=_metadata_diff(old_records[item_id], None, item_id)))
+        for item_id in sorted(new_records.keys() - old_records.keys()):
+            changes.append(SceneChange(item_id, "added", item_type=item_type,
+                                       diff=_metadata_diff(None, new_records[item_id], item_id)))
+        for item_id in sorted(old_records.keys() & new_records.keys()):
+            if old_positions[item_id] != new_positions[item_id]:
+                changes.append(SceneChange(item_id, "moved", item_type=item_type))
+            if old_records[item_id] != new_records[item_id]:
+                changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type,
+                                           diff=_metadata_diff(old_records[item_id], new_records[item_id], item_id),
+                                           changed_fields=_changed_fields(old_records[item_id], new_records[item_id])))
+    return changes
+
+
+def _common_positions(order: Iterable[str], common_ids: set[str]) -> dict[str, int]:
+    """Ignore additions/removals when deciding whether existing items moved."""
+    return {item_id: index for index, item_id in enumerate(
+        item_id for item_id in order if item_id in common_ids
+    )}
