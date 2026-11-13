@@ -4616,3 +4616,59 @@ def test_ukrainian_recovery_buttons_fit_full_labels_and_available_screen(applica
         if english is not None:
             application.removeTranslator(english)
         window.close()
+
+
+@pytest.mark.parametrize("decision", ["accept", "cancel", "edit_profile"])
+def test_project_translation_reviews_character_fields_before_atomic_apply(application, tmp_path, monkeypatch, decision):
+    project = Project.create(tmp_path / "character-translation", "Novel")
+    scene = project.add_scene("Scene", content="Original scene")
+    character = project.add_character("Mara")
+    character.description = "Original character description"
+    project.update_character(character.id, character)
+    before = project.manifest_path.read_bytes()
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    confirmations, seen, warnings = [], [], []
+
+    def confirm(*args, **kwargs):
+        confirmations.append(args[2])
+        return QMessageBox.StandardButton.Yes
+
+    monkeypatch.setattr(QMessageBox, "question", confirm)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args[-1]))
+    monkeypatch.setattr(window.provider, "generate_private", lambda *args, **kwargs: "Translated")
+
+    def review(dialog):
+        seen.extend(dialog.items)
+        assert project.manifest_path.read_bytes() == before
+        assert project.read_scene(scene.id) == "Original scene"
+        if decision == "edit_profile":
+            edited = project.get_character(character.id)
+            edited.description = "New author description"
+            project.update_character(character.id, edited)
+        return QDialog.DialogCode.Rejected if decision == "cancel" else QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr("app.ui.main_window.ProjectTranslationReviewDialog.exec", review)
+    try:
+        window.translate_project_to_ukrainian()
+        wait_until(lambda: bool(seen) and not window._project_busy, application)
+        assert any("character profile" in message for message in confirmations)
+        assert any(character.id in label and "Description" in label and source == character.description
+                   and translated == "Translated" for label, source, translated in seen)
+        stored = Project.open(project.root)
+        if decision == "accept":
+            assert stored.get_character(character.id).full_name == "Translated"
+            assert stored.get_character(character.id).description == "Translated"
+            assert stored.read_scene(scene.id) == "Translated"
+            assert not warnings
+        else:
+            assert stored.get_character(character.id).full_name == "Mara"
+            assert stored.read_scene(scene.id) == "Original scene"
+            if decision == "cancel":
+                assert stored.manifest_path.read_bytes() == before
+            else:
+                assert stored.get_character(character.id).description == "New author description"
+                assert warnings
+    finally:
+        window.close()

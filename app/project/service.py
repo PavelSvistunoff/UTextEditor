@@ -32,6 +32,7 @@ from .model import (
     character_from_mapping,
 )
 from .character_export import write_character_profile
+from .character_translation import FieldPath, apply_character_translations
 from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
 from app.document.encoding import has_binary_controls
@@ -870,6 +871,7 @@ class Project:
         *,
         expected_contents: dict[str, str],
         expected_manifest: dict[str, object],
+        translated_character_fields: dict[FieldPath, str] | None = None,
     ) -> dict[str, str]:
         """Commit all translated project text and titles, or roll the batch back."""
         with _PROJECT_TEXT_WRITE_LOCK:
@@ -880,6 +882,9 @@ class Project:
                 )
             if not isinstance(project_title, str) or not project_title.strip() or "\x00" in project_title:
                 raise ProjectError("Translated project title is invalid.")
+
+            if translated_character_fields is not None:
+                fresh.manifest = apply_character_translations(fresh.manifest, translated_character_fields)
 
             documents = {
                 item.id: item

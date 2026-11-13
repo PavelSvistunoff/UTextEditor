@@ -1,5 +1,25 @@
 # Refactoring progress
 
+## Whole-project translation — character text included
+
+- COMPLETE: populated character profile, directed relationship and scene-association prose is translated.
+- New owner: app/project/character_translation.py captures allowed text paths and validates complete updates.
+- Profile names/aliases, role, background, personality, motivation, goals, knowledge and arc text covered.
+- Relationship prose/status and scene purpose/goals/development/state values/evidence included.
+- IDs, keys, goal states, knowledge kinds, presence, state-field identifiers, numbers and portraits preserved.
+- Blank fields retain whitespace; source manifest is deeply captured before generation.
+- Original revision snapshot and field/length bounds include character data; no partial application.
+- Existing transaction commits the translated manifest together with all scene/note files and rolls back on failure.
+- UI consent names the expanded scope; review rows show localized field captions and stable IDs.
+- Regression first failed on unchanged character names; coverage includes both directions and grouped/ungrouped scenes.
+- Failure/cancellation, malformed names, partial/foreign paths, post-generation edits, bounds and late rollback tested.
+- Focused corpus: 387 passed; native Cocoa automation subset: 4 passed (fake providers/review decisions).
+- Full offscreen: 1137 passed, 2 skipped in 143.52s; live Ollama cases intentionally skipped.
+- Full log: /private/tmp/utexteditor-character-translation-full.log; extraction 1028 messages, Ukrainian catalog 1039 finished.
+- Reference validation and git diff --check passed; README and Ukrainian overview updated.
+- Clean Code review: domain/UI/provider boundaries, diagnostics, dirty buffers, IDs/rollback/stale guards retained.
+- Existing staged/unstaged bytecode and DS_Store changes preserved; no new dependencies.
+
 ## Recovery chooser — Ukrainian labels fixed
 
 - COMPLETE: recovery action labels no longer collapse into a single narrow row.

@@ -13,3 +13,22 @@ def test_translation_review_navigates_original_and_translated_items():
     assert dialog.translated.toPlainText() == "Чернетка"
     dialog.close()
     assert app is not None
+
+
+def test_character_review_uses_ukrainian_field_names_and_stable_ids():
+    from app.i18n import install_translation
+    from app.project.character_translation import CharacterTextField
+
+    app = QApplication.instance() or QApplication([])
+    _, translator = install_translation(app, "uk")
+    try:
+        field = CharacterTextField(("characters", 0, "primary_motivation"), "stable-id", "Мара", "Мотивація")
+        label = ProjectTranslationReviewDialog.character_field_label(field)
+        assert "Мара [stable-id]" in label
+        assert "Головна мотивація" in label
+        assert "primary_motivation" not in label
+    finally:
+        app.removeTranslator(translator)
+        _, english = install_translation(app, "en")
+        if english is not None:
+            app.removeTranslator(english)

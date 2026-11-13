@@ -193,6 +193,7 @@ def test_translation_commit_rolls_back_files_if_late_install_fails(
     chapter = project.add_chapter("Chapter")
     scene = project.add_scene("Scene", chapter_id=chapter.id, content="Scene text.")
     note = project.add_note("Note", content="Note text.")
+    character = project.add_character("Original character")
     provider = RecordingProvider()
     translation = run_project_translation(
         provider,
@@ -252,3 +253,200 @@ def test_translation_cancellation_stops_before_translating_next_field(tmp_path):
 
     assert len(provider.prompts) == 1
     assert project.manifest.title == "Novel"
+
+
+def character_project(tmp_path, *, grouped=False):
+    from app.project.model import (
+        CHARACTER_ARC_FIELDS, CHARACTER_BACKGROUND_FIELDS, CHARACTER_PERSONALITY_FIELDS,
+        CharacterGoal, CharacterKnowledge, CharacterRelationship,
+        CharacterStateChange, SceneCharacterAssociation,
+    )
+    from uuid import uuid4
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter") if grouped else None
+    scene = project.add_scene("Scene", chapter_id=chapter.id if chapter else None, content="A character returns.")
+    character = project.add_character("Mara")
+    character.display_name = "The visitor"
+    character.aliases = ["Watcher", "Traveller"]
+    character.role = "protagonist"
+    character.description = "A quiet visitor"
+    character.background = {key: f"Background {key}" for key in sorted(CHARACTER_BACKGROUND_FIELDS)}
+    character.personality = {key: [f"First {key}", f"Second {key}"] for key in sorted(CHARACTER_PERSONALITY_FIELDS)}
+    character.primary_motivation = "Find home"
+    for name in ("secondary_motivations", "desires", "needs", "obstacles", "accepted_risks", "refusals", "internal_conflicts"):
+        setattr(character, name, [f"First {name}", f"Second {name}"])
+    character.goals = [CharacterGoal("Return home", "blocked", 2, "Needs a guide")]
+    character.knowledge = [CharacterKnowledge("conceals", "The door is open")]
+    character.arc = {key: f"Arc {key}" for key in sorted(CHARACTER_ARC_FIELDS)}
+    project.update_character(character.id, character)
+    other = project.add_character("Guide")
+    relationship = CharacterRelationship(
+        str(uuid4()), character.id, other.id, "rival", "Old rivals", "Distrustful", 42,
+        "estranged", "Met at school", "A hidden key", "Learn to cooperate",
+    )
+    project.add_character_relationship(relationship)
+    association = SceneCharacterAssociation(
+        character.id, "mentioned", "Find the guide", ["Return home"], ["Grows wary"],
+        [CharacterStateChange("current_state", "Wary", "Trusting", "She turned away.")],
+    )
+    project.associate_character(scene.id, association)
+    project.save()
+    return project, scene.id, character.id, other.id, relationship.id
+
+
+class CharacterTranslationProvider(RecordingProvider):
+    def generate_private(self, prompt, **options):
+        self.prompts.append(prompt)
+        self.options.append(options)
+        source = prompt.split("<text_to_translate>\n", 1)[1].rsplit("\n</text_to_translate>", 1)[0]
+        return "П: " + source
+
+
+@pytest.mark.parametrize("grouped", [False, True])
+@pytest.mark.parametrize("source,target", [("English", "Ukrainian"), ("Ukrainian", "English")])
+def test_translation_includes_all_character_text_and_preserves_structured_values(tmp_path, grouped, source, target):
+    project, scene_id, character_id, other_id, relationship_id = character_project(tmp_path, grouped=grouped)
+    before = project.manifest.to_mapping()
+    provider = CharacterTranslationProvider()
+    translation = run_project_translation(
+        provider, project, source, target, {}, is_cancelled=lambda: False,
+    )
+    assert project.manifest.to_mapping() == before
+    snapshot = RevisionStore(project.root / ".utexteditor" / "revisions").read(translation.snapshot_path)
+    assert snapshot.structure == before
+    updated = commit_project_translation(project, translation).project
+    character = updated.get_character(character_id)
+    assert character.full_name == "П: Mara"
+    assert character.display_name == "П: The visitor"
+    assert character.aliases == ["П: Watcher", "П: Traveller"]
+    assert character.role == "П: protagonist"
+    assert character.description == "П: A quiet visitor"
+    assert character.primary_motivation == "П: Find home"
+    for name in ("secondary_motivations", "desires", "needs", "obstacles", "accepted_risks", "refusals", "internal_conflicts"):
+        assert getattr(character, name) == [f"П: First {name}", f"П: Second {name}"]
+    assert all(value.startswith("П: Background ") for value in character.background.values())
+    assert all(all(value.startswith("П: ") for value in values) for values in character.personality.values())
+    assert all(value.startswith("П: Arc ") for value in character.arc.values())
+    assert (character.goals[0].description, character.goals[0].notes) == ("П: Return home", "П: Needs a guide")
+    assert (character.goals[0].status, character.goals[0].priority) == ("blocked", 2)
+    assert (character.knowledge[0].kind, character.knowledge[0].statement) == ("conceals", "П: The door is open")
+    relationship = updated.manifest.character_relationships[0]
+    assert (relationship.id, relationship.source_id, relationship.target_id, relationship.trust) == (relationship_id, character_id, other_id, 42)
+    for name in ("relationship_type", "description", "attitude", "status", "history", "shared_secrets", "development_notes"):
+        assert getattr(relationship, name).startswith("П: ")
+    association = updated.get_scene(scene_id).character_associations[0]
+    assert (association.character_id, association.presence) == (character_id, "mentioned")
+    assert association.purpose == "П: Find the guide"
+    assert association.relevant_goals == ["П: Return home"]
+    assert association.development_notes == ["П: Grows wary"]
+    change = association.state_changes[0]
+    assert (change.field, change.value, change.previous_value, change.evidence) == (
+        "current_state", "П: Wary", "П: Trusting", "П: She turned away.",
+    )
+    assert updated.get_character(other_id).full_name == "П: Guide"
+    assert character.portrait == ""
+
+
+@pytest.mark.parametrize("failure", ["error", "cancel", "invalid_name"])
+def test_character_translation_failure_or_cancellation_preserves_project(tmp_path, failure):
+    project, scene_id, character_id, *_ = character_project(tmp_path)
+    manifest_before = project.manifest_path.read_bytes()
+    cancelled = Event()
+
+    class Provider(CharacterTranslationProvider):
+        def generate_private(self, prompt, **options):
+            source = prompt.split("<text_to_translate>\n", 1)[1].rsplit("\n</text_to_translate>", 1)[0]
+            if source == "Mara" and failure == "invalid_name":
+                return "Invalid\nname"
+            if source == "Find home":
+                if failure == "error":
+                    raise RuntimeError("character model failure")
+                cancelled.set()
+            return super().generate_private(prompt, **options)
+
+    expected = RuntimeError if failure == "error" else ProjectError
+    with pytest.raises(expected):
+        run_project_translation(
+            Provider(), project, "English", "Ukrainian", {}, is_cancelled=cancelled.is_set,
+        )
+    assert project.manifest_path.read_bytes() == manifest_before
+    assert project.read_scene(scene_id) == "A character returns."
+    assert project.get_character(character_id).primary_motivation == "Find home"
+    snapshots, issues = RevisionStore(project.root / ".utexteditor" / "revisions").list_snapshots()
+    assert len(snapshots) == 1 and not issues
+
+
+@pytest.mark.parametrize("alteration", ["omit", "identifier", "portrait"])
+def test_character_translation_rejects_partial_or_metadata_field_updates(tmp_path, alteration):
+    from dataclasses import replace
+
+    project, scene_id, character_id, *_ = character_project(tmp_path)
+    translation = run_project_translation(
+        CharacterTranslationProvider(), project, "English", "Ukrainian", {}, is_cancelled=lambda: False,
+    )
+    manifest_before = project.manifest_path.read_bytes()
+    fields = translation.character_fields
+    if alteration == "omit":
+        fields = fields[1:]
+    else:
+        first = fields[0]
+        path = ("characters", 0, "id" if alteration == "identifier" else "portrait")
+        fields = (replace(first, source=replace(first.source, path=path)), *fields[1:])
+    with pytest.raises(ProjectError, match="character text field"):
+        commit_project_translation(project, replace(translation, character_fields=fields))
+    assert project.manifest_path.read_bytes() == manifest_before
+    assert project.read_scene(scene_id) == "A character returns."
+    assert Project.open(project.root).get_character(character_id).full_name == "Mara"
+
+
+def test_character_edits_after_generation_discard_complete_translation(tmp_path):
+    project, scene_id, character_id, *_ = character_project(tmp_path)
+    translation = run_project_translation(
+        CharacterTranslationProvider(), project, "English", "Ukrainian", {}, is_cancelled=lambda: False,
+    )
+    changed = project.get_character(character_id)
+    changed.aliases.append("New author alias")
+    project.update_character(character_id, changed)
+    manifest_after_edit = project.manifest_path.read_bytes()
+    with pytest.raises(ProjectError, match="changed during translation"):
+        commit_project_translation(project, translation)
+    assert project.manifest_path.read_bytes() == manifest_after_edit
+    assert project.read_scene(scene_id) == "A character returns."
+    assert translation.expected_manifest["characters"][0]["aliases"] == ["Watcher", "Traveller"]
+
+
+@pytest.mark.parametrize("limit", ["fields", "length"])
+def test_character_translation_limits_fail_before_snapshot_or_model(tmp_path, monkeypatch, limit):
+    import app.project.translation as service
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    character.description = "x" * 21
+    project.update_character(character.id, character)
+    monkeypatch.setattr(service, "MAX_TRANSLATION_ITEMS" if limit == "fields" else "MAX_TRANSLATION_INPUT_LENGTH", 2 if limit == "fields" else 20)
+    provider = CharacterTranslationProvider()
+    before = project.manifest_path.read_bytes()
+    with pytest.raises(ProjectError, match="limit"):
+        run_project_translation(provider, project, "English", "Ukrainian", {}, is_cancelled=lambda: False)
+    assert not provider.prompts
+    assert not (project.root / ".utexteditor" / "revisions").exists()
+    assert project.manifest_path.read_bytes() == before
+
+
+def test_character_blanks_portrait_and_schema_values_are_not_sent_for_translation(tmp_path):
+    import base64
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    character.description = " \n "
+    character.portrait = base64.b64encode(b"\x89PNG\r\n\x1a\nportrait bytes").decode()
+    project.update_character(character.id, character)
+    provider = CharacterTranslationProvider()
+    translation = run_project_translation(provider, project, "English", "Ukrainian", {}, is_cancelled=lambda: False)
+    assert len(provider.prompts) == 3  # Project title, name and free-text role.
+    assert all(character.portrait not in prompt and character.id not in prompt for prompt in provider.prompts)
+    updated = commit_project_translation(project, translation).project.get_character(character.id)
+    assert updated.portrait == character.portrait
+    assert updated.description == " \n "
+    assert updated.background == {} and updated.goals == []

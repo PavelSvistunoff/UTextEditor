@@ -1794,6 +1794,17 @@ Text is sent to the configured Ollama destination:
     <message><source>The disk version changed during review. Please review it again.</source><translation>Версія на диску змінилася під час перегляду. Перегляньте її знову.</translation></message>
     <message><source>Version staged in the editor. Save to write it to disk.</source><translation>Версію підготовлено в редакторі. Збережіть документ, щоб записати її на диск.</translation></message>
     <message><source>Use File &gt; Review External Changes… to compare versions and choose how to proceed.</source><translation>Виберіть «Файл &gt; Переглянути зовнішні зміни…», щоб порівняти версії та вибрати подальшу дію.</translation></message>
+    <message><source>Translate the complete project from {source} to {target}?
+
+This includes the project title, chapter/scene/reference-note titles, every scene and reference note, and all character profile, relationship and scene-development text. Stable IDs, file paths, ordering, links, and note types will be preserved. A local revision snapshot is created first, and no project files are changed unless every translation succeeds.
+
+Text is sent to the configured Ollama destination:
+{host} — {model}</source><translation>Перекласти весь проєкт: {source} → {target}?
+
+Переклад охоплює назву проєкту, назви розділів, сцен і довідкових нотаток, тексти всіх сцен і нотаток, а також усі текстові поля профілів персонажів, їхніх стосунків і розвитку в сценах. Стабільні ID, шляхи файлів, порядок, зв’язки й типи нотаток зберігаються. Спочатку створюється локальна копія ревізії; файли проєкту зміняться лише після успішного перекладу всіх полів.
+
+Текст надсилається до налаштованого сервера Ollama:
+{host} — {model}</translation></message>
 </context>
 <context>
     <name>QuickOpenDialog</name>
@@ -2498,6 +2509,64 @@ Text is sent to the configured Ollama destination:
     <message><source>Translated text</source><translation>Перекладений текст</translation></message>
     <message><source>Original</source><translation>Оригінал</translation></message>
     <message><source>Translation</source><translation>Переклад</translation></message>
+    <message><source>Full name</source><translation>Повне ім’я</translation></message>
+    <message><source>Display name</source><translation>Ім’я для показу</translation></message>
+    <message><source>Aliases</source><translation>Псевдоніми</translation></message>
+    <message><source>Role</source><translation>Роль</translation></message>
+    <message><source>Description</source><translation>Опис</translation></message>
+    <message><source>Primary motivation</source><translation>Головна мотивація</translation></message>
+    <message><source>Secondary motivations</source><translation>Другорядні мотивації</translation></message>
+    <message><source>Desires</source><translation>Бажання</translation></message>
+    <message><source>Needs</source><translation>Потреби</translation></message>
+    <message><source>Obstacles</source><translation>Перешкоди</translation></message>
+    <message><source>Risks they accept</source><translation>Ризики, на які погоджується</translation></message>
+    <message><source>Things they refuse to do</source><translation>Те, чого не робитиме</translation></message>
+    <message><source>Internal conflicts</source><translation>Внутрішні конфлікти</translation></message>
+    <message><source>Background</source><translation>Минуле</translation></message>
+    <message><source>Personality</source><translation>Особистість</translation></message>
+    <message><source>Goals</source><translation>Цілі</translation></message>
+    <message><source>Knowledge and secrets</source><translation>Знання й таємниці</translation></message>
+    <message><source>Arc notes</source><translation>Нотатки про розвиток</translation></message>
+    <message><source>Age</source><translation>Вік</translation></message>
+    <message><source>Occupation</source><translation>Заняття</translation></message>
+    <message><source>Origin and culture</source><translation>Походження й культура</translation></message>
+    <message><source>Appearance</source><translation>Зовнішність</translation></message>
+    <message><source>History</source><translation>Історія</translation></message>
+    <message><source>Status and affiliations</source><translation>Суспільний статус і належність</translation></message>
+    <message><source>Personality traits</source><translation>Риси характеру</translation></message>
+    <message><source>Strengths</source><translation>Сильні сторони</translation></message>
+    <message><source>Weaknesses</source><translation>Слабкі сторони</translation></message>
+    <message><source>Fears</source><translation>Страхи</translation></message>
+    <message><source>Values and beliefs</source><translation>Цінності й переконання</translation></message>
+    <message><source>Habits</source><translation>Звички</translation></message>
+    <message><source>Emotional triggers</source><translation>Емоційні подразники</translation></message>
+    <message><source>Contradictions</source><translation>Суперечності</translation></message>
+    <message><source>Speech patterns</source><translation>Особливості мовлення</translation></message>
+    <message><source>Attitudes</source><translation>Ставлення</translation></message>
+    <message><source>Status</source><translation>Стан</translation></message>
+    <message><source>Notes</source><translation>Нотатки</translation></message>
+    <message><source>Statement</source><translation>Твердження</translation></message>
+    <message><source>Initial worldview</source><translation>Початковий світогляд</translation></message>
+    <message><source>Initial state</source><translation>Початковий стан</translation></message>
+    <message><source>Desired transformation</source><translation>Бажане перетворення</translation></message>
+    <message><source>Lessons</source><translation>Уроки</translation></message>
+    <message><source>Turning points</source><translation>Поворотні моменти</translation></message>
+    <message><source>Expected end state</source><translation>Очікуваний кінцевий стан</translation></message>
+    <message><source>Current state</source><translation>Поточний стан</translation></message>
+    <message><source>Unresolved conflicts</source><translation>Невирішені конфлікти</translation></message>
+    <message><source>Relationship type</source><translation>Тип зв’язку</translation></message>
+    <message><source>Emotional attitude</source><translation>Емоційне ставлення</translation></message>
+    <message><source>Shared secrets or conflicts</source><translation>Спільні таємниці або конфлікти</translation></message>
+    <message><source>Development notes</source><translation>Нотатки про розвиток</translation></message>
+    <message><source>Scene purpose</source><translation>Мета в сцені</translation></message>
+    <message><source>Scene-relevant goals</source><translation>Цілі, важливі для сцени</translation></message>
+    <message><source>State changes</source><translation>Зміни стану</translation></message>
+    <message><source>Value</source><translation>Значення</translation></message>
+    <message><source>Previous value</source><translation>Попереднє значення</translation></message>
+    <message><source>Evidence</source><translation>Свідчення</translation></message>
+    <message><source>Character profile</source><translation>Профіль персонажа</translation></message>
+    <message><source>Character relationship</source><translation>Стосунки персонажа</translation></message>
+    <message><source>Scene development</source><translation>Розвиток у сценах</translation></message>
 </context>
 <context>
     <name>AutoWriterReviewDialog</name>

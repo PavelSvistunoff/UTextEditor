@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from copy import deepcopy
 from datetime import datetime
 import re
 from typing import Protocol
 
 from app.document.revisions import RevisionStore
-from .model import ProjectError, Scene
+from .model import Manifest, ProjectError, Scene
+from .character_translation import (
+    CharacterFieldTranslation, apply_character_translations, character_text_fields,
+)
 from .service import Project
 
 MAX_TRANSLATION_ITEMS = 500
@@ -41,6 +45,7 @@ class ProjectTranslation:
     expected_manifest: Mapping[str, object]
     snapshot_path: str
     source_contents: Mapping[str, str]
+    character_fields: tuple[CharacterFieldTranslation, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -69,7 +74,7 @@ def run_project_translation(
     if is_cancelled():
         raise ProjectError("Project translation was cancelled; no project files were changed.")
 
-    original_manifest = project.manifest.to_mapping()
+    original_manifest = deepcopy(project.manifest.to_mapping())
     disk_project = Project.open(project.root)
     if disk_project.manifest.to_mapping() != original_manifest:
         raise ProjectError("Project structure changed before translation started; reload the project.")
@@ -107,7 +112,8 @@ def run_project_translation(
         snapshot_documents[note.id] = text
         title_fields.append((note.id, f"Reference note title {note.title!r}", note.title))
 
-    item_count = 1 + len(title_fields) + len(source_contents)
+    character_fields = character_text_fields(original_manifest)
+    item_count = 1 + len(title_fields) + len(source_contents) + len(character_fields)
     if item_count > MAX_TRANSLATION_ITEMS:
         raise ProjectError(
             f"Translation is limited to {MAX_TRANSLATION_ITEMS} project fields per run; "
@@ -116,6 +122,7 @@ def run_project_translation(
     for field_name, _label, text in (
         ("project title", "Project title", project.manifest.title),
         *title_fields,
+        *((field.owner_id, "Character text", field.text) for field in character_fields),
         *(
             (item_id, f"Project text {item_id}", text)
             for item_id, text in source_contents.items()
@@ -196,6 +203,15 @@ def run_project_translation(
         item_id: translate(text, f"text for {item_id}")
         for item_id, text in source_contents.items()
     }
+    translated_character_fields = tuple(
+        CharacterFieldTranslation(field, translate(field.text, f"character {field.owner_name!r}"))
+        for field in character_fields
+    )
+    # Validate the complete structured result before presenting it for review.
+    apply_character_translations(
+        Manifest.from_mapping(original_manifest),
+        {field.source.path: field.text for field in translated_character_fields},
+    )
     if is_cancelled():
         raise ProjectError(
             f"Project translation was cancelled; no project files were changed. "
@@ -211,6 +227,7 @@ def run_project_translation(
         original_manifest,
         str(snapshot.snapshot_path),
         source_contents,
+        translated_character_fields,
     )
 
 
@@ -223,6 +240,7 @@ def commit_project_translation(
         dict(translation.contents),
         expected_contents=dict(translation.expected_contents),
         expected_manifest=dict(translation.expected_manifest),
+        translated_character_fields={field.source.path: field.text for field in translation.character_fields},
     )
     return ProjectTranslationCommit(Project.open(project.root), persisted)
 

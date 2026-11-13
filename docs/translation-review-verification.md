@@ -37,3 +37,38 @@ tickets/V1 verified; parent/V2 stay partial for native keyboard/screen-reader
 and release-catalog checks. The independent-process final-check race also
 applies here. The tested transaction rollback is not a guarantee against process
 crashes, rollback I/O failure or uncooperative concurrent writers.
+
+
+## Character-text extension — verified implementation
+
+Whole-project translation now also captures every populated profile string/list
+entry, relationship prose and scene-association prose. This includes goal notes,
+knowledge statements, all background/personality/arc values, state values and
+quotations. Character/relationship/scene IDs, dictionary keys, goal states,
+knowledge kinds, presence, state-change field identifiers, priorities, trust and
+portraits retain their original values. Empty strings and whitespace-only fields
+remain unchanged and do not consume model requests or populated-field limits.
+
+`character_translation.py` owns the field inventory and copy-based application.
+Only paths captured from a validated manifest can be applied; missing/foreign
+paths and invalid values are rejected. Generation captures the manifest deeply,
+includes these fields in the existing 500-field / 32,000-character bounds and
+creates the original full revision before requests. The translated manifest is
+validated before review, then installed through the existing scene/note/manifest
+transaction after fresh conflict checks. No independent profile write is added.
+
+Consent discloses profile/relationship/scene-development text. Side-by-side rows
+include stable IDs and translated field captions; explicit Apply commits the whole
+batch, while Cancel and changed profiles preserve author data. Original snapshots
+include all original character structure and text. Both translation directions
+and both scene groupings are covered, as are error/cancellation during character
+requests, malformed names, metadata injection, partial results, source edits,
+blank fields/portraits, input bounds and late manifest-install rollback.
+
+Executed focused suite: **387 passed**. Full offscreen: **1137 passed, 2 skipped
+in 143.52s**; the skipped cases require a live Ollama server. Cocoa subset:
+**4 passed**, using fake providers and simulated review decisions; this does not
+establish manual keyboard or screen-reader behavior. Fresh extraction: **1028**
+source messages; Ukrainian catalog compiles with **1039 finished** messages and
+passes reference/placeholder validation. `git diff --check` passed. No live model
+translation quality or arbitrary independent-writer safety claim is made.

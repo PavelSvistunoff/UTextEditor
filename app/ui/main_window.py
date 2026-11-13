@@ -1395,7 +1395,8 @@ class MainWindow(QMainWindow):
         confirmation = self.tr(
             "Translate the complete project from {source} to {target}?\n\n"
             "This includes the project title, chapter/scene/reference-note titles, "
-            "and every scene and reference note. Stable IDs, file paths, ordering, "
+            "every scene and reference note, and all character profile, relationship "
+            "and scene-development text. Stable IDs, file paths, ordering, "
             "links, and note types will be preserved. A local revision snapshot is "
             "created first, and no project files are changed unless every translation "
             "succeeds.\n\n"
@@ -1540,6 +1541,9 @@ class MainWindow(QMainWindow):
         for note in project.manifest.notes:
             rows.append((self.tr("Reference note title") + f": {note.title} [{note.id}]", note.title, translation.item_titles[note.id]))
             rows.append((self.tr("Reference note text") + f": {note.title} [{note.id}]", translation.source_contents[note.id], translation.contents[note.id]))
+        for field in translation.character_fields:
+            rows.append((ProjectTranslationReviewDialog.character_field_label(field.source),
+                         field.source.text, field.text))
         if self._project_translation_progress_dialog is not None:
             self._project_translation_progress_dialog.hide()
         review = ProjectTranslationReviewDialog(rows, self)
