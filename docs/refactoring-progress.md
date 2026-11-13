@@ -1,5 +1,26 @@
 # Refactoring progress
 
+## Refactoring / TASK-032.04 checkpoint — background character export
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; repository refactor incomplete.
+- Extracted portable YAML export to `app/project/character_export.py`; public
+  Project export keeps destination-before-profile validation and file semantics.
+- UI writes a deep-copied profile through FunctionWorker with queued feedback;
+  changed project/generation or closing state suppresses stale success/errors.
+- Existing overwrite/localization tests adapted to await worker feedback; six
+  delayed-worker cases verify background thread, captured name and stale feedback.
+- fsync failure tests retain existing destination and remove staged files.
+- Focused UI/domain/i18n/translation suite: 321 passed. Final full offscreen:
+  998 passed, 2 skipped; added API-order regression afterward passed in a focused
+  17-case export run. `git diff --check` passed; packaged parity tested.
+- Clean Code review: domain serialization/persistence separated from Qt; no new
+  dependency, YAML/API format, undo or manuscript changes. No arbitrary-writer claim.
+- Native GUI/accessibility and live Ollama not tested; existing pyc changes preserved.
+- Files: new export module, service, main window, tests, README/TASKS/evidence docs.
+- Next: remaining custom AI/project errors and package audit; branch `main`.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — character profile export errors
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 open.

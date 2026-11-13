@@ -34,8 +34,8 @@ from .model import (
     CharacterStateChange,
     SceneCharacterAssociation,
     character_from_mapping,
-    character_to_mapping,
 )
+from .character_export import write_character_profile
 from .paths import validate_project_path
 from app.document.encoding import detect_line_ending, normalize_line_endings
 from app.document.encoding import has_binary_controls
@@ -703,39 +703,9 @@ class Project:
         replace_existing: bool = False,
     ) -> Path:
         """Export one portable YAML profile without its project relationships."""
-        target = Path(destination)
-        target_exists = target.exists()
-        if target_exists and not replace_existing:
-            raise FileExistsError(f"Character profile destination already exists: {target}")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        payload = yaml.safe_dump(
-            {
-                "character_format_version": 1,
-                "character": character_to_mapping(self.get_character(character_id)),
-            },
-            allow_unicode=True,
-            sort_keys=False,
-        ).encode("utf-8")
-        descriptor, temporary_name = tempfile.mkstemp(
-            prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
+        return write_character_profile(
+            lambda: self.get_character(character_id), destination, replace_existing=replace_existing
         )
-        temporary = Path(temporary_name)
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(payload)
-                stream.flush()
-                os.fsync(stream.fileno())
-            if replace_existing:
-                if target_exists:
-                    os.chmod(temporary, target.stat().st_mode)
-                os.replace(temporary, target)
-            else:
-                os.link(temporary, target)
-                temporary.unlink()
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-        return target
 
     def import_character(self, source: Path | str) -> Character:
         """Import a validated portable profile as a new project identity."""

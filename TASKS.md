@@ -403,7 +403,9 @@ now use the same categories and retain staged profile edits for retry. Text/PDF
 export failures also share typed project categories and existing source protection.
 Character scene-search errors share these categories, with project/generation
 staleness rejection covered by packaged Ukrainian tests. Character profile export
-uses shared typed categories and preserves overwrite cancellation.
+uses shared typed categories and preserves overwrite cancellation. Its filesystem
+write now runs in a worker using a captured profile; stale project/generation
+feedback is suppressed.
 AI generation/completion network failures have packaged Ukrainian runtime coverage,
 including stale request/settings rejection and preservation of dirty text/details.
 Automated literal candidates were reviewed; other raw service errors and native

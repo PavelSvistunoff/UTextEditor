@@ -131,5 +131,5 @@ diagnostics; stale results show no warning. Native UI review remains open.
 
 Six injected UI cases cover generic/format/path failures and overwrite confirm/
 cancel. Typed categories use the packaged Ukrainian catalog; exact diagnostics
-and existing destination content are preserved. Filesystem export remains
-synchronous and needs a separately tested worker migration. Native UI unverified.
+and existing destination content are preserved. Filesystem export now runs in a worker on a captured profile. Project/generation
+changes suppress stale success/failure feedback. Native UI unverified.

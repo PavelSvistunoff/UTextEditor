@@ -159,6 +159,38 @@ def test_character_profile_export_can_confirm_replacement_of_missing_target(tmp_
     assert "Mara" in destination.read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize("existing", [False, True])
+def test_character_export_fsync_failure_preserves_destination(tmp_path, monkeypatch, existing):
+    from app.project.character_export import export_character_profile
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    target = tmp_path / "profile.yaml"
+    if existing:
+        target.write_bytes(b"original profile")
+
+    def fail_sync(descriptor):
+        raise OSError("fsync failed")
+
+    monkeypatch.setattr("app.project.character_export.os.fsync", fail_sync)
+    with pytest.raises(OSError, match="fsync failed"):
+        export_character_profile(character, target, replace_existing=existing)
+    if existing:
+        assert target.read_bytes() == b"original profile"
+    else:
+        assert not target.exists()
+    assert not list(tmp_path.glob(".profile.yaml.*.tmp"))
+
+
+def test_character_export_checks_existing_destination_before_character_lookup(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    target = tmp_path / "profile.yaml"
+    target.write_bytes(b"existing")
+    with pytest.raises(FileExistsError):
+        project.export_character("missing character", target)
+    assert target.read_bytes() == b"existing"
+
+
 def test_find_scenes_mentioned_by_character_includes_alias_and_excerpt(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     character = project.add_character("Mara Venn")

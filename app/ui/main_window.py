@@ -53,6 +53,7 @@ from app.document.merge import merge_text
 from app.document.encoding import has_binary_controls
 from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
 from app.project import Project, ProjectError, ProjectFormatError, ProjectPathError, WordCount, count_words
+from app.project.character_export import export_character_profile
 from app.project.search import (MAX_DOCUMENT_BYTES, MAX_OPEN_BUFFER_UTF16_UNITS,
                                 OmittedSearchBuffer, SearchDocument, search_project)
 from app.project.autopilot import (
@@ -3363,12 +3364,14 @@ class MainWindow(QMainWindow):
             self._run_project_mutation(self.project.import_character, source)
 
     def export_project_character(self) -> None:
-        if self.project is None:
+        project = self.project
+        generation = self._project_generation
+        if project is None or self._project_busy:
             return
         kind, character_id = self._selected_project_item()
         if kind != "character" or not character_id:
             return
-        character = self.project.get_character(character_id)
+        character = deepcopy(project.get_character(character_id))
         suggested = f"{character.full_name}.yaml"
         target, _ = QFileDialog.getSaveFileName(self, self.tr("Export Character Profile"), suggested, self.tr("Character profile (*.yaml)"))
         if not target:
@@ -3378,12 +3381,22 @@ class MainWindow(QMainWindow):
             answer = QMessageBox.question(self, self.tr("Replace profile file"), self.tr("Replace the existing file?\n{path}").format(path=target))
             if answer != QMessageBox.StandardButton.Yes:
                 return
-        try:
-            self.project.export_character(character_id, target, replace_existing=replace_existing)
-        except (OSError, ProjectError, ValueError) as exc:
-            QMessageBox.warning(self, self.tr("Character export failed"), self._project_error_message(exc))
+        if project is not self.project or generation != self._project_generation or self._project_busy:
             return
-        self.statusBar().showMessage(self.tr("Character profile exported to {path}").format(path=target), 5000)
+        worker = FunctionWorker(export_character_profile, character, target, replace_existing=replace_existing)
+        self._track_worker(worker)
+
+        def finished(path):
+            if project is self.project and generation == self._project_generation and not self._closing_confirmed:
+                self.statusBar().showMessage(self.tr("Character profile exported to {path}").format(path=path), 5000)
+
+        def failed(error):
+            if project is self.project and generation == self._project_generation and not self._closing_confirmed:
+                QMessageBox.warning(self, self.tr("Character export failed"), self._project_error_message(error))
+
+        worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+        self.thread_pool.start(worker)
 
     def open_character_associated_scene(self) -> None:
         project = self.project

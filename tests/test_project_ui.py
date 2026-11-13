@@ -2699,12 +2699,13 @@ def test_character_export_failure_preserves_existing_file_and_localizes_category
         calls.append((args, kwargs))
         raise error_type("export detail %1")
 
-    monkeypatch.setattr(project, "export_character", fail_export)
+    monkeypatch.setattr("app.ui.main_window.export_character_profile", fail_export)
     _, translator = install_translation(application, "uk")
     try:
         window.export_project_character()
         if confirmed:
-            assert calls == [((character.id, str(target)), {"replace_existing": True})]
+            wait_until(lambda: bool(warnings), application)
+            assert calls == [((character, str(target)), {"replace_existing": True})]
             assert category in warnings[0][2] and "export detail %1" in warnings[0][2]
         else:
             assert not calls and not warnings
@@ -2712,6 +2713,72 @@ def test_character_export_failure_preserves_existing_file_and_localizes_category
         assert project.get_character(character.id).full_name == "Mara"
     finally:
         application.removeTranslator(translator)
+        window.close()
+
+
+@pytest.mark.parametrize("stale", [None, "project", "generation"])
+@pytest.mark.parametrize("fails", [False, True])
+def test_character_export_worker_captures_profile_and_ignores_stale_feedback(
+    application, tmp_path, monkeypatch, stale, fails,
+):
+    import yaml
+    from threading import current_thread, main_thread
+    from app.project.character_export import export_character_profile
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Captured name")
+    target = tmp_path / "profile.yaml"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("character", character.id))
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args: (str(target), ""))
+    started, release, done = Event(), Event(), Event()
+    warnings, threads = [], []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+
+    def delayed_export(profile, destination, **kwargs):
+        threads.append(current_thread())
+        started.set()
+        try:
+            if not release.wait(5):
+                raise TimeoutError("test release timed out")
+            if fails:
+                raise OSError("export failed")
+            return export_character_profile(profile, destination, **kwargs)
+        finally:
+            done.set()
+
+    monkeypatch.setattr("app.ui.main_window.export_character_profile", delayed_export)
+    try:
+        window.export_project_character()
+        wait_until(started.is_set, application)
+        assert threads[0] is not main_thread()
+        character.full_name = "Later edit"
+        if stale == "project":
+            window.project = None
+        elif stale == "generation":
+            window._project_generation += 1
+        window.statusBar().showMessage("current status")
+        messages = []
+        monkeypatch.setattr(window.statusBar(), "showMessage", lambda message, *args: messages.append(message))
+        release.set()
+        wait_until(done.is_set, application)
+        window.thread_pool.waitForDone(3000)
+        application.processEvents()
+        if stale:
+            assert not warnings and not any(str(target) in message for message in messages)
+        elif fails:
+            assert warnings and "export failed" in warnings[0][2]
+        else:
+            assert any(str(target) in message for message in messages)
+        if fails:
+            assert not target.exists()
+        else:
+            assert yaml.safe_load(target.read_text())["character"]["full_name"] == "Captured name"
+    finally:
+        release.set()
+        window.thread_pool.waitForDone(3000)
         window.close()
 
 
