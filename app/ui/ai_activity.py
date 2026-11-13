@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from time import monotonic
 from typing import Callable
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QDockWidget, QHBoxLayout, QLabel, QListWidget,
                                QListWidgetItem, QProgressBar, QPushButton,
                                QVBoxLayout, QWidget)

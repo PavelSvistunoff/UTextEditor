@@ -1,7 +1,5 @@
 """Document tabs and per-tab editor state."""
 
-from pathlib import Path
-
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget
 

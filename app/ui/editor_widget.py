@@ -1,8 +1,8 @@
 """QPlainTextEdit with non-destructive inline completions."""
 
-from PySide6.QtCore import QPoint, QRect, QSize, Qt, Signal
+from PySide6.QtCore import QRect, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QKeySequence, QPainter, QTextCharFormat, QTextCursor
-from PySide6.QtWidgets import QMenu, QPlainTextEdit, QTextEdit, QWidget
+from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget
 
 from app.ai.models import Suggestion
 from app.ai.validation import valid_suggestion

@@ -156,6 +156,8 @@ loads; an unavailable server or model causes the explicitly enabled test to fail
 
 The application separates document state and file handling (`app/document/`), AI services and the `AIProvider` abstraction (`app/ai/`), persistent settings (`app/settings/`), and Qt UI (`app/ui/`). The Ollama HTTP client is isolated in `app/ai/ollama_client.py`. GUI widgets do not make direct Ollama calls; the UI dispatches AI work to background workers and receives results on the GUI thread.
 
+Project persistence and captured manuscript operations live in `app/project/`; planning and evidence-checked analysis live in `app/ai/`. `MainWindow` captures widget state, dispatches workers and checks whether results are still current before presentation or application. These worker services can be imported and tested without constructing Qt widgets.
+
 AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No separate cloud AI provider is configured; a remote Ollama host can nevertheless receive document text.
 
 ## Interface localization

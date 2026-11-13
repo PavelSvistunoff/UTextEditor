@@ -506,16 +506,8 @@ def _character(value: object, label: str) -> Character:
     row = _mapping(value, label)
     fields = {"id", "full_name", "display_name", "aliases", "role", "description", "background", "personality", "primary_motivation", "secondary_motivations", "goals", "desires", "needs", "obstacles", "accepted_risks", "refusals", "internal_conflicts", "knowledge", "arc", "portrait"}
     _keys(row, {"id", "full_name"}, fields, label)
-    goals = []
-    for i, value in enumerate(_list(row.get("goals", []), f"{label}.goals")):
-        item = _mapping(value, f"{label}.goals[{i}]")
-        _keys(item, {"description"}, {"description", "status", "priority", "notes"}, f"{label}.goals[{i}]")
-        goals.append(CharacterGoal(_text(item["description"], f"{label}.goals[{i}].description"), _text(item.get("status", "active"), f"{label}.goals[{i}].status"), item.get("priority", 3), _text(item.get("notes", ""), f"{label}.goals[{i}].notes")))
-    knowledge = []
-    for i, value in enumerate(_list(row.get("knowledge", []), f"{label}.knowledge")):
-        item = _mapping(value, f"{label}.knowledge[{i}]")
-        _keys(item, {"kind", "statement"}, {"kind", "statement"}, f"{label}.knowledge[{i}]")
-        knowledge.append(CharacterKnowledge(_text(item["kind"], f"{label}.knowledge[{i}].kind"), _text(item["statement"], f"{label}.knowledge[{i}].statement")))
+    goals = _character_goals(row, label)
+    knowledge = _character_knowledge(row, label)
     return Character(
         id=_string(row["id"], f"{label}.id"), full_name=_title(row["full_name"], f"{label}.full_name"),
         display_name=_text(row.get("display_name", ""), f"{label}.display_name"), aliases=_text_list(row.get("aliases", []), f"{label}.aliases"),
@@ -527,6 +519,34 @@ def _character(value: object, label: str) -> Character:
         arc=_text_map(row.get("arc", {}), f"{label}.arc", CHARACTER_ARC_FIELDS),
         portrait=_text(row.get("portrait", ""), f"{label}.portrait"),
     )
+
+
+def _character_goals(row: dict, label: str) -> list[CharacterGoal]:
+    goals = []
+    for index, value in enumerate(_list(row.get("goals", []), f"{label}.goals")):
+        goal_label = f"{label}.goals[{index}]"
+        item = _mapping(value, goal_label)
+        _keys(item, {"description"}, {"description", "status", "priority", "notes"}, goal_label)
+        goals.append(CharacterGoal(
+            description=_text(item["description"], f"{goal_label}.description"),
+            status=_text(item.get("status", "active"), f"{goal_label}.status"),
+            priority=item.get("priority", 3),
+            notes=_text(item.get("notes", ""), f"{goal_label}.notes"),
+        ))
+    return goals
+
+
+def _character_knowledge(row: dict, label: str) -> list[CharacterKnowledge]:
+    knowledge = []
+    for index, value in enumerate(_list(row.get("knowledge", []), f"{label}.knowledge")):
+        knowledge_label = f"{label}.knowledge[{index}]"
+        item = _mapping(value, knowledge_label)
+        _keys(item, {"kind", "statement"}, {"kind", "statement"}, knowledge_label)
+        knowledge.append(CharacterKnowledge(
+            kind=_text(item["kind"], f"{knowledge_label}.kind"),
+            statement=_text(item["statement"], f"{knowledge_label}.statement"),
+        ))
+    return knowledge
 
 
 def character_from_mapping(value: object) -> Character:

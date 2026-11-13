@@ -1,5 +1,24 @@
 # Refactoring progress
 
+## Repository completion run — R2/R3 domain ownership batch
+
+- Project/AI worker extraction and UI orchestration refactor: COMPLETE.
+- Planning/analysis, project summaries, recovery resolution, bound saves,
+  captured text/PDF exports and project snapshots now have domain owners.
+- Existing MainWindow static call APIs retained; Qt signals and stale guards stay in UI.
+- Shared selected-scene capture preserves buffers, order and destination-before-read validation.
+- Profile goal/knowledge parsers now name their records and diagnostic paths.
+- Activity terminal callbacks use named functions and short-circuit stale results.
+- Pure project worker tests moved from UI tests: 6 passed without QApplication;
+  extracted services import without loading PySide6. New activity cases: 9 passed.
+- UI/E2E/settings/i18n pre/post extraction: 413 passed each; expanded final: 492 passed.
+- Full control: 1114 passed, 2 skipped; final targeted domain/worker/activity: 68 passed.
+- Direct Cocoa focus/activity: 36 passed; VoiceOver/OS palette not claimed.
+- Standalone editor smoke exposed an existing goal-tab initialization race despite exit 0;
+  this will be fixed separately, with a failing regression, before final reconciliation.
+- No unrelated staged pyc or DS_Store files included; no new dependencies.
+- Next: separate initialization fix, then close the reviewed refactoring inventory.
+
 ## Repository completion run — R2 AI boundary batch
 
 - AI shared parsing/protocol refactor: COMPLETE; final repository reconciliation pending.

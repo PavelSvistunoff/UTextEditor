@@ -124,3 +124,30 @@ def test_closing_window_cancels_inflight_activity(window):
     window.close()
     release.set()
     wait_until(lambda: item.state == "cancelled")
+
+
+@pytest.mark.parametrize("current,succeeded,expected", [
+    (True, True, "completed"), (True, False, "failed"), (False, True, "discarded"),
+])
+def test_activity_result_classification_skips_validation_for_stale_context(window, current, succeeded, expected):
+    validations = []
+    worker = FunctionWorker(lambda: "result")
+
+    def successful(result):
+        validations.append(result)
+        return succeeded
+
+    activity = window._track_ai_activity(
+        worker, "Captured request", current=lambda: current, successful=successful,
+    )
+    worker.run()
+    wait_until(lambda: activity.state == expected)
+    assert validations == (["result"] if current else [])
+
+
+def test_discarded_worker_reports_discarded_rather_than_user_cancellation(window):
+    worker = FunctionWorker(lambda: pytest.fail("Obsolete work must not start"))
+    activity = window._track_ai_activity(worker, "Obsolete request")
+    window._discard_ai_worker(worker)
+    worker.run()
+    wait_until(lambda: activity.state == "discarded")
