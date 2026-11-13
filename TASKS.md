@@ -37,29 +37,6 @@ git diff --check
 
 For localization extraction/compilation, use the commands in [README.md](README.md#interface-localization). Record actual runs and skips rather than treating this example as evidence.
 
-## Summary of parent tasks
-
-| Parent | Scope | Documented state |
-|---|---|---|
-| TASK-012 | Implement project-wide full-text search | partial |
-| TASK-013 | Implement Quick Open | partial |
-| TASK-015 | Implement related-item navigation | partial |
-| TASK-016 | Improve tab navigation | partial |
-| TASK-017 | Add recent standalone documents | partial |
-| TASK-018 | Improve menu organization | partial |
-| TASK-019 | Implement navigation history | partial |
-| TASK-020 | Improve Find and Replace | partial |
-| TASK-021 | Implement batch spelling and grammar review | partial |
-| TASK-022 | Implement AI context preview and controls | partial |
-| TASK-023 | Add AI translation batch review | partial |
-| TASK-024 | Improve AI scene draft review | partial |
-| TASK-025 | Add optional streaming AI previews | partial |
-| TASK-026 | Improve inline completion display | partial |
-| TASK-027 | Implement Markdown preview | partial |
-| TASK-028 | Improve manuscript export and PDF settings | partial |
-| TASK-030 | Improve character profile navigation | partial |
-| TASK-032 | Complete Ukrainian interface localization | partial |
-| TASK-034 | Perform accessibility audit and fixes | partial |
 
 ## Atomic execution backlog
 
