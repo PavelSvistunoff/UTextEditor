@@ -1,5 +1,7 @@
 # Qt callback latency
 
+> **Evidence snapshot:** This document records an earlier investigation or verification, not a fresh test run or a second implementation queue. Check [active tickets](../TASKS.md) and the [latest checkpoint](../IMPLEMENTATION_PROGRESS.md) before using it to close a gate. Native GUI and screen-reader checks require real platform evidence.
+
 The editor benchmark now measures delivery delay of a ready Qt zero-timer
 callback, both with no intervening operation and with synchronous typing and
 new-word tracking. Each sample queues the timer, performs the operation, and
