@@ -2927,7 +2927,7 @@ class MainWindow(QMainWindow):
         def failed(error) -> None:
             self._character_profile_saving = False
             self._return_to_character_profile()
-            QMessageBox.warning(dialog, CharacterDialog.tr("Profile save failed"), str(error))
+            QMessageBox.warning(dialog, CharacterDialog.tr("Profile save failed"), self._project_error_message(error))
 
         self._run_project_mutation(project.update_character_with_relationships, character_id,
                                    dialog.character, dialog.relationships,

@@ -104,3 +104,11 @@ Opening and project mutation warnings share typed project-error formatting.
 actual traversal rejection in both UI paths and preserves the diagnostic,
 including `%1` in the rejected path. The earlier format-error test remains valid.
 Native Ukrainian operation and remaining service error categories are still open.
+
+## Profile save errors — TASK-032.04
+
+The custom profile-save callback now uses shared project-error presentation.
+`test_failed_profile_save_reopens_staged_edits` covers generic, format and path
+errors with the packaged Ukrainian catalog, exact diagnostics and staged-name
+preservation after failure. Project source profile remains unchanged. Other
+custom callbacks, native runtime and accessibility remain open.

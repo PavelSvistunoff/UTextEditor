@@ -440,7 +440,8 @@ translated; missing-file diagnostics retain the original system detail and path.
 Standalone save conflicts use a translated category for manual and automatic
 saves while preserving the original diagnostics and dirty buffer. Invalid project
 format/path errors during opening and project changes use shared typed UI
-formatting with translated categories and original details.
+formatting with translated categories and original details. Profile-save failures
+now use the same categories and retain staged profile edits for retry.
 AI generation/completion network failures have packaged Ukrainian runtime coverage,
 including stale request/settings rejection and preservation of dirty text/details.
 Automated literal candidates were reviewed; other raw service errors and native

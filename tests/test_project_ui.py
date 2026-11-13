@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, Q
 from app.document.revisions import RevisionComparison, RevisionStore, SceneChange
 from app.document.recovery import RecoveryComparisonLabels, RecoveryStore
 from app.document.file_manager import FileManager, ExternalChangeError
-from app.project import Project, ProjectError, WordCount
+from app.project import Project, ProjectError, ProjectFormatError, ProjectPathError, WordCount
 from app.document.export import ExportChapter, ExportScene
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
@@ -2704,7 +2704,13 @@ def test_profile_save_refuses_changed_project_without_discarding_edits(applicati
     window.close()
 
 
-def test_failed_profile_save_reopens_staged_edits(application, tmp_path, monkeypatch):
+@pytest.mark.parametrize("error_type,category", [
+    (ProjectError, "Cannot save"),
+    (ProjectFormatError, "Некоректні дані проєкту"),
+    (ProjectPathError, "Неприпустимий шлях проєкту"),
+])
+def test_failed_profile_save_reopens_staged_edits(application, tmp_path, monkeypatch, error_type, category):
+    from app.i18n import install_translation
     project = Project.create(tmp_path / "project", "Book")
     character = project.add_character("Mara")
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
@@ -2717,15 +2723,20 @@ def test_failed_profile_save_reopens_staged_edits(application, tmp_path, monkeyp
     monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
 
     def fail(*_args):
-        raise ProjectError("Cannot save")
+        raise error_type("Cannot save %1")
 
     monkeypatch.setattr(project, "update_character_with_relationships", fail)
-    dialog._accept()
-    wait_until(lambda: bool(warnings), application)
-    assert dialog.isVisible() and dialog.full_name.text() == "Staged"
-    assert project.get_character(character.id).full_name == "Mara"
-    dialog.reject()
-    window.close()
+    _, translator = install_translation(application, "uk")
+    try:
+        dialog._accept()
+        wait_until(lambda: bool(warnings), application)
+        assert category in warnings[0][2] and "Cannot save %1" in warnings[0][2]
+        assert dialog.isVisible() and dialog.full_name.text() == "Staged"
+        assert project.get_character(character.id).full_name == "Mara"
+    finally:
+        application.removeTranslator(translator)
+        dialog.reject()
+        window.close()
 
 
 def test_profile_save_refuses_changed_directed_relationships(application, tmp_path, monkeypatch):

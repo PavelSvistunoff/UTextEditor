@@ -1,5 +1,23 @@
 # Refactoring progress
 
+## TASK-032.04 checkpoint — profile save errors
+
+- TASK-032.04: **CHECKPOINT**; TASK-032 parent partial; native .V2 open.
+- Profile-save callback now reuses shared typed project-error presentation.
+- Generic errors retain their original text; format/path failures show translated
+  categories with exact details. Failed saves reopen staged edits for retry.
+- Two typed regressions failed before fix; generic case passed. Focused UI/i18n/
+  translation tests: 240 passed; full offscreen: 967 passed, 2 skipped.
+- `git diff --check` passed; existing packaged catalog parity tests passed.
+- No new UI strings; no catalog rebuild needed. Native Ukrainian UI/accessibility
+  and live Ollama not tested. Branch `main`.
+- Clean Code review: shared UI formatting reused, callback lifecycle and source
+  profile preserved; no dependencies/API changes. Broader refactoring incomplete.
+- Files: main window, UI tests, README, TASKS and localization/progress docs.
+- Next: remaining custom project/character callbacks and export error handling.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — shared project error presentation
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
