@@ -1,5 +1,25 @@
 # Refactoring progress
 
+## TASK-032.04 checkpoint — character profile export errors
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 open.
+- Character export reuses shared typed project-error presentation; generic
+  details, overwrite confirmation and existing target behavior are retained.
+- Two typed confirmed cases failed before fix; six final injected UI cases cover
+  format/path/system errors, confirmation/cancellation and unchanged destination.
+- Focused UI/domain/i18n/translation tests: 313 passed; full offscreen suite:
+  990 passed, 2 skipped. `git diff --check` passed; packaged parity tested.
+- No new strings/catalog rebuild; native Ukrainian UI/accessibility and live
+  Ollama not tested. Three pre-existing pyc changes preserved; branch `main`.
+- Clean Code review: shared formatting reused; no domain/API/dependency changes.
+  Failure injection does not prove arbitrary-writer or partial-write rollback safety.
+- Found synchronous character export filesystem work; separate worker migration
+  needs a captured profile and tests for project changes and failed writes.
+- Files: main window, UI tests, README, TASKS, refactoring/localization docs.
+- Next: worker migration for profile export, then remaining custom AI callbacks.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — character scene-search errors
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.

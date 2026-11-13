@@ -2671,6 +2671,50 @@ def test_character_context_menu_exposes_relationship_io_and_scene_search():
     } <= action_ids
 
 
+@pytest.mark.parametrize("confirmed", [False, True])
+@pytest.mark.parametrize("error_type,category", [
+    (ProjectFormatError, "Некоректні дані проєкту"),
+    (ProjectPathError, "Неприпустимий шлях проєкту"),
+    (OSError, "export detail %1"),
+])
+def test_character_export_failure_preserves_existing_file_and_localizes_category(
+    application, tmp_path, monkeypatch, confirmed, error_type, category,
+):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    target = tmp_path / "profile.yaml"
+    target.write_text("existing profile", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(window, "_selected_project_item", lambda: ("character", character.id))
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args: (str(target), ""))
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes if confirmed else QMessageBox.StandardButton.No)
+    warnings, calls = [], []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+
+    def fail_export(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise error_type("export detail %1")
+
+    monkeypatch.setattr(project, "export_character", fail_export)
+    _, translator = install_translation(application, "uk")
+    try:
+        window.export_project_character()
+        if confirmed:
+            assert calls == [((character.id, str(target)), {"replace_existing": True})]
+            assert category in warnings[0][2] and "export detail %1" in warnings[0][2]
+        else:
+            assert not calls and not warnings
+        assert target.read_text(encoding="utf-8") == "existing profile"
+        assert project.get_character(character.id).full_name == "Mara"
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_character_associated_scene_picker_uses_explicit_links_and_rechecks_them(application, tmp_path, monkeypatch):
     from app.project.model import SceneCharacterAssociation
 

@@ -126,3 +126,10 @@ busy-state reset. Native export/localization review remains open.
 format, path and system errors for current, changed-project and changed-generation
 results. Current typed errors use shared Ukrainian categories and preserve exact
 diagnostics; stale results show no warning. Native UI review remains open.
+
+## Character profile export — TASK-032.04
+
+Six injected UI cases cover generic/format/path failures and overwrite confirm/
+cancel. Typed categories use the packaged Ukrainian catalog; exact diagnostics
+and existing destination content are preserved. Filesystem export remains
+synchronous and needs a separately tested worker migration. Native UI unverified.

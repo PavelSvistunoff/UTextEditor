@@ -3381,7 +3381,7 @@ class MainWindow(QMainWindow):
         try:
             self.project.export_character(character_id, target, replace_existing=replace_existing)
         except (OSError, ProjectError, ValueError) as exc:
-            QMessageBox.warning(self, self.tr("Character export failed"), str(exc))
+            QMessageBox.warning(self, self.tr("Character export failed"), self._project_error_message(exc))
             return
         self.statusBar().showMessage(self.tr("Character profile exported to {path}").format(path=target), 5000)
 

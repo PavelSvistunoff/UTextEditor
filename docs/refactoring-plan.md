@@ -59,6 +59,10 @@ checks separately; offscreen tests cannot establish native behavior.
    both callback routes are covered for source, format, path and system failures.
    Character scene-search failures reuse typed project presentation; explicit
    stale-project/generation guards are covered for each error category.
+   Character profile export errors reuse the same categories, with cancellation
+   and failure tests. `export_project_character` still performs export filesystem
+   work synchronously; move it to workers with captured-profile/stale-state tests
+   in a separate behavior batch (risk: live mutable profile and project changes).
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,
