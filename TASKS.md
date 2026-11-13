@@ -4,15 +4,15 @@
 
 ## Working agreement
 
-By default, implement one logical batch of **1–4 closely related atomic subtasks within one parent TASK** per Codex run, following `AGENTS.md` → “Logical task batches and continuation”. For high-risk changes, use a smaller batch (often one subtask). Do not automatically implement the entire backlog or unrelated parent tasks. Mark each subtask complete only when its own acceptance criteria pass; checkpoint unfinished work.
+**Execution authority:** Follow `AGENTS.md` → “Documentation entry points and authority” and “Logical task batches and continuation”. This file lists *unfinished* work only; the latest checkpoint at the top of `IMPLEMENTATION_PROGRESS.md` identifies what to resume first. For an explicitly authorized whole-backlog run, move between parents after verifying and checkpointing each bounded batch; otherwise stay within the assigned parent.
 
-- Execute **one bounded logical batch of 1–4 closely related atomic subtasks within one parent TASK** per Codex run unless explicitly asked otherwise. For high-risk changes, prefer one subtask. Follow `AGENTS.md` → “Logical task batches and continuation”; do not automatically move to another parent TASK.
-- Before implementation inspect the current code, README, tests and working-tree diff; do not overwrite unrelated work.
-- Each subtask must produce one independently reviewable change, a focused test (or documented reason), and evidence of verification.
-- For UI changes update English/Ukrainian source strings; compiled catalog and native verification are separate subtasks.
-- Preserve unsaved content, transactionality, backward compatibility, and offline editing without Ollama.
-- Run focused tests, then `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q` when practical; check `git diff --check`.
-- States: `[~]` implemented partly / verification outstanding, `[ ]` not documented complete, `[?]` requires code-level confirmation. Remove `[x]` entries after recording verified completion and its evidence. Never promote a task merely because UI exists.
+**Batch contract:** Select 1–4 related atomic subtasks of one parent (usually one for high-risk data integrity), inspect existing code and tests, check each “Done when” and the parent gate, run focused tests and the full offscreen suite when practical, and record evidence. Never infer missing functionality from `[ ]` or `[~]` alone. Do not touch unrelated worktree changes. Preserve unsaved manuscripts, Qt undo/redo, transactional saves, compatibility and offline editing.
+
+**Status convention:** `[~]` means partial or verification outstanding; `[ ]` means not documented complete; `[?]` needs code-level confirmation. On verified completion, record evidence in `IMPLEMENTATION_PROGRESS.md` and remove completed entries from this active backlog. Parent completes only after every child and parent acceptance gate pass. Native keyboard, accessibility and release-catalog checks require actual evidence; mark unavailable checks as blocked, not passed.
+
+**Verification baseline:** `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q` and `git diff --check`; report commands actually run and skipped checks.
+
+**Selection order:** Resume the latest unfinished selected batch first. Then prefer `TASK-001` memory/undo correctness; follow with remaining functional/UX verification and localization/accessibility tasks, accounting for dependencies and available native platforms. `V2` tickets are verification gates, not automatic instructions to rewrite existing features.
 
 ## Summary of parent tasks
 
