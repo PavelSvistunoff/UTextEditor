@@ -4,6 +4,24 @@
 
 
 
+## TASK-034.03 — completed native dialog focus matrix
+
+- TASK-034.03: **COMPLETE**, removed from the current backlog.
+- Inventory and tests cover all 24 standalone QDialog subclasses: initial focus,
+  forward/back Tab, unchanged text, Enter/Cancel or Esc and native owner focus return.
+- AI consent initial focus/default explicitly selects Not now; explicit Allow
+  via Enter/Space remains supported. Native missing focus reproduced before fix.
+- Final matrix: 27 passed offscreen, 27 Cocoa; additional native/localization
+  subset: 44 passed; broader earlier native UI corpus: 392 passed.
+- Full offscreen control run: 1093 passed, 2 skipped. Final focused fallback suite:
+  47 passed after English/missing-resource Qt-base reset validation.
+- Clean Code review: existing Qt controls/signals, no data/undo/dependency change.
+- VoiceOver/actual OS appearance gates were retired externally, not completed;
+  global macOS menu visibility is outside this dialog acceptance.
+- Existing staged pyc and DS_Store changes remain untouched.
+- Next: record completed localization inventory/migration acceptance.
+
+
 ## All-remaining-task execution — final checkpoint
 
 - Reviewed all eight starting tickets in one session; overall objective incomplete.

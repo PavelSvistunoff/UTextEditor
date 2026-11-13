@@ -271,3 +271,18 @@ Auto-pilot helper statuses and unavailable/orphan target labels in ProjectView.
 Concrete owners and reproduction paths are listed in
 [the residual inventory](all-remaining-tasks-checkpoint.md#concrete-residual-localization-inventory).
 Thus source/catalog parity alone does not close remaining TASK-032 work.
+
+## TASK-034.03 — completed dialog focus acceptance
+
+The constructor inventory contains all 24 standalone QDialog subclasses in the
+current app/ui source. A modal-exec keyboard matrix verifies initial focus,
+forward/back Tab without text mutation, Enter on Cancel or Esc rejection and
+actual native focus return to the owner. Three additional consent cases verify
+initial Not now, Enter rejection and explicit Enter/Space Allow. Final result:
+**27 passed offscreen and 27 passed on Cocoa**. The broader earlier native UI
+corpus passed 392 tests. Consent initially had no native focused control; explicit
+Not now focus/default fixed that reproduced defect. Auto-deleting dialogs are
+handled through finished signals/validity in the test harness.
+TASK-034.03 is COMPLETE for these dialog criteria. Actual macOS global menu
+restoration, VoiceOver speech and OS light/dark/high-contrast transitions are
+not asserted by this acceptance; the latter tickets were removed separately.
