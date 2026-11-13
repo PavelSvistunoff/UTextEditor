@@ -1,5 +1,21 @@
 # Implementation progress
 
+## TASK-009.04 structure comparison (2026-11-13)
+
+- **TASK-009.04: CHECKPOINT; parent TASK-009: open.** Comparison reports
+  project ID and format version differences when captured on both sides, with
+  no invented differences for legacy missing fields. Scene ordering compares
+  stable siblings within a chapter, avoiding false scene moves when chapters
+  move; legacy snapshots without membership fall back to flat order. Wider
+  structure coverage and native review remain unverified.
+- Changed `app/document/revisions.py`, `tests/test_revisions.py`,
+  `tests/test_project_ui.py`, `README.md`, `TASKS.md` and this checkpoint on
+  `codex/task-continuation`. Existing staged generated files remain unrelated.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py tests/test_project_ui.py -k revision`: 45 passed, 166 deselected.
+  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 906 passed, 2 skipped. Native UI and release catalog checks not run.
+- Blocker: none for further offline work. Next: audit remaining captured
+  structure and native comparison display; resume using the focused command.
+
 ## TASK-009.04 comparison labels (2026-11-13)
 
 - **TASK-009.04: CHECKPOINT; parent TASK-009: open.** The comparison now

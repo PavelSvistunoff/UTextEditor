@@ -191,8 +191,32 @@ class RevisionStore:
                     and old_project_title != new_project_title):
                 changes.append(SceneChange("project", "title-changed", old_project_title,
                                            new_project_title, item_type="project"))
+            # Legacy snapshots may lack these fields, so only compare fields
+            # explicitly captured in both snapshots.
+            shared_fields = {key for key in ("project_id", "format_version")
+                             if key in left.structure and key in right.structure}
+            old_metadata = {key: left.structure[key] for key in shared_fields}
+            new_metadata = {key: right.structure[key] for key in shared_fields}
+            if old_metadata != new_metadata:
+                changes.append(SceneChange(
+                    "project", "metadata-changed", item_type="project",
+                    diff=_metadata_diff(old_metadata, new_metadata, "project"),
+                    changed_fields=_changed_fields(old_metadata, new_metadata),
+                ))
         old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
         old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
+        stable_parent_ids = {key for key in common if key in old_parents and key in new_parents
+                             and old_parents[key] == new_parents[key]}
+        old_sibling_positions: dict[str, int] = {}
+        new_sibling_positions: dict[str, int] = {}
+        for order, parents, positions in ((left.scene_order, old_parents, old_sibling_positions),
+                                          (right.scene_order, new_parents, new_sibling_positions)):
+            counts: dict[str | None, int] = {}
+            for key in order:
+                if key in stable_parent_ids:
+                    parent = parents[key]
+                    positions[key] = counts.get(parent, 0)
+                    counts[parent] = positions[key] + 1
         old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
         old_associations = _scene_associations(left.structure)
         new_associations = _scene_associations(right.structure)
@@ -226,7 +250,11 @@ class RevisionStore:
             if scene_id not in common:
                 continue
             old_title, new_title = left.scene_titles.get(scene_id), right.scene_titles.get(scene_id)
-            if old_positions[scene_id] != new_positions[scene_id]:
+            moved = (old_sibling_positions[scene_id] != new_sibling_positions[scene_id]
+                     if scene_id in stable_parent_ids else
+                     (old_positions[scene_id] != new_positions[scene_id]
+                      if scene_id not in old_parents or scene_id not in new_parents else False))
+            if moved:
                 changes.append(SceneChange(scene_id, "moved", old_title, new_title))
             if (scene_id in old_parents and scene_id in new_parents
                     and old_parents[scene_id] != new_parents[scene_id]):

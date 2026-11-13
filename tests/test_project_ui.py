@@ -3294,6 +3294,19 @@ def test_revision_history_dialog_displays_path_and_project_title_changes(applica
     dialog.close()
 
 
+def test_revision_history_dialog_displays_project_identity_change(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("project", "metadata-changed", item_type="project",
+                    changed_fields=("project_id",), diff='-  "project_id": "old"\n+  "project_id": "new"\n'),
+    )))
+    text = dialog.details.toPlainText()
+    assert "Project Details Changed: project" in text
+    assert "Changed manifest fields: project_id" in text
+    assert '"old"' in text and '"new"' in text
+    dialog.close()
+
+
 def test_revision_history_dialog_displays_character_metadata_changes(application):
     dialog = RevisionHistoryDialog()
     dialog.show_comparison(RevisionComparison((

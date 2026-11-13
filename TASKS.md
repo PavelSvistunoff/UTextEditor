@@ -328,6 +328,8 @@ keyboard/screen-reader checks and release translation compilation remain open.
   missing final newlines instead of joining adjacent changed lines. Character
   and relationship reordering is reported without false moves on add/remove.
   Comparison labels identify titled scenes, chapters and notes by stable ID.
+  Captured project identity/version changes are reported, and reordered chapters
+  do not falsely mark their unchanged scenes as moved.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.05** — Add optional scheduled snapshots and retention policies.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
