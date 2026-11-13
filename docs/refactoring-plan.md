@@ -39,7 +39,8 @@ checks separately; offscreen tests cannot establish native behavior.
    claim protection from arbitrary concurrent writers or prune Qt undo.
 2. **Project** — inspect `service.py` (large transaction/orchestration surface),
    `model.py`, paths, search, translation, auto-writer and remaining modules.
-   Establish actual responsibility and duplication findings before extraction.
+   Character serialization mapping is now readable; inspect remaining model
+   validation and establish responsibility and duplication findings before extraction.
    Gate: stable IDs/YAML compatibility, conflict checks and rollback tests.
    `translation.py` scene capture is shared while retaining traversal order.
    Auto-writer rollback previously suppressed temporary-file unlink errors;

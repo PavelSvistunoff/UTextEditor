@@ -649,7 +649,34 @@ def _validate_scene_associations(scene: Scene, character_ids: set[str], label: s
 
 
 def _character_mapping(item: Character) -> dict[str, object]:
-    result = {"id": item.id, "full_name": item.full_name, "display_name": item.display_name, "aliases": item.aliases, "role": item.role, "description": item.description, "background": item.background, "personality": item.personality, "primary_motivation": item.primary_motivation, "secondary_motivations": item.secondary_motivations, "goals": [{"description": g.description, "status": g.status, "priority": g.priority, "notes": g.notes} for g in item.goals], "desires": item.desires, "needs": item.needs, "obstacles": item.obstacles, "accepted_risks": item.accepted_risks, "refusals": item.refusals, "internal_conflicts": item.internal_conflicts, "knowledge": [{"kind": k.kind, "statement": k.statement} for k in item.knowledge], "arc": item.arc}
+    result = {
+        "id": item.id,
+        "full_name": item.full_name,
+        "display_name": item.display_name,
+        "aliases": item.aliases,
+        "role": item.role,
+        "description": item.description,
+        "background": item.background,
+        "personality": item.personality,
+        "primary_motivation": item.primary_motivation,
+        "secondary_motivations": item.secondary_motivations,
+        "goals": [
+            {"description": goal.description, "status": goal.status,
+             "priority": goal.priority, "notes": goal.notes}
+            for goal in item.goals
+        ],
+        "desires": item.desires,
+        "needs": item.needs,
+        "obstacles": item.obstacles,
+        "accepted_risks": item.accepted_risks,
+        "refusals": item.refusals,
+        "internal_conflicts": item.internal_conflicts,
+        "knowledge": [
+            {"kind": knowledge.kind, "statement": knowledge.statement}
+            for knowledge in item.knowledge
+        ],
+        "arc": item.arc,
+    }
     if item.portrait:
         result["portrait"] = item.portrait
     return result

@@ -1,5 +1,20 @@
 # Refactoring progress
 
+## 2026-11-13 — character manifest serialization review
+
+- Status: **CHECKPOINT**; full repository audit and refactoring remain incomplete.
+- Reviewed character mapping in `app/project/model.py` and project domain tests.
+  Expanded the dense mapping and named goal/knowledge variables; field order,
+  optional portrait and serialized values are unchanged.
+- Focused `tests/test_project_domain.py`: 47 passed.
+- Full offscreen suite before and after edit: 947 passed, 2 skipped each.
+- `git diff --check` passed; Clean Code review: names and mapping clarity improved;
+  serialization contract retained; no new dependencies or error paths.
+- This readability change does not complete the model or project package audit.
+- Native GUI, accessibility and live Ollama were not tested.
+- Next: inspect remaining model validation and service transaction failure paths.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — Auto-writer rollback cleanup diagnostics
 
 - Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
