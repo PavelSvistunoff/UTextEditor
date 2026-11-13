@@ -1,5 +1,23 @@
 # Implementation progress
 
+## TASK-029.05 and parent complete (2026-11-13)
+
+- **TASK-029.05: COMPLETE; parent TASK-029: COMPLETE.** Explicit confirmation
+  clears locally stored new-word and scope history and all tracker undo/redo
+  contributions, while preserving manuscript text, goal configuration and
+  pause state. Subsequent edits/observations can create new progress. The
+  history displays approximate totals and last complete scope observations.
+- Changed `app/document/writing_goals.py`, `app/ui/main_window.py`, writing-goal
+  and editor tests, `README.md`, `UNIMPLEMENTED_FEATURES.md`, Ukrainian source
+  catalog, `TASKS.md`, and this file on `codex/task-continuation`. Unrelated
+  pre-existing staged generated artifacts remain untouched.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py -k 'writing_goal or goal_history or scope_history or clear_progress'`:
+  51 passed, 58 deselected. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  898 passed, 2 skipped. Source translations validated and temporary catalog
+  compiled. Native UI/accessibility and release catalog checks not performed.
+- Blocker: none for independent backlog work. Next: select another unfinished
+  parent, preserving safety and the separate TASK-001 history-memory limitation.
+
 ## TASK-029.02 completed (2026-11-13)
 
 - **TASK-029.02: COMPLETE; parent TASK-029 open.** The history stores the last

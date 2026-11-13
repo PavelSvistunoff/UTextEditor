@@ -2544,6 +2544,9 @@ Text is sent to the configured Ollama destination:
     <message><source>That file is already open in another tab.</source><translation>Цей файл уже відкрито в іншій вкладці.</translation></message>
     <message><source>Another tab is already saving to that file.</source><translation>Інша вкладка вже зберігає дані в цей файл.</translation></message>
     <message><source>Writing Goal History…</source><translation>Історія цілі письма…</translation></message>
+    <message><source>Clear Writing Goal History…</source><translation>Очистити історію цілі письма…</translation></message>
+    <message><source>Clear writing goal history</source><translation>Очистити історію цілі письма</translation></message>
+    <message><source>Remove all locally stored goal progress? Manuscript text and the goal settings will not change.</source><translation>Видалити весь локально збережений прогрес цілі? Текст рукопису та налаштування цілі не зміняться.</translation></message>
     <message><source>The file is being saved. Try opening it again when saving finishes.</source><translation>Файл зберігається. Спробуйте відкрити його знову після завершення збереження.</translation></message>
     <message><source>Saving file…</source><translation>Збереження файлу…</translation></message>
     <message><source>Old recovery data could not be removed: {error}</source><translation>Не вдалося видалити старі дані відновлення: {error}</translation></message>

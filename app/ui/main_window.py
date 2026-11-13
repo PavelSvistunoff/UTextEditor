@@ -364,6 +364,9 @@ class MainWindow(QMainWindow):
         goal_history = QAction(self.tr("Writing Goal History…"), self)
         goal_history.triggered.connect(self.show_writing_goal_history)
         writing_menu.addAction(goal_history)
+        clear_goal_history = QAction(self.tr("Clear Writing Goal History…"), self)
+        clear_goal_history.triggered.connect(self.clear_writing_goal_history)
+        writing_menu.addAction(clear_goal_history)
         reset_goal = QAction(self.tr("Reset Today's Progress…"), self)
         reset_goal.triggered.connect(self.reset_writing_goal)
         writing_menu.addAction(reset_goal)
@@ -859,7 +862,7 @@ class MainWindow(QMainWindow):
         editor._goal_undo_steps = document.availableUndoSteps()
         editor._goal_redo_available = document.isRedoAvailable()
 
-    def _refresh_writing_goal(self) -> None:
+    def _refresh_writing_goal(self, *, record_history: bool = True) -> None:
         if not hasattr(self, "_writing_goal_label"):
             return
         self._writing_goal_pause_action.setText(
@@ -913,7 +916,7 @@ class MainWindow(QMainWindow):
         elif (self.writing_goals.scope == "project_manuscript" and self.project is not None
               and not incomplete and project_observation_complete):
             scope_identity = f"project:{self.project.manifest.project_id}"
-        if scope_identity is not None and self.writing_goals.record_scope_count(scope_identity, count):
+        if record_history and scope_identity is not None and self.writing_goals.record_scope_count(scope_identity, count):
             self._schedule_writing_goal_persist()
         self._writing_goal_label.setText(
             (
@@ -939,6 +942,17 @@ class MainWindow(QMainWindow):
     def show_writing_goal_history(self) -> None:
         state = self.writing_goals.to_mapping()
         WritingGoalHistoryDialog(state["progress"], self, scope_history=state["scope_history"]).exec()
+
+    def clear_writing_goal_history(self) -> None:
+        if QMessageBox.question(
+            self, self.tr("Clear writing goal history"),
+            self.tr("Remove all locally stored goal progress? Manuscript text and the goal settings will not change."),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        self.writing_goals.clear_progress()
+        self._schedule_writing_goal_persist()
+        self._refresh_writing_goal(record_history=False)
 
     def toggle_writing_goal_pause(self) -> None:
         if self.writing_goals.target == 0:

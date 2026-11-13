@@ -274,6 +274,15 @@ class WritingGoalTracker:
                 states[state_index] = (fingerprint, updated_counts[key])
             self._histories[document_id] = (states, index)
 
+    def clear_progress(self) -> None:
+        """Remove stored progress and prevent undo/redo from restoring it."""
+        self.progress.clear()
+        self.scope_history.clear()
+        empty: dict[str, int] = {}
+        for states, _index in self._histories.values():
+            for position, (fingerprint, _counts) in enumerate(states):
+                states[position] = (fingerprint, empty)
+
     def to_mapping(self) -> dict[str, object]:
         return {
             "target": self.target,

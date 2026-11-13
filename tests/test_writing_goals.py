@@ -23,6 +23,23 @@ def test_scope_history_records_last_complete_observation_per_identity_and_round_
     assert WritingGoalTracker.from_mapping({"progress": {}}).scope_history == {}
 
 
+def test_clear_progress_removes_all_days_and_undo_redo_cannot_restore_them():
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "one ", local_date="2026-10-17")
+    tracker.record_text("doc", "one two", local_date="2026-10-18")
+    tracker.scope_history = {"2026-10-17": {"active_scene": {"doc": 1}}}
+    tracker.clear_progress()
+    assert tracker.progress == {} and tracker.scope_history == {}
+    assert tracker._current_text["doc"] == "one two"
+    tracker.record_text("doc", "one ", undo=True, local_date="2026-10-18")
+    tracker.record_text("doc", "one two", redo=True, local_date="2026-10-18")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 0
+    tracker.record_text("doc", "one two three", local_date="2026-10-18")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 1
+
+
 @pytest.mark.parametrize("history", [[], None, {"2026-10-17": {"new_words": {"x": 2}}},
                                      {"2026-10-17": {"active_scene": {"x": -1}}}])
 def test_invalid_persisted_scope_history_is_rejected(history):

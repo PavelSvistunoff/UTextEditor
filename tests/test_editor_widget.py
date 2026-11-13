@@ -161,6 +161,39 @@ def test_goal_history_does_not_store_incomplete_project_count(application, tmp_p
     window.close()
 
 
+def test_clear_goal_history_requires_confirmation_and_preserves_text(application, tmp_path, monkeypatch):
+    from app.document.writing_goals import WritingGoalStore
+    store = WritingGoalStore(tmp_path / "goals.json")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow(writing_goal_store=store)
+    editor = window.tabs.current_editor()
+    tracker = window.writing_goals
+    tracker.configure(10, "new_words")
+    editor.setPlainText("unsaved words")
+    before = tracker.to_mapping()
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Cancel)
+    window.clear_writing_goal_history()
+    assert tracker.to_mapping() == before
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
+    window.clear_writing_goal_history()
+    assert tracker.progress == {} and tracker.scope_history == {}
+    assert editor.toPlainText() == "unsaved words" and editor.document_state.dirty
+    assert tracker.target == 10 and tracker.scope == "new_words"
+    window._writing_goal_persist_timer.stop()
+    window._save_writing_goal_state()
+    for _ in range(100):
+        if window._writing_goal_save_worker is None:
+            break
+        QTest.qWait(10)
+    assert window._writing_goal_save_worker is None
+    assert store.load().progress == {} and store.load().scope_history == {}
+    editor.undo()
+    editor.redo()
+    assert tracker.count_new_words({editor._writing_goal_document_id}) == 0
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_editor_colors_follow_the_system_palette(application: QApplication) -> None:
     editor = EditorWidget()
     editor.apply_settings(AppSettings())

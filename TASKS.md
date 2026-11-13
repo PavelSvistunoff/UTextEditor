@@ -47,7 +47,7 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 | TASK-026 | Improve inline completion display | partial |
 | TASK-027 | Implement Markdown preview | partial |
 | TASK-028 | Improve manuscript export and PDF settings | partial |
-| TASK-029 | Add writing-goal history viewer | open |
+| TASK-029 | Add writing-goal history viewer | complete |
 | TASK-030 | Improve character profile navigation | partial |
 | TASK-031 | Improve automatic language detection | complete |
 | TASK-032 | Complete Ukrainian interface localization | partial |
@@ -880,7 +880,7 @@ PDF paper/title/heading/selection controls are verified in
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-029 — Add writing-goal history viewer
-**Priority:** Low · **Parent status:** open
+**Priority:** Low · **Parent status:** complete
 
 - [x] **TASK-029.01** — Display daily writing-goal history.
   Read-only dialog shows saved new-word totals by local date across stored
@@ -898,7 +898,9 @@ PDF paper/title/heading/selection controls are verified in
 - [x] **TASK-029.04** — Preserve pause/reset behavior.
   The read-only view reflects tracker pause/reset state without changing text.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-029.05** — Allow users to remove locally stored progress.  
+- [x] **TASK-029.05** — Allow users to remove locally stored progress.
+  An explicit confirmation clears stored values and undo/redo checkpoints;
+  document text, goal settings and pause state are preserved.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
