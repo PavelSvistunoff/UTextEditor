@@ -3,6 +3,24 @@
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
+
+## TASK-001.02 checkpoint — daily snapshot overhead
+
+- TASK-001.02: **CHECKPOINT**; parent TASK-001 remains open.
+- `app/document/writing_goals.py`: slots reduce daily snapshot overhead while
+  retaining reachable history; no Qt undo commands are removed.
+- 1,000 mixed commands: 251,241 traced bytes before, 236,924 after, one run
+  each; 1,001 states retained, undo/redo/branch counts verified in both.
+- 10,000 mixed commands: 10,001 states, 1,943,227 traced bytes; undo, redo
+  and branch counts passed (previous recorded run: 2,206,486 bytes).
+- Focused writing-goal/editor/benchmark tests: 124 passed before and after.
+- Full offscreen suite: 950 passed, 2 skipped; `git diff --check` passed.
+- Memory remains unbounded with reachable commands; a measured bound and focused
+  regression remain required. No native GUI, accessibility or live Ollama check.
+- Repository-wide audit/refactoring remains incomplete. Branch: `main`.
+- Next: investigate compact or external history preserving exact undo and failures.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## Refactoring checkpoint — character map validation
 
 - Repository-wide refactoring: **CHECKPOINT**; backlog statuses unchanged.

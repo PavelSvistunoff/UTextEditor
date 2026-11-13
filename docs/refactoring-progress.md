@@ -1,5 +1,24 @@
 # Refactoring progress
 
+## 2026-11-13 — TASK-001.02 daily snapshot overhead
+
+- TASK-001.02: **CHECKPOINT**, parent TASK-001 remains open; full repository
+  refactoring and package audits remain incomplete.
+- `app/document/writing_goals.py`: daily snapshots use slots, retaining all
+  reachable checkpoints and existing reset/rekey and undo semantics.
+- Focused writing-goal/editor/benchmark suite: 124 passed before and after.
+- Full offscreen suite: 950 passed, 2 skipped; `git diff --check` passed.
+- Single mixed 1,000-command samples: 251,241 traced bytes before and 236,924
+  after; both retained 1,001 states and passed undo/redo/branch checks. These
+  noisy measurements show no bound. The 10,000-command mixed run retained
+  10,001 states and 1,943,227 traced bytes; undo/redo and branch counts passed.
+  A previous recorded run reported 2,206,486 bytes; conditions may differ.
+- Clean Code review: ownership and side effects unchanged; no new dependencies,
+  error handling, persistence format, undo pruning or public API changes.
+- Native GUI, accessibility and live Ollama not tested.
+- Next: design and validate a real bound without discarding reachable Qt undo.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## 2026-11-13 — character map validation
 
 - Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.

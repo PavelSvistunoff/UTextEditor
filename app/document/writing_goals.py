@@ -18,6 +18,8 @@ _SCOPES = {"active_scene", "project_manuscript", "new_words"}
 class _DailyCounts(Mapping[str, int]):
     """Immutable snapshot sharing unchanged days across consecutive edits."""
 
+    __slots__ = ("base", "day", "count")
+
     def __init__(self, previous: Mapping[str, int], day: str, count: int) -> None:
         if isinstance(previous, _DailyCounts) and previous.day == day:
             self.base = previous.base
