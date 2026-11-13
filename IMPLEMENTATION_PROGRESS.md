@@ -1,5 +1,24 @@
 # Implementation progress
 
+## TASK-005.04 checkpoint (2026-11-13)
+
+- **TASK-005.04: CHECKPOINT; parent TASK-005: partial.** Concurrent tab saves
+  to the same resolved destination are rejected until the first worker finishes;
+  failure releases the reservation, preserving both buffers. Autosave reports
+  the conflict without a modal dialog. Independent-process final-check races
+  remain unresolved; see `docs/save-coordination.md`.
+- Changed `app/ui/main_window.py`, `tests/test_project_ui.py`, `README.md`,
+  `translations/utexteditor_uk.ts`, `TASKS.md`, and this checkpoint on branch
+  `codex/task-continuation`. Existing staged generated artifacts are unrelated.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_ui.py -k 'concurrent_save_as or standalone_repeated_saves or save_as_tracks'`:
+  4 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  881 passed, 2 skipped. Catalog: `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/check_translations.py translations/utexteditor_uk.ts` passed.
+- Native UI/catalog release checks and cross-platform independent-writer
+  verification not run. Next: investigate opening a destination while its
+  Save As worker is pending and a safe independent-writer coordination design;
+  resume TASK-005.04, preserving conflict checks and atomic replacement. This
+  run stops at an execution-budget checkpoint, not a completed parent gate.
+
 ## Codex batch checkpoint format (newest checkpoint first)
 
 For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subtask `COMPLETE`/`BLOCKED`/`CHECKPOINT`, parent status, acceptance evidence, files changed, exact tests run/not run, blockers, and the next safe step with resume command. Keep the latest checkpoint concise (about 10–20 lines where practical). Resume unfinished selected subtasks on the next run for the same assignment. Completing the batch does not imply the parent task or backlog is complete.

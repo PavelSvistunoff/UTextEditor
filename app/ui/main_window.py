@@ -278,6 +278,7 @@ class MainWindow(QMainWindow):
         self._spellcheck_pending = None
         self._generate_worker = None
         self._saving_editors = set()
+        self._save_targets = {}
         self._quit_in_progress = False
         self._closing_confirmed = False
         self._quit_discards = {}
@@ -5154,6 +5155,15 @@ class MainWindow(QMainWindow):
             target = Path(path)
         target = Path(target)
         resolved = target.resolve()
+        if resolved in self._save_targets.values():
+            message = self.tr("Another tab is already saving to that file.")
+            if autosave:
+                self.statusBar().showMessage(self.tr("Autosave failed: {error}").format(error=message), 10000)
+            else:
+                QMessageBox.warning(self, self.tr("Save failed"), message)
+            if callback:
+                callback(False)
+            return False
         for index in range(self.tabs.count()):
             other = self.tabs.widget(index)
             if other is not editor and other and other.document_state.path and other.document_state.path.resolve() == resolved:
@@ -5183,6 +5193,7 @@ class MainWindow(QMainWindow):
             snapshot.disk_digest = document.disk_digest if same_source_path else None
             worker = FunctionWorker(self.file_manager.save, snapshot, target)
         self._saving_editors.add(editor)
+        self._save_targets[editor] = resolved
         self._track_worker(worker)
         worker.signals.finished.connect(
             lambda result: self._saved_editor(
@@ -5219,6 +5230,7 @@ class MainWindow(QMainWindow):
         detach_project: bool = False,
     ) -> None:
         self._saving_editors.discard(editor)
+        self._save_targets.pop(editor, None)
         document = editor.document_state
         document.path = target
         document.mark_saved(saved_text)
@@ -5265,6 +5277,7 @@ class MainWindow(QMainWindow):
 
     def _save_failed(self, editor, error, callback=None, *, notify: bool = True) -> None:
         self._saving_editors.discard(editor)
+        self._save_targets.pop(editor, None)
         if self.tabs.indexOf(editor) >= 0:
             if notify:
                 message = str(error)

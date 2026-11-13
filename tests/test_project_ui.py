@@ -194,6 +194,58 @@ def test_save_as_tracks_new_destination_for_later_conflicts(application, tmp_pat
     window.close()
 
 
+@pytest.mark.parametrize("fail_first", [False, True])
+def test_concurrent_save_as_reserves_destination_until_worker_finishes(application, tmp_path, monkeypatch, fail_first):
+    target = tmp_path / "shared.txt"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    first = window.tabs.current_editor()
+    first.setPlainText("first buffer")
+    second = window.tabs.new_document()
+    second.setPlainText("second buffer")
+    started, release = Event(), Event()
+    original_save = window.file_manager.save
+
+    def delayed_save(*args):
+        started.set()
+        assert release.wait(3)
+        if fail_first:
+            raise OSError("simulated save failure")
+        return original_save(*args)
+
+    monkeypatch.setattr(window.file_manager, "save", delayed_save)
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    results = []
+    try:
+        assert window._save_editor(first, callback=results.append, target=target)
+        assert started.wait(3)
+        assert not window._save_editor(second, callback=results.append, target=target)
+        assert results == [False] and warnings
+        warnings.clear()
+        assert not window._save_editor(second, callback=results.append, target=target, autosave=True)
+        assert results == [False, False] and not warnings
+        assert second.toPlainText() == "second buffer" and second.document_state.dirty
+    finally:
+        release.set()
+    wait_until(lambda: len(results) == 3, application)
+    assert results[-1] is not fail_first
+    assert not window._save_targets
+    if fail_first:
+        assert not target.exists()
+    else:
+        assert target.read_text(encoding="utf-8") == "first buffer"
+    # The failed worker must release its reservation for a subsequent attempt.
+    if fail_first:
+        monkeypatch.setattr(window.file_manager, "save", original_save)
+        assert window._save_editor(second, callback=results.append, target=target)
+        wait_until(lambda: len(results) == 4, application)
+        assert results[-1] is True and target.read_text(encoding="utf-8") == "second buffer"
+    first.document_state.mark_saved()
+    second.document_state.mark_saved()
+    window.close()
+
+
 @pytest.mark.parametrize("kind", ["standalone", "scene"])
 def test_conflict_review_stages_merge_and_rechecks_disk_on_save(application, tmp_path, monkeypatch, kind):
     from PySide6.QtWidgets import QDialog
