@@ -103,7 +103,7 @@ class RevisionHistoryDialog(QDialog):
     def show_comparison(self, comparison: RevisionComparison) -> None:
         self._update_compare_enabled()
         if not comparison.changes:
-            self.details.setPlainText(self.tr("No chapter, scene, reference-note or link changes between these snapshots."))
+            self.details.setPlainText(self.tr("Snapshots compared; no changes found."))
             self.status.setText(self.tr("Snapshots compared; no changes found."))
             return
 
@@ -132,6 +132,8 @@ class RevisionHistoryDialog(QDialog):
             elif change.item_type == "relationship":
                 change_label = format_qt(self.tr("Relationship %1"), change_label)
             sections.append(f"{change_label}: {title}")
+            if change.item_type in {"scene", "note", "chapter"} and title != change.item_id:
+                sections.append(format_qt(self.tr("Item ID: %1"), change.item_id))
             if change.kind == "type-changed":
                 sections.append(
                     format_qt(self.tr("Type: %1 → %2"),
@@ -152,9 +154,7 @@ class RevisionHistoryDialog(QDialog):
                 sections.append(format_qt(self.tr("Title: %1 → %2"),
                                           change.old_title or self.tr("unknown"),
                                           change.new_title or self.tr("unknown")))
-                if change.item_type != "project":
-                    sections.append(format_qt(self.tr("Item ID: %1"), change.item_id))
-            if change.kind == "moved":
+            if change.kind == "moved" and title == change.item_id:
                 sections.append(format_qt(self.tr("Item ID: %1"), change.item_id))
             if change.diff:
                 sections.append(change.diff.rstrip())

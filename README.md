@@ -97,6 +97,7 @@ The recovery chooser's details show each readable snapshot's capture timestamp a
 Revision history and the before/after comparison both order snapshots by their capture instant, including timestamps with different timezone offsets.
 Revision text comparisons keep lines without a final newline separate and mark them with the conventional `No newline at end of file` diff notice.
 Revision comparisons also report changes in the relative order of existing character profiles and relationships; additions or removals alone do not count as moves.
+Scene, chapter and reference-note changes show stable IDs alongside titles so identically named items can be distinguished in the comparison.
 
 Save conflict checks run both before and after staging standalone files, project text, and project manifests. Standalone, project text, and project manifest writes are serialized with one another within the application process. This does not lock out independent processes: an edit between the final check and atomic replacement can still be overwritten. The [save-coordination evaluation](docs/save-coordination.md) records why advisory locking alone does not close that race.
 

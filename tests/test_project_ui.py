@@ -3322,6 +3322,23 @@ def test_revision_history_dialog_displays_scene_character_association(applicatio
     dialog.close()
 
 
+def test_revision_comparison_identifies_duplicate_titles_for_all_changed_items(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("scene-a", "text-changed", "Shared", "Shared", diff="-old\n+new\n"),
+        SceneChange("scene-b", "association-added", new_title="Shared", character_id="character"),
+        SceneChange("note-a", "removed", old_title="Shared", item_type="note"),
+        SceneChange("chapter-a", "added", new_title="Shared", item_type="chapter"),
+    )))
+    text = dialog.details.toPlainText()
+    for item_id in ("scene-a", "scene-b", "note-a", "chapter-a"):
+        assert f"Item ID: {item_id}" in text
+    assert "Character ID: character" in text
+    dialog.show_comparison(RevisionComparison(()))
+    assert dialog.details.toPlainText() == "Snapshots compared; no changes found."
+    dialog.close()
+
+
 def test_project_translation_actions_translate_and_refresh_open_documents(
     application, tmp_path, monkeypatch
 ):

@@ -1,5 +1,22 @@
 # Implementation progress
 
+## TASK-009.04 comparison labels (2026-11-13)
+
+- **TASK-009.04: CHECKPOINT; parent TASK-009: open.** The comparison now
+  displays stable IDs for titled scenes, notes and chapters, including text,
+  association, addition and removal changes. The no-change message no longer
+  omits project and character changes from its description. Broader structure
+  coverage and native review remain unverified.
+- Changed `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,
+  `README.md`, `TASKS.md` and this checkpoint on `codex/task-continuation`;
+  existing English/Ukrainian strings are reused. Unrelated staged generated
+  files remain untouched. Native UI and release catalog checks not performed.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py tests/test_project_ui.py -k revision`: 42 passed, 166 deselected.
+  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 903 passed, 2 skipped.
+- Blocker: none for further offline work. Next: audit uncovered manifest fields
+  and comparison details, then perform the native review when available; resume
+  with the focused command above.
+
 ## TASK-009.04 comparison checkpoint (2026-11-13)
 
 - **TASK-009.04: CHECKPOINT; parent TASK-009: open.** Text diffs distinguish
