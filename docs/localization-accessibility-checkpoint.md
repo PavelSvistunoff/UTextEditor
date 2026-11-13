@@ -15,6 +15,25 @@ remain outstanding; this update does not complete the localization audit.
 
 
 
+
+## Backlog reconciliation — catalog build verification
+
+TASK-032.03 is **COMPLETE** against the current TASKS.md wording and removed from
+unfinished work. Fresh source extraction found 947 strings; reference coverage,
+placeholders and plural validation passed. Both en/uk catalogs compiled to
+scratch files (28/955 finished translations). `tests/test_i18n.py` and
+`tests/test_translation_validation.py`: **42 passed**, including every packaged
+source/context entry and representative numerus parity with fresh compilation.
+Command: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_i18n.py tests/test_translation_validation.py`.
+Extraction/compilation followed README commands with scratch output paths.
+
+TASK-032 parent remains partial: .01/.02/.04 require broader dynamic/service
+workflow inventory and migration. Passing compilation does not establish that
+all visible text has been inventoried or native Ukrainian UI was verified.
+TASK-016.05, TASK-027.03, TASK-030.03 and TASK-034.01/.02/.03/.04/.06 retain
+unmet native, spoken-label, focus, palette or full-audit criteria in their evidence.
+No other current ticket is confirmed complete; none is removed on test totals alone.
+
 ## TASK-032.04 — standalone save conflict (2026-11-13)
 
 Manual save and autosave now show a translated category for typed external-change

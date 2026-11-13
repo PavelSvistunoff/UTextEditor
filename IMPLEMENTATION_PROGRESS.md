@@ -3,6 +3,21 @@
 > This short file records the **latest actionable checkpoint**. Earlier execution history is recorded in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
+
+## Backlog cleanup — verified catalog task
+
+- Reviewed all current TASKS.md entries against owning tests and evidence docs.
+- TASK-032.03: **COMPLETE** and removed; parent TASK-032 remains partial.
+- Fresh source extraction: 947 strings; reference/placeholder/plural check passed.
+- en/uk lrelease: 28/955 finished entries; packaged/fresh runtime parity passed.
+- Focused i18n/translation suite: 42 passed; no runtime implementation changed.
+- Remaining .01/.02/.04 need broader inventory; other tickets retain native gates.
+- Native GUI, screen-reader and full suite not run for documentation-only cleanup.
+- Existing three pyc changes preserved; `git diff --check` passed.
+- Evidence: docs/localization-accessibility-checkpoint.md; branch `main`.
+- Next: TASK-032.01/.02/.04 dynamic/service-error inventory and migration.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## TASK-032.01/.02/.03/.04 checkpoint — revision error messages
 
 - TASK-032.01, .02, .03, .04: **CHECKPOINT** each; parent TASK-032 partial;
