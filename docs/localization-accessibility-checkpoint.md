@@ -286,3 +286,19 @@ handled through finished signals/validity in the test harness.
 TASK-034.03 is COMPLETE for these dialog criteria. Actual macOS global menu
 restoration, VoiceOver speech and OS light/dark/high-contrast transitions are
 not asserted by this acceptance; the latter tickets were removed separately.
+
+
+## Final reconciliation — current backlog closed
+
+TASK-032.01/.02/.04 and TASK-034.03 are COMPLETE for the current acceptance
+criteria. This supersedes earlier partial inventories in this historical log.
+All 35 UI modules and helper-routed messages were reviewed; findings, reproduction
+paths and data/diagnostic exclusions are in [the final inventory](ui-localization-inventory.md).
+Native app-wide qtbase and application catalogs use native QTranslator lookup;
+English and missing-resource fallback clear the previous standard-control language.
+Extraction found 970 messages; Ukrainian has 980 finished entries. Full offscreen:
+1093 passed, 2 skipped; final focused fallback suite: 47 passed; native dialog
+matrix: 27 passed; final native subset: 44 passed; earlier expanded native: 392 passed.
+See [final acceptance](all-remaining-tasks-checkpoint.md) for exact scope and limits.
+VoiceOver speech and actual OS appearance gates were removed externally, not
+completed. Synthetic palettes and offscreen tests do not establish those checks.

@@ -47,7 +47,7 @@ def test_ui_language_resolution(selection, system, expected):
     assert resolve_ui_language(selection, system) == expected
 
 
-def test_interface_translator_includes_standard_qt_buttons_and_removes_them_together(application):
+def test_interface_translator_includes_standard_qt_buttons_and_resets_them_for_english(application):
     language, translator = install_translation(application, "uk")
     try:
         assert language == "uk"
@@ -56,8 +56,12 @@ def test_interface_translator_includes_standard_qt_buttons_and_removes_them_toge
         assert "Закрити" in buttons.button(QDialogButtonBox.StandardButton.Close).text().replace("&", "")
     finally:
         application.removeTranslator(translator)
-    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-    assert buttons.button(QDialogButtonBox.StandardButton.Cancel).text().replace("&", "") == "Cancel"
+    _, english = install_translation(application, "en")
+    try:
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        assert buttons.button(QDialogButtonBox.StandardButton.Cancel).text().replace("&", "") == "Cancel"
+    finally:
+        application.removeTranslator(english)
 
 
 def test_document_open_errors_are_translated_without_masking_other_errors(application):
@@ -210,10 +214,14 @@ def test_window_recovers_from_invalid_writing_goal_progress(application, tmp_pat
 def test_missing_translation_resource_falls_back_to_english(application, monkeypatch, tmp_path):
     import app.i18n as i18n
 
+    _, previous = install_translation(application, "uk")
+    application.removeTranslator(previous)
     monkeypatch.setattr(i18n, "TRANSLATION_DIR", tmp_path)
     language, translator = install_translation(application, "uk")
     assert language == "en"
     assert translator is None
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+    assert buttons.button(QDialogButtonBox.StandardButton.Cancel).text().replace("&", "") == "Cancel"
 
 
 def test_settings_dialog_persists_language_code_separately(application):

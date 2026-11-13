@@ -1,5 +1,22 @@
 # Refactoring progress
 
+## Current backlog — completed localization acceptance
+
+- TASK-032.01/.02/.04: **COMPLETE**; TASK-034.03 already **COMPLETE**.
+- TASK-032 remaining inventory, migration and error gates are closed; current TASKS.md is empty.
+- Source audit covers all 35 UI modules and helper/worker diagnostic paths.
+- Dispositions and exclusions: docs/ui-localization-inventory.md.
+- Native Qt translators replace Python virtual translation callbacks; English and missing-resource resets tested.
+- Full offscreen: 1093 passed, 2 skipped; final focused fallback checks: 47 passed.
+- Native Cocoa: expanded corpus 392 passed; all-dialog matrix 27 passed; final subset 44 passed.
+- Extraction 970 strings; Ukrainian 980 finished entries; both catalogs compile.
+- Clean Code checklist and criterion-by-criterion outcomes: docs/all-remaining-tasks-checkpoint.md.
+- TASK-034 VoiceOver/system-appearance gates were removed externally, not verified complete.
+- Changed scope: i18n lifecycle/tests, acceptance inventory, README and progress/backlog documents.
+- Unrelated staged bytecode and DS_Store changes preserved; no new dependency.
+- Repository-wide refactoring remains separate and is not declared complete.
+- Resume command for that work: `git status --short && cat docs/refactoring-plan.md`.
+
 ## TASK-034.03 — completed native dialog focus matrix
 
 - TASK-034.03: **COMPLETE**, removed from the current backlog.

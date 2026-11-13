@@ -11,20 +11,23 @@ TRANSLATION_DIR = Path(__file__).resolve().parent / "resources" / "translations"
 _QT_ARGUMENT = re.compile(r"%(\d+)")
 
 
-class _InterfaceTranslator(QTranslator):
-    """Keep app and Qt built-in translations in one removable installation."""
-
-    def __init__(self, language: str, parent=None) -> None:
-        super().__init__(parent)
-        self._qt_base = QTranslator(self)
-        directory = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
-        if not self._qt_base.load(f"qtbase_{language}", directory) and language != "en":
-            logging.getLogger("utexteditor.i18n").warning("Qt base translations unavailable for %s", language)
-
-    def translate(self, context: str, source_text: str, disambiguation: str | None = None, n: int = -1) -> str | None:
-        translated = super().translate(context, source_text, disambiguation, n)
-        # A null result lets Qt keep searching other translators/source fallback.
-        return translated or self._qt_base.translate(context, source_text, disambiguation, n) or None
+def _replace_qt_base_translation(application, language: str) -> None:
+    """Keep lookup in native Qt code and replace the app-wide base catalog."""
+    previous = getattr(application, "_utexteditor_qt_base_translator", None)
+    if previous is not None:
+        application.removeTranslator(previous)
+        previous.deleteLater()
+    application._utexteditor_qt_base_translator = None
+    if language == "en":
+        return
+    translator = QTranslator(application)
+    directory = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+    if not translator.load(f"qtbase_{language}", directory):
+        logging.getLogger("utexteditor.i18n").warning("Qt base translations unavailable for %s", language)
+        translator.deleteLater()
+        return
+    application.installTranslator(translator)
+    application._utexteditor_qt_base_translator = translator
 
 
 def format_qt(template: str, *values: object) -> str:
@@ -56,11 +59,13 @@ def resolve_ui_language(selection: str, system_languages: list[str] | None = Non
 def install_translation(application, selection: str) -> tuple[str, QTranslator | None]:
     """Install the selected compiled Qt catalog, retaining it for app lifetime."""
     language = resolve_ui_language(selection)
-    translator = _InterfaceTranslator(language, application)
+    translator = QTranslator(application)
     resource = TRANSLATION_DIR / f"utexteditor_{language}.qm"
     if not translator.load(str(resource)):
         if language != "en":
             return install_translation(application, "en")
+        _replace_qt_base_translation(application, "en")
         return "en", None
+    _replace_qt_base_translation(application, language)
     application.installTranslator(translator)
     return language, translator
