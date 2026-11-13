@@ -20,7 +20,6 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 |---|---|---|
 | TASK-001 | Fix writing-goal history memory growth | open |
 | TASK-005 | Investigate and mitigate save race conditions | partial |
-| TASK-006 | Benchmark large-document responsiveness | partial |
 | TASK-007 | Implement external file conflict resolution | partial |
 | TASK-008 | Improve recovery diagnosis | partial |
 | TASK-012 | Implement project-wide full-text search | partial |
@@ -97,39 +96,6 @@ Evidence: [docs/save-coordination.md](docs/save-coordination.md).
   accessibility checks remain outstanding, as do native filesystem and
   multi-process guarantees.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
-
-### TASK-006 — Benchmark large-document responsiveness
-Evidence: editor_responsiveness.py covers reads, GUI open, typing, cursor,
-search, word counts and completion context with new-word tracking enabled.
-Sizes and repetition counts are configurable; repeated operations report
-median/max. Read/open samples remain single; RSS is a cumulative process peak
-where supported. Native event-loop latency and representative project workloads
-remain unverified.
-**Priority:** Medium · **Parent status:** partial
-
-- [~] **TASK-006.03** — Measure GUI-thread latency and memory usage.
-  The benchmark now measures ready zero-timer callback delays during idle and
-  typing with new-word tracking, alongside cumulative RSS. Ten-sample
-  100K/1M/5M results and limitations are in docs/gui-latency-evaluation.md.
-  Native input/paint latency and representative project workloads remain open.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-006.04** — Establish representative document sizes and repeatable benchmarks.
-  Project-search probe now has configurable scene/line/repetition counts and
-  checks multilingual, non-BMP temporary scenes remain unchanged; 2,000- and
-  5,000-scene offscreen results and match-limit caveats are in
-  docs/gui-latency-evaluation.md. Native representative workloads remain unverified.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-006.05** — Optimize confirmed bottlenecks without weakening correctness.
-  Writing-goal token scanning is limited to the changed span plus boundary
-  context; exhaustive small-edit equivalence regression passes.
-  Goal refresh also skips buffer word scans for paused/disabled and new-word
-  goals. Overall GUI latency and bounded history remain outstanding.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-
-**Parent acceptance gate (all must pass):**
-- Baseline and post-change measurements are documented.
-- Performance regressions can be detected.
-- UI behavior and correctness are preserved.
 
 ### TASK-007 — Implement external file conflict resolution
 Audit: version display, explicit reload/save-elsewhere/merge, cancellation and
@@ -512,7 +478,7 @@ or partial as indicated.
 ## Cross-cutting execution priorities
 
 1. **Safety first:** TASK-005 and TASK-007 share the unresolved cross-process overwrite race; implement a defined coordination guarantee before declaring either complete.
-2. **Memory/performance:** TASK-001 and TASK-006 need measured bounds and repeated GUI benchmarks; do not truncate Qt undo silently.
+2. **Memory:** TASK-001 needs measured bounds; do not truncate Qt undo silently.
 3. **Recovery safety:** TASK-008 requires failure-mode tests before new UI polish.
 4. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
 5. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.

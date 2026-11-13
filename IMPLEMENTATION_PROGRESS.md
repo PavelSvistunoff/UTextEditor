@@ -16,33 +16,6 @@
 - Resume another open backlog task; independent TASK-005/007 save
   coordination remains unresolved.
 
-## TASK-006.04 wider project sample (2026-11-13)
-
-- **TASK-006.04: CHECKPOINT; parent TASK-006: partial.** A 5,000-scene,
-  multilingual offscreen search sample passed twice with all source files
-  unchanged; results and the 1,000-match cap are recorded in
-  `docs/gui-latency-evaluation.md`. Native input and paint remain unverified.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/project_search_responsiveness.py --scenes 5000 --lines 10 --repetitions 2` passed.
-  No application code changed; the previous full suite passed 898 tests with
-  2 skipped. Native GUI timing requires an interactive platform measurement.
-- Branch `codex/task-continuation`; pre-existing staged generated files remain
-  unrelated. Resume .04 on a representative native desktop.
-
-## TASK-006.04 checkpoint (2026-11-13)
-
-- **TASK-006.04: CHECKPOINT; parent TASK-006: partial.** The configurable
-  project-search probe exercises temporary multilingual and non-BMP scenes,
-  checks expected match counts and verifies source files are unchanged. Two
-  2,000-scene offscreen samples and result-limit caveats are recorded in
-  `docs/gui-latency-evaluation.md`. Native and wider workloads remain unverified.
-- Changed `benchmarks/project_search_responsiveness.py`, `README.md`, `TASKS.md`,
-  `docs/gui-latency-evaluation.md`, and this file on `codex/task-continuation`;
-  unrelated pre-existing staged generated artifacts were preserved.
-- Focused benchmark: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/project_search_responsiveness.py --scenes 2000 --lines 40 --repetitions 2` passed.
-- Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 898 passed, 2 skipped.
-- Blocker: none for more benchmark work; native input/paint and wider project
-  measurements remain. Resume .04 and use the benchmark command above.
-
 ## TASK-029.05 and parent complete (2026-11-13)
 
 - **TASK-029.05: COMPLETE; parent TASK-029: COMPLETE.** Explicit confirmation
@@ -260,7 +233,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   complete single-line ghost/safe-rejection policy is retained instead of adding
   a popup or hiding accepted text by elision. README/TASKS updated; diff reviewed
   and whitespace check passed. No new controls/strings; native/catalog V2 still
-  pending, parent partial. Broader latency remains TASK-006. Streaming audit
+  pending, parent partial. Streaming audit
   committed as `58fedca`; original staged artifacts retained. No push attempted.
 
 - **TASK-025.01–.05/V1 — verified (2026-11-01):** inspected optional provider
@@ -416,17 +389,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   and native keyboard/screen-reader verification. Performance audit/checkpoint
   committed as `3332f66`. No push attempted; staged artifacts preserved.
 
-- **TASK-006.V1 / V2 — DONE (2026-11-01 audit):** mapped numbered tickets
-  and parent criteria to benchmark scripts, named correctness tests, measured
-  evidence and native limitations in docs/gui-latency-evaluation.md. .01/.02
-  remain complete; .03/.04/.05 and parent remain partial. Re-ran reproducible
-  completion-context baseline: prior/current 0.0581/0.0002 seconds per 100
-  calls, 2,504,082/4,041 peak traced bytes, with equal sample output. This is
-  a microbenchmark, not overall application speed. Latest full offline suite
-  on unchanged implementation: 841 passed, 2 skipped; earlier focused editor/
-  goal suite: 96 passed. Documentation diff reviewed; whitespace check passed.
-  UI/catalog checks N/A: no new controls or Qt strings. Native performance
-  remains .03/.04, not waived. Search-budget checkpoint is `f805da5`.
 
 - **Resume checkpoint (2026-11-01):** this run verified starting commit
   `39ae121`, then committed Qt-history pruning (`9ce6082`), callback-latency
@@ -461,8 +423,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   with tabs/project size, capture remains synchronous and blocked regular-file
   reads are not interruptible. Earlier tabs can consume the allowance first;
   omissions are explicit. Prior search checkpoint committed as `e8031f9`.
-  Ready for scoped budget commit. TASK-006 acceptance reconciliation text is
-  drafted separately in docs/gui-latency-evaluation.md for the next checkpoint.
+  Ready for scoped budget commit.
   No push attempted; unrelated staged artifacts preserved.
 
 - **TASK-012.01–.05/.07/V1 — VERIFIED; file-read fixes (2026-11-01):**
@@ -512,19 +473,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   tests added. Benchmark checkpoint committed as `9337b37`; ready for scoped
   audit commit. No push attempted; unrelated staged artifacts preserved.
 
-- **TASK-006.03 — PARTIAL (2026-11-01):** added ready Qt callback delay
-  probes during idle and typing with new-word tracking. Ten samples at
-  100K/1M/5M characters completed, with byte-verified saves; typing callback
-  maxima 2.22/3.86/10.62 ms and cumulative peak RSS
-  130,023,424/151,977,984/321,372,160 bytes. Reproduction, workload and
-  event-loop/native limitations are in docs/gui-latency-evaluation.md.
-  Focused editor/goal suites: 96 passed; full offline suite: 817 passed,
-  2 skipped. Diff reviewed and whitespace check passed. Direct benchmark
-  assertions validate generated output; no hardware-sensitive timing test.
-  No product UI/strings changed; native/catalog checks N/A for tooling.
-  TASK-006 remains partial for native latency, project workloads and bounds.
-  TASK-001.04 checkpoint committed as `9ce6082`; unrelated staged files
-  remain preserved. Ready for scoped benchmark commit; no push attempted.
 
 - **TASK-001.04 — DONE (2026-11-01):** verified last checkpoint
   `39ae121` with 32 document tests. Existing staged `.DS_Store` and bytecode
@@ -615,45 +563,8 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
 
 
 
-- **TASK-006.01/.02 — DONE; .03/.04 — PARTIAL (2026-10-31):** editor
-  benchmark accepts --sizes and --repetitions, reports median/max per repeated
-  operation and handles missing Unix resource support. Ten samples at
-  100,000/1,000,000 characters: typing median 2.13/3.56 ms (max 2.22/3.63),
-  cursor median 0.48/0.48 ms, word count median 1.38/14.27 ms, context
-  median 0.06/0.62 ms. Single GUI opens 4.39/29.78 ms; cumulative peak RSS
-  129,794,048/151,715,840 bytes. Offline synthetic measurements on this
-  machine; no portable threshold or native event-loop guarantee. Read/open
-  remain single samples; Windows fallback is implemented but not natively
-  verified. Benchmark run and full suite passed: 697 passed, 2 skipped;
-  diff check passed. README/TASKS updated. Prior refresh change committed
-  as f6e38f4; benchmark changes uncommitted.
 
-- **TASK-006.05 — PARTIAL (2026-10-31):** goal status refresh no longer
-  recounts active/open scene buffers for new-word goals or paused/disabled
-  goals. Other scopes count only their required buffers. Three regressions
-  reject unnecessary count_words calls and verify label state. Editor suite:
-  59 passed; full suite: 697 passed, 2 skipped; after removing a redundant
-  action-label update, goal UI regressions: 16 passed. README/TASKS updated,
-  diff reviewed and whitespace check passed. Project membership traversal and
-  required scope counts remain synchronous; no overall latency bound claimed.
-  Previous token-scan optimization committed as 93b157f; new work uncommitted.
 
-- **TASK-006.05 — PARTIAL (2026-10-31):** writing-goal token scanning
-  now visits the changed span plus two surrounding characters, preserving
-  internal apostrophe/dash boundaries. Added exhaustive small-edit comparison
-  against the prior whole-document token scan over Unicode and punctuation
-  examples. Goal tests: 31 passed; full suite: 694 passed, 2 skipped;
-  diff reviewed and whitespace check passed. Microbenchmark on one million
-  characters: 100 complete bounded credit calculations 0.0079 seconds versus
-  2.1373 seconds for 100 whole-document token scans (different workloads;
-  this isolates scan cost and is not GUI latency). README/TASKS updated.
-  Long run completed: 10,000 commands retained 10,001 states and
-  3,723,520 current traced bytes; insertion phase took 142.514 seconds versus
-  the previous single run of 156.520 seconds. Counts 10,000 → 9,000 → 10,000
-  and branch 9,001 passed. These single runs do not establish a stable GUI
-  speedup. Memory remains unbounded and other GUI counting work
-  still scans whole buffers. Prior benchmark committed as 981deb7; new work
-  uncommitted.
 
 - **TASK-001.05 — PARTIAL (2026-10-31 checkpoint):** configurable
   --commands/--undo history benchmark now checks a branch edit after undo
@@ -941,23 +852,6 @@ the repository. The task statuses in `TASKS.md` remain authoritative.
   cross-platform verification is performed. The full offline suite after this
   mitigation passed: 424 passed, 2 skipped (`QT_QPA_PLATFORM=offscreen
   PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`).
-- **TASK-006 — in progress:** bounded completion-context construction now
-  searches only the requested window, avoiding a copy of the entire prefix.
-  On this machine, `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python
-  benchmarks/completion_context.py` measured 100 middle-of-document calls on
-  five million characters: previous 0.0459 s and 2,504,082 peak Python bytes;
-  current 0.0001 s and 4,041 bytes. These are microbenchmarks, not GUI latency
-  or process memory measurements. An offscreen GUI baseline is now available
-  via `benchmarks/editor_responsiveness.py`, with new-word tracking enabled.
-  For 100,000/1,000,000 characters, before the tracker optimization, opening
-  in Qt took 8.48/73.63 ms, typing 10.98/78.85 ms, cursor movement 1.91/14.83
-  ms, word counting 1.40/14.33 ms, and cumulative peak RSS was 102/125 MB.
-  Comparing unchanged edit spans in chunks reduced measured typing to
-  8.68/67.20 ms in a subsequent run; Qt opening was 8.71/77.89 ms. These
-  single-run, offscreen timings include GUI callbacks but exclude rendering
-  and are not platform-independent thresholds. The one-million-character
-  case remains slow; representative repeated measurements, GUI event-loop
-  latency and further investigation are still needed. Do not mark complete.
 - **TASK-007 — in progress:** fixed the standalone save callback to retain the
   newly written disk fingerprint, including after Save As. A Qt regression
   test exercises two saves followed by an external edit and verifies that the

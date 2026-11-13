@@ -235,13 +235,6 @@ network read may continue until data arrives or the connection times out.
 11. **Further find controls** (small/medium effort). Literal find supports
     optional case-insensitive and whole-word matching. Regular expressions
     would need separate safeguards and clear error reporting.
-13. **Measure large-project responsiveness** (medium effort). Establish
-    repeatable benchmarks for opening, editing, search, word counts, snapshots,
-    and AI context construction before optimizing. Then address measured
-    bottlenecks with bounded memory and cancellable background work. Acceptance:
-    record representative input sizes and compare results without weakening
-    conflict detection or correctness. Very large-file editing may require a
-    broader design change rather than a simple optimization.
 14. **Optional interface and provider extensions** (design decision). The
     following options have been evaluated independently; none is selected for
     implementation in the current scope:

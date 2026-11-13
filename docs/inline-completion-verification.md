@@ -18,7 +18,7 @@ editor string and its suffix. It also conservatively rejects positions before a
 soft line break inside a Qt block. Long suggestions and suggestions containing
 line breaks are rejected; a narrower resize dismisses a ghost that no longer
 fits. These decisions are presentation limits, not a guarantee of broader
-large-document typing latency (TASK-006).
+large-document typing latency.
 
 ## Acceptance evidence (.04–.05)
 
