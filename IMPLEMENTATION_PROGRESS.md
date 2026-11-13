@@ -1,5 +1,19 @@
 # Implementation progress
 
+## TASK-032.04 standalone open errors (2026-11-13)
+
+- **.04: CHECKPOINT; parent TASK-032: partial.** Invalid UTF-8 and binary
+  standalone-file errors now use translated UI messages; other errors retain
+  their diagnostic details. Other service errors, workflow inventory and native
+  localization review remain outstanding. TASK-001.02 remains open.
+- Changed file manager error type, `app/ui/main_window.py`, Ukrainian source and
+  packaged catalog, `tests/test_i18n.py`, `README.md`, `TASKS.md` and this
+  checkpoint on `codex/task-continuation`. Native checks not run.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_i18n.py tests/test_translation_validation.py tests/test_document.py`: 73 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 923 passed, 2 skipped.
+- Next: resume TASK-001.02 storage design and TASK-032.04 remaining service
+  errors; distinguish typed errors without discarding diagnostic details. Resume:
+  `rg -n 'str\(error\)|str\(exc\)' app/ui/main_window.py`.
+
 ## TASK-032.03 release catalogs (2026-11-13)
 
 - **.03: CHECKPOINT; parent TASK-032: partial.** Recompiled both packaged Qt

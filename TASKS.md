@@ -369,7 +369,8 @@ partial for all-field native keyboard/focus review in small windows; V2 open.
 
 Source extraction, placeholder checks and release catalog compilation pass;
 automated tests compare packaged translations against freshly compiled sources.
-Automated literal candidates were reviewed; raw service errors and native
+Standalone open errors for invalid UTF-8 and binary content are translated.
+Automated literal candidates were reviewed; other raw service errors and native
 workflows remain incomplete. Evidence and limits are in
 `docs/localization-accessibility-checkpoint.md`.
 

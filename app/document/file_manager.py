@@ -14,13 +14,17 @@ class ExternalChangeError(ValueError):
     """The on-disk document changed since it was loaded or last saved."""
 
 
+class BinaryTextError(ValueError):
+    """The file contains controls incompatible with a text document."""
+
+
 class FileManager:
     def open(self, path: str | Path) -> Document:
         file_path = Path(path)
         raw = file_path.read_bytes()
         text = raw.decode("utf-8-sig")
         if has_binary_controls(text):
-            raise ValueError("This file contains binary data and cannot be opened as UTF-8 text.")
+            raise BinaryTextError("This file contains binary data and cannot be opened as UTF-8 text.")
         document = Document.from_text(text.replace("\r\n", "\n").replace("\r", "\n"), file_path)
         document.line_ending = detect_line_ending(text)
         document.disk_digest = hashlib.sha256(raw).hexdigest()

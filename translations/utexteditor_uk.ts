@@ -681,6 +681,14 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>This file contains binary data and cannot be opened as UTF-8 text.</source>
+        <translation>Цей файл містить двійкові дані, тому його неможливо відкрити як текст UTF-8.</translation>
+    </message>
+    <message>
+        <source>This file is not valid UTF-8 text and cannot be opened.</source>
+        <translation>Цей файл не є коректним текстом UTF-8, тому його неможливо відкрити.</translation>
+    </message>
     <message><source>Preview before exporting</source><translation>Попередній перегляд перед експортом</translation></message>
     <message><source>Export preview discarded because the project or an open scene changed.</source><translation>Попередній перегляд експорту відхилено, оскільки проєкт або відкрита сцена змінилися.</translation></message>
     <message><source>Search limit for open documents reached; this document was not searched.</source><translation>Досягнуто обмеження пошуку у відкритих документах; цей документ пропущено.</translation></message>

@@ -48,7 +48,7 @@ from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
 from app.document.export import (ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source,
                                  export_manuscript, render_manuscript, write_rendered_manuscript)
-from app.document.file_manager import ExternalChangeError, FileManager
+from app.document.file_manager import BinaryTextError, ExternalChangeError, FileManager
 from app.document.merge import merge_text
 from app.document.encoding import has_binary_controls
 from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
@@ -5035,6 +5035,13 @@ class MainWindow(QMainWindow):
             return
         self._open_document_path(path)
 
+    def _document_open_error_message(self, error: Exception) -> str:
+        if isinstance(error, BinaryTextError):
+            return self.tr("This file contains binary data and cannot be opened as UTF-8 text.")
+        if isinstance(error, UnicodeDecodeError):
+            return self.tr("This file is not valid UTF-8 text and cannot be opened.")
+        return str(error)
+
     def _open_document_path(self, path: str) -> None:
         try:
             resolved = Path(path).resolve()
@@ -5051,7 +5058,7 @@ class MainWindow(QMainWindow):
         worker = FunctionWorker(self.file_manager.open, path)
         self._track_worker(worker)
         worker.signals.finished.connect(self._opened_document, Qt.ConnectionType.QueuedConnection)
-        worker.signals.failed.connect(lambda exc: QMessageBox.warning(self, self.tr("Open failed"), str(exc)), Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(lambda exc: QMessageBox.warning(self, self.tr("Open failed"), self._document_open_error_message(exc)), Qt.ConnectionType.QueuedConnection)
         self.statusBar().showMessage(self.tr("Opening file…"))
         self.thread_pool.start(worker)
 

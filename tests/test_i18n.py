@@ -17,6 +17,7 @@ from app.settings.settings import AppSettings
 from app.ui.settings_dialog import SettingsDialog
 from app.project import Project, WordCount
 from app.document.writing_goals import WritingGoalStore
+from app.document.file_manager import BinaryTextError
 from app.ui.project_view import ProjectView
 from app.ui.main_window import MainWindow
 from app.ui.revision_history_dialog import RevisionHistoryDialog
@@ -44,6 +45,22 @@ def application():
 )
 def test_ui_language_resolution(selection, system, expected):
     assert resolve_ui_language(selection, system) == expected
+
+
+def test_document_open_errors_are_translated_without_masking_other_errors(application):
+    language, translator = install_translation(application, "uk")
+    assert language == "uk"
+    class Context:
+        tr = staticmethod(MainWindow.tr)
+
+    try:
+        binary = MainWindow._document_open_error_message(Context(), BinaryTextError("binary"))
+        invalid = MainWindow._document_open_error_message(Context(), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid"))
+        assert "двійкові дані" in binary
+        assert "коректним текстом UTF-8" in invalid
+        assert MainWindow._document_open_error_message(Context(), OSError("disk detail")) == "disk detail"
+    finally:
+        application.removeTranslator(translator)
 
 
 def test_ukrainian_catalog_translations_and_placeholders_are_complete():
