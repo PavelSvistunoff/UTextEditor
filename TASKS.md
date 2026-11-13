@@ -406,7 +406,9 @@ PDF paper/title/heading/selection controls are verified in
 
 Saving now retains exact captured values for untouched fields, avoiding
 whitespace normalization and lossy reparsing of multiline/delimited values.
-`docs/character-profile-verification.md` records named tests. .03 remains
+`docs/character-profile-verification.md` records named tests. Profile multiline
+fields now use Tab for focus traversal; an offscreen narrow-window test visits
+all profile fields. .03 remains
 partial for all-field native keyboard/focus review in small windows; V2 open.
 
 **Parent acceptance gate (all must pass):**

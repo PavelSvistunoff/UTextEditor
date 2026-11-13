@@ -2131,6 +2131,38 @@ def test_character_profile_long_forms_scroll_and_preserve_fields(application):
     assert original.internal_conflicts == []
 
 
+def test_character_profile_narrow_form_keyboard_reaches_profile_fields(application):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QTabWidget
+    from app.project import Character
+
+    original = Character(id="00000000-0000-4000-8000-000000000001", full_name="Mara")
+    dialog = CharacterDialog(original)
+    dialog.resize(400, 380)
+    dialog.show()
+    tabs = dialog.findChild(QTabWidget)
+    profile_widgets = dialog._profile_widgets()
+    visited = set()
+    for page in (0, 2, 3):
+        tabs.setCurrentIndex(page)
+        application.processEvents()
+        expected = {widget for widget in profile_widgets.values() if widget.isVisible()}
+        first = next(widget for widget in profile_widgets.values() if widget in expected)
+        first.setFocus()
+        for _ in range(100):
+            focused = application.focusWidget()
+            if focused in expected:
+                visited.add(focused)
+            QTest.keyClick(focused, Qt.Key.Key_Tab)
+            application.processEvents()
+        assert expected <= visited
+    assert visited == set(profile_widgets.values())
+    dialog.personality_fields["attitudes"].setPlainText("staged text")
+    dialog.reject()
+    assert original.personality == {}
+
+
 def test_character_ai_suggestions_require_review_and_leave_existing_fields(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     character = project.add_character("Mara")

@@ -10,7 +10,11 @@ model serialization and existing associated-scene navigation.
   resizable scroll areas. `test_character_profile_long_forms_scroll_and_preserve_fields`
   exercises both at 400x380, scrolls lower fields into view and verifies their
   staged values while leaving the source Character unchanged.
-- .03 (partial): the offscreen scroll case establishes reachability of sampled
+- .03 (partial): `test_character_profile_narrow_form_keyboard_reaches_profile_fields`
+  traverses every profile field with Tab at 400x380 offscreen and verifies Cancel
+  leaves the original profile unchanged. Multiline profile fields now give Tab
+  to focus navigation instead of inserting a tab character. The scroll case
+  establishes reachability of sampled
   lower fields, not native keyboard traversal of every field, screen-reader
   labels, focus reveal or all system font/palette combinations. Keep that gate
   and V2 open rather than inferring them from scrollbar ranges.

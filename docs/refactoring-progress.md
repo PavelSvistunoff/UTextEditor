@@ -1,5 +1,21 @@
 # Refactoring progress
 
+## 2026-11-13 — TASK-030.03 keyboard traversal
+
+- TASK-030.03: **CHECKPOINT**; TASK-030 parent partial; native .V2 remains open.
+- `app/ui/character_dialog.py`: multiline profile fields pass Tab to focus
+  traversal; the regression failed before the change and reaches every profile
+  field offscreen at 400x380 afterward. Tab no longer inserts a literal tab.
+- Existing profile save/cancel and navigation tests remain applicable; source
+  profile remains unchanged on Cancel. Native focus reveal is unverified.
+- Focused UI suite: 183 passed; full offscreen suite: 951 passed, 2 skipped.
+- Translation validation passed; UI string audit returned 9 candidates.
+- Clean Code review: existing widget registry reused; no domain, persistence,
+  async or undo behavior changed; no new dependencies or translation strings.
+- Native GUI, screen-reader and packaged Ukrainian runtime were not tested.
+- Next: native profile review; continue TASK-001.02 without dropping undo.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## 2026-11-13 — TASK-001.02 daily snapshot overhead
 
 - TASK-001.02: **CHECKPOINT**, parent TASK-001 remains open; full repository

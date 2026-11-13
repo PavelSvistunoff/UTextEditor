@@ -4,6 +4,22 @@
 
 
 
+
+## TASK-030.03 checkpoint — profile keyboard traversal
+
+- TASK-030.03: **CHECKPOINT**; parent TASK-030 remains partial; .V2 native gate open.
+- Offscreen regression failed before fix: Tab inserted text and Ctrl+Tab changed
+  tabs before all profile fields could be reached.
+- Multiline profile fields now move focus on Tab; this changes literal Tab entry.
+- 400x380 offscreen traversal visits all profile fields; Cancel preserves source.
+- `tests/test_project_ui.py`: 183 passed; full offscreen suite: 951 passed, 2 skipped.
+- Translation validation passed; UI string audit reported 9 candidates for review.
+- Native keyboard/focus, screen-reader and Ukrainian packaged runtime not tested.
+- Files: `app/ui/character_dialog.py`, `tests/test_project_ui.py`, README,
+  TASKS and profile/refactoring evidence docs; branch `main`.
+- Next: native TASK-030.03/.V2 review; continue TASK-001.02 memory bound work.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## TASK-001.02 checkpoint — daily snapshot overhead
 
 - TASK-001.02: **CHECKPOINT**; parent TASK-001 remains open.

@@ -177,6 +177,9 @@ class CharacterDialog(QDialog):
         self.scene_button.clicked.connect(self.scene_requested.emit)
         layout.addWidget(self.scene_button)
         layout.addWidget(buttons)
+        for widget in self._profile_widgets().values():
+            if isinstance(widget, QPlainTextEdit):
+                widget.setTabChangesFocus(True)
         self._original_character = deepcopy(character)
         self._initial_fields = self.profile_fields()
 
