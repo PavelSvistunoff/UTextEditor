@@ -367,10 +367,11 @@ partial for all-field native keyboard/focus review in small windows; V2 open.
 - [~] **TASK-032.04** — Include dialogs, errors, confirmations, and status messages.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
-Source extraction, placeholder checks and temporary compilation pass, including
-new export-preview strings. Automated literal candidates were reviewed; raw
-service errors and release/native workflows remain incomplete. Evidence and
-limits are in `docs/localization-accessibility-checkpoint.md`.
+Source extraction, placeholder checks and release catalog compilation pass;
+automated tests compare packaged translations against freshly compiled sources.
+Automated literal candidates were reviewed; raw service errors and native
+workflows remain incomplete. Evidence and limits are in
+`docs/localization-accessibility-checkpoint.md`.
 
 **Parent acceptance gate (all must pass):**
 - All supported UI workflows have Ukrainian translations.

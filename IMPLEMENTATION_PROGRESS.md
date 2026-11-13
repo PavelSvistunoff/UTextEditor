@@ -1,5 +1,21 @@
 # Implementation progress
 
+## TASK-032.03 release catalogs (2026-11-13)
+
+- **.03: CHECKPOINT; parent TASK-032: partial.** Recompiled both packaged Qt
+  catalogs from source and added source-to-package runtime translation parity
+  tests, including plurals. The previous Ukrainian package differed from a
+  fresh compilation for 579 non-plural context/source pairs. Native release UI
+  review and the broader audit and service-error translation remain open.
+- TASK-001.02 remains open: bounding all reachable Qt undo metadata still needs
+  a responsive design that preserves exact counts on storage failure.
+- Changed packaged catalogs, `tests/test_translation_validation.py`, `TASKS.md`,
+  `docs/localization-accessibility-checkpoint.md` and this checkpoint on
+  `codex/task-continuation`. Native checks not performed.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_translation_validation.py tests/test_i18n.py`: 40 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 922 passed, 2 skipped. `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/check_translations.py translations/utexteditor_uk.ts`: passed.
+- Next: resume TASK-001.02 design, then continue native/catalog acceptance and
+  TASK-032 service-error work. Resume: `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+
 ## TASK-001.02 rekey snapshot sharing (2026-11-13)
 
 - **.02: CHECKPOINT; parent TASK-001: open.** Rekeying an editor to an

@@ -96,6 +96,26 @@ def test_plural_forms_in_nonplural_message_are_rejected(tmp_path):
     assert any("plural forms in a non-plural" in error for error in validate(target))
 
 
+@pytest.mark.parametrize("language", ["en", "uk"])
+def test_packaged_catalog_matches_compiled_source(tmp_path, language):
+    lrelease = Path(sys.executable).parent / "pyside6-lrelease"
+    if not lrelease.exists():
+        pytest.skip("Qt Linguist compiler is unavailable")
+    source = Path(f"translations/utexteditor_{language}.ts")
+    compiled = tmp_path / f"{language}.qm"
+    subprocess.run([str(lrelease), str(source), "-qm", str(compiled)], check=True, capture_output=True)
+    expected, packaged = QTranslator(), QTranslator()
+    assert expected.load(str(compiled))
+    assert packaged.load(str(Path(f"app/resources/translations/utexteditor_{language}.qm").resolve()))
+    for context in ET.parse(source).findall("context"):
+        name = context.findtext("name")
+        for message in context.findall("message"):
+            text = message.findtext("source") or ""
+            comment = message.findtext("comment")
+            for number in ([1, 2, 5] if message.get("numerus") == "yes" else [-1]):
+                assert packaged.translate(name, text, comment, number) == expected.translate(name, text, comment, number), (name, text, number)
+
+
 def test_compiled_ukrainian_character_strings_use_runtime_context(tmp_path):
     lrelease = Path(sys.executable).parent / "pyside6-lrelease"
     if not lrelease.exists():
