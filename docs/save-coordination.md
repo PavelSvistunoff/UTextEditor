@@ -62,9 +62,10 @@ serialization is implemented.
 | Atomic replacement and failure safety remain correct | `test_failed_atomic_save_keeps_original_file_and_document_dirty`, `test_text_saves_are_atomic_and_reject_stale_disk_snapshots`, and `test_scene_import_and_failed_manifest_update_roll_back_file` verify source/dirty-state preservation, stale-disk rejection, permissions and rollback. These are local filesystem tests, not crash-durability certification. |
 | Residual risks documented | README and this evaluation describe independent writers, advisory locks and native filesystem verification gaps. |
 
-No GUI, dialogs or translated strings were added by the coordination work;
-V2's translation compilation and native keyboard/accessibility checks are
-N/A for this task. This does **not** waive native filesystem verification:
+The later tab save/open coordination adds translated UI feedback. Ukrainian
+source validation and temporary compilation passed; release catalog and native
+keyboard/accessibility checks remain outstanding for V2. Native filesystem
+verification also remains outstanding:
 Windows sharing/deletion/mapped-file behavior, Linux/network filesystems and
 a defined multi-process guarantee remain open. TASK-005 stays partial and
 TASK-007 retains the shared overwrite limitation. No redundant tests were

@@ -4878,6 +4878,9 @@ class MainWindow(QMainWindow):
             else:
                 self._record_navigation()
             return
+        if resolved in self._save_targets.values():
+            self._report_open_during_save()
+            return
         normalized = raw.replace("\r\n", "\n").replace("\r", "\n")
         document = Document.from_text(normalized, path)
         document.line_ending = detect_line_ending(raw)
@@ -4994,12 +4997,20 @@ class MainWindow(QMainWindow):
                     if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
                         self.tabs.setCurrentIndex(index)
                         return
+                if resolved in self._save_targets.values():
+                    self._report_open_during_save()
+                    return
             except (OSError, RuntimeError) as exc:
                 QMessageBox.warning(self, self.tr("Open failed"), str(exc))
                 return
         self.tabs.add_document(document)
         if document.path is not None:
             self._remember_recent_file(document.path)
+
+    def _report_open_during_save(self) -> None:
+        self.statusBar().showMessage(
+            self.tr("The file is being saved. Try opening it again when saving finishes."), 10000
+        )
 
     def _populate_recent_files_menu(self) -> None:
         menu = self._recent_files_menu

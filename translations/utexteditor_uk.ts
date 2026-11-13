@@ -2537,6 +2537,7 @@ Text is sent to the configured Ollama destination:
     <message><source>Save failed</source><translation>Не вдалося зберегти</translation></message>
     <message><source>That file is already open in another tab.</source><translation>Цей файл уже відкрито в іншій вкладці.</translation></message>
     <message><source>Another tab is already saving to that file.</source><translation>Інша вкладка вже зберігає дані в цей файл.</translation></message>
+    <message><source>The file is being saved. Try opening it again when saving finishes.</source><translation>Файл зберігається. Спробуйте відкрити його знову після завершення збереження.</translation></message>
     <message><source>Saving file…</source><translation>Збереження файлу…</translation></message>
     <message><source>Old recovery data could not be removed: {error}</source><translation>Не вдалося видалити старі дані відновлення: {error}</translation></message>
     <message><source>Autosave failed: {error}</source><translation>Не вдалося автоматично зберегти: {error}</translation></message>

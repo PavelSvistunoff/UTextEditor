@@ -1,5 +1,26 @@
 # Implementation progress
 
+## TASK-005.04 / V2 checkpoint (2026-11-13)
+
+- **.04: CHECKPOINT; V2: BLOCKED; parent TASK-005: partial.** A standalone
+  or project open result for a destination with a pending Save As no longer
+  creates a second tab; the status bar asks the user to retry. Tests preserve
+  the unsaved buffer and cover retry after a failed save. The independent-writer
+  final-check race remains; its platform/coordination limits are documented in
+  `docs/save-coordination.md`.
+- V2 was reopened because these changes add interface messages. Ukrainian
+  source validation and temporary `.qm` compilation pass; native keyboard and
+  accessibility verification and a release catalog are outstanding.
+- Changed `app/ui/main_window.py`, `tests/test_project_ui.py`, `README.md`,
+  `translations/utexteditor_uk.ts`, `TASKS.md`, `docs/save-coordination.md`, and
+  this file on `codex/task-continuation`; pre-existing staged artifacts retained.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_ui.py -k 'open_result_is_not_installed or concurrent_save_as or binding_open_file'`:
+  8 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  883 passed, 2 skipped. `tools/check_translations.py translations/utexteditor_uk.ts`
+  passed; `.venv/bin/pyside6-lrelease translations/utexteditor_uk.ts -qm /private/tmp/utexteditor-task005-uk.qm` passed.
+- Next: continue independent backlog work; resume .04 when a cross-platform
+  competing-version guarantee can be demonstrated, and V2 with native review.
+
 ## TASK-005.04 checkpoint (2026-11-13)
 
 - **TASK-005.04: CHECKPOINT; parent TASK-005: partial.** Concurrent tab saves

@@ -247,6 +247,57 @@ def test_concurrent_save_as_reserves_destination_until_worker_finishes(applicati
 
 
 @pytest.mark.parametrize("kind", ["standalone", "scene"])
+def test_open_result_is_not_installed_while_save_as_targets_same_path(application, tmp_path, monkeypatch, kind):
+    if kind == "scene":
+        project = Project.create(tmp_path / "novel", "Novel")
+        scene = project.add_scene("Opening", content="saved")
+        target = project.root / scene.path
+    else:
+        target = tmp_path / "draft.txt"
+        target.write_text("saved", encoding="utf-8")
+    loaded = FileManager().open(target)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    if kind == "scene":
+        window.project = project
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved manuscript")
+    started, release = Event(), Event()
+
+    def failing_save(*args):
+        started.set()
+        assert release.wait(3)
+        raise OSError("simulated failure")
+
+    monkeypatch.setattr(window.file_manager, "save", failing_save)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    results = []
+    try:
+        assert window._save_editor(editor, callback=results.append, target=target)
+        assert started.wait(3)
+        count = window.tabs.count()
+        if kind == "scene":
+            window._project_document_opened(project, "scene", scene.id, target, "saved")
+        else:
+            window._opened_document(loaded)
+        assert window.tabs.count() == count
+        assert "being saved" in window.statusBar().currentMessage()
+        assert editor.toPlainText() == "unsaved manuscript" and editor.document_state.dirty
+    finally:
+        release.set()
+    wait_until(lambda: bool(results), application)
+    assert results == [False]
+    if kind == "scene":
+        window._project_document_opened(project, "scene", scene.id, target, "saved")
+    else:
+        window._opened_document(loaded)
+    assert window.tabs.count() == count + 1
+    assert target.read_text(encoding="utf-8") == "saved"
+    editor.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("kind", ["standalone", "scene"])
 def test_conflict_review_stages_merge_and_rechecks_disk_on_save(application, tmp_path, monkeypatch, kind):
     from PySide6.QtWidgets import QDialog
     if kind == "scene":

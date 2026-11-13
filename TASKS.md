@@ -166,7 +166,8 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   Shared reentrant in-process coordination now covers standalone, project text,
   and manifest saves. A window also rejects concurrent tab saves to the same
   resolved destination while the first worker is pending, releasing the
-  reservation on success or failure; independent-process races remain.
+  reservation on success or failure. Pending open results for that destination
+  are discarded with retry feedback; independent-process races remain.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-005.05** — Document residual risks.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
@@ -182,10 +183,11 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   .02, .03 and .05 verified; .04 and parent remain partial because the suite
   explicitly reproduces the independent-writer final-check overwrite window.
   **Done when:** evidence includes test names, remaining gaps, and platform-specific verification needs.
-- [x] **TASK-005.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  N/A for UI/catalog checks: coordination changes no GUI or strings. Native
-  filesystem and multi-process guarantees remain unverified as documented;
-  this does not complete the parent or TASK-007.
+- [~] **TASK-005.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
+  Later save/open coordination added UI messages. Ukrainian source validation
+  and temporary compilation pass; release catalog and native keyboard and
+  accessibility checks remain outstanding, as do native filesystem and
+  multi-process guarantees.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-006 — Benchmark large-document responsiveness
