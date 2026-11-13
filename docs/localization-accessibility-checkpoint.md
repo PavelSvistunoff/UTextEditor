@@ -81,3 +81,10 @@ V1 is complete as an evidence/gap record; V2 and parent stay partial. The same
 native/release-catalog limitations remain open in individual UI-task V2 tickets.
 They cannot be marked N/A merely because offscreen tests pass. No runtime code,
 controls or strings changed in this reconciliation; no redundant tests added.
+
+## Invalid project format — TASK-032.04
+
+Opening a malformed manifest now shows a translated category and original detail.
+`test_invalid_project_open_is_localized_and_preserves_active_project` reproduces
+a model validation error and checks active project, dirty buffer and busy reset.
+Native Ukrainian and remaining project/AI categories are still unverified.

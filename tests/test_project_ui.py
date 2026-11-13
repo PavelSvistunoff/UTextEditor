@@ -38,6 +38,34 @@ def test_recovery_comparison_formats_localized_errors_and_empty_results(tmp_path
     assert MainWindow._compare_recovery_entries((), *args) == "Немає копій"
 
 
+def test_invalid_project_open_is_localized_and_preserves_active_project(application, tmp_path, monkeypatch):
+    from app.i18n import install_translation
+    from app.project import Manifest, ProjectFormatError
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with pytest.raises(ProjectFormatError) as raised:
+        Manifest.from_mapping({})
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved")
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    _, translator = install_translation(application, "uk")
+    try:
+        window._set_project_busy(True)
+        window._project_open_failed(raised.value)
+        assert "Некоректні дані проєкту" in warnings[0][2]
+        assert str(raised.value) in warnings[0][2]
+        assert window.project is project and not window._project_busy
+        assert editor.toPlainText() == "unsaved" and editor.document_state.dirty
+    finally:
+        application.removeTranslator(translator)
+        editor.document_state.mark_saved()
+        window.close()
+
+
 def test_recovery_chooser_displays_captured_disk_status_in_ukrainian(application, tmp_path):
     import subprocess
     import sys

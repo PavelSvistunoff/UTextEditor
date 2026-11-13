@@ -1,5 +1,21 @@
 # Refactoring progress
 
+## TASK-032.04 checkpoint — invalid project format
+
+- TASK-032.04: **CHECKPOINT**; TASK-032 parent partial; native .V2 remains open.
+- Typed project-format open errors receive Ukrainian category with original detail.
+- Regression failed before change; active project, dirty text and busy reset tested.
+- Focused UI/i18n/translation tests: 230 passed; full offscreen: 957 passed, 2 skipped.
+- Source extraction/reference validation and en/uk compilation passed; packaged
+  parity covered by tests. `git diff --check` passed.
+- Clean Code review: existing formatter reused; domain, workers and persistence
+  unchanged; no dependency or public API changes. Broader refactoring incomplete.
+- Native Ukrainian UI/accessibility and live Ollama not tested.
+- Files: main window, UI tests, Ukrainian TS/QM, README, TASKS and evidence docs.
+- Next: audit AI errors and remaining project/path error categories; branch `main`.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## 2026-11-13 — TASK-032.04 standalone save conflict
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.

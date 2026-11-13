@@ -162,7 +162,7 @@ AI completions are suggestions and do not enter the document until accepted. Mod
 
 The interface uses Qt Linguist source catalogs in `translations/` and compiled Qt `.qm` catalogs packaged under `app/resources/translations/`. `system`, `en`, and `uk` are the persisted interface-language values. System mode uses Qt's preferred UI locales, matches regional variants by language, and falls back to English. The daily writing goal selector and revision comparison statuses and change labels support Ukrainian. Language selection does not change manuscript language, writing instructions, project content, filenames, or AI prompts. Interface changes take effect after restart.
 
-When opening a standalone document, invalid UTF-8, binary-content and missing-file error categories are available in Ukrainian. Standalone save conflicts also have a Ukrainian category; original system and conflict details may still appear in their original language.
+When opening a standalone document, invalid UTF-8, binary-content and missing-file error categories are available in Ukrainian. Invalid project-format errors and standalone save conflicts also have Ukrainian categories; original system and conflict details may still appear in their original language.
 
 When adding or changing translatable UI text, use `self.tr("English source text")` in the owning widget. Extract and compile catalogs with the PySide6 Qt Linguist tools:
 

@@ -438,7 +438,8 @@ automated tests compare packaged translations against freshly compiled sources.
 Standalone open errors for invalid UTF-8, binary content and missing files are
 translated; missing-file diagnostics retain the original system detail and path.
 Standalone save conflicts use a translated category for manual and automatic
-saves while preserving the original diagnostics and dirty buffer.
+saves while preserving the original diagnostics and dirty buffer. Invalid project
+format errors during opening also have a translated category with original details.
 Automated literal candidates were reviewed; other raw service errors and native
 workflows remain incomplete. Evidence and limits are in
 `docs/localization-accessibility-checkpoint.md`.

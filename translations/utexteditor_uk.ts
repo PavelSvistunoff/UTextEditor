@@ -1093,6 +1093,7 @@ Text is sent to the configured Ollama destination:
     <message><source>Opening {title}…</source><translation>Відкриття: {title}…</translation></message>
     <message><source>Document could not be opened</source><translation>Не вдалося відкрити документ</translation></message>
     <message><source>File not found: %1</source><translation>Файл не знайдено: %1</translation></message>
+    <message><source>Invalid project data: %1</source><translation>Некоректні дані проєкту: %1</translation></message>
     <message><source>The file changed or was removed on disk: %1</source><translation>Файл змінено або видалено на диску: %1</translation></message>
     <message><source>Project document changed on disk or cannot be verified; reload, compare, or use Save As.</source><translation>Документ проєкту змінився на диску або його неможливо перевірити; перезавантажте, порівняйте або скористайтеся командою «Зберегти як».</translation></message>
     <message><source>Project document could not be verified for safe saving: {error}</source><translation>Не вдалося перевірити документ проєкту для безпечного збереження: {error}</translation></message>
