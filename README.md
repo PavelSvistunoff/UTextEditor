@@ -184,7 +184,7 @@ For performance investigation, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python b
 
 ## Product direction
 
-The project-workspace, character reference, Ollama AI planning and review, manuscript export, and named revision-snapshot foundations are implemented. The next useful increments are the remaining gaps listed in `UNIMPLEMENTED_FEATURES.md`: broader revision management, recovery diagnosis, richer project search, and complete interface translation. These are candidates, not promises or descriptions of current behavior. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or a separate cloud AI provider without a separate product decision.
+The project-workspace, character reference, Ollama AI planning and review, manuscript export, and named revision-snapshot foundations are implemented. The next useful increments are the remaining gaps listed in `UNIMPLEMENTED_FEATURES.md`: recovery diagnosis, richer project search, and complete interface translation. These are candidates, not promises or descriptions of current behavior. Any future AI or project features must preserve privacy, portability, and the author's control; avoid proprietary project formats or a separate cloud AI provider without a separate product decision.
 
 ## Development expectations
 

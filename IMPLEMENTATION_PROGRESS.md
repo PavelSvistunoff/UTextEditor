@@ -14,57 +14,8 @@
   to refer to the open parent rather than a completed evaluation ticket.
 - Documentation-only change: tests not run. Checked backlog preservation, local
   evidence links and `git diff --check`. Native checks not performed.
-- Resume TASK-009.04 using the focused command in the checkpoint below;
-  independent TASK-005/007 save coordination remains unresolved.
-
-## TASK-009.04 structure comparison (2026-11-13)
-
-- **TASK-009.04: CHECKPOINT; parent TASK-009: open.** Comparison reports
-  project ID and format version differences when captured on both sides, with
-  no invented differences for legacy missing fields. Scene ordering compares
-  stable siblings within a chapter, avoiding false scene moves when chapters
-  move; legacy snapshots without membership fall back to flat order. Wider
-  structure coverage and native review remain unverified.
-- Changed `app/document/revisions.py`, `tests/test_revisions.py`,
-  `tests/test_project_ui.py`, `README.md`, `TASKS.md` and this checkpoint on
-  `codex/task-continuation`. Existing staged generated files remain unrelated.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py tests/test_project_ui.py -k revision`: 45 passed, 166 deselected.
-  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 906 passed, 2 skipped. Native UI and release catalog checks not run.
-- Blocker: none for further offline work. Next: audit remaining captured
-  structure and native comparison display; resume using the focused command.
-
-## TASK-009.04 comparison labels (2026-11-13)
-
-- **TASK-009.04: CHECKPOINT; parent TASK-009: open.** The comparison now
-  displays stable IDs for titled scenes, notes and chapters, including text,
-  association, addition and removal changes. The no-change message no longer
-  omits project and character changes from its description. Broader structure
-  coverage and native review remain unverified.
-- Changed `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,
-  `README.md`, `TASKS.md` and this checkpoint on `codex/task-continuation`;
-  existing English/Ukrainian strings are reused. Unrelated staged generated
-  files remain untouched. Native UI and release catalog checks not performed.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py tests/test_project_ui.py -k revision`: 42 passed, 166 deselected.
-  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 903 passed, 2 skipped.
-- Blocker: none for further offline work. Next: audit uncovered manifest fields
-  and comparison details, then perform the native review when available; resume
-  with the focused command above.
-
-## TASK-009.04 comparison checkpoint (2026-11-13)
-
-- **TASK-009.04: CHECKPOINT; parent TASK-009: open.** Text diffs distinguish
-  unterminated final lines for scenes and notes, including newline-only changes;
-  Unicode separators are not misidentified as missing newlines. Character and
-  relationship relative reordering is reported without false moves from
-  additions/removals. Broader structure coverage and native review remain.
-- Changed `app/document/revisions.py`, `tests/test_revisions.py`, `README.md`,
-  `TASKS.md`, and this checkpoint on `codex/task-continuation`. The conventional
-  diff notice is English; native and translation catalog checks were not run.
-- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py`: 27 passed.
-  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 902 passed, 2 skipped.
-- Blocker: none for further offline comparison work. Next: audit remaining
-  version-1 manifest structure fields and comparison display; resume .04 with
-  `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py tests/test_project_ui.py -k revision`.
+- Resume another open backlog task; independent TASK-005/007 save
+  coordination remains unresolved.
 
 ## TASK-006.04 wider project sample (2026-11-13)
 
@@ -76,8 +27,7 @@
   No application code changed; the previous full suite passed 898 tests with
   2 skipped. Native GUI timing requires an interactive platform measurement.
 - Branch `codex/task-continuation`; pre-existing staged generated files remain
-  unrelated. Next: pursue independent revision comparison work while native
-  verification is unavailable; resume .04 on a representative native desktop.
+  unrelated. Resume .04 on a representative native desktop.
 
 ## TASK-006.04 checkpoint (2026-11-13)
 
@@ -240,7 +190,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   .DS_Store/bytecode are preserved; no push attempted. No global completion is
   claimed. Next implementation gaps remain TASK-001 reachable-history bounds
   and active identity collisions; TASK-005/.007 independent-writer race;
-  broader recovery diagnosis; revision selective/safety restore and scheduling;
+  broader recovery diagnosis;
   encoding/line-ending selection and large-file safety;
   TASK-029 history viewer. TASK-027.03 and TASK-030.03 retain native latency/
   all-field focus requirements. Native/accessibility/release catalog checks in
@@ -390,18 +340,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   V2 checks. Revision-value comparison committed as `2c2a9c5`. Original staged
   artifacts preserved; no push attempted.
 
-- **TASK-009.04 — captured metadata values (2026-11-01):** verified starting
-  HEAD `d6f7d86` and original staged artifacts. Character, directed-relationship
-  and scene-association comparisons now provide deterministic Unicode JSON
-  diffs for additions/removals/changes through the existing read-only display.
-  Missing keys differ from null; source snapshots and live projects are not
-  changed. Extended domain/UI regressions plus one new Unicode/immutability
-  regression pass: revision module 23 passed; revision/UI suite before the
-  extra domain test 181 passed; full offline suite 846 passed, 2 skipped.
-  README/TASKS updated; diff reviewed and whitespace check passed. No new UI
-  controls or translatable strings; no catalog change required for raw manifest
-  data. Native review and remaining structure/restore/scheduling requirements
-  stay open; TASK-009.04 and parent remain partial. No push attempted.
 
 - **TASK-018.01–.05/V1 — VERIFIED (2026-11-01):** reviewed Project/AI
   grouping, retained handler/shortcut table, disabled-action explanations and
@@ -426,7 +364,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   The overall backlog is still incomplete: earliest open work remains
   TASK-001's reachable-history bound/active-identity collision/stress gate;
   TASK-005/.007's independent-writer race; broader TASK-008 diagnosis;
-  TASK-009 restore/safety snapshots/comparison/scheduling; and TASK-011
+  TASK-011
   encoding/line-ending/large-file safety. TASK-019 and later
   inherited UI tickets still need acceptance reconciliation or implementation
   as appropriate. Continue from these gaps, preserving completed evidence;
@@ -506,8 +444,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   preserve actively tracked identity collisions, then stress validation).
   TASK-005/.007 still share the independent-writer final-check overwrite race;
   no broader guarantee may be claimed. Further feasible work includes broader
-  TASK-008 diagnosis, TASK-009 selective/safety restore and richer metadata
-  comparison/scheduling, TASK-011 encoding/line-ending/large-
+  TASK-008 diagnosis, TASK-011 encoding/line-ending/large-
   file safety, and the remaining UI verification queue. Native screen-reader,
   filesystem and release-catalog checks remain explicitly open. TASK-012's
   numbered tickets are verified; its parent still awaits V2. Do not redo the
@@ -548,17 +485,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   checkpoint committed as `62a2553`; ready for scoped search commit.
   No push attempted; unrelated staged artifacts preserved.
 
-- **TASK-009.01 — comparison chronology fix (2026-11-01):** domain listing
-  already orders timezone-aware instants, but the dialog still ordered the
-  two selected snapshots lexically. It now parses their validated timestamps
-  before ordering, preserving before/after direction across differing offsets.
-  Added signal-path regression for 12:00+02:00 versus 11:00Z. Focused revision/
-  project UI suites: 175 passed; full offline suite: 829 passed, 2 skipped.
-  Diff reviewed; whitespace check passed. README/TASKS updated. No strings or
-  controls changed; catalog/native accessibility checks N/A for this ordering
-  correction. Restore, richer comparison and scheduling remain open. Recovery
-  checkpoint committed as `1501132`; ready for scoped chronology commit.
-  No push attempted; unrelated staged artifacts preserved.
 
 - **TASK-008.01 — DONE (2026-11-01):** recovery scans now capture per-snapshot
   canonical-file status in the worker: untitled, missing, appeared, unchanged,
@@ -728,47 +654,9 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   remains unobserved until commit/push; no commits or pushes made. This
   completes workflow integration, not all localization/native acceptance.
 
-- **TASK-009.01 — preview labels (2026-10-31):** revision snapshots expose
-  captured document titles through the domain model; note previews now use
-  captured titles alongside stable IDs. Legacy documents without title
-  metadata fall back to IDs. Added Qt regression covering duplicate titles,
-  distinct note identities and legacy metadata. Focused revision/UI suites:
-  173 passed; full offline suite: 705 passed, 2 skipped; diff reviewed and
-  whitespace check passed. README/TASKS updated; no new translated strings.
-  Native verification and revision restore/scheduling remain open. Previous
-  ordering comparison committed as e1bfe84; new work uncommitted.
 
-- **TASK-009.04 — PARTIAL (2026-10-31):** revision comparison reports
-  reference-note reordering among IDs present in both snapshots. Additions
-  and removals do not generate false moves. Moved-item labels expose stable
-  IDs, including duplicate titles, using existing translated strings. Added
-  domain and Qt regressions. Focused revision/UI suites: 172 passed; full
-  offline suite: 704 passed, 2 skipped; Ukrainian catalog validation and
-  diff check passed. README/TASKS updated and diff reviewed. Broader metadata
-  before/after values, restore/scheduling and native verification remain open.
-  Previous listing fix committed as c655e9a; new changes uncommitted.
 
-- **TASK-009.01 — listing/preview hardening (2026-10-31):** revision
-  enumeration uses explicit directory listing so filesystem errors become
-  diagnostics rather than an apparently empty history. Revision reads reject
-  symbolic links, preserving valid companion entries and linked/external files.
-  Added focused listing-failure and symlink regressions. Revision tests:
-  21 passed; full offline suite: 702 passed, 2 skipped; diff reviewed and
-  whitespace check passed. README/TASKS updated. This pre-read symlink check
-  does not exclude concurrent path replacement. Native verification and
-  broader revision restore/scheduling remain open. Prior chronology change
-  committed as 67f8152; new work remains uncommitted.
 
-- **TASK-009.01 — chronology hardening (2026-10-31):** revision reads
-  validate timezone-aware capture timestamps and listing sorts by instant
-  rather than timestamp text. Regression tests cover invalid and timezone-free
-  timestamps (with valid integrity digests), preservation of invalid files and
-  valid companion snapshots, plus differing timezone offsets. Revision suite:
-  19 passed; full offline suite: 700 passed, 2 skipped; diff reviewed and
-  whitespace check passed. README/TASKS updated. No new UI controls or strings;
-  existing diagnostics show validation errors. Restore/scheduling and native
-  verification remain open. Previous benchmark committed as b7aa90f; this
-  change remains uncommitted.
 
 - **TASK-006.01/.02 — DONE; .03/.04 — PARTIAL (2026-10-31):** editor
   benchmark accepts --sizes and --repetitions, reports median/max per repeated
@@ -982,24 +870,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   is a single synthetic append-heavy run. Mixed edits, longer sessions and
   native memory measurements remain outstanding; this does not establish a
   bound or solve TASK-001.02.
-- **TASK-009.04 — PARTIAL:** revision comparisons identify changed manifest
-  fields for character profiles, directed relationships and scene-character
-  associations, without displaying their values or portrait data. Modified
-  `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
-  `tests/test_revisions.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
-  suites: 162 passed; full offline suite: 666 passed, 2 skipped; Ukrainian
-  source catalog validation passed. Before-and-after metadata values, broader
-  structure comparisons, native accessibility review and
-  release catalog compilation remain outstanding.
-- **TASK-009.04 — PARTIAL:** the revision comparison now displays both old
-  and new titles and stable IDs for renamed chapters, scenes and notes. Modified
-  `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
-  suites: 162 passed; full offline suite: 666 passed, 2 skipped; Ukrainian
-  source catalog validation passed. Metadata field-level differences, native
-  accessibility checks and release catalog compilation
-  remain outstanding.
 - **TASK-005.04 — PARTIAL:** standalone saves and project text writes now
   share an in-process lock over fingerprint checks and replacement, including
   project bulk text updates. Threaded regressions cover two standalone saves
@@ -1010,87 +880,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   and translation suites: 71 passed; full offline suite: 665 passed, 2 skipped.
   Independent-process coordination remains outstanding, as does coordination
   with separate project manifest writes.
-- **TASK-009.04 — PARTIAL:** revision comparisons now report added, removed
-  and changed scene-character associations by stable character ID, ignoring
-  association-list reordering. Modified `app/document/revisions.py`,
-  `app/ui/revision_history_dialog.py`, `tests/test_revisions.py`,
-  `tests/test_project_ui.py`, `translations/utexteditor_uk.ts`, and `README.md`.
-  Focused revision and UI suites: 161 passed; full offline suite: 663 passed,
-  2 skipped; Ukrainian source catalog validation passed. Field-level metadata
-  differences and broader structure comparisons remain,
-  as do native accessibility verification and release catalog compilation.
-- **TASK-009.04 — PARTIAL:** revision comparisons now flag added, removed and
-  changed character profiles and directed relationships by stable ID, without
-  rendering profile data or portraits. Modified `app/document/revisions.py`,
-  `app/ui/revision_history_dialog.py`, `tests/test_revisions.py`,
-  `tests/test_project_ui.py`, `translations/utexteditor_uk.ts`, and `README.md`.
-  Focused revision and UI suites: 159 passed; full offline suite: 661 passed,
-  2 skipped; Ukrainian source catalog validation passed. Field-level
-  differences, scene-character association changes, native
-  accessibility checks and release catalog compilation remain outstanding.
-- **TASK-009.04 — PARTIAL:** comparisons now report project title changes
-  and scene/reference-note path changes with before/after values. Missing path
-  or title metadata in legacy structures does not produce inferred changes.
-  Modified `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
-  `tests/test_revisions.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
-  suites: 157 passed; full offline suite: 659 passed, 2 skipped; Ukrainian
-  source catalog validation passed. Other metadata and structure comparisons,
-  native accessibility checks, and release catalog
-  compilation remain outstanding.
-- **TASK-009.04 — PARTIAL:** comparisons now identify a scene's chapter change,
-  including moves to or from ungrouped, even when its flattened ordering does
-  not change. Stable chapter IDs distinguish duplicate titles; legacy snapshot
-  structures without scene-parent data do not generate inferred moves. Modified
-  `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
-  `tests/test_revisions.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, and `README.md`. Focused revision and UI
-  suites: 155 passed; full offline suite: 657 passed, 2 skipped; Ukrainian
-  source catalog validation passed. Other structure and metadata comparisons,
-  native accessibility checks, and release catalog
-  compilation remain outstanding.
-- **TASK-009.04 — PARTIAL:** revision comparisons now report chapter
-  additions, removals, title changes and reordering, avoiding false moves from
-  insertions or removals. The review dialog labels chapter changes. Modified
-  `app/document/revisions.py`, `app/ui/revision_history_dialog.py`,
-  `tests/test_revisions.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, `README.md`, `UNIMPLEMENTED_FEATURES.md`,
-  and `TASKS.md`. Focused revision and project UI suites: 153 passed; full
-  offline suite: 655 passed, 2 skipped. Ukrainian source catalog validation
-  passed. Directed link additions and
-  removals are also reported by stable IDs. Scene-parent and other
-  structure comparisons, native accessibility checks and release catalog
-  compilation remain outstanding.
-- **TASK-009.01 — DONE:** snapshot previews now provide previous/next pages
-  over all captured scene and note text, retaining a 32,768-character display
-  bound per page. Selecting a different snapshot resets the page. Modified
-  `app/ui/revision_history_dialog.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, `README.md`, and `TASKS.md`. Focused
-  revision and project UI suites: 150 passed; full offline suite: 652 passed,
-  2 skipped. Ukrainian source catalog validation passed. Native accessibility checks and release catalog
-  compilation remain outstanding.
-- **TASK-009.01 — PARTIAL:** selecting one revision shows a read-only preview
-  of scene and note contents, capped at 32,768 characters and labeled when
-  truncated. A selection generation prevents older asynchronous comparisons
-  from replacing the current preview. Modified `app/ui/revision_history_dialog.py`,
-  `app/ui/main_window.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, `README.md`, and `TASKS.md`. Focused
-  revision and project UI suites: 150 passed; full offline suite: 652 passed,
-  2 skipped. Ukrainian source catalog validation passed. Full access to
-  content beyond the preview limit, native
-  accessibility verification, and release catalog compilation remain.
-- **TASK-009.02 — DONE:** the revision history dialog now offers confirmed
-  deletion of a single selected snapshot in a worker. The store revalidates
-  the captured digest and rejects symlinks before deletion; project text is
-  untouched. Modified `app/document/revisions.py`,
-  `app/ui/revision_history_dialog.py`, `app/ui/main_window.py`,
-  `tests/test_revisions.py`, `tests/test_project_ui.py`,
-  `translations/utexteditor_uk.ts`, `README.md`, `UNIMPLEMENTED_FEATURES.md`,
-  and `TASKS.md`. Focused revision and project UI suites: 148 passed; full
-  offline suite: 650 passed, 2 skipped. Ukrainian source catalog validation
-  passed. A separate process could still
-  replace the file between the final integrity check and unlink; native
-  accessibility verification and release catalog compilation remain.
 - **TASK-008.02 — DONE:** recovery scans now report unfinished atomic-write
   temporary files as well as malformed snapshots. The report says a write may
   still be in progress; automatic retention and document cleanup preserve
@@ -1152,7 +941,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   recovery remain incomplete.
 - **Audit queue:** complete the remaining atomic status audit; prioritize
   TASK-005 save coordination, TASK-007 conflict protection, TASK-008 recovery
-  diagnosis, and TASK-009 safe revision management before performance and UX.
+  diagnosis before performance and UX.
   Other inherited statuses remain unverified. Native screen-reader and
   platform checks require a suitable GUI environment.
 

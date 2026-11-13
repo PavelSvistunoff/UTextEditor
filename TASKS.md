@@ -23,7 +23,6 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 | TASK-006 | Benchmark large-document responsiveness | partial |
 | TASK-007 | Implement external file conflict resolution | partial |
 | TASK-008 | Improve recovery diagnosis | partial |
-| TASK-009 | Implement revision snapshot management | open |
 | TASK-011 | Improve file encoding and large-file handling | open |
 | TASK-012 | Implement project-wide full-text search | partial |
 | TASK-013 | Implement Quick Open | partial |
@@ -166,35 +165,6 @@ remain outstanding; see `IMPLEMENTATION_PROGRESS.md` for completed evidence.
 - Invalid entries do not prevent recovery of valid entries.
 - Canonical files are never silently overwritten.
 - Unrecoverable data is clearly identified.
-
-### TASK-009 — Implement revision snapshot management
-**Priority:** High · **Parent status:** open
-
-- [ ] **TASK-009.03** — Add selective restore.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-009.04** — Extend comparison to chapter, link, and project-structure changes.
-  Reference-note relative reordering is now reported without false moves from
-  additions/removals; moved items expose stable IDs using existing translations.
-  Character, directed-relationship and scene-association changes now include
-  deterministic Unicode JSON diffs of captured values, including additions and
-  removals. Missing fields remain distinct from explicit null. Broader structure
-  coverage and native review remain open. Scene and note text diffs also mark
-  missing final newlines instead of joining adjacent changed lines. Character
-  and relationship reordering is reported without false moves on add/remove.
-  Comparison labels identify titled scenes, chapters and notes by stable ID.
-  Captured project identity/version changes are reported, and reordered chapters
-  do not falsely mark their unchanged scenes as moved.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-009.05** — Add optional scheduled snapshots and retention policies.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-009.06** — Create safety snapshots before destructive restores.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-
-**Parent acceptance gate (all must pass):**
-- Users can inspect affected content before restoring.
-- Unsaved buffers are handled explicitly.
-- Restore is transactional or leaves original data intact on failure.
-- Snapshot deletion requires confirmation.
 
 ### TASK-011 — Improve file encoding and large-file handling
 **Priority:** Medium · **Parent status:** open
@@ -562,7 +532,7 @@ or partial as indicated.
 
 1. **Safety first:** TASK-005 and TASK-007 share the unresolved cross-process overwrite race; implement a defined coordination guarantee before declaring either complete.
 2. **Memory/performance:** TASK-001 and TASK-006 need measured bounds and repeated GUI benchmarks; do not truncate Qt undo silently.
-3. **Recovery and revision safety:** TASK-008, TASK-009 and TASK-011 require failure-mode tests before new UI polish.
+3. **Recovery and file safety:** TASK-008 and TASK-011 require failure-mode tests before new UI polish.
 4. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
 5. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.
 

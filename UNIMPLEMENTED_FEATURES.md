@@ -65,9 +65,6 @@ session was exercised, and this review does not prove other paths defect-free.
 - **Recovery diagnosis:** recovery supports restore, inspection/comparison,
   project relocation, discard, and defer. Repair and diagnosis for partial or
   corrupt recovery sets remain limited.
-- **Revision management:** scheduled snapshots and restore with a
-  preview are not available. Comparisons cover chapters, scenes and reference
-  notes and directed link additions/removals, but not all project-structure changes.
 - **Large documents and encodings:** files are read into memory as a whole;
   the editor supports UTF-8 only, and encoding and line-ending choices are not
   selectable in the status bar. NUL, non-whitespace ASCII controls and DEL are rejected as likely binary
@@ -193,13 +190,6 @@ network read may continue until data arrives or the connection times out.
    change it between the final check and replacement. A supported coordination
    guarantee and cross-platform verification remain necessary before claiming
    that conflicts cannot be overwritten silently.
-3. **Make revision snapshots actionable** (high effort). Build on existing
-   snapshots, comparisons and confirmed deletion with previewed, selective
-   restore, followed by optional scheduling and retention settings. Acceptance:
-   show affected files and dirty buffers before restore, create a safety
-   snapshot, recheck disk and project state, and either apply transactionally or
-   leave the original intact. This depends on the revision-management gap
-   above and requires especially careful failure and rollback tests.
 4. **Improve recovery triage** (medium/high effort). Extend the existing scan,
    comparison, relocation, and restore choices with clearer per-document status,
    timestamps and readable corruption details. A readable snapshot can be selected for recovery; parseable version-1 entries
