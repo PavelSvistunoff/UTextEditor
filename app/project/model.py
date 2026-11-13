@@ -355,7 +355,7 @@ def _mapping(value: object, label: str) -> dict:
     return value
 
 
-def _keys(value: dict, required: set[str], allowed: set[str], label: str) -> None:
+def _keys(value: dict, required: set[str], allowed: set[str] | frozenset[str], label: str) -> None:
     missing = required - value.keys()
     extra = value.keys() - allowed
     if missing:
@@ -562,15 +562,13 @@ def _text_list(value: object, label: str) -> list[str]:
 
 def _text_map(value: object, label: str, allowed: frozenset[str]) -> dict[str, str]:
     row = _mapping(value, label)
-    if row.keys() - allowed:
-        raise ProjectFormatError(f"{label} has unknown fields: {', '.join(sorted(row.keys() - allowed))}")
+    _keys(row, set(), allowed, label)
     return {key: _text(item, f"{label}.{key}") for key, item in row.items()}
 
 
 def _text_list_map(value: object, label: str, allowed: frozenset[str]) -> dict[str, list[str]]:
     row = _mapping(value, label)
-    if row.keys() - allowed:
-        raise ProjectFormatError(f"{label} has unknown fields: {', '.join(sorted(row.keys() - allowed))}")
+    _keys(row, set(), allowed, label)
     return {key: _text_list(item, f"{label}.{key}") for key, item in row.items()}
 
 

@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 import app.project.service as project_service
+from app.project.model import character_from_mapping
 from app.document.file_manager import ExternalChangeError, FileManager
 from app.project import (
     Chapter,
@@ -27,6 +28,14 @@ from app.project import (
     SceneCharacterAssociation,
     validate_project_path,
 )
+
+
+@pytest.mark.parametrize("field", ["background", "personality", "arc"])
+def test_character_maps_reject_unknown_fields_in_sorted_order(field):
+    profile = {"id": str(uuid4()), "full_name": "Mara", field: {"z": "", "a": ""}}
+
+    with pytest.raises(ProjectFormatError, match=rf"character\.{field} has unknown fields: a, z"):
+        character_from_mapping(profile)
 
 
 def test_create_open_and_versioned_manifest(tmp_path):

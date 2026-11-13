@@ -2,6 +2,20 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+
+## Refactoring checkpoint — character map validation
+
+- Repository-wide refactoring: **CHECKPOINT**; backlog statuses unchanged.
+- Branch `main`; character background, personality and arc maps share key validation.
+- Sorted unknown-key diagnostics tested before and after; YAML contract unchanged.
+- Files: `app/project/model.py`, `tests/test_project_domain.py`, refactoring docs.
+- Focused project tests: 98 passed; full offscreen suite: 950 passed, 2 skipped.
+- `git diff --check` passed; native GUI, accessibility and live Ollama not tested.
+- Transaction staging and rollback inspected; concurrent-writer risk remains.
+- Project model/service and remaining package audits are incomplete.
+- Next: examine remaining manifest parsing and transaction edge cases.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — Auto-writer cleanup diagnostics
 
 - Repository-wide refactoring: **CHECKPOINT**; backlog statuses unchanged.

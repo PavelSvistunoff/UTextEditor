@@ -41,6 +41,8 @@ checks separately; offscreen tests cannot establish native behavior.
    `model.py`, paths, search, translation, auto-writer and remaining modules.
    Character serialization mapping is now readable; inspect remaining model
    validation and establish responsibility and duplication findings before extraction.
+   Character map unknown-key checks now share the existing manifest rule;
+   sorted diagnostics are covered for background, personality and arc.
    Gate: stable IDs/YAML compatibility, conflict checks and rollback tests.
    `translation.py` scene capture is shared while retaining traversal order.
    Auto-writer rollback previously suppressed temporary-file unlink errors;

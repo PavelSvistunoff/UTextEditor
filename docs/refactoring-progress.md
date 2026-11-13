@@ -1,5 +1,21 @@
 # Refactoring progress
 
+## 2026-11-13 — character map validation
+
+- Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
+- `app/project/model.py`: shared existing unknown-key validation for character
+  background, personality and arc maps; error ordering and wording retained.
+- Added parameterized regression for unknown keys; 50 domain tests passed before
+  the refactor; project domain, setup and translation tests: 98 passed after it.
+- Reviewed transaction staging, installation, rollback and cleanup and existing
+  failure tests; no transaction code changed. Cross-process races remain a risk.
+- Clean Code review: shared rule, unchanged boundaries and diagnostics; no new
+  dependencies or public API. Model and project service audits remain incomplete.
+- Full offscreen suite: 950 passed, 2 skipped; `git diff --check` passed.
+- Native GUI, accessibility and live Ollama were not tested.
+- Next: examine remaining manifest parsing/validation and transaction edge cases.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — character manifest serialization review
 
 - Status: **CHECKPOINT**; full repository audit and refactoring remain incomplete.
