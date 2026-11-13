@@ -1,5 +1,23 @@
 # Refactoring progress
 
+## 2026-11-13 — save conflict check
+
+- Status: **CHECKPOINT**; overall audit and refactoring remain incomplete.
+- Reviewed `file_manager.py`, `document.py`, `write_lock.py`, `test_document.py`
+  and callers; export and PDF compiler received an initial comparison only.
+- The two save conflict checks duplicated the digest rule. Extracted it without
+  moving either check or changing their diagnostics, save order or lock scope.
+- Added tests for source removal before save and during staging; each checks the
+  dirty buffer, original digest and temporary-file cleanup. Both passed before
+  the refactor. Existing tests cover changed files and the independent-writer race.
+- Focused command: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_document.py tests/test_project_domain.py tests/test_recovery.py` → 126 passed.
+- Full offscreen suite: 931 passed, 2 skipped. `git diff --check` passed.
+- Risk remains: the last digest check is not an atomic cross-process compare-and-swap.
+- Next: compare `export.py` and `book_compiler.py` scene validation and tests,
+  preserving selection behavior and validation order before any deduplication.
+- Native GUI, accessibility and live Ollama were not tested.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — initial checkpoint
 
 - Scope: repository-wide Clean Code refactoring, separate from `TASKS.md` feature tickets.

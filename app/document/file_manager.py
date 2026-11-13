@@ -18,6 +18,24 @@ class BinaryTextError(ValueError):
     """The file contains controls incompatible with a text document."""
 
 
+def _check_disk_digest(
+    target: Path, write_target: Path, expected_digest: str, *, during_save: bool
+) -> None:
+    """Reject a missing or changed source before committing a save."""
+    try:
+        current = write_target.read_bytes()
+    except FileNotFoundError as exc:
+        when = "during saving" if during_save else "after it was opened"
+        raise ExternalChangeError(
+            f"{target} was removed {when}; use Save As to create a new file."
+        ) from exc
+    if hashlib.sha256(current).hexdigest() != expected_digest:
+        when = "during saving" if during_save else "since it was opened"
+        raise ExternalChangeError(
+            f"{target} changed on disk {when}; reload, compare, or use Save As."
+        )
+
+
 class FileManager:
     def open(self, path: str | Path) -> Document:
         file_path = Path(path)
@@ -43,16 +61,7 @@ class FileManager:
         write_target = target.resolve() if target.is_symlink() else target
         same_document = document.path is not None and target.resolve(strict=False) == document.path.resolve(strict=False)
         if same_document and document.disk_digest is not None:
-            try:
-                current = write_target.read_bytes()
-            except FileNotFoundError as exc:
-                raise ExternalChangeError(
-                    f"{target} was removed after it was opened; use Save As to create a new file."
-                ) from exc
-            if hashlib.sha256(current).hexdigest() != document.disk_digest:
-                raise ExternalChangeError(
-                    f"{target} changed on disk since it was opened; reload, compare, or use Save As."
-                )
+            _check_disk_digest(target, write_target, document.disk_digest, during_save=False)
         write_target.parent.mkdir(parents=True, exist_ok=True)
         payload = normalize_line_endings(document.text, document.line_ending).encode(document.encoding)
         descriptor, temporary_name = tempfile.mkstemp(prefix=f".{write_target.name}.", suffix=".tmp", dir=write_target.parent)
@@ -65,16 +74,7 @@ class FileManager:
             if write_target.exists():
                 os.chmod(temporary, write_target.stat().st_mode)
             if same_document and document.disk_digest is not None:
-                try:
-                    current = write_target.read_bytes()
-                except FileNotFoundError as exc:
-                    raise ExternalChangeError(
-                        f"{target} was removed during saving; use Save As to create a new file."
-                    ) from exc
-                if hashlib.sha256(current).hexdigest() != document.disk_digest:
-                    raise ExternalChangeError(
-                        f"{target} changed on disk during saving; reload, compare, or use Save As."
-                    )
+                _check_disk_digest(target, write_target, document.disk_digest, during_save=True)
             os.replace(temporary, write_target)
         except BaseException:
             try:

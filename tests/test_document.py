@@ -167,6 +167,37 @@ def test_file_manager_refuses_to_overwrite_external_changes(tmp_path: Path) -> N
     assert document.dirty
 
 
+@pytest.mark.parametrize("remove_during_staging", [False, True])
+def test_save_preserves_dirty_document_when_source_is_removed(
+    tmp_path: Path, monkeypatch, remove_during_staging: bool
+) -> None:
+    path = tmp_path / "draft.txt"
+    path.write_text("original", encoding="utf-8")
+    manager = FileManager()
+    document = manager.open(path)
+    document.update_text("my edit")
+    original_digest = document.disk_digest
+
+    if remove_during_staging:
+        original_fsync = os.fsync
+
+        def remove_after_stage(fd):
+            original_fsync(fd)
+            path.unlink()
+
+        monkeypatch.setattr("app.document.file_manager.os.fsync", remove_after_stage)
+    else:
+        path.unlink()
+
+    with pytest.raises(ExternalChangeError, match="removed"):
+        manager.save(document)
+
+    assert not path.exists()
+    assert document.text == "my edit" and document.dirty
+    assert document.disk_digest == original_digest
+    assert not list(tmp_path.glob(".draft.txt.*.tmp"))
+
+
 def test_save_detects_separate_process_edit_during_staging(tmp_path: Path, monkeypatch) -> None:
     path = tmp_path / "draft.txt"
     path.write_text("original", encoding="utf-8")

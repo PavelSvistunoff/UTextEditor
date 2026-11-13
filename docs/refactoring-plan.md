@@ -21,7 +21,12 @@ checks separately; offscreen tests cannot establish native behavior.
 
 1. **Document** — `app/document/encoding.py`: repeated counting and manual
    character scanning obscure the line-ending tie rule; test mixed endings and
-   preserve the first-occurrence tie break. Initial change is in progress.
+   preserve the first-occurrence tie break. Initial change completed in `be1cc15`.
+   `file_manager.py`: duplicated digest checks now share a rule while retaining
+   both checks and their distinct diagnostics; verify removed/changed sources,
+   staging cleanup, dirty state and the documented independent-writer race.
+   `export.py` and `book_compiler.py` repeat scene ID and text validation; review
+   differences in selection and validation order before considering reuse.
    Audit `file_manager.py`, `recovery.py`, `revisions.py`, `writing_goals.py`,
    `merge.py`, export/compiler and remaining modules with their corresponding
    tests. Risk: external-write conflicts, rollback, data loss and undo; do not

@@ -2,6 +2,19 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+## Refactoring checkpoint — save conflicts
+
+- Repository-wide refactoring: **CHECKPOINT**; no backlog subtask selected or closed.
+- `app/document/file_manager.py`: shared digest-check rule, retaining both checks and diagnostics.
+- `tests/test_document.py`: source removal before save and during staging; dirty state and cleanup preserved.
+- Focused document/project/recovery suite: 126 passed; tests also passed before the change.
+- Full offscreen suite: 931 passed, 2 skipped; `git diff --check` passed.
+- Independent writers can still race after the final check; no stronger guarantee is claimed.
+- No native GUI, accessibility or live Ollama checks performed.
+- See `docs/refactoring-progress.md` and `docs/refactoring-plan.md` for scope and remaining work.
+- Next: compare scene validation in `app/document/export.py` and `book_compiler.py` with their tests.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — 2026-11-13
 
 - User-authorized repository-wide refactoring; no `TASKS.md` subtask selected or closed.
