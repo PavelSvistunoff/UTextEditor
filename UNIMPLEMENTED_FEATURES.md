@@ -1,5 +1,7 @@
 # Remaining features and known limitations
 
+> **Planning boundary:** This is a product-gap and risk inventory, **not** Codex's active task queue. For execution use `TASKS.md`, with the latest resume state in `IMPLEMENTATION_PROGRESS.md` and policy in `AGENTS.md`. Measurements and test totals below describe the review date, not the latest branch test result. Optional proposals are not automatically approved implementation tasks.
+
 This inventory compares the repository's Markdown documents with the current
 implementation. `README.md` is the source of truth for current product scope;
 `SPEC.md` and the later sections of `README.uk.md` also describe older
