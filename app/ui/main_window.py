@@ -4133,8 +4133,12 @@ class MainWindow(QMainWindow):
 
     def _project_book_compile_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)
-        message = self.tr("Export destination is a project source file.") if isinstance(error, ExportSourceError) else str(error)
-        QMessageBox.warning(self, self.tr("Book compilation failed"), message)
+        QMessageBox.warning(self, self.tr("Book compilation failed"), self._export_error_message(error))
+
+    def _export_error_message(self, error: Exception) -> str:
+        if isinstance(error, ExportSourceError):
+            return self.tr("Export destination is a project source file.")
+        return self._project_error_message(error)
 
     def _ask_export_options(self):
         dialog = QDialog(self)
@@ -4268,8 +4272,7 @@ class MainWindow(QMainWindow):
 
     def _project_export_failed(self, project: Project, error) -> None:
         self._set_project_busy(False)
-        message = self.tr("Export destination is a project source file.") if isinstance(error, ExportSourceError) else str(error)
-        QMessageBox.warning(self, self.tr("Export failed"), message)
+        QMessageBox.warning(self, self.tr("Export failed"), self._export_error_message(error))
 
     def _scan_recovery(self) -> None:
         if self.recovery_store is None:

@@ -55,6 +55,8 @@ checks separately; offscreen tests cannot establish native behavior.
    guards are present; preserve their operation-specific checks and messages.
    Project open/mutation warnings now share typed project error presentation;
    real path rejection and malformed-manifest cases retain diagnostic details.
+   Text/PDF export errors share source-protection and typed project presentation;
+   both callback routes are covered for source, format, path and system failures.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

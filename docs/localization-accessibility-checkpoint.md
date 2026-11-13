@@ -112,3 +112,10 @@ The custom profile-save callback now uses shared project-error presentation.
 errors with the packaged Ukrainian catalog, exact diagnostics and staged-name
 preservation after failure. Project source profile remains unchanged. Other
 custom callbacks, native runtime and accessibility remain open.
+
+## Export errors — TASK-032.04
+
+Text and PDF export share error presentation, preserving the localized source-file
+protection and using typed project-format/path categories. Eight injected callback
+cases cover both routes, exact diagnostic retention, generic system errors and
+busy-state reset. Native export/localization review remains open.

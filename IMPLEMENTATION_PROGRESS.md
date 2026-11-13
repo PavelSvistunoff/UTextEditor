@@ -7,6 +7,25 @@
 
 
 
+## TASK-032.04 checkpoint — shared export errors
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 open.
+- Text/PDF export callbacks share source-protection and typed project formatting.
+- Four format/path cases failed before fix; system fallback cases passed. Eight
+  final cases cover both callbacks, original details and busy-state reset.
+- Focused UI/export/PDF/i18n/translation tests: 273 passed; full offscreen suite:
+  975 passed, 2 skipped. `git diff --check` passed; packaged parity tested.
+- No new translation strings/catalog changes. Native Ukrainian UI/accessibility,
+  native pagination and live Ollama not tested.
+- Clean Code review: shared presentation rule, operation-specific titles retained;
+  no export persistence/undo/API changes or new dependencies. Broader audit open.
+- Started at `d0787db` (profile package already committed externally); three
+  pre-existing tracked pyc changes preserved and excluded from this package.
+- Files: main window, UI tests, README, TASKS, refactoring plan and evidence docs.
+- Next: remaining custom project/character error callbacks; branch `main`.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — profile save errors
 
 - TASK-032.04: **CHECKPOINT**; TASK-032 parent partial; native .V2 open.

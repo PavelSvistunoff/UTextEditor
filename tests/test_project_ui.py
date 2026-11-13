@@ -16,7 +16,7 @@ from app.document.revisions import RevisionComparison, RevisionStore, SceneChang
 from app.document.recovery import RecoveryComparisonLabels, RecoveryStore
 from app.document.file_manager import FileManager, ExternalChangeError
 from app.project import Project, ProjectError, ProjectFormatError, ProjectPathError, WordCount
-from app.document.export import ExportChapter, ExportScene
+from app.document.export import ExportChapter, ExportScene, ExportSourceError
 from app.ui.main_window import MainWindow
 from app.ui.project_view import ProjectView
 from app.ui.character_dialog import CharacterDialog
@@ -132,6 +132,35 @@ def test_project_path_error_is_localized_without_losing_diagnostics(application,
         assert "Неприпустимий шлях проєкту" in warnings[0][2]
         assert str(raised.value) in warnings[0][2]
         assert window.project is project
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
+@pytest.mark.parametrize("handler", ["_project_export_failed", "_project_book_compile_failed"])
+@pytest.mark.parametrize("error,category", [
+    (ProjectFormatError("detail %1"), "Некоректні дані проєкту"),
+    (ProjectPathError("detail %1"), "Неприпустимий шлях проєкту"),
+    (OSError("detail %1"), "detail %1"),
+    (ExportSourceError("Export destination is a project source file."), "Файл призначення експорту є вихідним файлом проєкту."),
+])
+def test_export_failures_share_project_error_categories(application, tmp_path, monkeypatch, handler, error, category):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    _, translator = install_translation(application, "uk")
+    try:
+        window._set_project_busy(True)
+        getattr(window, handler)(project, error)
+        assert category in warnings[0][2]
+        if not isinstance(error, ExportSourceError):
+            assert str(error) in warnings[0][2]
+        assert not window._project_busy and window.project is project
     finally:
         application.removeTranslator(translator)
         window.close()
