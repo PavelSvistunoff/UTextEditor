@@ -168,10 +168,15 @@ def _append_scene_block(
     scene_prefix: str,
     include_heading: bool,
 ) -> None:
+    text = _scene_text(scene, scene_texts)
+    content = f"{scene_prefix}{scene.title}\n\n{text}" if include_heading else text
+    blocks.append(content)
+
+
+def _scene_text(scene: ExportScene, scene_texts: Mapping[str, str]) -> str:
     if scene.scene_id not in scene_texts:
         raise ValueError(f"Text is unavailable for scene {scene.scene_id!r}.")
     text = scene_texts[scene.scene_id]
     if not isinstance(text, str):
         raise TypeError(f"Text for scene {scene.scene_id!r} must be a string.")
-    content = f"{scene_prefix}{scene.title}\n\n{text}" if include_heading else text
-    blocks.append(content)
+    return text

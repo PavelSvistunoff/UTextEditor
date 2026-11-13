@@ -138,6 +138,12 @@ def test_compile_book_rejects_missing_scene_text(application, tmp_path: Path) ->
         )
 
 
+def test_book_validates_each_scene_text_before_later_duplicate_id(application, tmp_path: Path) -> None:
+    scene = ExportScene("same", "Scene")
+    with pytest.raises(ValueError, match="unavailable"):
+        compile_book_pdf(tmp_path / "book.pdf", "Title", [], [scene, scene], {})
+
+
 @pytest.mark.parametrize("page_size, width", [("A5", 420), ("A4", 595), ("Letter", 612)])
 def test_pdf_page_size_and_title_page_author(application, tmp_path, page_size, width):
     from PySide6.QtPdf import QPdfDocument

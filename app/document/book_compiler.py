@@ -22,7 +22,7 @@ from PySide6.QtGui import (
     QTextFormat,
 )
 
-from .export import ExportChapter, ExportScene
+from .export import ExportChapter, ExportScene, _add_unique_scene, _scene_text
 
 
 def compile_book_pdf(
@@ -94,13 +94,8 @@ def _validate_scene(
     seen: set[str],
     scene_texts: Mapping[str, str],
 ) -> None:
-    if not scene.scene_id or scene.scene_id in seen:
-        raise ValueError(f"Duplicate or empty scene ID in manuscript: {scene.scene_id!r}")
-    seen.add(scene.scene_id)
-    if scene.scene_id not in scene_texts:
-        raise ValueError(f"Text is unavailable for scene {scene.scene_id!r}.")
-    if not isinstance(scene_texts[scene.scene_id], str):
-        raise TypeError(f"Text for scene {scene.scene_id!r} must be a string.")
+    _add_unique_scene(seen, scene)
+    _scene_text(scene, scene_texts)
 
 
 def _build_document(

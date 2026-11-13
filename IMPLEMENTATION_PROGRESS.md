@@ -2,6 +2,18 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+## Refactoring checkpoint — export validation
+
+- Repository-wide refactoring: **CHECKPOINT**; backlog task statuses unchanged.
+- Shared scene ID and text checks between document export and PDF compilation.
+- Preserved text-export selection and the different validation orders; three regressions added.
+- Focused `tests/test_export.py tests/test_book_compiler.py`: 25 passed before and after.
+- Full offscreen suite: 934 passed, 2 skipped; `git diff --check` passed.
+- No native GUI, accessibility or live Ollama checks performed.
+- Full inventory and all remaining packages are still outstanding.
+- Next: inspect `app/document/recovery.py` and `tests/test_recovery.py`.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — save conflicts
 
 - Repository-wide refactoring: **CHECKPOINT**; no backlog subtask selected or closed.

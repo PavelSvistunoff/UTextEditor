@@ -25,8 +25,8 @@ checks separately; offscreen tests cannot establish native behavior.
    `file_manager.py`: duplicated digest checks now share a rule while retaining
    both checks and their distinct diagnostics; verify removed/changed sources,
    staging cleanup, dirty state and the documented independent-writer race.
-   `export.py` and `book_compiler.py` repeat scene ID and text validation; review
-   differences in selection and validation order before considering reuse.
+   `export.py` and `book_compiler.py`: shared scene ID and text validation;
+   selection and the distinct validation order are covered by regressions.
    Audit `file_manager.py`, `recovery.py`, `revisions.py`, `writing_goals.py`,
    `merge.py`, export/compiler and remaining modules with their corresponding
    tests. Risk: external-write conflicts, rollback, data loss and undo; do not

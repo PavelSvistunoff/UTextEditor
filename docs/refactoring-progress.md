@@ -1,5 +1,22 @@
 # Refactoring progress
 
+## 2026-11-13 — export scene validation
+
+- Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
+- Reviewed `export.py`, `book_compiler.py`, `test_export.py` and
+  `test_book_compiler.py` for scene validation and export persistence.
+- Shared the identical scene ID and text validation; each caller retains its
+  original ordering and selection behavior. PDF still validates each scene in
+  sequence; text export checks all IDs and only selected scene text.
+- Added three regressions for selected text and error ordering; focused tests
+  passed before and after (25 passed). No output or public API change intended.
+- Full offscreen suite: 934 passed, 2 skipped. `git diff --check` passed.
+- Export replacement and PDF pagination/native behavior remain separate risks;
+  existing tests do not constitute native GUI verification.
+- Next: inspect `app/document/recovery.py` and `tests/test_recovery.py`, then
+  record concrete findings before choosing the next bounded batch.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — save conflict check
 
 - Status: **CHECKPOINT**; overall audit and refactoring remain incomplete.

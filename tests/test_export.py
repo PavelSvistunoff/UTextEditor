@@ -96,3 +96,17 @@ def test_duplicate_scene_ids_are_rejected() -> None:
 
     with pytest.raises(ValueError, match="Duplicate or empty"):
         render_manuscript([ExportChapter("One", (duplicate,)), ExportChapter("Two", (duplicate,))], [], {"same": "text"})
+
+
+def test_export_validates_only_selected_scene_text_but_all_scene_ids() -> None:
+    scenes = [ExportScene("one", "First"), ExportScene("two", "Second")]
+    assert render_manuscript([], scenes, {"one": "text"}, selected_scene_ids={"one"}) == "## First\n\ntext"
+
+    with pytest.raises(ValueError, match="Duplicate or empty"):
+        render_manuscript([], [scenes[0], scenes[0]], {}, selected_scene_ids=set())
+
+
+def test_export_reports_duplicate_id_before_missing_text() -> None:
+    scene = ExportScene("same", "Scene")
+    with pytest.raises(ValueError, match="Duplicate or empty"):
+        render_manuscript([], [scene, scene], {})
