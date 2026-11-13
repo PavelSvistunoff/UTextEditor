@@ -1,5 +1,18 @@
 # Implementation progress
 
+## TASK-006.04 wider project sample (2026-11-13)
+
+- **TASK-006.04: CHECKPOINT; parent TASK-006: partial.** A 5,000-scene,
+  multilingual offscreen search sample passed twice with all source files
+  unchanged; results and the 1,000-match cap are recorded in
+  `docs/gui-latency-evaluation.md`. Native input and paint remain unverified.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/project_search_responsiveness.py --scenes 5000 --lines 10 --repetitions 2` passed.
+  No application code changed; the previous full suite passed 898 tests with
+  2 skipped. Native GUI timing requires an interactive platform measurement.
+- Branch `codex/task-continuation`; pre-existing staged generated files remain
+  unrelated. Next: pursue independent revision comparison work while native
+  verification is unavailable; resume .04 on a representative native desktop.
+
 ## TASK-006.04 checkpoint (2026-11-13)
 
 - **TASK-006.04: CHECKPOINT; parent TASK-006: partial.** The configurable

@@ -62,6 +62,13 @@ the entire project; absent search traversed all files. Warm cache, synthetic
 content and two samples limit comparisons. These values are diagnostic rather
 than thresholds or native input/paint measurements.
 
+A wider run with `--scenes 5000 --lines 10 --repetitions 2` on the same
+machine on 2026-11-13 completed with unchanged source files: absent searches
+took 252.2/247.9 ms (maximum timer gaps 5.7/5.7 ms); `книга` took 48.2/35.8 ms
+(31.7/19.4 ms gaps); and `🌿` took 40.1/37.4 ms (23.8/21.6 ms gaps).
+Matching searches again reached the result cap. These are offscreen synthetic
+measurements, not native input or paint latency.
+
 ## Acceptance reconciliation — TASK-006.V1 / V2
 
 Reviewed 2026-11-01 against all three benchmark scripts, completion context,
