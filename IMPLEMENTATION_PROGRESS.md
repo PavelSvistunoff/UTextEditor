@@ -1,5 +1,53 @@
 # Implementation progress
 
+## TASK-001.02 reset snapshot sharing (2026-11-13)
+
+- **.02: CHECKPOINT; parent TASK-001: open.** Daily reset now preserves
+  sharing of unchanged days between checkpoints, including when resetting the
+  currently edited day. Undo and redo remain covered. The number of reachable
+  checkpoints remains unbounded, so the parent memory and stress gates remain open.
+- Changed `app/document/writing_goals.py`, `tests/test_writing_goals.py`,
+  `README.md`, `TASKS.md`, and this checkpoint on `codex/task-continuation`;
+  pre-existing staged generated files remain untouched.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py tests/test_writing_goal_benchmark.py`: 122 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 919 passed, 2 skipped. Native checks not run.
+- Disk-backed checkpoints need a design for I/O failures and responsive undo;
+  synchronous disk operations on the UI thread would violate responsiveness.
+  Next: evaluate a bounded, asynchronous store preserving exact counts and
+  handling failures before implementing; resume current batch. Resume command:
+  `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+
+## TASK-001.02 shared daily snapshots (2026-11-13)
+
+- **.02: CHECKPOINT; parent TASK-001: open.** Consecutive snapshots on the
+  same day share prior-day counts. A regression covers 100 edits, undo, reset
+  of a prior day, and redo. Reachable checkpoint count remains unbounded;
+  parent memory and long-session gates are not met.
+- A synthetic tracemalloc comparison of 10,000 snapshots with 365 prior days
+  measured 1,374,495 bytes shared versus 130,953,728 bytes copying dicts;
+  this isolates snapshot allocation, not whole-app memory or a fixed bound.
+- Changed `app/document/writing_goals.py`, `tests/test_writing_goals.py`,
+  `README.md`, `TASKS.md`, and this checkpoint on `codex/task-continuation`.
+  Existing staged generated artifacts preserved.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py tests/test_writing_goal_benchmark.py`: 121 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 918 passed, 2 skipped. Native checks not run.
+- Next: resume .02; design bounded storage for all reachable undo states without
+  silently dropping undo or changing counts, then verify .03 and benchmark .05.
+  Resume: `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+- Blocker: none; resume current batch.
+
+## TASK-001.02 continuation checkpoint (2026-11-13)
+
+- **.02: CHECKPOINT; parent TASK-001: open.** Reviewed reachable undo
+  metadata: each retained state still carries a fingerprint and a daily-count
+  snapshot; no fixed bound has been demonstrated. Truncation would compromise
+  reachable undo/redo counts. Parent memory and stress gates remain open.
+- No implementation files changed; branch `codex/task-continuation`. Existing
+  staged generated files are unrelated and preserved.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_writing_goal_benchmark.py`: 46 passed. `git diff --check` passed before this checkpoint. Full suite and native checks not run.
+- Next: resume .02 with a representation that bounds metadata relative to
+  supported Qt undo history while preserving daily counts, then verify .03
+  and measure .05. Resume: `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+- Blocker: execution budget; resume the current batch.
+
 ## Current resume pointer (documentation routing; 2026-11-13)
 
 - **Branch:** `codex/task-continuation`. **Parent:** TASK-001 open. **Next batch:** TASK-001.02 and TASK-001.03 (high-risk: split into one subtask if needed), then TASK-001.05 benchmark. This pointer summarizes the latest recorded checkpoint below; it is not a new test run or a completion claim.

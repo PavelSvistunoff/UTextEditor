@@ -8,10 +8,47 @@ import os
 from pathlib import Path
 import re
 import tempfile
-from typing import Mapping
+from typing import Iterator, Mapping
 
 _WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
 _SCOPES = {"active_scene", "project_manuscript", "new_words"}
+
+
+class _DailyCounts(Mapping[str, int]):
+    """Immutable snapshot sharing unchanged days across consecutive edits."""
+
+    def __init__(self, previous: Mapping[str, int], day: str, count: int) -> None:
+        if isinstance(previous, _DailyCounts) and previous.day == day:
+            self.base = previous.base
+        else:
+            self.base = dict(previous)
+            self.base.pop(day, None)
+        self.day = day
+        self.count = count
+
+    def __getitem__(self, key: str) -> int:
+        return self.count if key == self.day else self.base[key]
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self.base
+        yield self.day
+
+    def __len__(self) -> int:
+        return len(self.base) + 1
+
+    def without_day(self, day: str, bases: dict[int, tuple[dict[str, int], dict[str, int]]]) -> Mapping[str, int]:
+        if day == self.day:
+            return self.base
+        if day not in self.base:
+            return self
+        key = id(self.base)
+        if key not in bases:
+            bases[key] = (self.base, {name: count for name, count in self.base.items() if name != day})
+        result = object.__new__(_DailyCounts)
+        result.base = bases[key][1]
+        result.day = self.day
+        result.count = self.count
+        return result
 
 
 class WritingGoalTracker:
@@ -66,7 +103,7 @@ class WritingGoalTracker:
                     checked_values[identity] = count
                 checked_scopes[name] = checked_values
             self.scope_history[day] = checked_scopes
-        self._histories: dict[str, tuple[list[tuple[bytes, dict[str, int]]], int]] = {}
+        self._histories: dict[str, tuple[list[tuple[bytes, Mapping[str, int]]], int]] = {}
         self._current_text: dict[str, str] = {}
         if aliases is not None and not isinstance(aliases, Mapping):
             raise ValueError("Writing-goal aliases must be a mapping.")
@@ -215,8 +252,7 @@ class WritingGoalTracker:
         if added:
             # Progress snapshots are immutable after being stored. Reuse the
             # previous one for edits that do not add a word.
-            counts = dict(counts)
-            counts[today] = counts.get(today, 0) + added
+            counts = _DailyCounts(counts, today, counts.get(today, 0) + added)
         # Qt may merge many keystrokes into a single undo command. Its
         # intermediate contents cannot be reached by undo or redo, so the UI
         # may replace the previous endpoint when it knows the command merged.
@@ -291,16 +327,20 @@ class WritingGoalTracker:
         today = local_date or self.local_date()
         date.fromisoformat(today)
         self.progress[today] = {}
+        shared_bases: dict[int, tuple[dict[str, int], dict[str, int]]] = {}
         for document_id, (states, index) in tuple(self._histories.items()):
-            updated_counts: dict[int, dict[str, int]] = {}
+            updated_counts: dict[int, Mapping[str, int]] = {}
             for state_index, (fingerprint, counts) in enumerate(states):
                 if today not in counts:
                     continue
                 key = id(counts)
                 if key not in updated_counts:
-                    updated = dict(counts)
-                    updated.pop(today)
-                    updated_counts[key] = updated
+                    if isinstance(counts, _DailyCounts):
+                        updated_counts[key] = counts.without_day(today, shared_bases)
+                    else:
+                        updated = dict(counts)
+                        updated.pop(today)
+                        updated_counts[key] = updated
                 states[state_index] = (fingerprint, updated_counts[key])
             self._histories[document_id] = (states, index)
 

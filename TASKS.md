@@ -47,6 +47,8 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 **Priority:** High · **Parent status:** open
 
 - [~] **TASK-001.02** — Implement bounded history metadata without breaking word counts.
+  Consecutive checkpoints on one day share unchanged prior-day counts, including
+  after a daily reset, but reachable checkpoint count is still unbounded.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.03** — Preserve correct behavior across undo, redo, pause, and reset.
   Saving to an unused tracking identity now retains checkpoints; same-ID rekeys

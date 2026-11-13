@@ -188,6 +188,38 @@ def test_unchanged_progress_snapshots_are_shared_and_remain_correct_after_reset(
     assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 1
 
 
+def test_daily_snapshots_share_prior_days_and_survive_undo_and_reset() -> None:
+    tracker = WritingGoalTracker(100, "new_words", progress={
+        "2026-10-16": {"doc": 7}, "2026-10-17": {"doc": 3},
+    })
+    tracker.attach("doc", "")
+    for number in range(1, 101):
+        tracker.record_text("doc", " word" * number, local_date="2026-10-18")
+    states, _ = tracker._histories["doc"]
+    assert all(snapshot.base is states[1][1].base for _, snapshot in states[1:])
+    tracker.record_text("doc", " word" * 99, local_date="2026-10-18", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 99
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-16") == 7
+    tracker.reset_today(local_date="2026-10-17")
+    assert all(snapshot.base is states[1][1].base for _, snapshot in states[1:])
+    tracker.record_text("doc", " word" * 100, local_date="2026-10-18", redo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-18") == 100
+
+
+def test_reset_current_day_shares_prior_counts_and_keeps_old_undo_states() -> None:
+    tracker = WritingGoalTracker(100, "new_words", progress={"2026-10-16": {"doc": 7}})
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "one", local_date="2026-10-17")
+    tracker.record_text("doc", "one two", local_date="2026-10-17")
+    states, _ = tracker._histories["doc"]
+    tracker.reset_today(local_date="2026-10-17")
+    assert states[1][1] is states[2][1]
+    tracker.record_text("doc", "one", undo=True, local_date="2026-10-17")
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-16") == 7
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 0
+
+
 def test_compacted_command_preserves_daily_counts_through_reset_undo_and_redo() -> None:
     tracker = WritingGoalTracker(10, "new_words")
     tracker.attach("doc", "")
