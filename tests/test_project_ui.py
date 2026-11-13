@@ -138,6 +138,43 @@ def test_recovery_can_restore_one_selected_older_snapshot(application, tmp_path,
     window.close()
 
 
+def test_recovery_opens_damaged_metadata_text_only_by_explicit_selection(application, tmp_path, monkeypatch):
+    import json
+    canonical = tmp_path / "original.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "unsaved draft", canonical_path=canonical)
+    payload = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+    payload["captured_at"] = "invalid"
+    entry.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+    original = entry.snapshot_path.read_bytes()
+    scan = store.scan()
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    count = window.tabs.count()
+    window._recovery_scan_finished(scan)
+    assert "readable text" in window._recovery_dialog.detailedText()
+    assert any(button.text() == "Open text from damaged snapshot…" and button.isEnabled()
+               for button in window._recovery_dialog.buttons())
+    assert window.tabs.count() == count
+    window._recovery_dialog.close()
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _prompt, labels, *_args: (labels[0], False))
+    dialog = QMessageBox(window)
+    window._handle_recovery_choice("damaged", scan, dialog)
+    assert window.tabs.count() == count
+    window._recovery_dialog.close()
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _prompt, labels, *_args: (labels[0], True))
+    window._handle_recovery_choice("damaged", scan, dialog)
+    editor = window.tabs.current_editor()
+    assert window.tabs.count() == count + 1
+    assert editor.toPlainText() == "unsaved draft" and editor.document_state.dirty
+    assert editor.document_state.path is None
+    assert canonical.read_text(encoding="utf-8") == "saved"
+    assert entry.snapshot_path.read_bytes() == original
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_standalone_repeated_saves_update_disk_fingerprint_and_detect_external_edits(application, tmp_path, monkeypatch):
     path = tmp_path / "draft.txt"
     path.write_text("base", encoding="utf-8")
@@ -190,6 +227,109 @@ def test_save_as_tracks_new_destination_for_later_conflicts(application, tmp_pat
     assert destination.read_text(encoding="utf-8") == "external copy"
     assert source.read_text(encoding="utf-8") == "source"
     assert editor.toPlainText() == "my next edit" and editor.document_state.dirty
+    editor.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("fail_first", [False, True])
+def test_concurrent_save_as_reserves_destination_until_worker_finishes(application, tmp_path, monkeypatch, fail_first):
+    target = tmp_path / "shared.txt"
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    first = window.tabs.current_editor()
+    first.setPlainText("first buffer")
+    second = window.tabs.new_document()
+    second.setPlainText("second buffer")
+    started, release = Event(), Event()
+    original_save = window.file_manager.save
+
+    def delayed_save(*args):
+        started.set()
+        assert release.wait(3)
+        if fail_first:
+            raise OSError("simulated save failure")
+        return original_save(*args)
+
+    monkeypatch.setattr(window.file_manager, "save", delayed_save)
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    results = []
+    try:
+        assert window._save_editor(first, callback=results.append, target=target)
+        assert started.wait(3)
+        assert not window._save_editor(second, callback=results.append, target=target)
+        assert results == [False] and warnings
+        warnings.clear()
+        assert not window._save_editor(second, callback=results.append, target=target, autosave=True)
+        assert results == [False, False] and not warnings
+        assert second.toPlainText() == "second buffer" and second.document_state.dirty
+    finally:
+        release.set()
+    wait_until(lambda: len(results) == 3, application)
+    assert results[-1] is not fail_first
+    assert not window._save_targets
+    if fail_first:
+        assert not target.exists()
+    else:
+        assert target.read_text(encoding="utf-8") == "first buffer"
+    # The failed worker must release its reservation for a subsequent attempt.
+    if fail_first:
+        monkeypatch.setattr(window.file_manager, "save", original_save)
+        assert window._save_editor(second, callback=results.append, target=target)
+        wait_until(lambda: len(results) == 4, application)
+        assert results[-1] is True and target.read_text(encoding="utf-8") == "second buffer"
+    first.document_state.mark_saved()
+    second.document_state.mark_saved()
+    window.close()
+
+
+@pytest.mark.parametrize("kind", ["standalone", "scene"])
+def test_open_result_is_not_installed_while_save_as_targets_same_path(application, tmp_path, monkeypatch, kind):
+    if kind == "scene":
+        project = Project.create(tmp_path / "novel", "Novel")
+        scene = project.add_scene("Opening", content="saved")
+        target = project.root / scene.path
+    else:
+        target = tmp_path / "draft.txt"
+        target.write_text("saved", encoding="utf-8")
+    loaded = FileManager().open(target)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    if kind == "scene":
+        window.project = project
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved manuscript")
+    started, release = Event(), Event()
+
+    def failing_save(*args):
+        started.set()
+        assert release.wait(3)
+        raise OSError("simulated failure")
+
+    monkeypatch.setattr(window.file_manager, "save", failing_save)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    results = []
+    try:
+        assert window._save_editor(editor, callback=results.append, target=target)
+        assert started.wait(3)
+        count = window.tabs.count()
+        if kind == "scene":
+            window._project_document_opened(project, "scene", scene.id, target, "saved")
+        else:
+            window._opened_document(loaded)
+        assert window.tabs.count() == count
+        assert "being saved" in window.statusBar().currentMessage()
+        assert editor.toPlainText() == "unsaved manuscript" and editor.document_state.dirty
+    finally:
+        release.set()
+    wait_until(lambda: bool(results), application)
+    assert results == [False]
+    if kind == "scene":
+        window._project_document_opened(project, "scene", scene.id, target, "saved")
+    else:
+        window._opened_document(loaded)
+    assert window.tabs.count() == count + 1
+    assert target.read_text(encoding="utf-8") == "saved"
     editor.document_state.mark_saved()
     window.close()
 
@@ -3154,6 +3294,19 @@ def test_revision_history_dialog_displays_path_and_project_title_changes(applica
     dialog.close()
 
 
+def test_revision_history_dialog_displays_project_identity_change(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("project", "metadata-changed", item_type="project",
+                    changed_fields=("project_id",), diff='-  "project_id": "old"\n+  "project_id": "new"\n'),
+    )))
+    text = dialog.details.toPlainText()
+    assert "Project Details Changed: project" in text
+    assert "Changed manifest fields: project_id" in text
+    assert '"old"' in text and '"new"' in text
+    dialog.close()
+
+
 def test_revision_history_dialog_displays_character_metadata_changes(application):
     dialog = RevisionHistoryDialog()
     dialog.show_comparison(RevisionComparison((
@@ -3179,6 +3332,23 @@ def test_revision_history_dialog_displays_scene_character_association(applicatio
     text = dialog.details.toPlainText()
     assert "Character Association Added: Opening" in text
     assert "Character ID: character-id" in text
+    dialog.close()
+
+
+def test_revision_comparison_identifies_duplicate_titles_for_all_changed_items(application):
+    dialog = RevisionHistoryDialog()
+    dialog.show_comparison(RevisionComparison((
+        SceneChange("scene-a", "text-changed", "Shared", "Shared", diff="-old\n+new\n"),
+        SceneChange("scene-b", "association-added", new_title="Shared", character_id="character"),
+        SceneChange("note-a", "removed", old_title="Shared", item_type="note"),
+        SceneChange("chapter-a", "added", new_title="Shared", item_type="chapter"),
+    )))
+    text = dialog.details.toPlainText()
+    for item_id in ("scene-a", "scene-b", "note-a", "chapter-a"):
+        assert f"Item ID: {item_id}" in text
+    assert "Character ID: character" in text
+    dialog.show_comparison(RevisionComparison(()))
+    assert dialog.details.toPlainText() == "Snapshots compared; no changes found."
     dialog.close()
 
 

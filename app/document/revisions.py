@@ -191,8 +191,32 @@ class RevisionStore:
                     and old_project_title != new_project_title):
                 changes.append(SceneChange("project", "title-changed", old_project_title,
                                            new_project_title, item_type="project"))
+            # Legacy snapshots may lack these fields, so only compare fields
+            # explicitly captured in both snapshots.
+            shared_fields = {key for key in ("project_id", "format_version")
+                             if key in left.structure and key in right.structure}
+            old_metadata = {key: left.structure[key] for key in shared_fields}
+            new_metadata = {key: right.structure[key] for key in shared_fields}
+            if old_metadata != new_metadata:
+                changes.append(SceneChange(
+                    "project", "metadata-changed", item_type="project",
+                    diff=_metadata_diff(old_metadata, new_metadata, "project"),
+                    changed_fields=_changed_fields(old_metadata, new_metadata),
+                ))
         old_chapters, new_chapters = _chapter_records(left.structure), _chapter_records(right.structure)
         old_parents, new_parents = _scene_parents(left.structure), _scene_parents(right.structure)
+        stable_parent_ids = {key for key in common if key in old_parents and key in new_parents
+                             and old_parents[key] == new_parents[key]}
+        old_sibling_positions: dict[str, int] = {}
+        new_sibling_positions: dict[str, int] = {}
+        for order, parents, positions in ((left.scene_order, old_parents, old_sibling_positions),
+                                          (right.scene_order, new_parents, new_sibling_positions)):
+            counts: dict[str | None, int] = {}
+            for key in order:
+                if key in stable_parent_ids:
+                    parent = parents[key]
+                    positions[key] = counts.get(parent, 0)
+                    counts[parent] = positions[key] + 1
         old_paths, new_paths = _document_paths(left.structure), _document_paths(right.structure)
         old_associations = _scene_associations(left.structure)
         new_associations = _scene_associations(right.structure)
@@ -226,7 +250,11 @@ class RevisionStore:
             if scene_id not in common:
                 continue
             old_title, new_title = left.scene_titles.get(scene_id), right.scene_titles.get(scene_id)
-            if old_positions[scene_id] != new_positions[scene_id]:
+            moved = (old_sibling_positions[scene_id] != new_sibling_positions[scene_id]
+                     if scene_id in stable_parent_ids else
+                     (old_positions[scene_id] != new_positions[scene_id]
+                      if scene_id not in old_parents or scene_id not in new_parents else False))
+            if moved:
                 changes.append(SceneChange(scene_id, "moved", old_title, new_title))
             if (scene_id in old_parents and scene_id in new_parents
                     and old_parents[scene_id] != new_parents[scene_id]):
@@ -258,12 +286,12 @@ class RevisionStore:
                                                    changed_fields=_changed_fields(old_scene_chars[character_id],
                                                                                   new_scene_chars[character_id])))
             if left.documents[scene_id] != right.documents[scene_id]:
-                diff = "".join(difflib.unified_diff(
-                    left.documents[scene_id].splitlines(keepends=True),
-                    right.documents[scene_id].splitlines(keepends=True),
-                    fromfile=f"{old_title or scene_id} (before)",
-                    tofile=f"{new_title or scene_id} (after)",
-                ))
+                diff = _text_diff(
+                    left.documents[scene_id],
+                    right.documents[scene_id],
+                    f"{old_title or scene_id} (before)",
+                    f"{new_title or scene_id} (after)",
+                )
                 changes.append(SceneChange(scene_id, "text-changed", old_title, new_title, diff))
 
         old_notes, new_notes = _note_records(left.structure), _note_records(right.structure)
@@ -306,12 +334,12 @@ class RevisionStore:
                                            old_path=old_paths[note_id], new_path=new_paths[note_id]))
             if left.documents.get(note_id) != right.documents.get(note_id):
                 old_text, new_text = left.documents.get(note_id), right.documents.get(note_id)
-                diff = "".join(difflib.unified_diff(
-                    (old_text or "").splitlines(keepends=True),
-                    (new_text or "").splitlines(keepends=True),
-                    fromfile=f"{old_title or note_id} (before)",
-                    tofile=f"{new_title or note_id} (after)",
-                ))
+                diff = _text_diff(
+                    old_text or "",
+                    new_text or "",
+                    f"{old_title or note_id} (before)",
+                    f"{new_title or note_id} (after)",
+                )
                 changes.append(SceneChange(
                     note_id, "text-changed", old_title, new_title, diff, item_type="note"
                 ))
@@ -323,6 +351,11 @@ class RevisionStore:
         for field, item_type in (("characters", "character"), ("character_relationships", "relationship")):
             old_records = _metadata_records(left.structure, field)
             new_records = _metadata_records(right.structure, field)
+            common_records = old_records.keys() & new_records.keys()
+            old_positions = {key: index for index, key in enumerate(
+                key for key in old_records if key in common_records)}
+            new_positions = {key: index for index, key in enumerate(
+                key for key in new_records if key in common_records)}
             for item_id in sorted(old_records.keys() - new_records.keys()):
                 changes.append(SceneChange(item_id, "removed", item_type=item_type,
                                            diff=_metadata_diff(old_records[item_id], None, item_id)))
@@ -330,6 +363,8 @@ class RevisionStore:
                 changes.append(SceneChange(item_id, "added", item_type=item_type,
                                            diff=_metadata_diff(None, new_records[item_id], item_id)))
             for item_id in sorted(old_records.keys() & new_records.keys()):
+                if old_positions[item_id] != new_positions[item_id]:
+                    changes.append(SceneChange(item_id, "moved", item_type=item_type))
                 if old_records[item_id] != new_records[item_id]:
                     changes.append(SceneChange(item_id, "metadata-changed", item_type=item_type,
                                                diff=_metadata_diff(old_records[item_id], new_records[item_id], item_id),
@@ -385,6 +420,18 @@ class RevisionStore:
             except OSError:
                 pass
             raise
+
+
+def _text_diff(before: str, after: str, before_label: str, after_label: str) -> str:
+    """Keep unterminated lines distinct and mark their missing final newline."""
+    def split_lines(text: str) -> list[str]:
+        parts = text.split("\n")
+        return [part + "\n" for part in parts[:-1]] + ([parts[-1]] if parts[-1] else [])
+
+    lines = difflib.unified_diff(split_lines(before), split_lines(after),
+                                 fromfile=before_label, tofile=after_label)
+    return "".join(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n"
+                   for line in lines)
 
 
 def _metadata_diff(before: dict | None, after: dict | None, item_id: str) -> str:

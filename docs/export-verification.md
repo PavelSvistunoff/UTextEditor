@@ -42,4 +42,4 @@ Numbered tickets/V1 verified. Parent/V2 remain partial for native keyboard,
 screen-reader, release-catalog and cross-platform PDF visual/pagination review.
 The source inventory records that a PDF page preview is still absent. Large
 exports still retain the complete rendered output; only preview display is
-bounded, not total document/process memory (TASK-006/TASK-011).
+bounded, not total document/process memory.

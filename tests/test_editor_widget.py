@@ -23,6 +23,7 @@ from app.ui.font_utils import configure_application_font, editor_font
 from app.ui.main_window import MainWindow
 from app.ui.settings_dialog import SettingsDialog
 from app.ui.tab_widget import DocumentTabWidget
+from app.ui.writing_goal_history_dialog import WritingGoalHistoryDialog
 from app.ui.workers import FunctionWorker
 
 
@@ -64,6 +65,132 @@ def test_closing_tab_releases_writing_goal_history(application: QApplication) ->
     window.close_tab(window.tabs.currentIndex())
     assert document_id not in window.writing_goals._histories
     assert document_id not in window.writing_goals._current_text
+    window.close()
+
+
+def test_goal_history_shows_stored_daily_new_word_totals_without_changing_tracker(application):
+    from app.document.writing_goals import WritingGoalTracker
+    tracker = WritingGoalTracker(10, "new_words", progress={
+        "2026-10-17": {"a": 3, "b": 2}, "2026-10-18": {"a": 1},
+    })
+    before = tracker.to_mapping()
+    dialog = WritingGoalHistoryDialog(tracker.progress)
+    assert dialog.table.rowCount() == 2
+    assert [dialog.table.item(0, col).text() for col in range(4)] == [
+        "2026-10-18", "Newly written words", "All stored documents", "1",
+    ]
+    assert dialog.table.item(1, 3).text() == "5"
+    assert dialog.table.editTriggers() == dialog.table.EditTrigger.NoEditTriggers
+    assert tracker.to_mapping() == before
+    dialog.close()
+
+
+def test_goal_history_action_uses_current_progress(application):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.progress = {"2026-10-17": {"doc": 3}}
+    with patch("app.ui.main_window.WritingGoalHistoryDialog") as dialog:
+        action = next(action for action in window.findChildren(QAction) if action.text() == "Writing Goal History…")
+        action.trigger()
+    assert dialog.call_args.args[0] == {"2026-10-17": {"doc": 3}}
+    dialog.return_value.exec.assert_called_once()
+    window.close()
+
+
+def test_goal_history_reflects_pause_and_reset_without_changing_document(application):
+    from app.document.writing_goals import WritingGoalTracker
+    tracker = WritingGoalTracker(10, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "one", local_date="2026-10-17")
+    tracker.set_paused(True)
+    tracker.record_text("doc", "one two", local_date="2026-10-17")
+    dialog = WritingGoalHistoryDialog(tracker.progress)
+    assert dialog.table.item(0, 3).text() == "1"
+    dialog.close()
+    tracker.reset_today(local_date="2026-10-17")
+    dialog = WritingGoalHistoryDialog(tracker.progress)
+    assert dialog.table.item(0, 3).text() == "0"
+    assert tracker._current_text["doc"] == "one two" and tracker.paused
+    dialog.close()
+
+
+def test_goal_history_records_active_document_count(application, monkeypatch):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    tracker = window.writing_goals
+    monkeypatch.setattr(tracker, "local_date", lambda: "2026-10-17")
+    tracker.configure(10, "active_scene")
+    editor = window.tabs.current_editor()
+    editor.setPlainText("one two")
+    window._refresh_writing_goal()
+    identity = editor._writing_goal_document_id
+    assert tracker.scope_history["2026-10-17"]["active_scene"][identity] == 2
+    dialog = WritingGoalHistoryDialog(tracker.progress, scope_history=tracker.scope_history)
+    assert any(dialog.table.item(row, 1).text() == "Active document words"
+               and dialog.table.item(row, 2).text() == identity
+               and dialog.table.item(row, 3).text() == "2"
+               for row in range(dialog.table.rowCount()))
+    dialog.close()
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_goal_history_does_not_store_incomplete_project_count(application, tmp_path, monkeypatch):
+    from app.project import Project, WordCount
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="one two")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    tracker = window.writing_goals
+    monkeypatch.setattr(tracker, "local_date", lambda: "2026-10-17")
+    tracker.configure(10, "project_manuscript")
+    window._scene_word_counts = {}
+    window._project_count_complete = True
+    window._refresh_writing_goal()
+    assert tracker.scope_history == {}
+    window._scene_word_counts = {scene.id: WordCount(2, True)}
+    window._project_count_complete = False
+    window._refresh_writing_goal()
+    assert tracker.scope_history == {}
+    window._project_count_complete = True
+    window._refresh_writing_goal()
+    assert tracker.scope_history["2026-10-17"]["project_manuscript"] == {
+        f"project:{project.manifest.project_id}": 2,
+    }
+    window.close()
+
+
+def test_clear_goal_history_requires_confirmation_and_preserves_text(application, tmp_path, monkeypatch):
+    from app.document.writing_goals import WritingGoalStore
+    store = WritingGoalStore(tmp_path / "goals.json")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow(writing_goal_store=store)
+    editor = window.tabs.current_editor()
+    tracker = window.writing_goals
+    tracker.configure(10, "new_words")
+    editor.setPlainText("unsaved words")
+    before = tracker.to_mapping()
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Cancel)
+    window.clear_writing_goal_history()
+    assert tracker.to_mapping() == before
+    monkeypatch.setattr(QMessageBox, "question", lambda *_args: QMessageBox.StandardButton.Yes)
+    window.clear_writing_goal_history()
+    assert tracker.progress == {} and tracker.scope_history == {}
+    assert editor.toPlainText() == "unsaved words" and editor.document_state.dirty
+    assert tracker.target == 10 and tracker.scope == "new_words"
+    window._writing_goal_persist_timer.stop()
+    window._save_writing_goal_state()
+    for _ in range(100):
+        if window._writing_goal_save_worker is None:
+            break
+        QTest.qWait(10)
+    assert window._writing_goal_save_worker is None
+    assert store.load().progress == {} and store.load().scope_history == {}
+    editor.undo()
+    editor.redo()
+    assert tracker.count_new_words({editor._writing_goal_document_id}) == 0
+    editor.document_state.mark_saved()
     window.close()
 
 
@@ -780,6 +907,64 @@ def test_daily_new_words_goal_tracks_typing_undo_and_redo(application: QApplicat
     assert window.writing_goals.count_new_words({document_id}) == 2
 
     editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_save_as_open_file_preserves_both_writing_goal_histories(application, tmp_path, monkeypatch):
+    path = tmp_path / "open.txt"
+    path.write_text("", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.configure(10, "new_words")
+    first = window.tabs.add_document(Document.from_text("", path))
+    second = window.tabs.new_document()
+    first.insertPlainText("first")
+    second.insertPlainText("second words")
+    first_id, second_id = first._writing_goal_document_id, second._writing_goal_document_id
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: None)
+    result = []
+
+    assert not window._save_editor(second, callback=result.append, target=path)
+    assert result == [False]
+    assert second._writing_goal_document_id == second_id
+    assert path.read_text(encoding="utf-8") == ""
+    for editor, identity, count in ((first, first_id, 1), (second, second_id, 2)):
+        assert window.writing_goals.count_new_words({identity}) == count
+        editor.undo()
+        assert window.writing_goals.count_new_words({identity}) == 0
+        editor.redo()
+        assert window.writing_goals.count_new_words({identity}) == count
+        editor.document_state.mark_saved()
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
+def test_writing_goal_identity_collision_keeps_editor_histories(application, monkeypatch):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.configure(10, "new_words")
+    first = window.tabs.current_editor()
+    second = window.tabs.new_document()
+    first.insertPlainText("first")
+    second.insertPlainText("second words")
+    first_id, second_id = first._writing_goal_document_id, second._writing_goal_document_id
+    original_id = window._goal_document_id
+    monkeypatch.setattr(window, "_goal_document_id", lambda editor: first_id if editor is second else original_id(editor))
+    window._attach_writing_goal_document(second)
+
+    alias_id = second._writing_goal_document_id
+    assert alias_id != second_id
+    assert window.writing_goals.aliases[alias_id] == first_id
+    for editor, identity, count in ((first, first_id, 1), (second, alias_id, 2)):
+        editor.undo()
+        states, position = window.writing_goals._histories[identity]
+        assert states[position][1].get(window.writing_goals.local_date(), 0) == 0
+        editor.redo()
+        states, position = window.writing_goals._histories[identity]
+        assert states[position][1][window.writing_goals.local_date()] == count
+        editor.document_state.mark_saved()
+    assert window.writing_goals.count_new_words({first_id}) == 3
     window._writing_goal_persist_timer.stop()
     window.close()
 

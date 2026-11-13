@@ -25,13 +25,13 @@ retained IDs/paths/links and CRLF. `test_failed_translation_does_not_modify_proj
 and `test_translation_cancellation_stops_before_translating_next_field` verify
 no partial model output is committed. `test_translation_commit_conflict_preserves_entire_project`
 rejects external changes, and `test_translation_commit_rolls_back_files_if_late_install_fails`
-checks byte-exact rollback of a late manifest-install failure and backup cleanup.
+checks byte-exact rollback of a late manifest-install failure and temporary file cleanup.
 The UI refreshes only still-current captured buffers after commit.
 
 Twelve focused translation tests pass; the unchanged implementation is covered
 by the full 868-passed/2-skipped suite. No runtime behavior, strings or redundant
 tests added for this audit; README already describes the workflow. All numbered
 tickets/V1 verified; parent/V2 stay partial for native keyboard/screen-reader
-and release-catalog checks. TASK-005's independent-process final-check race also
+and release-catalog checks. The independent-process final-check race also
 applies here. The tested transaction rollback is not a guarantee against process
 crashes, rollback I/O failure or uncooperative concurrent writers.

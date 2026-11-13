@@ -8,10 +8,64 @@ import os
 from pathlib import Path
 import re
 import tempfile
-from typing import Mapping
+from typing import Iterator, Mapping
 
 _WORD = re.compile(r"(?u)[^\W_]+(?:['’‐‑‒–—-][^\W_]+)*")
 _SCOPES = {"active_scene", "project_manuscript", "new_words"}
+
+
+class _DailyCounts(Mapping[str, int]):
+    """Immutable snapshot sharing unchanged days across consecutive edits."""
+
+    def __init__(self, previous: Mapping[str, int], day: str, count: int) -> None:
+        if isinstance(previous, _DailyCounts) and previous.day == day:
+            self.base = previous.base
+        else:
+            self.base = dict(previous)
+            self.base.pop(day, None)
+        self.day = day
+        self.count = count
+
+    def __getitem__(self, key: str) -> int:
+        return self.count if key == self.day else self.base[key]
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self.base
+        yield self.day
+
+    def __len__(self) -> int:
+        return len(self.base) + 1
+
+    def without_day(self, day: str, bases: dict[int, tuple[dict[str, int], dict[str, int]]]) -> Mapping[str, int]:
+        if day == self.day:
+            return self.base
+        if day not in self.base:
+            return self
+        key = id(self.base)
+        if key not in bases:
+            bases[key] = (self.base, {name: count for name, count in self.base.items() if name != day})
+        result = object.__new__(_DailyCounts)
+        result.base = bases[key][1]
+        result.day = self.day
+        result.count = self.count
+        return result
+
+    def with_floor(
+        self, floor: Mapping[str, int],
+        bases: dict[tuple[int, str], tuple[dict[str, int], dict[str, int]]],
+    ) -> "_DailyCounts":
+        key = (id(self.base), self.day)
+        if key not in bases:
+            merged = dict(self.base)
+            for day, count in floor.items():
+                if day != self.day:
+                    merged[day] = max(merged.get(day, 0), count)
+            bases[key] = (self.base, merged)
+        result = object.__new__(_DailyCounts)
+        result.base = bases[key][1]
+        result.day = self.day
+        result.count = max(self.count, floor.get(self.day, 0))
+        return result
 
 
 class WritingGoalTracker:
@@ -23,6 +77,8 @@ class WritingGoalTracker:
         scope: str = "active_scene",
         paused: bool = False,
         progress: Mapping[str, Mapping[str, int]] | None = None,
+        scope_history: Mapping[str, Mapping[str, Mapping[str, int]]] | None = None,
+        aliases: Mapping[str, str] | None = None,
     ) -> None:
         self.target = self._validate_target(target)
         if scope not in _SCOPES:
@@ -46,8 +102,32 @@ class WritingGoalTracker:
                     raise ValueError("Writing-goal counts must be non-negative integers.")
                 checked[document_id] = count
             self.progress[day] = checked
-        self._histories: dict[str, tuple[list[tuple[bytes, dict[str, int]]], int]] = {}
+        self.scope_history: dict[str, dict[str, dict[str, int]]] = {}
+        if scope_history is not None and not isinstance(scope_history, Mapping):
+            raise ValueError("Writing-goal scope history must be a mapping.")
+        for day, scopes in (scope_history or {}).items():
+            date.fromisoformat(day)
+            if not isinstance(scopes, Mapping):
+                raise ValueError("Writing-goal scope history must map dates to scopes.")
+            checked_scopes: dict[str, dict[str, int]] = {}
+            for name, values in scopes.items():
+                if name not in {"active_scene", "project_manuscript"} or not isinstance(values, Mapping):
+                    raise ValueError("Writing-goal scope history has an invalid scope.")
+                checked_values: dict[str, int] = {}
+                for identity, count in values.items():
+                    if not isinstance(identity, str) or not identity or isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                        raise ValueError("Writing-goal scope history has an invalid count or identity.")
+                    checked_values[identity] = count
+                checked_scopes[name] = checked_values
+            self.scope_history[day] = checked_scopes
+        self._histories: dict[str, tuple[list[tuple[bytes, Mapping[str, int]]], int]] = {}
         self._current_text: dict[str, str] = {}
+        if aliases is not None and not isinstance(aliases, Mapping):
+            raise ValueError("Writing-goal aliases must be a mapping.")
+        self.aliases: dict[str, str] = dict(aliases or {})
+        if any(not isinstance(key, str) or not key or not isinstance(value, str) or not value
+               or key == value or value in self.aliases for key, value in self.aliases.items()):
+            raise ValueError("Writing-goal aliases must map distinct identities to primary identities.")
 
     @staticmethod
     def _fingerprint(text: str) -> bytes:
@@ -80,11 +160,31 @@ class WritingGoalTracker:
         self._histories[document_id] = ([(self._fingerprint(text), counts)], 0)
         self._current_text[document_id] = text
 
-    def rekey_document(self, old_id: str, new_id: str, text: str) -> None:
+    def is_attached(self, document_id: str) -> bool:
+        return document_id in self._histories
+
+    def associate_alias(self, alias: str, primary: str) -> None:
+        if not alias or not primary or alias == primary or primary in self.aliases:
+            raise ValueError("An alias and a distinct primary identity are required.")
+        for key, value in tuple(self.aliases.items()):
+            if value == alias:
+                self.aliases[key] = primary
+        self.aliases[alias] = primary
+
+    def rekey_document(self, old_id: str, new_id: str, text: str) -> bool:
+        """Move history to an unused identity; leave both histories intact on collision."""
         if old_id == new_id:
             if self._current_text.get(old_id) != text:
                 self.attach(new_id, text)
-            return
+            return True
+        if new_id in self._histories:
+            return False
+        if new_id in self.aliases:
+            raise ValueError("Cannot rekey to an alias identity.")
+        self.aliases.pop(old_id, None)
+        for alias, primary in tuple(self.aliases.items()):
+            if primary == old_id:
+                self.aliases[alias] = new_id
         preserve_history = (
             old_id in self._histories
             and self._current_text.get(old_id) == text
@@ -102,19 +202,24 @@ class WritingGoalTracker:
         if preserve_history and history is not None:
             states, index = history
             if destination_counts:
-                merged_counts: dict[int, dict[str, int]] = {}
+                merged_counts: dict[int, Mapping[str, int]] = {}
+                merged_bases: dict[tuple[int, str], tuple[dict[str, int], dict[str, int]]] = {}
                 for position, (fingerprint, counts) in enumerate(states):
                     key = id(counts)
                     if key not in merged_counts:
-                        merged = dict(counts)
-                        for day, count in destination_counts.items():
-                            merged[day] = max(merged.get(day, 0), count)
-                        merged_counts[key] = merged
+                        if isinstance(counts, _DailyCounts):
+                            merged_counts[key] = counts.with_floor(destination_counts, merged_bases)
+                        else:
+                            merged = dict(counts)
+                            for day, count in destination_counts.items():
+                                merged[day] = max(merged.get(day, 0), count)
+                            merged_counts[key] = merged
                     states[position] = (fingerprint, merged_counts[key])
             self._histories[new_id] = (states, index)
             self._current_text[new_id] = text
         else:
             self.attach(new_id, text)
+        return True
 
     def detach(self, document_id: str) -> None:
         """Release transient undo history while retaining saved progress."""
@@ -168,8 +273,7 @@ class WritingGoalTracker:
         if added:
             # Progress snapshots are immutable after being stored. Reuse the
             # previous one for edits that do not add a word.
-            counts = dict(counts)
-            counts[today] = counts.get(today, 0) + added
+            counts = _DailyCounts(counts, today, counts.get(today, 0) + added)
         # Qt may merge many keystrokes into a single undo command. Its
         # intermediate contents cannot be reached by undo or redo, so the UI
         # may replace the previous endpoint when it knows the command merged.
@@ -199,7 +303,9 @@ class WritingGoalTracker:
         today = local_date or self.local_date()
         date.fromisoformat(today)
         counts = self.progress.get(today, {})
-        return sum(counts.get(document_id, 0) for document_id in set(document_ids))
+        primary_ids = {self.aliases.get(document_id, document_id) for document_id in document_ids}
+        identities = primary_ids | {alias for alias, primary in self.aliases.items() if primary in primary_ids}
+        return sum(counts.get(document_id, 0) for document_id in identities)
 
     def goal_progress(
         self,
@@ -224,22 +330,49 @@ class WritingGoalTracker:
             raise TypeError("Writing-goal paused state must be a boolean.")
         self.paused = paused
 
+    def record_scope_count(self, identity: str, count: int, *, local_date: str | None = None) -> bool:
+        """Record the latest complete observed count for the active count-based scope."""
+        if self.target == 0 or self.paused or self.scope == "new_words":
+            return False
+        if not isinstance(identity, str) or not identity or isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise ValueError("A valid scope identity and count are required.")
+        day = local_date or self.local_date()
+        date.fromisoformat(day)
+        counts = self.scope_history.setdefault(day, {}).setdefault(self.scope, {})
+        if counts.get(identity) == count:
+            return False
+        counts[identity] = count
+        return True
+
     def reset_today(self, *, local_date: str | None = None) -> None:
         today = local_date or self.local_date()
         date.fromisoformat(today)
         self.progress[today] = {}
+        shared_bases: dict[int, tuple[dict[str, int], dict[str, int]]] = {}
         for document_id, (states, index) in tuple(self._histories.items()):
-            updated_counts: dict[int, dict[str, int]] = {}
+            updated_counts: dict[int, Mapping[str, int]] = {}
             for state_index, (fingerprint, counts) in enumerate(states):
                 if today not in counts:
                     continue
                 key = id(counts)
                 if key not in updated_counts:
-                    updated = dict(counts)
-                    updated.pop(today)
-                    updated_counts[key] = updated
+                    if isinstance(counts, _DailyCounts):
+                        updated_counts[key] = counts.without_day(today, shared_bases)
+                    else:
+                        updated = dict(counts)
+                        updated.pop(today)
+                        updated_counts[key] = updated
                 states[state_index] = (fingerprint, updated_counts[key])
             self._histories[document_id] = (states, index)
+
+    def clear_progress(self) -> None:
+        """Remove stored progress and prevent undo/redo from restoring it."""
+        self.progress.clear()
+        self.scope_history.clear()
+        empty: dict[str, int] = {}
+        for states, _index in self._histories.values():
+            for position, (fingerprint, _counts) in enumerate(states):
+                states[position] = (fingerprint, empty)
 
     def to_mapping(self) -> dict[str, object]:
         return {
@@ -247,6 +380,8 @@ class WritingGoalTracker:
             "scope": self.scope,
             "paused": self.paused,
             "progress": deepcopy(self.progress),
+            "scope_history": deepcopy(self.scope_history),
+            "aliases": dict(self.aliases),
         }
 
     @classmethod
@@ -255,11 +390,17 @@ class WritingGoalTracker:
             raise ValueError("Writing-goal settings must be a mapping.")
         if "progress" in value and not isinstance(value["progress"], Mapping):
             raise ValueError("Writing-goal progress must be a mapping.")
+        if "scope_history" in value and not isinstance(value["scope_history"], Mapping):
+            raise ValueError("Writing-goal scope history must be a mapping.")
+        if "aliases" in value and not isinstance(value["aliases"], Mapping):
+            raise ValueError("Writing-goal aliases must be a mapping.")
         return cls(
             target=value.get("target", 0),
             scope=value.get("scope", "active_scene"),
             paused=value.get("paused", False),
             progress=value.get("progress", {}),
+            scope_history=value.get("scope_history", {}),
+            aliases=value.get("aliases", {}),
         )
 
     @staticmethod

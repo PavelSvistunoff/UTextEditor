@@ -681,6 +681,14 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>This file contains binary data and cannot be opened as UTF-8 text.</source>
+        <translation>Цей файл містить двійкові дані, тому його неможливо відкрити як текст UTF-8.</translation>
+    </message>
+    <message>
+        <source>This file is not valid UTF-8 text and cannot be opened.</source>
+        <translation>Цей файл не є коректним текстом UTF-8, тому його неможливо відкрити.</translation>
+    </message>
     <message><source>Preview before exporting</source><translation>Попередній перегляд перед експортом</translation></message>
     <message><source>Export preview discarded because the project or an open scene changed.</source><translation>Попередній перегляд експорту відхилено, оскільки проєкт або відкрита сцена змінилися.</translation></message>
     <message><source>Search limit for open documents reached; this document was not searched.</source><translation>Досягнуто обмеження пошуку у відкритих документах; цей документ пропущено.</translation></message>
@@ -1020,6 +1028,12 @@ Text is sent to the configured Ollama destination:
     <message><source>Recovery data could not be inspected: {error}</source><translation>Не вдалося перевірити дані відновлення: {error}</translation></message>
     <message><source>No recovery data found.</source><translation>Даних відновлення не знайдено.</translation></message>
     <message><source>Unreadable recovery entry: {path} ({message})</source><translation>Не вдалося прочитати запис відновлення: {path} ({message})</translation></message>
+    <message><source>Some damaged snapshots contain readable text. It can be opened separately without trusting their metadata.</source><translation>Деякі пошкоджені копії містять текст, доступний для читання. Його можна відкрити окремо, не довіряючи їхнім метаданим.</translation></message>
+    <message><source>Damaged or incomplete snapshots may not contain recoverable text.</source><translation>Пошкоджені або неповні копії можуть не містити тексту, який можна відновити.</translation></message>
+    <message><source>Open text from damaged snapshot…</source><translation>Відкрити текст із пошкодженої копії…</translation></message>
+    <message><source>Open damaged snapshot text</source><translation>Відкрити текст пошкодженої копії</translation></message>
+    <message><source>Choose a damaged snapshot. Its text will open as an unsaved document; metadata is not trusted.</source><translation>Виберіть пошкоджену копію. Її текст відкриється як незбережений документ; метадані не використовуються.</translation></message>
+    <message><source>Recovered text is open as an unsaved document.</source><translation>Відновлений текст відкрито як незбережений документ.</translation></message>
     <message><source>Recovery snapshots are captured every 30 seconds while documents are dirty; changes after the latest snapshot and hardware failures may not be recoverable.</source><translation>Копії для відновлення створюються кожні 30 секунд, поки документи мають незбережені зміни; зміни після останньої копії та дані після збою обладнання можуть бути втрачені.</translation></message>
     <message><source>Recover unsaved work</source><translation>Відновити незбережену роботу</translation></message>
     <message><source>Recovery data is available. Choose how to proceed.</source><translation>Доступні дані відновлення. Виберіть подальшу дію.</translation></message>
@@ -2536,6 +2550,12 @@ Text is sent to the configured Ollama destination:
     <message><source>Opening file…</source><translation>Відкриття файлу…</translation></message>
     <message><source>Save failed</source><translation>Не вдалося зберегти</translation></message>
     <message><source>That file is already open in another tab.</source><translation>Цей файл уже відкрито в іншій вкладці.</translation></message>
+    <message><source>Another tab is already saving to that file.</source><translation>Інша вкладка вже зберігає дані в цей файл.</translation></message>
+    <message><source>Writing Goal History…</source><translation>Історія цілі письма…</translation></message>
+    <message><source>Clear Writing Goal History…</source><translation>Очистити історію цілі письма…</translation></message>
+    <message><source>Clear writing goal history</source><translation>Очистити історію цілі письма</translation></message>
+    <message><source>Remove all locally stored goal progress? Manuscript text and the goal settings will not change.</source><translation>Видалити весь локально збережений прогрес цілі? Текст рукопису та налаштування цілі не зміняться.</translation></message>
+    <message><source>The file is being saved. Try opening it again when saving finishes.</source><translation>Файл зберігається. Спробуйте відкрити його знову після завершення збереження.</translation></message>
     <message><source>Saving file…</source><translation>Збереження файлу…</translation></message>
     <message><source>Old recovery data could not be removed: {error}</source><translation>Не вдалося видалити старі дані відновлення: {error}</translation></message>
     <message><source>Autosave failed: {error}</source><translation>Не вдалося автоматично зберегти: {error}</translation></message>
@@ -2562,5 +2582,21 @@ Text is sent to the configured Ollama destination:
     <message><source>Captured manuscript export</source><translation>Зафіксований результат експорту рукопису</translation></message>
     <message><source>Only the beginning is displayed; export includes the entire captured manuscript.</source><translation>Показано лише початок; експорт міститиме весь зафіксований рукопис.</translation></message>
     <message><source>Export</source><translation>Експортувати</translation></message>
+</context>
+<context>
+    <name>WritingGoalHistoryDialog</name>
+    <message><source>Writing goal history</source><translation>Історія цілі письма</translation></message>
+    <message><source>Approximate newly written words across stored document identities, by local date. Undo and redo can change counts; only an enabled, unpaused goal records progress. Document and project counts are the last complete observations for each local day; older observations may be unavailable.</source><translation>Приблизна кількість нових слів за збереженими ідентифікаторами документів і місцевою датою. Скасування та повторення можуть змінювати кількість; прогрес записується лише для ввімкненої та непризупиненої цілі. Кількість слів документа й проєкту — останнє повне значення за кожну місцеву дату; давніші значення можуть бути недоступні.</translation></message>
+    <message><source>Local date</source><translation>Місцева дата</translation></message>
+    <message><source>Measure</source><translation>Показник</translation></message>
+    <message><source>Approximate words</source><translation>Приблизна кількість слів</translation></message>
+    <message><source>Daily writing goal history</source><translation>Щоденна історія цілі письма</translation></message>
+    <message><source>Newly written words</source><translation>Нові написані слова</translation></message>
+    <message><source>All stored documents</source><translation>Усі збережені документи</translation></message>
+    <message><source>Active document words</source><translation>Слова активного документа</translation></message>
+    <message><source>Project manuscript words</source><translation>Слова рукопису проєкту</translation></message>
+    <message><source>Document or project</source><translation>Документ або проєкт</translation></message>
+    <message><source>Words</source><translation>Слова</translation></message>
+    <message><source>Close</source><translation>Закрити</translation></message>
 </context>
 </TS>

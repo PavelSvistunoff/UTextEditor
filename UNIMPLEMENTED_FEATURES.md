@@ -1,5 +1,7 @@
 # Remaining features and known limitations
 
+> **Planning boundary:** This is a product-gap and risk inventory, **not** Codex's active task queue. For execution use `TASKS.md`, with the latest resume state in `IMPLEMENTATION_PROGRESS.md` and policy in `AGENTS.md`. Measurements and test totals below describe the review date, not the latest branch test result. Optional proposals are not automatically approved implementation tasks.
+
 This inventory compares the repository's Markdown documents with the current
 implementation. `README.md` is the source of truth for current product scope;
 `SPEC.md` and the later sections of `README.uk.md` also describe older
@@ -65,9 +67,6 @@ session was exercised, and this review does not prove other paths defect-free.
 - **Recovery diagnosis:** recovery supports restore, inspection/comparison,
   project relocation, discard, and defer. Repair and diagnosis for partial or
   corrupt recovery sets remain limited.
-- **Revision management:** scheduled snapshots and restore with a
-  preview are not available. Comparisons cover chapters, scenes and reference
-  notes and directed link additions/removals, but not all project-structure changes.
 - **Large documents and encodings:** files are read into memory as a whole;
   the editor supports UTF-8 only, and encoding and line-ending choices are not
   selectable in the status bar. NUL, non-whitespace ASCII controls and DEL are rejected as likely binary
@@ -186,29 +185,6 @@ network read may continue until data arrives or the connection times out.
    scene association boundaries and do not expose other characters implicitly.
    This complements the first-use disclosure gap above; it adds UI complexity
    and must avoid interrupting every keystroke.
-2. **Complete external file conflict protection** (medium/high effort).
-   The review flow shows the saved base, current disk version, and open buffer,
-   with reload, save elsewhere, or a reviewed merge. The disk is checked again
-   after review and before replacement, but an independent process can still
-   change it between the final check and replacement. A supported coordination
-   guarantee and cross-platform verification remain necessary before claiming
-   that conflicts cannot be overwritten silently.
-3. **Make revision snapshots actionable** (high effort). Build on existing
-   snapshots, comparisons and confirmed deletion with previewed, selective
-   restore, followed by optional scheduling and retention settings. Acceptance:
-   show affected files and dirty buffers before restore, create a safety
-   snapshot, recheck disk and project state, and either apply transactionally or
-   leave the original intact. This depends on the revision-management gap
-   above and requires especially careful failure and rollback tests.
-4. **Improve recovery triage** (medium/high effort). Extend the existing scan,
-   comparison, relocation, and restore choices with clearer per-document status,
-   timestamps and readable corruption details. A readable snapshot can now be
-   selected for recovery; export and recovery of content from damaged entries
-   need further work. Acceptance: damaged entries remain available for diagnosis;
-   no repair or discard occurs without explicit action, and canonical files
-   changed on disk are never overwritten silently. Partial or corrupt snapshots
-   may not contain enough data to recover; the UI must say so.
-
 ### Medium priority
 
 5. **Extend project-wide search** (medium/high effort). Add matching options
@@ -223,13 +199,6 @@ network read may continue until data arrives or the connection times out.
    navigable list, explanations and explicit selection, rejects stale or
    overlapping ranges, and groups accepted edits into one undo step. Compile
    the Ukrainian catalog and verify native keyboard and accessibility behavior.
-8. **Portable project backup and validation** (medium/high effort). Project
-   files are already portable YAML and UTF-8, and snapshots live inside the
-   project. Offer a user-selected backup destination and a read-only integrity
-   report for missing files, invalid paths, and unreadable snapshots. Acceptance:
-   explain whether open unsaved buffers and revisions are included, never
-   overwrite without confirmation, and test restoring a backup in a separate
-   directory. This must not imply that recovery snapshots are a complete backup.
 9. **Improve manuscript export and PDF options** (medium effort). Existing
    Markdown/plain-text export supports scene subsets; PDF now offers paper
    size, title-page title and author, optional chapter and scene headings, and scene selection.
@@ -252,19 +221,6 @@ network read may continue until data arrives or the connection times out.
 11. **Further find controls** (small/medium effort). Literal find supports
     optional case-insensitive and whole-word matching. Regular expressions
     would need separate safeguards and clear error reporting.
-12. **Writing-goal history** (medium effort). Daily progress is stored locally
-    and already accounts for undo/redo. A local history view could show past
-    days and scope without changing manuscript text. Acceptance: explain the
-    local-date and counting semantics, honor pause/reset, and provide a clear
-    way to remove local progress. Avoid presenting approximate inserted-word
-    counts as exact writing analytics.
-13. **Measure large-project responsiveness** (medium effort). Establish
-    repeatable benchmarks for opening, editing, search, word counts, snapshots,
-    and AI context construction before optimizing. Then address measured
-    bottlenecks with bounded memory and cancellable background work. Acceptance:
-    record representative input sizes and compare results without weakening
-    conflict detection or correctness. Very large-file editing may require a
-    broader design change rather than a simple optimization.
 14. **Optional interface and provider extensions** (design decision). The
     following options have been evaluated independently; none is selected for
     implementation in the current scope:

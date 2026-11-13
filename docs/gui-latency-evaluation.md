@@ -1,4 +1,4 @@
-# Qt callback latency — TASK-006.03
+# Qt callback latency
 
 The editor benchmark now measures delivery delay of a ready Qt zero-timer
 callback, both with no intervening operation and with synchronous typing and
@@ -40,27 +40,31 @@ latency, realistic project traversal, huge lines, multibyte text, asynchronous
 background contention and memory pressure remain unmeasured. A zero timer has
 no specified ordering relative to all other event sources. These measurements
 do not establish a supported file-size limit, bounded undo metadata or a
-responsiveness guarantee. TASK-006 remains partial for those broader checks.
+responsiveness guarantee; those broader checks remain unverified.
 There are no new product strings or controls to localize or verify natively.
 
-## Acceptance reconciliation — TASK-006.V1 / V2
+## Multilingual project search workload
 
-Reviewed 2026-11-01 against all three benchmark scripts, completion context,
-goal accounting/status refresh and their regression tests.
+The project-search probe accepts scene count, lines per scene and repetition
+count. It creates temporary English, Ukrainian and French text with non-BMP
+characters, verifies that source files are unchanged, and reports startup,
+elapsed time, maximum 5 ms timer gap and displayed results. Reproduce with:
 
-| Ticket / criterion | Verified evidence and boundary |
-| --- | --- |
-| .01 opening, typing, cursor, search and word counts | `editor_responsiveness.py` measures each operation. .01 is complete as an offline operation benchmark; early-match search and single open/read/save samples are explicit limitations. |
-| .02 goals and context | The editor benchmark enables new-word tracking and measures context construction; `writing_goal_history.py` separately checks counts through independent commands, undo/redo and branching. .02 is complete; this does not establish bounded history. |
-| .03 GUI latency and memory | Ready Qt callback samples and cumulative native-process RSS are recorded above; Python history allocation measurements are in IMPLEMENTATION_PROGRESS. Partial: native input/paint latency and memory-pressure behavior are unverified. |
-| .04 repeatable representative sizes | CLI sizes/repetitions and 100K/1M/5M/10M character workloads are documented here and in `large-file-evaluation.md`. Partial: synthetic ASCII paragraphs are not representative of every language, line shape, project or long editing session. |
-| .05 optimize confirmed bottlenecks | Bounded context construction, changed-span token scans and skipping unnecessary goal word counts are implemented. `test_context_clamps_cursor_and_honours_character_limit`, `test_context_honours_paragraph_boundaries_at_and_across_window_edge`, `test_bounded_token_scan_matches_full_scan_for_boundary_edits` and `test_goal_refresh_skips_unneeded_buffer_word_counts` guard correctness. Partial: reachable history and required GUI counting remain unbounded/synchronous. |
-| Baseline and post-change measurements | `completion_context.py` retains the prior implementation, checks equal output for its sample and measures both approaches on five million characters. A fresh 100-call run measured prior/current 0.0581/0.0002 seconds and 2,504,082/4,041 peak Python-traced bytes. These isolate context construction, not overall GUI speed. Prior GUI/goal measurements and their limitations remain in IMPLEMENTATION_PROGRESS. |
-| Detect regressions and preserve correctness | The repeatable workloads, timing/allocation reports and source-byte assertions provide diagnostics; offline context, goal, editor and file tests verify behavior. There is no portable timing pass/fail threshold or complete application responsiveness guarantee. |
+```sh
+QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/project_search_responsiveness.py --scenes 2000 --lines 40 --repetitions 2
+```
 
-V1 is complete as an acceptance reconciliation; it does not complete the
-partial numbered tickets or parent. V2's release-catalog and native keyboard/
-accessibility checks are N/A for this task's internal optimizations and benchmark
-tooling: no UI controls or translation sources were added. Native performance
-verification remains an explicit .03/.04 requirement, not an exemption obtained
-by marking V2 N/A. TASK-001's reachable-history bound is still separate work.
+On the development machine, 2026-11-13, offscreen Qt: absent search took
+111.0/121.1 ms with maximum timer gaps 5.8/5.9 ms; Ukrainian `книга` took
+39.3/26.5 ms with 5.3/21.4 ms gaps; emoji `🌿` took 24.4/35.1 ms with 5.6/29.1 ms
+gaps. Matching searches each reached the 1,000-result cap and did not traverse
+the entire project; absent search traversed all files. Warm cache, synthetic
+content and two samples limit comparisons. These values are diagnostic rather
+than thresholds or native input/paint measurements.
+
+A wider run with `--scenes 5000 --lines 10 --repetitions 2` on the same
+machine on 2026-11-13 completed with unchanged source files: absent searches
+took 252.2/247.9 ms (maximum timer gaps 5.7/5.7 ms); `книга` took 48.2/35.8 ms
+(31.7/19.4 ms gaps); and `🌿` took 40.1/37.4 ms (23.8/21.6 ms gaps).
+Matching searches again reached the result cap. These are offscreen synthetic
+measurements, not native input or paint latency.

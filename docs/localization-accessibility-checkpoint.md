@@ -4,6 +4,13 @@ Reviewed 2026-11-01 against the 879-passed/2-skipped offline suite. This is an
 acceptance reconciliation, not a completed native localization/accessibility
 audit. No generated release catalogs or unrelated staged artifacts were changed.
 
+Update 2026-11-13: the packaged English and Ukrainian catalogs were rebuilt
+from their current source files. The previous Ukrainian release catalog differed
+from a fresh compilation on 579 non-plural source/context pairs. Automated
+tests now compare packaged and freshly compiled translations for every source
+entry and representative plural numbers. Native UI and screen-reader checks
+remain outstanding; this update does not complete the localization audit.
+
 ## TASK-032
 
 - .01 partial: audit_ui_strings.py reports nine selected-Qt-API candidates. They

@@ -28,6 +28,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--commands", type=int, default=1000)
     parser.add_argument("--undo", type=int, default=100)
+    parser.add_argument("--workload", choices=("append", "mixed"), default="append")
     args = parser.parse_args()
     if args.commands < 1 or not 0 <= args.undo <= args.commands:
         parser.error("commands must be positive and undo must be between zero and commands")
@@ -46,9 +47,19 @@ def main() -> None:
         words = ("The", "writer", "opened", "the", "door", "and", "noticed", "a", "familiar", "voice")
         for command in range(1, args.commands + 1):
             cursor = editor.textCursor()
-            cursor.movePosition(QTextCursor.MoveOperation.End)
             cursor.beginEditBlock()
-            cursor.insertText(" " + words[(command - 1) % len(words)])
+            if args.workload == "mixed" and command % 3 == 1:
+                cursor.movePosition(QTextCursor.MoveOperation.Start)
+                cursor.insertText("слово " if command % 2 else "word ")
+            elif args.workload == "mixed" and command % 3 == 2:
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.insertText("!")
+            elif args.workload == "mixed":
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.deletePreviousChar()
+            else:
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.insertText(" " + words[(command - 1) % len(words)])
             cursor.endEditBlock()
             if command in {max(1, args.commands // 10), max(1, args.commands // 2), args.commands}:
                 states, _ = window.writing_goals._histories[document_id]
@@ -66,7 +77,10 @@ def main() -> None:
         after_redo = window.writing_goals.count_new_words({document_id})
         print(f"New-word counts: before undo {before}, after {args.undo} undo {after_undo}, "
               f"after {args.undo} redo {after_redo}")
-        if (before, after_undo, after_redo) != (args.commands, args.commands - args.undo, args.commands):
+        def expected(commands: int) -> int:
+            return commands if args.workload == "append" else (commands + 2) // 3
+
+        if (before, after_undo, after_redo) != (expected(args.commands), expected(args.commands - args.undo), expected(args.commands)):
             raise AssertionError("Writing-goal counts did not follow the editing history.")
         for _ in range(args.undo):
             editor.undo()
@@ -76,7 +90,7 @@ def main() -> None:
         cursor.insertText(" branch")
         cursor.endEditBlock()
         branch_count = window.writing_goals.count_new_words({document_id})
-        if branch_count != args.commands - args.undo + 1 or editor.document().isRedoAvailable():
+        if branch_count != expected(args.commands - args.undo) + 1 or editor.document().isRedoAvailable():
             raise AssertionError("Branch edit did not discard redo history correctly.")
         states, _ = window.writing_goals._histories[document_id]
         print(f"After undo and branch: {branch_count} words; {len(states)} tracked states")

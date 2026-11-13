@@ -48,7 +48,7 @@ from app.document.document import Document
 from app.document.encoding import detect_line_ending, normalize_line_endings, python_index_to_qt_position, qt_position_to_python_index
 from app.document.export import (ExportChapter, ExportScene, ExportSourceError, ensure_destination_not_source,
                                  export_manuscript, render_manuscript, write_rendered_manuscript)
-from app.document.file_manager import ExternalChangeError, FileManager
+from app.document.file_manager import BinaryTextError, ExternalChangeError, FileManager
 from app.document.merge import merge_text
 from app.document.encoding import has_binary_controls
 from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
@@ -115,6 +115,7 @@ from .settings_dialog import SettingsDialog
 from .tab_widget import DocumentTabWidget
 from .workers import FunctionWorker, StreamingWorker
 from .writing_goal_dialog import WritingGoalDialog
+from .writing_goal_history_dialog import WritingGoalHistoryDialog
 
 
 @dataclass
@@ -278,6 +279,7 @@ class MainWindow(QMainWindow):
         self._spellcheck_pending = None
         self._generate_worker = None
         self._saving_editors = set()
+        self._save_targets = {}
         self._quit_in_progress = False
         self._closing_confirmed = False
         self._quit_discards = {}
@@ -359,6 +361,12 @@ class MainWindow(QMainWindow):
         configure_goal.triggered.connect(self.configure_writing_goal)
         writing_menu.addAction(configure_goal)
         writing_menu.addAction(self._writing_goal_pause_action)
+        goal_history = QAction(self.tr("Writing Goal History…"), self)
+        goal_history.triggered.connect(self.show_writing_goal_history)
+        writing_menu.addAction(goal_history)
+        clear_goal_history = QAction(self.tr("Clear Writing Goal History…"), self)
+        clear_goal_history.triggered.connect(self.clear_writing_goal_history)
+        writing_menu.addAction(clear_goal_history)
         reset_goal = QAction(self.tr("Reset Today's Progress…"), self)
         reset_goal.triggered.connect(self.reset_writing_goal)
         writing_menu.addAction(reset_goal)
@@ -782,16 +790,29 @@ class MainWindow(QMainWindow):
         return document_id
 
     def _attach_writing_goal_document(self, editor, *, reset_history: bool = False) -> None:
-        document_id = self._goal_document_id(editor)
+        logical_id = self._goal_document_id(editor)
         old_id = getattr(editor, "_writing_goal_document_id", None)
-        if old_id == document_id and not reset_history:
+        old_logical_id = getattr(editor, "_writing_goal_logical_id", old_id)
+        if old_logical_id == logical_id and not reset_history:
             return
-        if isinstance(old_id, str) and old_id != document_id:
-            self.writing_goals.rekey_document(old_id, document_id, editor.toPlainText())
+        document_id = logical_id
+        if old_logical_id == logical_id and isinstance(old_id, str):
+            document_id = old_id
+            self.writing_goals.attach(document_id, editor.toPlainText())
+        elif isinstance(old_id, str) and old_id != logical_id:
+            if not self.writing_goals.rekey_document(old_id, logical_id, editor.toPlainText()):
+                document_id = f"goal-alias:{uuid4().hex}"
+                self.writing_goals.rekey_document(old_id, document_id, editor.toPlainText())
+                self.writing_goals.associate_alias(document_id, logical_id)
             self._schedule_writing_goal_persist()
         else:
+            if old_id is None and self.writing_goals.is_attached(logical_id):
+                document_id = f"goal-alias:{uuid4().hex}"
+                self.writing_goals.associate_alias(document_id, logical_id)
+                self._schedule_writing_goal_persist()
             self.writing_goals.attach(document_id, editor.toPlainText())
         editor._writing_goal_document_id = document_id
+        editor._writing_goal_logical_id = logical_id
         editor._goal_undo_merge_active = False
         editor._goal_undo_command_added = False
         editor._goal_undo_steps = editor.document().availableUndoSteps()
@@ -799,9 +820,9 @@ class MainWindow(QMainWindow):
         self._refresh_writing_goal()
 
     def _record_writing_goal_text(self, editor) -> None:
-        document_id = self._goal_document_id(editor)
-        if getattr(editor, "_writing_goal_document_id", None) != document_id:
+        if getattr(editor, "_writing_goal_logical_id", None) != self._goal_document_id(editor):
             self._attach_writing_goal_document(editor)
+        document_id = editor._writing_goal_document_id
         history_action = editor._history_action
         document = editor.document()
         # Qt's standard context menu can invoke the native undo slot without
@@ -854,7 +875,7 @@ class MainWindow(QMainWindow):
         editor._goal_undo_steps = document.availableUndoSteps()
         editor._goal_redo_available = document.isRedoAvailable()
 
-    def _refresh_writing_goal(self) -> None:
+    def _refresh_writing_goal(self, *, record_history: bool = True) -> None:
         if not hasattr(self, "_writing_goal_label"):
             return
         self._writing_goal_pause_action.setText(
@@ -867,6 +888,7 @@ class MainWindow(QMainWindow):
         active_words = (count_words(editor.toPlainText())
                         if editor is not None and self.writing_goals.scope == "active_scene" else 0)
         project_words = 0
+        project_observation_complete = True
         document_ids: set[str] = set()
         if self.project is not None:
             open_scenes: dict[str, str] = {}
@@ -884,8 +906,9 @@ class MainWindow(QMainWindow):
                 else:
                     count = self._scene_word_counts.get(scene.id, WordCount(0, False))
                     project_words += count.count
+                    project_observation_complete = project_observation_complete and count.complete
         if not document_ids and editor is not None:
-            document_ids.add(self._goal_document_id(editor))
+            document_ids.add(editor._writing_goal_document_id)
         progress = self.writing_goals.goal_progress(
             active_scene_words=active_words,
             project_words=project_words,
@@ -900,6 +923,14 @@ class MainWindow(QMainWindow):
             and self.project is not None
             and not self._project_count_complete
         )
+        scope_identity = None
+        if self.writing_goals.scope == "active_scene" and editor is not None:
+            scope_identity = self._goal_document_id(editor)
+        elif (self.writing_goals.scope == "project_manuscript" and self.project is not None
+              and not incomplete and project_observation_complete):
+            scope_identity = f"project:{self.project.manifest.project_id}"
+        if record_history and scope_identity is not None and self.writing_goals.record_scope_count(scope_identity, count):
+            self._schedule_writing_goal_persist()
         self._writing_goal_label.setText(
             (
                 "Daily goal complete "
@@ -920,6 +951,21 @@ class MainWindow(QMainWindow):
             self._attach_open_writing_goal_documents()
             self._schedule_writing_goal_persist()
             self._refresh_writing_goal()
+
+    def show_writing_goal_history(self) -> None:
+        state = self.writing_goals.to_mapping()
+        WritingGoalHistoryDialog(state["progress"], self, scope_history=state["scope_history"]).exec()
+
+    def clear_writing_goal_history(self) -> None:
+        if QMessageBox.question(
+            self, self.tr("Clear writing goal history"),
+            self.tr("Remove all locally stored goal progress? Manuscript text and the goal settings will not change."),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        self.writing_goals.clear_progress()
+        self._schedule_writing_goal_persist()
+        self._refresh_writing_goal(record_history=False)
 
     def toggle_writing_goal_pause(self) -> None:
         if self.writing_goals.target == 0:
@@ -4261,6 +4307,10 @@ class MainWindow(QMainWindow):
             )
             for issue in scan.issues
         )
+        if any(issue.recoverable_text is not None for issue in scan.issues):
+            details.append(self.tr("Some damaged snapshots contain readable text. It can be opened separately without trusting their metadata."))
+        if scan.issues:
+            details.append(self.tr("Damaged or incomplete snapshots may not contain recoverable text."))
         details.append(
             self.tr("Disk status can change after inspection; restoring checks the canonical file again.")
         )
@@ -4275,6 +4325,8 @@ class MainWindow(QMainWindow):
         restore = dialog.addButton(self.tr("Restore latest"), QMessageBox.ButtonRole.AcceptRole)
         restore_selected = dialog.addButton(self.tr("Restore selected snapshot…"), QMessageBox.ButtonRole.ActionRole)
         restore_selected.setEnabled(bool(scan.entries))
+        recover_damaged = dialog.addButton(self.tr("Open text from damaged snapshot…"), QMessageBox.ButtonRole.ActionRole)
+        recover_damaged.setEnabled(any(issue.recoverable_text is not None for issue in scan.issues))
         inspect = dialog.addButton(self.tr("Inspect / compare"), QMessageBox.ButtonRole.ActionRole)
         locate = dialog.addButton(self.tr("Locate project…"), QMessageBox.ButtonRole.ActionRole)
         discard = dialog.addButton(self.tr("Discard recovery data"), QMessageBox.ButtonRole.DestructiveRole)
@@ -4285,6 +4337,7 @@ class MainWindow(QMainWindow):
         self._recovery_scan = scan
         restore.clicked.connect(lambda: self._handle_recovery_choice("restore", scan, dialog))
         restore_selected.clicked.connect(lambda: self._handle_recovery_choice("select", scan, dialog))
+        recover_damaged.clicked.connect(lambda: self._handle_recovery_choice("damaged", scan, dialog))
         inspect.clicked.connect(lambda: self._handle_recovery_choice("inspect", scan, dialog))
         locate.clicked.connect(lambda: self._handle_recovery_choice("locate", scan, dialog))
         discard.clicked.connect(lambda: self._handle_recovery_choice("discard", scan, dialog))
@@ -4293,6 +4346,23 @@ class MainWindow(QMainWindow):
     def _handle_recovery_choice(self, choice: str, scan: RecoveryScan, dialog: QMessageBox) -> None:
         dialog.close()
         if choice == "defer":
+            return
+        if choice == "damaged":
+            issues = [issue for issue in scan.issues if issue.recoverable_text is not None]
+            labels = [str(issue.snapshot_path) for issue in issues]
+            if not labels:
+                self._recovery_scan_finished(scan)
+                return
+            label, accepted = QInputDialog.getItem(
+                self, self.tr("Open damaged snapshot text"),
+                self.tr("Choose a damaged snapshot. Its text will open as an unsaved document; metadata is not trusted."),
+                labels, 0, False,
+            )
+            if not accepted or label not in labels:
+                self._recovery_scan_finished(scan)
+                return
+            self.tabs.add_document(Document(text=issues[labels.index(label)].recoverable_text, dirty=True))
+            self.statusBar().showMessage(self.tr("Recovered text is open as an unsaved document."), 8000)
             return
         if choice == "inspect":
             labels = RecoveryComparisonLabels(
@@ -4877,6 +4947,9 @@ class MainWindow(QMainWindow):
             else:
                 self._record_navigation()
             return
+        if resolved in self._save_targets.values():
+            self._report_open_during_save()
+            return
         normalized = raw.replace("\r\n", "\n").replace("\r", "\n")
         document = Document.from_text(normalized, path)
         document.line_ending = detect_line_ending(raw)
@@ -4962,6 +5035,13 @@ class MainWindow(QMainWindow):
             return
         self._open_document_path(path)
 
+    def _document_open_error_message(self, error: Exception) -> str:
+        if isinstance(error, BinaryTextError):
+            return self.tr("This file contains binary data and cannot be opened as UTF-8 text.")
+        if isinstance(error, UnicodeDecodeError):
+            return self.tr("This file is not valid UTF-8 text and cannot be opened.")
+        return str(error)
+
     def _open_document_path(self, path: str) -> None:
         try:
             resolved = Path(path).resolve()
@@ -4978,7 +5058,7 @@ class MainWindow(QMainWindow):
         worker = FunctionWorker(self.file_manager.open, path)
         self._track_worker(worker)
         worker.signals.finished.connect(self._opened_document, Qt.ConnectionType.QueuedConnection)
-        worker.signals.failed.connect(lambda exc: QMessageBox.warning(self, self.tr("Open failed"), str(exc)), Qt.ConnectionType.QueuedConnection)
+        worker.signals.failed.connect(lambda exc: QMessageBox.warning(self, self.tr("Open failed"), self._document_open_error_message(exc)), Qt.ConnectionType.QueuedConnection)
         self.statusBar().showMessage(self.tr("Opening file…"))
         self.thread_pool.start(worker)
 
@@ -4993,12 +5073,20 @@ class MainWindow(QMainWindow):
                     if existing and existing.document_state.path and existing.document_state.path.resolve() == resolved:
                         self.tabs.setCurrentIndex(index)
                         return
+                if resolved in self._save_targets.values():
+                    self._report_open_during_save()
+                    return
             except (OSError, RuntimeError) as exc:
                 QMessageBox.warning(self, self.tr("Open failed"), str(exc))
                 return
         self.tabs.add_document(document)
         if document.path is not None:
             self._remember_recent_file(document.path)
+
+    def _report_open_during_save(self) -> None:
+        self.statusBar().showMessage(
+            self.tr("The file is being saved. Try opening it again when saving finishes."), 10000
+        )
 
     def _populate_recent_files_menu(self) -> None:
         menu = self._recent_files_menu
@@ -5154,6 +5242,15 @@ class MainWindow(QMainWindow):
             target = Path(path)
         target = Path(target)
         resolved = target.resolve()
+        if resolved in self._save_targets.values():
+            message = self.tr("Another tab is already saving to that file.")
+            if autosave:
+                self.statusBar().showMessage(self.tr("Autosave failed: {error}").format(error=message), 10000)
+            else:
+                QMessageBox.warning(self, self.tr("Save failed"), message)
+            if callback:
+                callback(False)
+            return False
         for index in range(self.tabs.count()):
             other = self.tabs.widget(index)
             if other is not editor and other and other.document_state.path and other.document_state.path.resolve() == resolved:
@@ -5183,6 +5280,7 @@ class MainWindow(QMainWindow):
             snapshot.disk_digest = document.disk_digest if same_source_path else None
             worker = FunctionWorker(self.file_manager.save, snapshot, target)
         self._saving_editors.add(editor)
+        self._save_targets[editor] = resolved
         self._track_worker(worker)
         worker.signals.finished.connect(
             lambda result: self._saved_editor(
@@ -5219,6 +5317,7 @@ class MainWindow(QMainWindow):
         detach_project: bool = False,
     ) -> None:
         self._saving_editors.discard(editor)
+        self._save_targets.pop(editor, None)
         document = editor.document_state
         document.path = target
         document.mark_saved(saved_text)
@@ -5265,6 +5364,7 @@ class MainWindow(QMainWindow):
 
     def _save_failed(self, editor, error, callback=None, *, notify: bool = True) -> None:
         self._saving_editors.discard(editor)
+        self._save_targets.pop(editor, None)
         if self.tabs.indexOf(editor) >= 0:
             if notify:
                 message = str(error)
