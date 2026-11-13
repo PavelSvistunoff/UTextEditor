@@ -947,6 +947,30 @@ def test_project_analysis_cancel_action_works_in_ukrainian(app, tmp_path, monkey
             app.removeTranslator(translator)
 
 
+@pytest.mark.parametrize("task", ["summary", "continuity"])
+def test_analysis_context_heading_is_localized_and_preserves_source_text(window, app, tmp_path, task):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "analysis", "Novel")
+    window.project = project
+    sources = ("Scene %1 — Ukrainian назва", "note: {timestamp}")
+    _, translator = install_translation(app, "uk")
+    try:
+        window._project_analysis_finished(
+            window._project_ai_generation, project, task, sources, "Unchanged AI result %1",
+            window._settings_generation, window._project_generation,
+            window._active_document_generation, (), {},
+        )
+        review = window._analysis_windows[-1]
+        heading = review.sources.text()
+        assert heading.startswith("Локальний контекст зафіксовано о ")
+        assert heading.endswith(":\n" + "\n".join(sources))
+        assert review.output.toPlainText() == "Unchanged AI result %1"
+        review.close()
+    finally:
+        app.removeTranslator(translator)
+
+
 def test_continuity_analysis_worker_reviews_selected_scene_and_character(window, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening", content="Mara opens the door.")

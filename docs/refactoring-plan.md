@@ -63,6 +63,8 @@ checks separately; offscreen tests cannot establish native behavior.
    and failure tests. `export_project_character` export filesystem
    work has moved to a worker using a captured profile; stale project/generation
    success/failure feedback and fsync failures are tested.
+   Project-analysis context heading now uses one translated template rather than
+   concatenation; source labels/model output remain captured data, tested verbatim.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

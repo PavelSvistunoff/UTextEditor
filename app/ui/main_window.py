@@ -6086,10 +6086,11 @@ class MainWindow(QMainWindow):
         title = self.tr("Scene summary") if task == "summary" else self.tr("Continuity review")
         window = AnalysisWindow(
             title,
-            "Captured local context at "
-            + datetime.now().astimezone().isoformat(timespec="seconds")
-            + ":\n"
-            + "\n".join(sources),
+            format_qt(
+                self.tr("Captured local context at %1:\n%2"),
+                datetime.now().astimezone().isoformat(timespec="seconds"),
+                "\n".join(sources),
+            ),
             result,
             self,
         )

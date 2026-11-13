@@ -3,6 +3,26 @@
 > This short file records the **latest actionable checkpoint**. Earlier execution history is recorded in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
+## TASK-032.01/.02/.03 checkpoint — analysis context heading
+
+- TASK-032.01, TASK-032.02, TASK-032.03: **CHECKPOINT** each; parent TASK-032
+  partial; native .V2 remains open. Broader repository refactoring incomplete.
+- Inventoried unmarked MainWindow analysis-source heading; summary/continuity
+  workflows now use one translated template with captured timestamp/source data.
+- Two packaged Ukrainian regressions failed before fix; source placeholders and
+  model output remain verbatim. No manuscript/AI prompt or stale-guard changes.
+- Focused workflow/i18n/translation suite: 102 passed; full offscreen suite:
+  1006 passed, 2 skipped. `git diff --check` passed.
+- Source extraction/reference validation passed; Ukrainian package rebuilt and
+  en/uk compilation/parity tested. No native Ukrainian UI/accessibility check.
+- Clean Code review: simple template replaces concatenation; existing formatter
+  reused, owning tr context correct, no dependencies/API/persistence changes.
+- Files: main window, workflow tests, Ukrainian TS/QM, README and evidence docs.
+- Existing pyc changes preserved; branch `main`.
+- Next: inventory remaining dynamic labels/service errors beyond AST heuristic.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — stale character-development failure
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 open.

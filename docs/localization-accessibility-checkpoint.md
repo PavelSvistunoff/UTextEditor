@@ -141,3 +141,13 @@ Ollama diagnostic for current failures, and no warning after scene/profile/setti
 project changes. Four stale cases failed before adding the existing context guard
 to the failure callback. Button reset remains available; no proposal is staged.
 Native Ukrainian runtime and accessibility remain unverified.
+
+## Project-analysis context heading — TASK-032.01/.02/.03
+
+Inventory finding: MainWindow._project_analysis_finished built the visible
+“Captured local context at” heading outside tr(). Reproduce through Project AI
+scene summary or continuity review; the AnalysisWindow sources label owns the
+visible result. The caller now uses a single MainWindow translation template
+with timestamp and joined source labels as arguments. Two packaged Ukrainian
+regressions failed before the change and retain literal placeholder-like source
+names and model output. Native UI verification remains open.
