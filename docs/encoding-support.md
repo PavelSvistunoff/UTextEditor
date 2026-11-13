@@ -56,6 +56,6 @@ detection dependency is justified for an explicitly chosen codec.
 
 The tests added for this investigation exercise current FileManager failure
 boundaries, not a claim that legacy Open support is implemented. Large-file
-limits and incremental decoding remain TASK-011.05; codec availability alone
+limits and incremental decoding remain part of TASK-011; codec availability alone
 does not bound memory or guarantee GUI latency. Native selector accessibility
 and Windows codec workflows require verification when that UI is implemented.

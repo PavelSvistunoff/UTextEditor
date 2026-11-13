@@ -1,5 +1,22 @@
 # Implementation progress
 
+## Active backlog cleanup (2026-11-13)
+
+- Removed eight previously completed parent tasks and 132 completed subtasks
+  from `TASKS.md`; their historical evidence remains in this file, verification
+  documents and Git history. All previously open/partial subtasks and open
+  parent acceptance gates remain. TASK-008.V2 and TASK-011.06 make existing
+  native-verification and safe-large-file gaps explicit; they are not new
+  claims of completion. Stable task IDs are retained.
+- Updated `README.uk.md` where its current-state claims conflicted with
+  `README.md`, including the save-race limitation and implemented AI review,
+  disclosure and navigation features. Updated `docs/encoding-support.md`
+  to refer to the open parent rather than a completed evaluation ticket.
+- Documentation-only change: tests not run. Checked backlog preservation, local
+  evidence links and `git diff --check`. Native checks not performed.
+- Resume TASK-009.04 using the focused command in the checkpoint below;
+  independent TASK-005/007 save coordination remains unresolved.
+
 ## TASK-009.04 structure comparison (2026-11-13)
 
 - **TASK-009.04: CHECKPOINT; parent TASK-009: open.** Comparison reports
