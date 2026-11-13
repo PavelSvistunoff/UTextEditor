@@ -681,6 +681,15 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Project or AI settings changed; no files were added.</source><translation>Проєкт або налаштування ШІ змінилися; файли не додано.</translation></message>
+    <message><source>Generated %1 chapters, %2 scenes, and %3 character notes. Applying the complete batch…</source><translation>Згенеровано розділів: %1, сцен: %2 та нотаток персонажів: %3. Застосування повного пакета…</translation></message>
+    <message><source>Could not apply generated content: %1</source><translation>Не вдалося застосувати згенерований вміст: %1</translation></message>
+    <message><source>Auto-pilot added %1 scene drafts and character notes.</source><translation>Автопілот додав чернетки сцен (%1) і нотатки персонажів.</translation></message>
+    <message><source>Auto-pilot failed; no generated changes were added: %1</source><translation>Помилка автопілота; згенеровані зміни не додано: %1</translation></message>
+    <message><source>The template changed while suggestions were generated; your edits were kept. Try Suggest again if needed.</source><translation>Шаблон змінився під час генерації пропозицій; ваші правки збережено. За потреби повторіть запит пропозицій.</translation></message>
+    <message><source>Auto-pilot cancelled; no generated changes were applied.</source><translation>Автопілот скасовано; згенеровані зміни не застосовано.</translation></message>
+    <message><source>Project setup AI request cancelled.</source><translation>Запит ШІ для налаштування проєкту скасовано.</translation></message>
+    <message><source>Suggestions failed: %1. Check that %2 is reachable and model %3 is available.</source><translation>Не вдалося отримати пропозиції: %1. Перевірте доступність %2 і моделі %3.</translation></message>
     <message>
         <source>This file contains binary data and cannot be opened as UTF-8 text.</source>
         <translation>Цей файл містить двійкові дані, тому його неможливо відкрити як текст UTF-8.</translation>
@@ -1098,6 +1107,9 @@ Text is sent to the configured Ollama destination:
     <message><source>Could not load revision snapshots: %1</source><translation>Не вдалося завантажити знімки ревізій: %1</translation></message>
     <message><source>Could not compare snapshots: %1</source><translation>Не вдалося порівняти знімки: %1</translation></message>
     <message><source>Project search failed: %1</source><translation>Не вдалося виконати пошук у проєкті: %1</translation></message>
+    <message><source>Original project is unavailable; recovered text was opened separately.</source><translation>Початковий проєкт недоступний; відновлений текст відкрито окремо.</translation></message>
+    <message><source>The selected directory is a different project.</source><translation>Вибраний каталог містить інший проєкт.</translation></message>
+    <message><source>The original project item could not be identified.</source><translation>Не вдалося визначити початковий елемент проєкту.</translation></message>
     <message><source>Resume Daily Goal</source><translation>Відновити щоденну ціль</translation></message>
     <message><source>Daily goal: at least %1/%2</source><translation>Щоденна ціль: щонайменше %1/%2</translation></message>
     <message><source>Daily goal complete %1/%2</source><translation>Щоденну ціль виконано %1/%2</translation></message>
@@ -1824,6 +1836,8 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>ProjectBriefDialog</name>
+    <message><source>Auto-pilot is refining the plan and drafting new scenes. Cancel leaves project files unchanged…</source><translation>Автопілот уточнює план і створює чернетки нових сцен. Скасування залишає файли проєкту без змін…</translation></message>
+    <message><source>Suggestions added to the template. Review and edit them before continuing.</source><translation>Пропозиції додано до шаблону. Перегляньте й відредагуйте їх перед продовженням.</translation></message>
     <message>
         <source>Asking the model for suggestions…</source>
         <translation>Запит пропозицій у моделі…</translation>
@@ -1885,6 +1899,10 @@ Text is sent to the configured Ollama destination:
 </context>
 <context>
     <name>ProjectView</name>
+    <message><source>Unavailable — </source><translation>Недоступно — </translation></message>
+    <message><source>Missing target %1</source><translation>Відсутня ціль %1</translation></message>
+    <message><source>Missing source %1</source><translation>Відсутнє джерело %1</translation></message>
+    <message><source>Links:</source><translation>Зв’язки:</translation></message>
     <message><source>Project navigation</source><translation>Навігація проєктом</translation></message>
     <message>
         <source>Open Associated Scene…</source>

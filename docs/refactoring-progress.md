@@ -1,5 +1,27 @@
 # Refactoring progress
 
+## All-remaining-task execution — final checkpoint
+
+- Reviewed all eight starting tickets in one session; overall objective incomplete.
+- COMPLETE/removed: TASK-030.03 (native all-field profile lifecycle), TASK-034.06
+  (reproduced native width/clipping barriers fixed and native retested).
+- TASK-032.01/.02/.04: CHECKPOINT; dynamic inventory broadened, goal/autosave/
+  recovery labels localized, binary/UTF-8 original diagnostics retained.
+- TASK-034.03: CHECKPOINT, comprehensive focus inventory remains; .034.02/.04:
+  BLOCKED for speech and actual OS matrix. AXIsProcessTrusted() returned False.
+- Final native expanded UI corpus: 392 passed; final Ukrainian subset: 10 passed.
+- Focused recovery/UI/i18n suite: 368 passed; final full offscreen: 1059 passed,
+  2 skipped; source/reference and en/uk compilation/parity passed; diff check passed.
+- Recovery label capture leaves legacy defaults/data flow intact; a failing
+  regression demonstrated lost binary diagnostics before the separate behavior fix.
+- Clean Code review: UI-owned messages captured before worker work, explicit
+  templates, no dependencies/undo/YAML changes; existing three pyc changes preserved.
+- Evidence and remaining criteria: docs/all-remaining-tasks-checkpoint.md.
+- Next: complete dynamic/service inventory; grant/observe native accessibility,
+  VoiceOver and actual system appearance tests before closing remaining gates.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-034.03/.04/.06 — direct native retest
 
 - TASK-034.06: **COMPLETE** for reproduced barriers; removed from open backlog.

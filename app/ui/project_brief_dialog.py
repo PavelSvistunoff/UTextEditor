@@ -111,8 +111,7 @@ class ProjectBriefDialog(QDialog):
         self.status.setText(
             message
             or (
-                "Auto-pilot is refining the plan and drafting new scenes. "
-                "Cancel leaves project files unchanged…"
+                self.tr("Auto-pilot is refining the plan and drafting new scenes. Cancel leaves project files unchanged…")
                 if running
                 else ""
             )
@@ -126,5 +125,5 @@ class ProjectBriefDialog(QDialog):
         self.editor.setPlainText(text)
         self.set_suggesting(
             False,
-            "Suggestions added to the template. Review and edit them before continuing.",
+            self.tr("Suggestions added to the template. Review and edit them before continuing."),
         )

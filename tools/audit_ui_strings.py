@@ -14,8 +14,8 @@ WIDGET_CONSTRUCTORS = {"QAction", "QCheckBox", "QLabel", "QMenu", "QPushButton",
 TEXT_METHODS = {"addAction", "addButton", "setAccessibleDescription", "setAccessibleName", "setPlaceholderText",
                 "setStatusTip", "setText", "setToolTip", "setWindowTitle", "showMessage",
                 "setTitle", "setLabelText", "setCancelButtonText", "setInformativeText",
-                "setDetailedText", "setHeaderLabel", "addItem", "show_error"}
-INDEXED_TEXT_METHODS = {"setItemText", "setTabText"}
+                "setDetailedText", "setHeaderLabel", "addItem", "show_error", "set_applying"}
+INDEXED_TEXT_METHODS = {"setItemText", "setTabText", "set_suggesting", "set_autopilot_running"}
 MESSAGE_METHODS = {"critical", "information", "question", "warning"}
 INPUT_METHODS = {"getItem", "getMultiLineText", "getText"}
 FILE_METHODS = {"getExistingDirectory", "getOpenFileName", "getSaveFileName"}

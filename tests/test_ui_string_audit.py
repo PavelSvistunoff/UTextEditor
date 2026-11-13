@@ -58,9 +58,12 @@ status.setText("Failed: {}".format(error))
 AnalysisWindow(title, "Captured at " + timestamp + ":\\n" + sources, result)
 label.setText("Count: %1".replace("%1", count))
 status.setText("Ready" if ready else "Waiting")
+brief.set_suggesting(False, "Suggestions failed")
+brief.set_autopilot_running(False, "Cancelled")
+progress.set_applying("Applying content")
 dialog.show_error(self.tr("Failed: {error}").format(error=error))
 AnalysisWindow(title, format_qt(self.tr("Captured at %1"), timestamp), result)
 '''
     findings = audit_source(source, Path("example.py"))
-    assert len(findings) == 5
+    assert len(findings) == 8
     assert any("Captured at" in item for item in findings)

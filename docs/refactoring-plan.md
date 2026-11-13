@@ -73,6 +73,9 @@ checks separately; offscreen tests cannot establish native behavior.
    captured generation checks; new-open and existing-tab workers are tested.
    Revision creation shares completion cleanup/context checks; name-prompt state
    changes and success/failure worker feedback are covered by regressions.
+   Recovery worker explanations now use UI-captured immutable message values;
+   legacy helper defaults remain English. Binary/UTF-8 categories retain original
+   diagnostics; data-preserving regressions cover all newly changed paths.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

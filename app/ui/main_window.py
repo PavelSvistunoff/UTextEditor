@@ -134,6 +134,13 @@ def _character_choice_label(character: Character) -> str:
 
 
 @dataclass(frozen=True)
+class _RecoveryRestoreMessages:
+    project_unavailable: str = "Original project is unavailable; recovered text was opened separately."
+    wrong_project: str = "The selected directory is a different project."
+    unidentified_item: str = "The original project item could not be identified."
+
+
+@dataclass(frozen=True)
 class _RecoveryPayload:
     document_id: str
     text: str
@@ -2220,13 +2227,13 @@ class MainWindow(QMainWindow):
             or not self.settings.ai_enabled
             or dialog is not self._project_setup_brief_dialog
         ):
-            dialog.set_autopilot_running(False, "Project or AI settings changed; no files were added.")
+            dialog.set_autopilot_running(False, self.tr("Project or AI settings changed; no files were added."))
             return
 
         scene_count = sum(len(scenes) for _title, scenes in draft.chapters)
         dialog.set_applying(
-            f"Generated {len(draft.chapters)} chapters, {scene_count} scenes, and "
-            f"{len(draft.characters)} character notes. Applying the complete batch…",
+            format_qt(self.tr("Generated %1 chapters, %2 scenes, and %3 character notes. Applying the complete batch…"),
+                      len(draft.chapters), scene_count, len(draft.characters)),
         )
         self._run_project_mutation(
             project.add_autopilot_content,
@@ -2234,13 +2241,13 @@ class MainWindow(QMainWindow):
             draft.characters,
             on_success=lambda: self._project_autopilot_applied(dialog, scene_count),
             on_failure=lambda error: dialog.set_autopilot_running(
-                False, f"Could not apply generated content: {error}"
+                False, format_qt(self.tr("Could not apply generated content: %1"), error)
             ),
         )
 
     def _project_autopilot_applied(self, dialog: ProjectBriefDialog, scene_count: int) -> None:
         dialog.set_autopilot_running(
-            False, f"Auto-pilot added {scene_count} scene drafts and character notes."
+            False, format_qt(self.tr("Auto-pilot added %1 scene drafts and character notes."), scene_count)
         )
         dialog.accept()
         self.statusBar().showMessage(
@@ -2259,7 +2266,7 @@ class MainWindow(QMainWindow):
             self._project_setup_cancel_action.setEnabled(False)
         self._set_project_busy(False)
         if dialog is self._project_setup_brief_dialog:
-            dialog.set_autopilot_running(False, f"Auto-pilot failed; no generated changes were added: {error}")
+            dialog.set_autopilot_running(False, format_qt(self.tr("Auto-pilot failed; no generated changes were added: %1"), error))
         if settings_generation == self._settings_generation:
             self.statusBar().showMessage(self.tr("Auto-pilot did not change the project."), 8000)
 
@@ -2322,7 +2329,7 @@ class MainWindow(QMainWindow):
         if dialog.brief() != submitted_brief:
             dialog.set_suggesting(
                 False,
-                "The template changed while suggestions were generated; your edits were kept. Try Suggest again if needed.",
+                self.tr("The template changed while suggestions were generated; your edits were kept. Try Suggest again if needed."),
             )
             return
         dialog.apply_suggestion(suggestion)
@@ -2340,8 +2347,8 @@ class MainWindow(QMainWindow):
         if dialog is self._project_setup_brief_dialog:
             dialog.set_suggesting(
                 False,
-                f"Suggestions failed: {error}. Check that {self.provider.host} is reachable "
-                f"and model {self.provider.model} is available.",
+                format_qt(self.tr("Suggestions failed: %1. Check that %2 is reachable and model %3 is available."),
+                          error, self.provider.host, self.provider.model),
             )
         if settings_generation == self._settings_generation and self.settings.ai_enabled:
             self.statusBar().showMessage(self.tr("Could not generate template suggestions."), 8000)
@@ -2452,11 +2459,11 @@ class MainWindow(QMainWindow):
         if self._project_setup_brief_dialog is not None:
             if was_autopilot:
                 self._project_setup_brief_dialog.set_autopilot_running(
-                    False, "Auto-pilot cancelled; no generated changes were applied."
+                    False, self.tr("Auto-pilot cancelled; no generated changes were applied.")
                 )
             else:
                 self._project_setup_brief_dialog.set_suggesting(
-                    False, "Project setup AI request cancelled."
+                    False, self.tr("Project setup AI request cancelled.")
                 )
         if self._project_setup_cancel_action is not None:
             self._project_setup_cancel_action.setEnabled(False)
@@ -4468,6 +4475,7 @@ class MainWindow(QMainWindow):
             self.recovery_store,
             selected,
             located_directory,
+            self._recovery_restore_messages(),
         )
         self._track_worker(worker)
         worker.signals.finished.connect(self._recovery_restore_finished, Qt.ConnectionType.QueuedConnection)
@@ -4500,7 +4508,11 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, self.tr("Recovery comparison"), comparison)
 
     @staticmethod
-    def _prepare_recovery_restore(store: RecoveryStore, entries: tuple[RecoveryEntry, ...], located_directory):
+    def _prepare_recovery_restore(
+        store: RecoveryStore, entries: tuple[RecoveryEntry, ...], located_directory,
+        messages: _RecoveryRestoreMessages | None = None,
+    ):
+        messages = messages or _RecoveryRestoreMessages()
         restored = []
         for original in entries:
             entry = original
@@ -4509,12 +4521,12 @@ class MainWindow(QMainWindow):
                 if (project_path is None or not project_path.is_dir()) and located_directory:
                     project_path = Path(located_directory)
                 if project_path is None or not project_path.is_dir():
-                    restored.append((entry, Document(text=entry.text, dirty=True), "Original project is unavailable; recovered text was opened separately."))
+                    restored.append((entry, Document(text=entry.text, dirty=True), messages.project_unavailable))
                     continue
                 try:
                     project = Project.open(project_path)
                     if project.manifest.project_id != entry.project_id:
-                        raise ProjectError("The selected directory is a different project.")
+                        raise ProjectError(messages.wrong_project)
                     if entry.project_item_id is not None:
                         item = (project.get_scene(entry.project_item_id)
                                 if entry.project_item_kind == "scene"
@@ -4531,7 +4543,7 @@ class MainWindow(QMainWindow):
                         candidates = [*project.iter_scenes(), *project.manifest.notes]
                         matches = [candidate for candidate in candidates if relative_path is not None and Path(candidate.path) == relative_path]
                         if len(matches) != 1:
-                            raise ProjectError("The original project item could not be identified.")
+                            raise ProjectError(messages.unidentified_item)
                         item = matches[0]
                     entry = replace(
                         entry,
@@ -4553,6 +4565,13 @@ class MainWindow(QMainWindow):
                     (entry, Document(text=entry.text, dirty=True), str(exc))
                 )
         return restored
+
+    def _recovery_restore_messages(self) -> _RecoveryRestoreMessages:
+        return _RecoveryRestoreMessages(
+            project_unavailable=self.tr("Original project is unavailable; recovered text was opened separately."),
+            wrong_project=self.tr("The selected directory is a different project."),
+            unidentified_item=self.tr("The original project item could not be identified."),
+        )
 
     def _recovery_restore_finished(self, restored) -> None:
         warnings: list[str] = []
@@ -5082,10 +5101,13 @@ class MainWindow(QMainWindow):
         if isinstance(error, FileNotFoundError):
             return format_qt(self.tr("File not found: %1"), str(error))
         if isinstance(error, BinaryTextError):
-            return self.tr("This file contains binary data and cannot be opened as UTF-8 text.")
-        if isinstance(error, UnicodeDecodeError):
-            return self.tr("This file is not valid UTF-8 text and cannot be opened.")
-        return str(error)
+            message = self.tr("This file contains binary data and cannot be opened as UTF-8 text.")
+        elif isinstance(error, UnicodeDecodeError):
+            message = self.tr("This file is not valid UTF-8 text and cannot be opened.")
+        else:
+            return str(error)
+        detail = str(error)
+        return message if not detail or detail == message else f"{message}\n\n{detail}"
 
     def _open_document_path(self, path: str) -> None:
         try:

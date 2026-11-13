@@ -47,6 +47,19 @@ def test_ui_language_resolution(selection, system, expected):
     assert resolve_ui_language(selection, system) == expected
 
 
+def test_interface_translator_includes_standard_qt_buttons_and_removes_them_together(application):
+    language, translator = install_translation(application, "uk")
+    try:
+        assert language == "uk"
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Close)
+        assert "Скасувати" in buttons.button(QDialogButtonBox.StandardButton.Cancel).text().replace("&", "")
+        assert "Закрити" in buttons.button(QDialogButtonBox.StandardButton.Close).text().replace("&", "")
+    finally:
+        application.removeTranslator(translator)
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+    assert buttons.button(QDialogButtonBox.StandardButton.Cancel).text().replace("&", "") == "Cancel"
+
+
 def test_document_open_errors_are_translated_without_masking_other_errors(application):
     language, translator = install_translation(application, "uk")
     assert language == "uk"
@@ -54,10 +67,14 @@ def test_document_open_errors_are_translated_without_masking_other_errors(applic
         tr = staticmethod(MainWindow.tr)
 
     try:
-        binary = MainWindow._document_open_error_message(Context(), BinaryTextError("binary"))
-        invalid = MainWindow._document_open_error_message(Context(), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid"))
+        binary_error = BinaryTextError("binary detail %1")
+        decode_error = UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid")
+        binary = MainWindow._document_open_error_message(Context(), binary_error)
+        invalid = MainWindow._document_open_error_message(Context(), decode_error)
         assert "двійкові дані" in binary
         assert "коректним текстом UTF-8" in invalid
+        assert str(binary_error) in binary
+        assert str(decode_error) in invalid
         assert MainWindow._document_open_error_message(Context(), OSError("disk detail")) == "disk detail"
     finally:
         application.removeTranslator(translator)

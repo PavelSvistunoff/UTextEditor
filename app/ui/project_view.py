@@ -82,20 +82,20 @@ class ProjectView(QTreeWidget):
         }
         titles.update({note.id: note.title for note in project.manifest.notes})
         for note in project.manifest.notes:
-            prefix = "Unavailable — " if note.id in unavailable_ids else ""
+            prefix = self.tr("Unavailable — ") if note.id in unavailable_ids else ""
             item = QTreeWidgetItem([f"{prefix}{note.title} ({note.type})"])
             item.setData(0, Qt.ItemDataRole.UserRole, "note")
             item.setData(0, Qt.ItemDataRole.UserRole + 1, note.id)
             linked = [
-                f"→ {titles.get(link.target_id, 'Missing target ' + link.target_id)}"
+                f"→ {titles.get(link.target_id, self.tr('Missing target %1').replace('%1', link.target_id))}"
                 for link in project.links_from(note.id)
             ]
             linked.extend(
-                f"← {titles.get(link.source_id, 'Missing source ' + link.source_id)}"
+                f"← {titles.get(link.source_id, self.tr('Missing source %1').replace('%1', link.source_id))}"
                 for link in project.links_to(note.id)
             )
             if linked:
-                item.setToolTip(0, "Links:\n" + "\n".join(linked))
+                item.setToolTip(0, self.tr("Links:") + "\n" + "\n".join(linked))
             notes.addChild(item)
         characters = QTreeWidgetItem([self.tr("Characters (%1)").replace("%1", str(len(project.manifest.characters)))])
         characters.setData(0, Qt.ItemDataRole.UserRole, "group")
@@ -162,7 +162,7 @@ class ProjectView(QTreeWidget):
     def _add_scene(
         self, parent: QTreeWidgetItem, scene_id: str, title: str, count: WordCount, unavailable: bool
     ) -> None:
-        prefix = "Unavailable — " if unavailable else ""
+        prefix = self.tr("Unavailable — ") if unavailable else ""
         item = QTreeWidgetItem([prefix + self._count_label(title, count)])
         item.setData(0, Qt.ItemDataRole.UserRole, "scene")
         item.setData(0, Qt.ItemDataRole.UserRole + 1, scene_id)

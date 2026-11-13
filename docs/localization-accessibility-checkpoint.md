@@ -249,3 +249,25 @@ macOS global-menu restoration is not established by that test. Full offscreen:
 **1056 passed, 2 skipped**. TASK-034.06 is COMPLETE for reproduced width/clipping
 barriers and removed from backlog; .02 speech, .03 comprehensive focus inventory
 and .04 actual OS palette matrix remain incomplete.
+
+## Recovery explanations and retained open diagnostics
+
+Recovery captures three UI-localized explanations in a frozen message value before
+worker invocation. The static helper keeps English defaults for existing callers.
+Three packaged Ukrainian cases keep dirty recovered text, original scene files and
+recovery snapshots, even after removing the translator before worker work.
+The binary/UTF-8 open wrapper now retains original diagnostics; the added assertion
+failed before the fix. Final targeted Cocoa runtime: **10 passed**, covering these
+paths and daily-goal/autosave labels. Broader service workflow inventory remains.
+
+Final environment check: ApplicationServices `AXIsProcessTrusted()` returned
+**False**. Native QTest events inside Qt were possible; broader OS accessibility
+automation/speech/system-display matrix was not authorized for this process.
+Final complete offscreen run after recovery/diagnostic changes: **1059 passed,
+2 skipped**. Full outcome matrix: [all remaining tasks](all-remaining-tasks-checkpoint.md).
+
+Supplemental non-tr() constant inspection also found still-untranslated template/
+Auto-pilot helper statuses and unavailable/orphan target labels in ProjectView.
+Concrete owners and reproduction paths are listed in
+[the residual inventory](all-remaining-tasks-checkpoint.md#concrete-residual-localization-inventory).
+Thus source/catalog parity alone does not close remaining TASK-032 work.

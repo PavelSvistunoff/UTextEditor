@@ -2066,6 +2066,47 @@ def test_project_recovery_failures_preserve_text_as_untitled(tmp_path, failure):
     assert entry.snapshot_path.exists()
 
 
+@pytest.mark.parametrize("failure,expected", [
+    ("unavailable", "Початковий проєкт недоступний"),
+    ("wrong", "Вибраний каталог містить інший проєкт"),
+    ("legacy", "Не вдалося визначити початковий елемент проєкту"),
+])
+def test_recovery_messages_are_captured_in_ui_and_preserve_unsaved_text(
+    application, tmp_path, monkeypatch, failure, expected,
+):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="saved")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save(
+        "recovery-id", "unsaved text", canonical_path=project.root / "unknown.txt",
+        project_path=project.root, project_id=project.manifest.project_id,
+    )
+    located = None
+    if failure in {"unavailable", "wrong"}:
+        project.root.rename(tmp_path / "original")
+    if failure == "wrong":
+        located = Project.create(tmp_path / "other", "Other").root
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    _, translator = install_translation(application, "uk")
+    try:
+        messages = window._recovery_restore_messages()
+    finally:
+        application.removeTranslator(translator)
+    try:
+        restored = window._prepare_recovery_restore(store, (entry,), located, messages)
+        _, document, error = restored[0]
+        assert expected in error
+        assert document.text == "unsaved text" and document.dirty and document.path is None
+        assert entry.snapshot_path.exists()
+        source_root = tmp_path / "original" if failure in {"unavailable", "wrong"} else project.root
+        assert (source_root / scene.path).read_text() == "saved"
+    finally:
+        window.close()
+
+
 @pytest.mark.parametrize("change", ["removed", "relinked"])
 def test_project_open_discards_result_for_changed_item(application, tmp_path, change):
     project = Project.create(tmp_path / "novel", "Novel")
@@ -4136,6 +4177,79 @@ def test_project_translation_review_cancels_or_discards_changed_buffer(applicati
     assert project.manifest.title == "Novel"
     editor.document_state.mark_saved()
     window.close()
+
+
+@pytest.mark.parametrize("mode,expected", [
+    ("suggestion_error", "Не вдалося отримати пропозиції"),
+    ("autopilot_error", "Помилка автопілота"),
+    ("applied", "Автопілот додав"),
+    ("cancel_autopilot", "Автопілот скасовано"),
+    ("cancel_suggestion", "Запит ШІ для налаштування проєкту скасовано"),
+])
+def test_project_brief_callback_statuses_are_localized(application, monkeypatch, mode, expected):
+    from app.i18n import install_translation
+    from app.ui.project_brief_dialog import ProjectBriefDialog
+    from app.ui.workers import FunctionWorker
+
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    dialog = ProjectBriefDialog(window)
+    window._project_setup_brief_dialog = dialog
+    _, translator = install_translation(application, "uk")
+    try:
+        if mode == "suggestion_error":
+            window._project_brief_suggestion_failed(window._project_setup_generation, window._settings_generation, dialog, RuntimeError("error %1"))
+            assert "error %1" in dialog.status.text() and window.provider.host in dialog.status.text()
+        elif mode == "autopilot_error":
+            window._project_autopilot_failed(window._project_setup_generation, window._settings_generation, dialog, RuntimeError("error %1"))
+            assert "error %1" in dialog.status.text()
+        elif mode == "applied":
+            window._project_autopilot_applied(dialog, 2)
+            assert "2" in dialog.status.text()
+        else:
+            window._project_setup_worker = FunctionWorker(lambda: None)
+            window._project_setup_cancel_event = Event() if mode == "cancel_autopilot" else None
+            window.cancel_project_setup()
+        assert expected in dialog.status.text()
+    finally:
+        application.removeTranslator(translator)
+        window._project_setup_brief_dialog = None
+        dialog.close()
+        window.close()
+
+
+def test_project_brief_dynamic_statuses_and_missing_tree_items_are_localized(application, tmp_path):
+    from app.i18n import install_translation
+    from app.project import Link
+    from app.ui.project_brief_dialog import ProjectBriefDialog
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene %1", content="text")
+    note = project.add_note("Note %2", content="note")
+    missing_id = "00000000-0000-4000-8000-000000000099"
+    project.manifest.links.append(Link(note.id, missing_id))
+    _, translator = install_translation(application, "uk")
+    dialog, view = ProjectBriefDialog(), ProjectView()
+    try:
+        dialog.set_autopilot_running(True)
+        assert "Автопілот уточнює план" in dialog.status.text()
+        dialog.apply_suggestion("User text %1")
+        assert dialog.brief() == "User text %1" and "Пропозиції додано" in dialog.status.text()
+        view.show_project(project, {scene.id: WordCount(0, False)}, {}, WordCount(0, False), {scene.id, note.id})
+        found = []
+        iterator = view._items()
+        for item in iterator:
+            if item.data(0, Qt.ItemDataRole.UserRole) in {"scene", "note"}:
+                found.append(item)
+        assert len(found) == 2 and all(item.text(0).startswith("Недоступно — ") for item in found)
+        note_item = next(item for item in found if item.data(0, Qt.ItemDataRole.UserRole) == "note")
+        assert note_item.toolTip(0).startswith("Зв’язки:")
+        assert "Відсутня ціль " + missing_id in note_item.toolTip(0)
+        assert "Note %2" in note_item.text(0)
+    finally:
+        dialog.close()
+        view.close()
+        application.removeTranslator(translator)
 
 
 @pytest.mark.parametrize("target,paused,scope,expected", [
