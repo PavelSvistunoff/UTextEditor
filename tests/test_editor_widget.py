@@ -1293,3 +1293,28 @@ def test_goal_refresh_skips_unneeded_buffer_word_counts(application, target, sco
     else:
         assert "0/10" in window._writing_goal_label.text()
     window.close()
+
+
+@pytest.mark.parametrize("scope", ["active_scene", "new_words", "project_manuscript"])
+def test_new_tab_with_active_goal_waits_for_tracking_initialization(application, monkeypatch, scope):
+    import sys
+
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    original = window.tabs.current_editor()
+    original.setPlainText("Existing unsaved manuscript")
+    window.writing_goals.configure(10, scope)
+    callback_errors = []
+    monkeypatch.setattr(sys, "excepthook", lambda *error: callback_errors.append(error))
+    try:
+        window.new_document()
+        editor = window.tabs.current_editor()
+        assert editor is not original
+        assert window.writing_goals.is_attached(editor._writing_goal_document_id)
+        assert editor.toPlainText() == ""
+        assert original.toPlainText() == "Existing unsaved manuscript"
+        assert not callback_errors, [str(error[1]) for error in callback_errors]
+    finally:
+        for index in range(window.tabs.count()):
+            window.tabs.widget(index).document_state.mark_saved()
+        window.close()

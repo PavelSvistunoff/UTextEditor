@@ -883,6 +883,11 @@ class MainWindow(QMainWindow):
             self._writing_goal_label.clear()
             return
         editor = self.tabs.current_editor()
+        # Tab selection signals can precede editor_created and goal attachment.
+        # Attachment refreshes again once the new tab has a stable tracking ID.
+        if editor is not None and not hasattr(editor, "_writing_goal_document_id"):
+            self._writing_goal_label.clear()
+            return
         active_words = (count_words(editor.toPlainText())
                         if editor is not None and self.writing_goals.scope == "active_scene" else 0)
         project_words = 0

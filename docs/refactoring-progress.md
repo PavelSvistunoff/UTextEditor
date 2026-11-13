@@ -1,5 +1,20 @@
 # Refactoring progress
 
+## Separate behavior fix — goal initialization during tab selection
+
+- B1: COMPLETE; kept separate from the pure refactoring commits.
+- Editor responsiveness smoke exposed AttributeError inside Qt callbacks while
+  opening a tab with a nonzero writing goal (process still exited zero).
+- Added a sys.excepthook regression: all 3 scopes failed before the fix.
+- Goal refresh now waits until editor_created attaches the tracking identity;
+  attachment performs the real refresh. Existing signal order/API is preserved.
+- Existing manuscript text and per-document goal tracking remain intact.
+- Focused editor/goals/history corpus: 127 passed; native final subset: 12 passed.
+- Repeated editor smoke completed with no traceback; full control run pending.
+- No change to Qt undo stacks, reachable history, file saving or AI behavior.
+- Clean Code review: explicit lifecycle guard, documented reason, observable failure test.
+- Next: final full-suite evidence and all-module audit reconciliation.
+
 ## Repository completion run — R2/R3 domain ownership batch
 
 - Project/AI worker extraction and UI orchestration refactor: COMPLETE.
