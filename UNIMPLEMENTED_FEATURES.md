@@ -223,13 +223,6 @@ network read may continue until data arrives or the connection times out.
    navigable list, explanations and explicit selection, rejects stale or
    overlapping ranges, and groups accepted edits into one undo step. Compile
    the Ukrainian catalog and verify native keyboard and accessibility behavior.
-8. **Portable project backup and validation** (medium/high effort). Project
-   files are already portable YAML and UTF-8, and snapshots live inside the
-   project. Offer a user-selected backup destination and a read-only integrity
-   report for missing files, invalid paths, and unreadable snapshots. Acceptance:
-   explain whether open unsaved buffers and revisions are included, never
-   overwrite without confirmation, and test restoring a backup in a separate
-   directory. This must not imply that recovery snapshots are a complete backup.
 9. **Improve manuscript export and PDF options** (medium effort). Existing
    Markdown/plain-text export supports scene subsets; PDF now offers paper
    size, title-page title and author, optional chapter and scene headings, and scene selection.

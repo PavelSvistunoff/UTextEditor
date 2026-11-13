@@ -224,7 +224,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   claimed. Next implementation gaps remain TASK-001 reachable-history bounds
   and active identity collisions; TASK-005/.007 independent-writer race;
   broader recovery diagnosis; revision selective/safety restore and scheduling;
-  portable backup; encoding/line-ending selection and large-file safety;
+  encoding/line-ending selection and large-file safety;
   TASK-029 history viewer. TASK-027.03 and TASK-030.03 retain native latency/
   all-field focus requirements. Native/accessibility/release catalog checks in
   UI V2 remain open. Do not redo completed audits or silently truncate Qt undo.
@@ -409,8 +409,8 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   The overall backlog is still incomplete: earliest open work remains
   TASK-001's reachable-history bound/active-identity collision/stress gate;
   TASK-005/.007's independent-writer race; broader TASK-008 diagnosis;
-  TASK-009 restore/safety snapshots/comparison/scheduling; TASK-010 backup;
-  and TASK-011 encoding/line-ending/large-file safety. TASK-019 and later
+  TASK-009 restore/safety snapshots/comparison/scheduling; and TASK-011
+  encoding/line-ending/large-file safety. TASK-019 and later
   inherited UI tickets still need acceptance reconciliation or implementation
   as appropriate. Continue from these gaps, preserving completed evidence;
   do not truncate Qt undo, weaken conflict checks or promote native gates on
@@ -490,7 +490,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   TASK-005/.007 still share the independent-writer final-check overwrite race;
   no broader guarantee may be claimed. Further feasible work includes broader
   TASK-008 diagnosis, TASK-009 selective/safety restore and richer metadata
-  comparison/scheduling, TASK-010 backup, TASK-011 encoding/line-ending/large-
+  comparison/scheduling, TASK-011 encoding/line-ending/large-
   file safety, and the remaining UI verification queue. Native screen-reader,
   filesystem and release-catalog checks remain explicitly open. TASK-012's
   numbered tickets are verified; its parent still awaits V2. Do not redo the
