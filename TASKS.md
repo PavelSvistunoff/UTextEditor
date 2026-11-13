@@ -4,6 +4,8 @@
 
 ## Codex run contract
 
+For each implementation ticket, follow the [Clean Code discipline](AGENTS.md#clean-code-discipline-for-codex) and its [practical review checklist](docs/clean-code-codex.md#codex-completion-review-apply-to-each-selected-ticket). Apply it only to new/touched code; preserve acceptance and safety guarantees.
+
 1. Inspect `git status --short`, [AGENTS.md](AGENTS.md), the newest [checkpoint](IMPLEMENTATION_PROGRESS.md), one selected parent and exact subtask IDs, then source and related tests.
 2. Execute one high-risk ticket or 1–4 related subtasks **within one parent** per bounded batch. An explicitly authorized whole-backlog run can continue in additional **verified, checkpointed batches**.
 3. Write success, failure, stale-state and undo/data-safety checks before coding. Verify what already exists; never implement a duplicate merely to satisfy an open checkbox.

@@ -154,6 +154,33 @@ Never insert an AI completion directly into the document without explicit user a
 
 `Esc` rejects an inline completion.
 
+## Clean Code discipline for Codex
+
+Apply the project-specific [Clean Code guidelines](docs/clean-code-codex.md)
+to **new and directly modified code**. They adapt the principles of Robert C.
+Martin's *Clean Code* to Python and PySide6; they are not a request for a
+repository-wide rewrite. In every selected task:
+
+1. Prefer clear, intention-revealing names and consistent terminology.
+2. Keep functions focused, with evident side effects, guard clauses and
+   minimal meaningful arguments; do not impose arbitrary length limits.
+3. Keep domain rules in the owning service/model, Qt UI as orchestration and
+   the Ollama protocol inside its provider boundary.
+4. Deduplicate actual business rules without speculative interfaces or
+   unnecessary dependencies. Choose readable, simple control flow.
+5. Handle exceptional, cancelled and stale states explicitly; preserve
+   diagnostics, dirty manuscript data, undo and transactional behavior.
+6. Explain **why** in comments where needed; replace stale comments and
+   commented-out code with accurate code or documentation.
+7. Add readable deterministic tests for behavior and failure paths. Refactor
+   incrementally and only within the selected ticket's scope.
+
+**Priority order:** correctness and user-data safety → task acceptance gates →
+readability and maintainability → style. Do not turn these guidelines into
+unrelated refactoring tasks or claim that offscreen tests establish native
+accessibility. Include the [completion review checklist](docs/clean-code-codex.md#codex-completion-review-apply-to-each-selected-ticket)
+in the final review of code changes.
+
 ## Code Quality
 
 Prefer simple, maintainable code over unnecessary abstraction.
