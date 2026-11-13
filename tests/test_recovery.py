@@ -201,6 +201,24 @@ def test_scan_reports_corrupt_snapshot_and_preserves_it_for_diagnosis(tmp_path: 
     assert corrupt.exists()
 
 
+def test_scan_recovers_text_from_invalid_metadata_without_trusting_unknown_formats(tmp_path):
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "draft to recover")
+    payload = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+    payload["captured_at"] = "invalid"
+    entry.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+    unknown = entry.snapshot_path.parent / "unknown.json"
+    payload["format_version"] = 999
+    unknown.write_text(json.dumps(payload), encoding="utf-8")
+    original = entry.snapshot_path.read_bytes()
+    scan = store.scan()
+    issues = {issue.snapshot_path: issue for issue in scan.issues}
+    assert not scan.entries
+    assert issues[entry.snapshot_path].recoverable_text == "draft to recover"
+    assert issues[unknown].recoverable_text is None
+    assert entry.snapshot_path.read_bytes() == original
+
+
 def test_scan_reports_unfinished_snapshot_write_and_preserves_it_until_discard(tmp_path: Path) -> None:
     store = RecoveryStore(tmp_path / "recovery", retention=1)
     entry = store.save("doc", "valid")

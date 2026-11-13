@@ -26,7 +26,7 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 | TASK-005 | Investigate and mitigate save race conditions | partial |
 | TASK-006 | Benchmark large-document responsiveness | partial |
 | TASK-007 | Implement external file conflict resolution | partial |
-| TASK-008 | Improve recovery diagnosis | open |
+| TASK-008 | Improve recovery diagnosis | partial |
 | TASK-009 | Implement revision snapshot management | open |
 | TASK-010 | Implement portable project backup | open |
 | TASK-011 | Improve file encoding and large-file handling | open |
@@ -264,7 +264,7 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
 
 ### TASK-008 — Improve recovery diagnosis
-**Priority:** High · **Parent status:** open
+**Priority:** High · **Parent status:** partial
 
 - [x] **TASK-008.01** — Show per-document recovery status and timestamps.
   Scan workers capture canonical-file state (unchanged, changed, missing,
@@ -276,7 +276,7 @@ keyboard/screen-reader checks and release translation compilation remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-008.02** — Identify incomplete or corrupt recovery entries.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-008.03** — Display readable diagnostic information.
+- [x] **TASK-008.03** — Display readable diagnostic information.
   Directory-listing failures now produce per-directory diagnostics while other
   readable snapshots remain recoverable. Root enumeration failures also return
   a diagnostic. Symbolic-link snapshots are diagnosed and preserved by automatic
@@ -284,8 +284,9 @@ keyboard/screen-reader checks and release translation compilation remain open.
   comparisons now label truncation beyond 6,000 characters in English/Ukrainian;
   Empty/NUL-containing snapshot paths are diagnosed and preserved; inspection
   includes captured text when a canonical file is absent. Non-regular snapshots
-  are diagnosed without blocking scan or automatic cleanup. Broader diagnosis
-  remains incomplete.
+  are diagnosed without blocking scan or automatic cleanup. Parseable version-1
+  snapshots with damaged metadata offer explicitly selected text in a separate
+  unsaved document; invalid JSON and unsupported versions are not recovered.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-008.04** — Support selective recovery or export of valid content.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

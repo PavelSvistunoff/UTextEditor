@@ -38,6 +38,7 @@ class RecoveryIssue:
     snapshot_path: Path
     message: str
     incomplete_write: bool = False
+    recoverable_text: str | None = None
 
 
 @dataclass(frozen=True)
@@ -186,10 +187,12 @@ class RecoveryStore:
                 issues.append(RecoveryIssue(directory, str(exc)))
                 continue
             for path in snapshots:
+                payload = None
                 try:
-                    entries.append(self._read_entry(path))
+                    payload = self._read_payload(path)
+                    entries.append(self._entry_from_payload(path, payload))
                 except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
-                    issues.append(RecoveryIssue(path, str(exc)))
+                    issues.append(RecoveryIssue(path, str(exc), recoverable_text=self._recover_text(payload)))
             for path in unfinished:
                 if path.is_file():
                     issues.append(RecoveryIssue(
@@ -315,7 +318,7 @@ class RecoveryStore:
         return hashlib.sha256(data).hexdigest()
 
     @classmethod
-    def _read_entry(cls, path: Path) -> RecoveryEntry:
+    def _read_payload(cls, path: Path) -> object:
         if path.is_symlink():
             raise ValueError("Recovery snapshot must not be a symbolic link.")
         flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -323,7 +326,23 @@ class RecoveryStore:
         with os.fdopen(descriptor, "r", encoding="utf-8") as stream:
             if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
                 raise ValueError("Recovery snapshot is not a regular file.")
-            payload = json.load(stream)
+            return json.load(stream)
+
+    @classmethod
+    def _recover_text(cls, payload: object) -> str | None:
+        """Extract text only from parseable version-1 data, without trusting metadata."""
+        if isinstance(payload, dict) and payload.get("format_version") == cls.FORMAT_VERSION:
+            text = payload.get("text")
+            if isinstance(text, str):
+                return text
+        return None
+
+    @classmethod
+    def _read_entry(cls, path: Path) -> RecoveryEntry:
+        return cls._entry_from_payload(path, cls._read_payload(path))
+
+    @classmethod
+    def _entry_from_payload(cls, path: Path, payload: object) -> RecoveryEntry:
         if not isinstance(payload, dict) or payload.get("format_version") != cls.FORMAT_VERSION:
             raise ValueError("Unsupported recovery snapshot format.")
         required = ("snapshot_id", "document_id", "captured_at")

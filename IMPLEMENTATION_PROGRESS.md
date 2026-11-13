@@ -1,5 +1,24 @@
 # Implementation progress
 
+## TASK-008.03 completed (2026-11-13)
+
+- **TASK-008.03: COMPLETE; parent TASK-008: partial.** Scans report damaged
+  and incomplete entries while preserving valid snapshots. Parseable version-1
+  entries with invalid metadata offer explicit recovery of captured text into
+  a new unsaved document; metadata and canonical paths are not trusted. Invalid
+  JSON and unsupported formats cannot be recovered by this method. Parent's
+  absolute no-silent-overwrite gate remains affected by the independently
+  reproduced final-check race in TASK-005/007.
+- Changed `app/document/recovery.py`, `app/ui/main_window.py`, recovery/UI
+  tests, `README.md`, `UNIMPLEMENTED_FEATURES.md`, Ukrainian source catalog,
+  `TASKS.md`, and this file on `codex/task-continuation`. Existing staged
+  artifacts remain unrelated. Native UI/accessibility checks not run.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_recovery.py tests/test_project_ui.py -k 'recovery or fifo_snapshot'`:
+  56 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  886 passed, 2 skipped. Ukrainian source validation and temporary `pyside6-lrelease`
+  compilation passed. Next: continue independent tasks; revisit parent after
+  the external-writer guarantee is resolved.
+
 ## TASK-008.03 checkpoint (2026-11-13)
 
 - **TASK-008.03: CHECKPOINT; parent TASK-008: open.** Non-regular snapshot

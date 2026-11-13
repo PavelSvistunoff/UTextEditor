@@ -1020,6 +1020,12 @@ Text is sent to the configured Ollama destination:
     <message><source>Recovery data could not be inspected: {error}</source><translation>Не вдалося перевірити дані відновлення: {error}</translation></message>
     <message><source>No recovery data found.</source><translation>Даних відновлення не знайдено.</translation></message>
     <message><source>Unreadable recovery entry: {path} ({message})</source><translation>Не вдалося прочитати запис відновлення: {path} ({message})</translation></message>
+    <message><source>Some damaged snapshots contain readable text. It can be opened separately without trusting their metadata.</source><translation>Деякі пошкоджені копії містять текст, доступний для читання. Його можна відкрити окремо, не довіряючи їхнім метаданим.</translation></message>
+    <message><source>Damaged or incomplete snapshots may not contain recoverable text.</source><translation>Пошкоджені або неповні копії можуть не містити тексту, який можна відновити.</translation></message>
+    <message><source>Open text from damaged snapshot…</source><translation>Відкрити текст із пошкодженої копії…</translation></message>
+    <message><source>Open damaged snapshot text</source><translation>Відкрити текст пошкодженої копії</translation></message>
+    <message><source>Choose a damaged snapshot. Its text will open as an unsaved document; metadata is not trusted.</source><translation>Виберіть пошкоджену копію. Її текст відкриється як незбережений документ; метадані не використовуються.</translation></message>
+    <message><source>Recovered text is open as an unsaved document.</source><translation>Відновлений текст відкрито як незбережений документ.</translation></message>
     <message><source>Recovery snapshots are captured every 30 seconds while documents are dirty; changes after the latest snapshot and hardware failures may not be recoverable.</source><translation>Копії для відновлення створюються кожні 30 секунд, поки документи мають незбережені зміни; зміни після останньої копії та дані після збою обладнання можуть бути втрачені.</translation></message>
     <message><source>Recover unsaved work</source><translation>Відновити незбережену роботу</translation></message>
     <message><source>Recovery data is available. Choose how to proceed.</source><translation>Доступні дані відновлення. Виберіть подальшу дію.</translation></message>

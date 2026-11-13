@@ -4262,6 +4262,10 @@ class MainWindow(QMainWindow):
             )
             for issue in scan.issues
         )
+        if any(issue.recoverable_text is not None for issue in scan.issues):
+            details.append(self.tr("Some damaged snapshots contain readable text. It can be opened separately without trusting their metadata."))
+        if scan.issues:
+            details.append(self.tr("Damaged or incomplete snapshots may not contain recoverable text."))
         details.append(
             self.tr("Disk status can change after inspection; restoring checks the canonical file again.")
         )
@@ -4276,6 +4280,8 @@ class MainWindow(QMainWindow):
         restore = dialog.addButton(self.tr("Restore latest"), QMessageBox.ButtonRole.AcceptRole)
         restore_selected = dialog.addButton(self.tr("Restore selected snapshot…"), QMessageBox.ButtonRole.ActionRole)
         restore_selected.setEnabled(bool(scan.entries))
+        recover_damaged = dialog.addButton(self.tr("Open text from damaged snapshot…"), QMessageBox.ButtonRole.ActionRole)
+        recover_damaged.setEnabled(any(issue.recoverable_text is not None for issue in scan.issues))
         inspect = dialog.addButton(self.tr("Inspect / compare"), QMessageBox.ButtonRole.ActionRole)
         locate = dialog.addButton(self.tr("Locate project…"), QMessageBox.ButtonRole.ActionRole)
         discard = dialog.addButton(self.tr("Discard recovery data"), QMessageBox.ButtonRole.DestructiveRole)
@@ -4286,6 +4292,7 @@ class MainWindow(QMainWindow):
         self._recovery_scan = scan
         restore.clicked.connect(lambda: self._handle_recovery_choice("restore", scan, dialog))
         restore_selected.clicked.connect(lambda: self._handle_recovery_choice("select", scan, dialog))
+        recover_damaged.clicked.connect(lambda: self._handle_recovery_choice("damaged", scan, dialog))
         inspect.clicked.connect(lambda: self._handle_recovery_choice("inspect", scan, dialog))
         locate.clicked.connect(lambda: self._handle_recovery_choice("locate", scan, dialog))
         discard.clicked.connect(lambda: self._handle_recovery_choice("discard", scan, dialog))
@@ -4294,6 +4301,23 @@ class MainWindow(QMainWindow):
     def _handle_recovery_choice(self, choice: str, scan: RecoveryScan, dialog: QMessageBox) -> None:
         dialog.close()
         if choice == "defer":
+            return
+        if choice == "damaged":
+            issues = [issue for issue in scan.issues if issue.recoverable_text is not None]
+            labels = [str(issue.snapshot_path) for issue in issues]
+            if not labels:
+                self._recovery_scan_finished(scan)
+                return
+            label, accepted = QInputDialog.getItem(
+                self, self.tr("Open damaged snapshot text"),
+                self.tr("Choose a damaged snapshot. Its text will open as an unsaved document; metadata is not trusted."),
+                labels, 0, False,
+            )
+            if not accepted or label not in labels:
+                self._recovery_scan_finished(scan)
+                return
+            self.tabs.add_document(Document(text=issues[labels.index(label)].recoverable_text, dirty=True))
+            self.statusBar().showMessage(self.tr("Recovered text is open as an unsaved document."), 8000)
             return
         if choice == "inspect":
             labels = RecoveryComparisonLabels(

@@ -138,6 +138,43 @@ def test_recovery_can_restore_one_selected_older_snapshot(application, tmp_path,
     window.close()
 
 
+def test_recovery_opens_damaged_metadata_text_only_by_explicit_selection(application, tmp_path, monkeypatch):
+    import json
+    canonical = tmp_path / "original.txt"
+    canonical.write_text("saved", encoding="utf-8")
+    store = RecoveryStore(tmp_path / "recovery")
+    entry = store.save("doc", "unsaved draft", canonical_path=canonical)
+    payload = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+    payload["captured_at"] = "invalid"
+    entry.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+    original = entry.snapshot_path.read_bytes()
+    scan = store.scan()
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    count = window.tabs.count()
+    window._recovery_scan_finished(scan)
+    assert "readable text" in window._recovery_dialog.detailedText()
+    assert any(button.text() == "Open text from damaged snapshot…" and button.isEnabled()
+               for button in window._recovery_dialog.buttons())
+    assert window.tabs.count() == count
+    window._recovery_dialog.close()
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _prompt, labels, *_args: (labels[0], False))
+    dialog = QMessageBox(window)
+    window._handle_recovery_choice("damaged", scan, dialog)
+    assert window.tabs.count() == count
+    window._recovery_dialog.close()
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _prompt, labels, *_args: (labels[0], True))
+    window._handle_recovery_choice("damaged", scan, dialog)
+    editor = window.tabs.current_editor()
+    assert window.tabs.count() == count + 1
+    assert editor.toPlainText() == "unsaved draft" and editor.document_state.dirty
+    assert editor.document_state.path is None
+    assert canonical.read_text(encoding="utf-8") == "saved"
+    assert entry.snapshot_path.read_bytes() == original
+    editor.document_state.mark_saved()
+    window.close()
+
+
 def test_standalone_repeated_saves_update_disk_fingerprint_and_detect_external_edits(application, tmp_path, monkeypatch):
     path = tmp_path / "draft.txt"
     path.write_text("base", encoding="utf-8")
