@@ -28,7 +28,6 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 | TASK-007 | Implement external file conflict resolution | partial |
 | TASK-008 | Improve recovery diagnosis | partial |
 | TASK-009 | Implement revision snapshot management | open |
-| TASK-010 | Implement portable project backup | open |
 | TASK-011 | Improve file encoding and large-file handling | open |
 | TASK-012 | Implement project-wide full-text search | partial |
 | TASK-013 | Implement Quick Open | partial |
@@ -341,26 +340,6 @@ keyboard/screen-reader checks and release translation compilation remain open.
 - Unsaved buffers are handled explicitly.
 - Restore is transactional or leaves original data intact on failure.
 - Snapshot deletion requires confirmation.
-
-### TASK-010 — Implement portable project backup
-**Priority:** Medium · **Parent status:** open
-
-- [ ] **TASK-010.01** — Allow users to select a backup destination.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-010.02** — Include project metadata and required manuscript files.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-010.03** — Explicitly define handling of revisions and unsaved buffers.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-010.04** — Add read-only backup integrity validation.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-010.05** — Support restoring a backup into a separate directory.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-
-**Parent acceptance gate (all must pass):**
-- Backup contents are documented.
-- Missing or unreadable files are reported.
-- Existing destinations are not overwritten without confirmation.
-- Restored projects pass integrity checks.
 
 ### TASK-011 — Improve file encoding and large-file handling
 **Priority:** Medium · **Parent status:** open
