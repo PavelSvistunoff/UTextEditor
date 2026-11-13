@@ -1,5 +1,25 @@
 # Implementation progress
 
+## TASK-001.03 / .05 checkpoint (2026-11-13)
+
+- **.03: CHECKPOINT; .05: CHECKPOINT; parent TASK-001: open.** A direct
+  tracker reproduction confirms rekeying to an active identity replaces the
+  destination's tracked text and checkpoints. No collision fix is claimed;
+  independent editor identities and project-wide progress need a safe design.
+- Added mixed history workload: multilingual insertions at document start,
+  punctuation insertion/deletion, undo, redo and branching. At 10,000 commands:
+  10,001 states, 2,206,486 current traced Python bytes; counts 3334 → 3000 →
+  3334, branch 3001. Timing overlapped the full test run near the end and is
+  not a clean baseline. Synthetic operations do not establish a memory bound.
+- Changed `benchmarks/writing_goal_history.py`, `tests/test_writing_goal_benchmark.py`,
+  `README.md`, `TASKS.md` and this checkpoint on `codex/task-continuation`.
+  Unrelated staged generated files remain untouched. Native checks not run.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goal_benchmark.py tests/test_writing_goals.py`: 39 passed.
+  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 908 passed, 2 skipped.
+  Benchmark: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/writing_goal_history.py --commands 10000 --undo 1000 --workload mixed` passed.
+- Blocker: none. Next: design and test separate live editor identities without
+  losing historical progress, then address bounded undo metadata; resume .03.
+
 ## Active backlog cleanup (2026-11-13)
 
 - Removed eight previously completed parent tasks and 132 completed subtasks

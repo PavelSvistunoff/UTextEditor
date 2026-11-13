@@ -55,11 +55,18 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   is not actively tracked. Scope/enable transitions now
   preserve checkpoints, with no new-word credit for inactive edits; bounded
   history and actively tracked identity collisions remain outstanding.
+  A direct tracker reproduction confirms rekeying into an active destination
+  replaces its tracked text and checkpoints; a per-editor identity design is
+  still needed to preserve both histories.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.05** — Benchmark realistic long editing sessions.
   History benchmark now accepts command/undo counts and checks branching after
   undo; 100-command smoke and 10,000-command runs passed. The latter retained
   10,001 states and 3,723,574 current Python-traced bytes; no bound established.
+  The mixed workload additionally inserts multilingual words at the start and
+  adds/removes punctuation; a 10,000-command run verified undo, redo and
+  branching, retaining 10,001 states and 2,206,486 Python-traced bytes. It
+  remains synthetic and does not establish a memory bound.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 
 **Parent acceptance gate (all must pass):**
