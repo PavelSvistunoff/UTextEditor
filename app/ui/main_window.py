@@ -5585,20 +5585,28 @@ class MainWindow(QMainWindow):
         worker = FunctionWorker(search_project, project.root, documents, query, cancel, buffers)
         self._track_worker(worker)
 
-        def finished(result):
+        def finish_search() -> bool:
+            if self._project_search_cancel is not cancel:
+                return False
             self._project_search_cancel = None
             panel.set_running(False)
-            if self.project is not project or self._project_generation != project_generation or self._closing_confirmed:
+            if self._closing_confirmed:
+                return False
+            if self.project is not project or self._project_generation != project_generation:
                 panel.status.setText(self.tr("Project changed. Search again."))
+                return False
+            return True
+
+        def finished(result):
+            if not finish_search():
                 return
             self._project_search_query = query
             self._project_search_context = (project, project_generation, generation)
             panel.set_results(result)
 
         def failed(error):
-            self._project_search_cancel = None
-            panel.set_running(False)
-            panel.status.setText(str(error))
+            if finish_search():
+                panel.status.setText(format_qt(self.tr("Project search failed: %1"), error))
 
         worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)

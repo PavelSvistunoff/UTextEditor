@@ -1097,6 +1097,7 @@ Text is sent to the configured Ollama destination:
     <message><source>Invalid project path: %1</source><translation>Неприпустимий шлях проєкту: %1</translation></message>
     <message><source>Could not load revision snapshots: %1</source><translation>Не вдалося завантажити знімки ревізій: %1</translation></message>
     <message><source>Could not compare snapshots: %1</source><translation>Не вдалося порівняти знімки: %1</translation></message>
+    <message><source>Project search failed: %1</source><translation>Не вдалося виконати пошук у проєкті: %1</translation></message>
     <message><source>Captured local context at %1:
 %2</source><translation>Локальний контекст зафіксовано о %1:
 %2</translation></message>

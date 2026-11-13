@@ -180,3 +180,14 @@ snapshot. Both now format translated MainWindow templates. Eight injected UI
 cases cover load/compare, visible/hidden dialog, project identity and selection
 generation changes, preserving exact error details. Three untranslated cases
 failed before change; stale checks already passed. Native UI remains open.
+
+## Project-search failure feedback — TASK-032.01/.02/.04
+
+Inventory: MainWindow._start_project_text_search failed callback displayed
+str(error) directly in ProjectSearchPanel.status and did not validate captured
+project context. Ten worker cases cover success/failure for current, changed
+project/generation, closing and superseded requests. A translated failure wrapper
+preserves exact diagnostics; shared completion logic prevents stale feedback or
+clearing a newer request. Three baseline cases failed before the fix. Native UI
+review remains open. Source extraction and packaged parity checks are recorded
+in the current implementation checkpoint.

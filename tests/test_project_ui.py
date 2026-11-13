@@ -933,6 +933,73 @@ def test_project_search_cancel_keeps_gui_responsive(application, tmp_path, monke
     window.close()
 
 
+@pytest.mark.parametrize("fails", [False, True])
+@pytest.mark.parametrize("change", [None, "project", "generation", "closing", "superseded"])
+def test_project_search_feedback_is_localized_and_rejects_stale_results(
+    application, tmp_path, monkeypatch, fails, change,
+):
+    from app.i18n import install_translation
+    from app.project.search import SearchResult
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    started, release = Event(), Event()
+
+    def search(*args):
+        started.set()
+        if not release.wait(5):
+            raise TimeoutError("test release timed out")
+        if fails:
+            raise OSError("disk detail %1 {error}")
+        return SearchResult((), (), False, False)
+
+    monkeypatch.setattr("app.ui.main_window.search_project", search)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    window.show_project_search()
+    panel = window._project_search_panel
+    _, translator = install_translation(application, "uk")
+    try:
+        window._start_project_text_search("word")
+        wait_until(started.is_set, application)
+        if change == "project":
+            window.project = None
+        elif change == "generation":
+            window._project_generation += 1
+        elif change == "closing":
+            window._closing_confirmed = True
+        elif change == "superseded":
+            replacement_cancel = Event()
+            window._project_search_cancel = replacement_cancel
+        previous_status = panel.status.text()
+        release.set()
+        if change == "superseded":
+            window.thread_pool.waitForDone(3000)
+            application.processEvents()
+            assert window._project_search_cancel is replacement_cancel
+            assert panel.cancel_button.isEnabled() and panel.status.text() == previous_status
+            return
+        wait_until(lambda: window._project_search_cancel is None, application)
+        assert not panel.cancel_button.isEnabled()
+        if change == "closing":
+            assert panel.status.text() == previous_status
+        elif change:
+            assert panel.status.text() == window.tr("Project changed. Search again.")
+            assert "disk detail" not in panel.status.text()
+        elif fails:
+            assert panel.status.text().startswith("Не вдалося виконати пошук у проєкті:")
+            assert "disk detail %1 {error}" in panel.status.text()
+        else:
+            assert panel.status.text() == panel.tr("Search finished.")
+        assert panel.results.count() == 0
+    finally:
+        release.set()
+        window.thread_pool.waitForDone(3000)
+        application.removeTranslator(translator)
+        window._closing_confirmed = False
+        window.close()
+
+
 def test_project_search_panel_reports_omitted_errors(application):
     from app.project.search import SearchResult
     from app.ui.project_search_panel import ProjectSearchPanel

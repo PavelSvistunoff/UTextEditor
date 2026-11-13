@@ -4,6 +4,27 @@
 
 
 
+## TASK-032.01/.02/.04 checkpoint — project-search completion
+
+- TASK-032.01, .02, .04: **CHECKPOINT** each; parent TASK-032 partial.
+- Inventoried raw search failure status; translated wrapper retains exact details.
+- Refactor: success/failure share completion and captured-context validation.
+- Separate behavior fix: obsolete failure reports project change; closing and
+  superseded callbacks do not overwrite current feedback or newer search state.
+- Ten worker cases cover success/failure across current/project/generation/
+  closing/superseded states. Three baseline failure cases reproduced defects.
+- Focused UI/search/i18n/translation tests: 307 passed; full offscreen suite:
+  1024 passed, 2 skipped. `git diff --check` passed.
+- Source extraction/reference validation and en/uk compilation passed; Ukrainian
+  package rebuilt and parity tested. Native UI/accessibility and live Ollama untested.
+- Clean Code review: shared state rule, explicit guards, original diagnostics;
+  no domain search, persistence, undo, dependency or public API changes.
+- Files: main window, UI tests, Ukrainian TS/QM, README and evidence/checkpoints.
+- Existing TASKS.md and three pyc changes preserved; branch `main`.
+- Next: remaining revision/recovery typed errors and full UI inventory.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## Backlog cleanup — verified catalog task
 
 - Reviewed all current TASKS.md entries against owning tests and evidence docs.
