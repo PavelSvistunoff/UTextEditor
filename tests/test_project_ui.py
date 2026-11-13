@@ -2513,6 +2513,53 @@ def test_character_profile_narrow_form_keyboard_reaches_profile_fields(applicati
     assert original.personality == {}
 
 
+def test_narrow_profile_all_staged_fields_survive_scene_return_save_and_cancel(application, tmp_path, monkeypatch):
+    from copy import deepcopy
+    from PySide6.QtWidgets import QLineEdit
+    from app.project import SceneCharacterAssociation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    character = project.add_character("Mara")
+    scene = project.add_scene("Associated", content="Original scene")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window._project_opened(project)
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _label, choices, *args: (choices[0], True))
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    dialog.resize(400, 380)
+    for key, widget in dialog._profile_widgets().items():
+        value = {"goals": "Find key | active | 2 | before dawn", "knowledge": "knows: the secret",
+                 "arc": "current_state: Ready"}.get(key, "Staged " + key)
+        if isinstance(widget, QLineEdit):
+            widget.setText(value)
+        else:
+            widget.setPlainText(value)
+    expected_fields = dialog.profile_fields()
+    try:
+        window._open_scene_from_character_profile(dialog, project, character.id)
+        wait_until(lambda: any(binding.item_id == scene.id for binding in window._project_documents.values()), application)
+        window._return_to_character_profile()
+        application.processEvents()
+        assert dialog.isVisible() and dialog.profile_fields() == expected_fields
+        dialog._accept()
+        expected_character = deepcopy(dialog.character)
+        wait_until(lambda: not window._character_profile_saving, application)
+        assert Project.open(project.root).get_character(character.id) == expected_character
+        window._edit_character(project.get_character(character.id))
+        cancelled = window._active_character_dialog
+        cancelled.resize(400, 380)
+        cancelled.full_name.setText("Discarded edit")
+        cancelled.reject()
+        assert Project.open(project.root).get_character(character.id) == expected_character
+        assert project.read_scene(scene.id) == "Original scene"
+    finally:
+        if window._active_character_dialog is not None:
+            window._active_character_dialog.reject()
+        window.close()
+
+
 def test_character_ai_suggestions_require_review_and_leave_existing_fields(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "novel", "Novel")
     character = project.add_character("Mara")

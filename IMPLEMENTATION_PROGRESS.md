@@ -4,6 +4,21 @@
 
 
 
+## TASK-030.03 — direct native completion
+
+- TASK-030.03: **COMPLETE**, removed from TASKS.md; broader parent/native audit
+  remains separate. Cocoa Qt screen available on macOS 27.0.1 arm64 / Qt 6.11.2.
+- Native all-field keyboard/structured-profile run: 5 passed; earlier native
+  profile/review run: 31 passed. Inputs used QTest on native Qt widgets.
+- New 400x380 case preserves every staged field through associated-scene return,
+  saves/reopens exact character model, then verifies Cancel preserves persisted data.
+- Full offscreen batch: 1055 passed, 2 skipped; `git diff --check` passed.
+- No VoiceOver spoken-label or system-palette acceptance claimed.
+- Files: TASKS, profile evidence, UI regression and checkpoints; pyc preserved.
+- Next: TASK-032 dynamic strings and native Find/Replace width defect (.034.06).
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.01/.02/.04 checkpoint — revision creation feedback
 
 - TASK-032.01, .02, .04: **CHECKPOINT** each; parent TASK-032 partial.

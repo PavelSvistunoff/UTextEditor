@@ -44,3 +44,15 @@ profile service/UI tests: 55 passed. No controls or translation strings changed.
 keyboard, accessibility and release-catalog review. Exact preservation concerns
 untouched values, not a new syntax for editing arbitrary multiline structured
 entries. README documents the fix and retained form behavior.
+
+## Direct native acceptance — TASK-030.03
+
+macOS 27.0.1 arm64, Qt 6.11.2, Cocoa, one native screen. Direct native command:
+`QT_QPA_PLATFORM=cocoa PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_ui.py -k "narrow_profile_all or narrow_form_keyboard or profile_save_preserves_untouched"`
+produced **5 passed**. QTest traversed every profile field at 400x380. A full
+staged-field case returned from a real associated-scene open, compared all widget
+values exactly, saved and checked the reopened YAML model, then cancelled a new
+edit without changing persisted data. Three structured-value cases retained exact
+untouched values. This is native automated Qt input, not a human screen-reader
+audit. TASK-030.03 is COMPLETE under its current criteria; speech/palette and
+application-wide focus acceptance remain under TASK-034.
