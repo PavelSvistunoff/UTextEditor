@@ -33,7 +33,7 @@ Each `.V2` requires **real** Linux/macOS GUI testing: record OS/Qt, keyboard/foc
 - [ ] **TASK-017.V2** (Medium) — Reopen existing tab via Recent Files, handle missing path, clear recents; preserve unsaved buffers. [Recent files](docs/recent-files-verification.md)
 - [ ] **TASK-018.V2** (Medium) — Navigate Project/AI menus by keyboard; verify action reachability, disabled explanations and no shortcut collisions. [Menus](docs/menu-organization-verification.md)
 - [ ] **TASK-019.V2** (Low) — Back/Forward through scene/search/note; remove/relink a target and verify safe skipping without changing dirty buffers. [History](docs/navigation-history-verification.md)
-- [ ] **TASK-020.V2** (Medium) — Find/Replace Unicode, case/whole-word and narrow-window focus; verify zero matches and replacement undo. [Find/Replace](docs/find-replace-verification.md)
+- [ ] **TASK-020.V2** (Medium) — Find/Replace Unicode, case/whole-word and narrow-window focus; verify zero matches and replacement undo. [Find/Replace tests](tests/test_find_replace.py)
 - [ ] **TASK-021.V2** (Medium) — Navigate spelling suggestions with arrows/Space; Cancel/Apply, reject stale suggestions, undo and check spoken labels. [Spellcheck](docs/spelling-review-verification.md)
 - [ ] **TASK-022.V2** (High) — Inspect captured AI completion context/destination, exclude notes and Cancel before sending; verify disclosure and stale guards. [AI context](docs/completion-context-verification.md)
 - [ ] **TASK-023.V2** (Medium) — Navigate duplicate-title translation review; Cancel with project unchanged, check explicit all-or-nothing Apply and stable IDs. [Translation](docs/translation-review-verification.md)
