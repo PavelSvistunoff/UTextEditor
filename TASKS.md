@@ -401,6 +401,8 @@ format/path errors during opening and project changes use shared typed UI
 formatting with translated categories and original details. Profile-save failures
 now use the same categories and retain staged profile edits for retry. Text/PDF
 export failures also share typed project categories and existing source protection.
+Character scene-search errors share these categories, with project/generation
+staleness rejection covered by packaged Ukrainian tests.
 AI generation/completion network failures have packaged Ukrainian runtime coverage,
 including stale request/settings rejection and preservation of dirty text/details.
 Automated literal candidates were reviewed; other raw service errors and native

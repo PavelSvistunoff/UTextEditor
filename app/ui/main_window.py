@@ -3473,8 +3473,9 @@ class MainWindow(QMainWindow):
             self._open_project_document("scene", labels[label].id)
 
     def _character_scene_search_failed(self, project, generation: int, error) -> None:
-        if project is self.project and generation == self._project_generation:
-            QMessageBox.warning(self, self.tr("Character scene search failed"), str(error))
+        if project is not self.project or generation != self._project_generation:
+            return
+        QMessageBox.warning(self, self.tr("Character scene search failed"), self._project_error_message(error))
 
     def move_project_scene(self, offset: int) -> None:
         if self.project is None or self.project_view is None:

@@ -3,6 +3,24 @@
 > This short file records the **latest actionable checkpoint**. Earlier execution history is recorded in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
+## TASK-032.04 checkpoint — character scene-search errors
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
+- Scene-search callback uses shared typed project presentation; stale checks use
+  an explicit early return. Format/path categories localized, diagnostics retained.
+- Nine injected callback cases cover three error types across current/project/
+  generation changes. Two typed current cases failed before the change.
+- Focused UI/domain/i18n/translation tests: 307 passed; full offscreen suite:
+  984 passed, 2 skipped. `git diff --check` passed; packaged parity tested.
+- No new UI strings or catalog rebuild. Native Ukrainian UI/accessibility and
+  live Ollama not tested. Existing three pyc changes preserved; branch `main`.
+- Clean Code review: shared formatting and clear guard, domain and workers
+  unchanged; no dependency/API changes. Repository-wide refactoring incomplete.
+- Files: main window, UI tests, README, TASKS, refactoring/localization evidence.
+- Next: character export and remaining custom AI/project failure callbacks.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — shared export errors
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 open.

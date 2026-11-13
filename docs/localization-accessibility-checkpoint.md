@@ -119,3 +119,10 @@ Text and PDF export share error presentation, preserving the localized source-fi
 protection and using typed project-format/path categories. Eight injected callback
 cases cover both routes, exact diagnostic retention, generic system errors and
 busy-state reset. Native export/localization review remains open.
+
+## Character scene-search failures — TASK-032.04
+
+`test_character_scene_search_failure_localization_and_stale_guards` covers
+format, path and system errors for current, changed-project and changed-generation
+results. Current typed errors use shared Ukrainian categories and preserve exact
+diagnostics; stale results show no warning. Native UI review remains open.

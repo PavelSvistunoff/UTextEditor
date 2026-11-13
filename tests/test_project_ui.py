@@ -166,6 +166,40 @@ def test_export_failures_share_project_error_categories(application, tmp_path, m
         window.close()
 
 
+@pytest.mark.parametrize("stale", [None, "project", "generation"])
+@pytest.mark.parametrize("error,category", [
+    (ProjectFormatError("scene detail %1"), "Некоректні дані проєкту"),
+    (ProjectPathError("scene detail %1"), "Неприпустимий шлях проєкту"),
+    (OSError("scene detail %1"), "scene detail %1"),
+])
+def test_character_scene_search_failure_localization_and_stale_guards(
+    application, tmp_path, monkeypatch, stale, error, category,
+):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    generation = window._project_generation
+    if stale == "project":
+        window.project = None
+    elif stale == "generation":
+        window._project_generation += 1
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    _, translator = install_translation(application, "uk")
+    try:
+        window._character_scene_search_failed(project, generation, error)
+        if stale:
+            assert not warnings
+        else:
+            assert category in warnings[0][2] and str(error) in warnings[0][2]
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_recovery_chooser_displays_captured_disk_status_in_ukrainian(application, tmp_path):
     import subprocess
     import sys
