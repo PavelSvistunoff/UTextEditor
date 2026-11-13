@@ -196,3 +196,22 @@ def test_private_generation_can_request_json_mode() -> None:
     payload = json.loads(urlopen.call_args.args[0].data.decode())
     assert payload["format"] == "json"
     assert payload["think"] is False
+
+
+def test_complete_reference_requests_disable_input_truncation_and_context_shifting():
+    client = OllamaClient()
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response_with({"message": {"content": "Draft"}})) as urlopen:
+        client.generate_private("All references", require_full_context=True)
+    payload = json.loads(urlopen.call_args.args[0].data)
+    assert payload["truncate"] is False
+    assert payload["shift"] is False
+    assert payload["messages"][1]["content"] == "All references"
+
+
+def test_context_window_failure_does_not_expose_note_contents():
+    client = OllamaClient()
+    error = HTTPError("http://localhost:11434/api/chat", 400, "Bad Request", {}, BytesIO(b'context length exceeded: PRIVATE NOTE'))
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=error):
+        with pytest.raises(OllamaError, match="context window") as caught:
+            client.generate_private("All references", require_full_context=True)
+    assert "PRIVATE NOTE" not in str(caught.value)

@@ -45,7 +45,12 @@ more business logic there.
 Structured character profiles, directed relationships, and optional scene
 associations are part of the version-1 YAML manifest. Scene-focused AI requests
 must use `character_context.py` and include only explicitly associated
-profiles; planning may use its compact project-level motivation summary.
+profiles for completion, analysis and scene-development requests. Whole-project
+Auto-writer additionally includes all textual profiles and relationships as
+background, while explicit associations still determine scene presence. Character
+profile generation includes all project reference notes. Neither workflow may
+silently truncate this reference material. Planning may use the compact
+project-level motivation summary.
 
 ## Logical task batches and continuation
 

@@ -453,6 +453,7 @@
         <source>AI suggestions failed</source>
         <translation>Не вдалося отримати пропозиції ШІ</translation>
     </message>
+    <message><source>Send the current character profile and all project reference notes (including unsaved open notes) to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.</source><translation>Надіслати поточний профіль персонажа та всі довідкові нотатки проєкту (включно з незбереженими відкритими нотатками) до %1 (модель %2), щоб запропонувати значення для порожніх полів? Запит і відповідь відображаються в діагностиці ШІ.</translation></message>
 </context>
 <context>
     <name>CharacterRelationshipDialog</name>
@@ -1805,6 +1806,15 @@ Text is sent to the configured Ollama destination:
 
 Текст надсилається до налаштованого сервера Ollama:
 {host} — {model}</translation></message>
+    <message><source>Auto-writer will {operation} using the project outline, scene text, reference notes in full, all character profiles and relationships as background, explicit scene associations, your optional instructions, and current AI settings.
+
+Destination: {host} — model {model}
+
+Project text and reference notes are sent only to this configured model. A complete local revision snapshot is created before generation. All scene changes are applied together only after every scene succeeds and you review the drafts. Refine mode may replace existing text.</source><translation>Автоматичне написання буде {operation}, використовуючи план проєкту, текст сцен, усі довідкові нотатки повністю, усі профілі персонажів і стосунки як тло, явні зв’язки зі сценами, ваші необов’язкові вказівки та поточні налаштування ШІ.
+
+Призначення: {host} — модель {model}
+
+Текст проєкту та довідкові нотатки надсилаються лише цій налаштованій моделі. Перед генеруванням створюється повний локальний знімок редакції. Усі зміни сцен застосовуються разом лише після успішного генерування всіх сцен і перегляду чернеток. Режим покращення може замінити наявний текст.</translation></message>
 </context>
 <context>
     <name>QuickOpenDialog</name>

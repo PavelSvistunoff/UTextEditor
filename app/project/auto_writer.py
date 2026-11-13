@@ -8,12 +8,12 @@ from dataclasses import dataclass
 from app.document.revisions import RevisionStore
 from .model import ProjectError
 from .service import Project
-from .character_context import scene_character_context
+from .character_context import scene_character_context, complete_project_character_context
+from .reference_context import capture_project_notes, check_reference_size
 
 MAX_AUTOWRITER_SCENES = 80
 MAX_SCENE_INPUT_LENGTH = 16000
 MAX_SCENE_OUTPUT_LENGTH = 30000
-MAX_REFERENCE_CONTEXT = 10000
 AUTO_WRITER_REQUEST_TIMEOUT_SECONDS = 300
 
 
@@ -30,7 +30,7 @@ def run_auto_writer(
     project: Project,
     mode: str,
     instructions: str,
-    open_text: Mapping[str, str],
+    open_text: Mapping[str, str | None],
     *,
     maximum_tokens: int,
     temperature: float,
@@ -51,6 +51,11 @@ def run_auto_writer(
     if disk_project.manifest.to_mapping() != project.manifest.to_mapping():
         raise ProjectError("Project structure changed before Auto-writer started; reload the project.")
 
+    project = disk_project
+    references = capture_project_notes(project, open_text)
+    profile_context = complete_project_character_context(project)
+    check_reference_size(references.text + profile_context)
+
     scene_records: list[tuple[str, str, str, str, str]] = []
     scene_order: list[str] = []
     scene_titles: dict[str, str] = {}
@@ -61,6 +66,8 @@ def run_auto_writer(
         for scene in chapter.scenes:
             disk_text = project.read_scene(scene.id)
             current_text = open_text.get(scene.id, disk_text)
+            if current_text is None:
+                raise ProjectError("An open scene could not be captured completely; no context was truncated.")
             scene_records.append(
                 (scene.id, chapter.title, scene.title, current_text, disk_text)
             )
@@ -72,6 +79,8 @@ def run_auto_writer(
     for scene in project.manifest.ungrouped_scenes:
         disk_text = project.read_scene(scene.id)
         current_text = open_text.get(scene.id, disk_text)
+        if current_text is None:
+            raise ProjectError("An open scene could not be captured completely; no context was truncated.")
         scene_records.append(
             (scene.id, "Ungrouped scenes", scene.title, current_text, disk_text)
         )
@@ -80,10 +89,9 @@ def run_auto_writer(
         documents[scene.id] = current_text
         expected_disk[scene.id] = disk_text
         expected_context[scene.id] = disk_text
-    for note in project.manifest.notes:
-        disk_text = project.read_note(note.id)
-        documents[note.id] = open_text.get(note.id, disk_text)
-        expected_context[note.id] = disk_text
+    for note in references.notes:
+        documents[note.id] = note.text
+        expected_context[note.id] = note.disk_text
 
     targets = [
         record
@@ -119,16 +127,7 @@ def run_auto_writer(
             f"Auto-writer was cancelled; no scenes were changed. Original snapshot is at {snapshot.snapshot_path}."
         )
 
-    notes = [
-        f"{note.type}: {note.title}\n{documents[note.id]}"
-        for note in project.manifest.notes
-    ]
-    reference_context = "\n\n".join(notes)
-    if len(reference_context) > MAX_REFERENCE_CONTEXT:
-        reference_context = (
-            reference_context[:MAX_REFERENCE_CONTEXT]
-            + "\n[Reference notes truncated to the Auto-writer context limit.]"
-        )
+    reference_context = references.text
     outline_parts = [
         "# " + chapter.title + "\n" + "\n".join(f"- {scene.title}" for scene in chapter.scenes)
         for chapter in project.manifest.chapters
@@ -170,12 +169,20 @@ def run_auto_writer(
             f"<writing_instructions>\n{instructions or '[No additional instructions supplied.]'}\n</writing_instructions>\n"
             f"<project_outline>\n{outline[:5000]}\n</project_outline>\n"
             f"<reference_notes>\n{reference_context}\n</reference_notes>\n"
+            f"<all_project_character_profiles>\n{profile_context}\n</all_project_character_profiles>\n"
+            "All project profiles are background references, not evidence that a character is present in this scene. "
+            "Use the explicit scene associations below to determine presence. "
+            "Respect chronology; later scene developments are not established facts in an earlier scene.\n"
             f"<associated_character_context>\n{character_context or '[No characters associated with this scene.]'}\n</associated_character_context>\n"
             "Respect each character's stated knowledge and limitations. They must not act on concealed or unknown facts unless this scene establishes how they learned them. Treat profiles as guidance that allows motivated surprises.\n"
             f"<preceding_scenes>\n{chr(10).join(preceding[-2:])}\n</preceding_scenes>\n"
+            f"Target scene: {title} [{scene_id}]\n"
             f"<current_chapter>\n{chapter_title}\n</current_chapter>\n"
             f"<current_scene>\n{current_text if mode == 'refine_all' else '[Empty scene]'}\n</current_scene>"
         )
+        references.verify_current()
+        if is_cancelled():
+            raise ProjectError("Auto-writer was cancelled; no scenes were changed.")
         generated = provider.generate_private(
             prompt,
             role=(
@@ -185,7 +192,11 @@ def run_auto_writer(
             maximum_tokens=min(maximum_tokens, 1400),
             temperature=temperature,
             timeout=AUTO_WRITER_REQUEST_TIMEOUT_SECONDS,
+            require_full_context=True,
         )
+        if is_cancelled():
+            raise ProjectError("Auto-writer was cancelled; no scenes were changed.")
+        references.verify_current()
         if not isinstance(generated, str) or not generated.strip():
             raise ProjectError(f"The model returned an empty result for scene {title!r}.")
         if len(generated) > MAX_SCENE_OUTPUT_LENGTH or "\x00" in generated:

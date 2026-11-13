@@ -111,3 +111,30 @@ def _profile(character: Character, association: SceneCharacterAssociation) -> tu
         evidence = f"; evidence: {change.evidence}" if change.evidence else ""
         lines.append(f"Scene state change: {change.field} → {change.value}{previous}{evidence}")
     return "\n".join(lines), omitted
+
+
+def complete_project_character_context(project) -> str:
+    """Full textual profiles, relationships and recorded scene development.
+
+    Auto-writer explicitly shares the whole cast as background. Other scene AI
+    workflows retain the associated-only, bounded context above. Image data is
+    not text context and is deliberately excluded.
+    """
+    import json
+    from copy import deepcopy
+
+    mapping = deepcopy(project.manifest.to_mapping())
+    characters = mapping.get("characters", [])
+    for character in characters:
+        character.pop("portrait", None)
+    scenes = [scene for chapter in mapping["chapters"] for scene in chapter["scenes"]]
+    scenes.extend(mapping["ungrouped_scenes"])
+    return json.dumps({
+        "characters": characters,
+        "relationships": mapping.get("character_relationships", []),
+        "scene_development": [
+            {"scene_id": scene["id"], "title": scene["title"],
+             "character_associations": scene["character_associations"]}
+            for scene in scenes if scene.get("character_associations")
+        ],
+    }, ensure_ascii=False)

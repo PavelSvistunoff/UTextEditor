@@ -36,7 +36,8 @@ from PySide6.QtWidgets import QApplication
 
 from app.ai.completion_service import (STALE_PROJECT_CONTEXT, CompletionService, build_context, capture_project_completion,
                                        complete_captured_project_scene, complete_project_scene)
-from app.ai.character_profile import suggest_character_fields
+from app.project.character_suggestions import suggest_project_character_fields
+from app.project.reference_context import MAX_PROJECT_REFERENCE_BYTES
 from app.ai.character_development import suggest_character_development
 from app.ai.project_analysis import run_project_analysis
 from app.ai.project_planning import generate_project_outline, suggest_project_brief
@@ -1256,7 +1257,8 @@ class MainWindow(QMainWindow):
         )
         confirmation = self.tr(
             "Auto-writer will {operation} using the project outline, scene text, reference "
-            "notes, characters associated with each scene, your optional instructions, and current AI settings.\n\n"
+            "notes in full, all character profiles and relationships as background, explicit scene associations, "
+            "your optional instructions, and current AI settings.\n\n"
             "Destination: {host} — model {model}\n\n"
             "Project text and reference notes are sent only to this configured model. "
             "A complete local revision snapshot is created before generation. All scene "
@@ -1281,11 +1283,13 @@ class MainWindow(QMainWindow):
             )
             return
 
-        open_text: dict[str, str] = {}
+        note_buffers, _note_states = self._capture_project_note_buffers(project)
+        open_text: dict[str, str | None] = {}
         editor_states: dict[str, tuple[object, int]] = {}
         for editor, binding in tuple(self._project_documents.items()):
             if binding.project is project and self.tabs.indexOf(editor) >= 0:
-                open_text[binding.item_id] = editor.toPlainText()
+                open_text[binding.item_id] = (note_buffers[binding.item_id] if binding.kind == "note"
+                                              else editor.toPlainText())
                 editor_states[binding.item_id] = (editor, editor.revision)
                 timer = self._autosave_timers.get(editor)
                 if timer is not None:
@@ -3041,7 +3045,7 @@ class MainWindow(QMainWindow):
         if not any(not value.strip() for value in fields.values()):
             QMessageBox.information(dialog, CharacterDialog.tr("No empty fields"), CharacterDialog.tr("There are no empty fields to fill."))
             return
-        confirmation = CharacterDialog.tr("Send the current character profile to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.")
+        confirmation = CharacterDialog.tr("Send the current character profile and all project reference notes (including unsaved open notes) to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.")
         if QMessageBox.question(dialog, CharacterDialog.tr("Confirm AI request"), format_qt(confirmation, self.settings.ollama_host, self.settings.ollama_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
             return
         if not self._ensure_ai_context_consent():
@@ -3049,9 +3053,14 @@ class MainWindow(QMainWindow):
         settings_generation = self._settings_generation
         project_generation = self._project_generation
         active = [True]
+        note_buffers, note_states = self._capture_project_note_buffers(project)
+        suggestion_generation = getattr(dialog, "suggestion_generation", 0) + 1
+        dialog.suggestion_generation = suggestion_generation
         worker = FunctionWorker(
-            suggest_character_fields, self.provider, fields, self.settings.language, self.settings.temperature,
+            suggest_project_character_fields, self.provider, project, fields,
+            self.settings.language, self.settings.temperature, note_buffers,
             fallback_language="Ukrainian" if self.ui_language == "uk" else "English",
+            is_cancelled=lambda: worker.cancelled,
         )
         dialog.ai_button.setEnabled(False)
         dialog.ai_button.setText(CharacterDialog.tr("Generating suggestions…"))
@@ -3064,6 +3073,8 @@ class MainWindow(QMainWindow):
         def current():
             return (active[0] and not worker.cancelled and self.project is project and self._project_generation == project_generation
                     and self._settings_generation == settings_generation and self.settings.ai_enabled
+                    and dialog.suggestion_generation == suggestion_generation
+                    and self._project_note_editor_states(project) == note_states
                     and dialog.profile_fields() == fields)
 
         def cancel_suggestions():
@@ -3074,8 +3085,9 @@ class MainWindow(QMainWindow):
 
         self._track_ai_activity(worker, AIActivityPanel.tr("Character suggestions"), context=dialog.character.display_name or dialog.character.full_name, current=current, cancel=cancel_suggestions)
 
-        def finished(suggestions):
-            if not active[0] or worker.cancelled:
+        def finished(result):
+            suggestions = result.values
+            if not active[0] or worker.cancelled or dialog.suggestion_generation != suggestion_generation:
                 return
             dialog.ai_button.setEnabled(True)
             dialog.ai_button.setText(CharacterDialog.tr("Fill Empty Fields with AI…"))
@@ -3086,11 +3098,26 @@ class MainWindow(QMainWindow):
             preview.setWindowTitle(CharacterDialog.tr("Review character suggestions"))
             preview.insert_button.setText(CharacterDialog.tr("Fill empty fields"))
             preview.findChild(QLabel).setText(CharacterDialog.tr("Review these suggestions before filling the empty fields. Save the profile to keep them."))
-            if preview.exec() == QDialog.DialogCode.Accepted and current():
-                dialog.apply_profile_suggestions(suggestions)
+            if preview.exec() != QDialog.DialogCode.Accepted or not current():
+                return
+            # Files may change while the modal review is open. Verify off-thread
+            # before touching staged fields, then recheck all captured UI state.
+            dialog.ai_button.setEnabled(False)
+            verification = FunctionWorker(result.references.verify_current)
+            self._track_worker(verification)
+
+            def verified(_result):
+                if active[0] and dialog.suggestion_generation == suggestion_generation:
+                    dialog.ai_button.setEnabled(True)
+                if current():
+                    dialog.apply_profile_suggestions(suggestions)
+
+            verification.signals.finished.connect(verified, Qt.ConnectionType.QueuedConnection)
+            verification.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
+            self.thread_pool.start(verification)
 
         def failed(error):
-            if active[0] and not worker.cancelled:
+            if active[0] and not worker.cancelled and dialog.suggestion_generation == suggestion_generation:
                 dialog.ai_button.setEnabled(True)
                 dialog.ai_button.setText(CharacterDialog.tr("Fill Empty Fields with AI…"))
                 if current():
@@ -3099,6 +3126,23 @@ class MainWindow(QMainWindow):
         worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
         self.thread_pool.start(worker)
+
+    def _project_note_editor_states(self, project: Project) -> dict:
+        return {
+            binding.item_id: (editor, editor.revision)
+            for editor, binding in tuple(self._project_documents.items())
+            if binding.project is project and binding.kind == "note" and self.tabs.indexOf(editor) >= 0
+        }
+
+    def _capture_project_note_buffers(self, project: Project) -> tuple[dict[str, str | None], dict]:
+        states = self._project_note_editor_states(project)
+        remaining = MAX_PROJECT_REFERENCE_BYTES
+        buffers: dict[str, str | None] = {}
+        for note_id, (editor, _revision) in states.items():
+            units = editor.document().characterCount() - 1
+            buffers[note_id] = editor.toPlainText() if units <= remaining else None
+            remaining = max(0, remaining - units)
+        return buffers, states
 
     def associate_project_character(self) -> None:
         if self.project is None:

@@ -45,8 +45,9 @@ class AIProvider(Protocol):
         temperature: float = 0.2,
         timeout: float | None = None,
         json_mode: bool = False,
+        require_full_context: bool = False,
     ) -> str:
-        """Generate locally while keeping the request/response visible to diagnostics."""
+        """Generate with diagnostics; full-context requests must refuse truncation."""
         ...
 
     def check_spelling(self, text: str, language: str) -> list[Suggestion]:

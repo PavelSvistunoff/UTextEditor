@@ -68,6 +68,10 @@ class OllamaClient:
             body = exc.read(MAX_ERROR_BODY_BYTES).decode("utf-8", errors="replace")
             if "model" in body.lower() and "not found" in body.lower():
                 message = f"Ollama model '{self.model}' was not found. Pull it with `ollama pull {self.model}` or choose another model in AI Settings."
+            elif exc.code in {400, 413} and payload.get("truncate") is False and "context" in body.lower():
+                message = ("The complete request exceeds or cannot use the model context window. "
+                           "Increase Ollama's context length or reduce project reference material; "
+                           "no context was intentionally omitted.")
             else:
                 message = f"Ollama returned HTTP {exc.code} while contacting {path}."
             duration = time.time() - start
@@ -199,6 +203,7 @@ class OllamaClient:
         temperature: float = 0.2,
         timeout: float | None = None,
         json_mode: bool = False,
+        require_full_context: bool = False,
     ) -> str:
         """Generate a local AI response while keeping the interaction visible in diagnostics."""
         # Private here means the request is internal to the app workflow, not that it
@@ -212,6 +217,7 @@ class OllamaClient:
             observe=True,
             timeout=timeout,
             json_mode=json_mode,
+            require_full_context=require_full_context,
         )
 
     def _chat_payload(
@@ -240,10 +246,14 @@ class OllamaClient:
         observe: bool,
         timeout: float | None,
         json_mode: bool,
+        require_full_context: bool = False,
     ) -> str:
         payload = self._chat_payload(
             prompt, role=role, maximum_tokens=maximum_tokens, temperature=temperature,
         )
+        if require_full_context:
+            payload["truncate"] = False
+            payload["shift"] = False
         if json_mode:
             payload["format"] = "json"
         response = self._post(

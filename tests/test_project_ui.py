@@ -4784,3 +4784,61 @@ def test_character_model_format_deviations_are_reviewed_then_saved_canonically(a
         if window._active_character_dialog is not None:
             window._active_character_dialog.reject()
         window.close()
+
+
+@pytest.mark.parametrize("change", [None, "model_closed", "review_closed", "review_open"])
+def test_character_fill_uses_all_notes_and_discards_stale_note_context(application, tmp_path, monkeypatch, change):
+    from app.ui.generated_text_dialog import GeneratedTextDialog
+
+    project = Project.create(tmp_path / "all-note-context", "Novel")
+    first = project.add_note("Open reference", "research", content="OLD_OPEN_DISK")
+    closed = project.add_note("Closed reference", "timeline", content="CLOSED_REFERENCE_END")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.autosave_enabled = False
+    window._project_opened(project)
+    window._open_project_document("note", first.id)
+    wait_until(lambda: window.tabs.count() == 2, application)
+    editor = window.tabs.current_editor()
+    editor.setPlainText("OPEN_REFERENCE" + "x" * 11000 + "OPEN_REFERENCE_END")
+    dialog = CharacterDialog(character)
+    requests, reviews, warnings = [], [], []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args[-1]))
+
+    def generate(prompt, **options):
+        requests.append(prompt)
+        assert "OPEN_REFERENCE_END" in prompt and "CLOSED_REFERENCE_END" in prompt
+        assert "OLD_OPEN_DISK" not in prompt
+        assert options["require_full_context"] is True
+        if change == "model_closed":
+            (project.root / closed.path).write_text("Edited during model request", encoding="utf-8")
+        return '{"description":"Proposed description"}'
+
+    def review(preview):
+        reviews.append(preview.output.toPlainText())
+        assert dialog.description.toPlainText() == ""
+        if change == "review_closed":
+            (project.root / closed.path).write_text("Edited during review", encoding="utf-8")
+        elif change == "review_open":
+            editor.insertPlainText("AUTHOR_EDIT")
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(window.provider, "generate_private", generate)
+    monkeypatch.setattr(GeneratedTextDialog, "exec", review)
+    try:
+        window._suggest_character_profile(dialog, project)
+        wait_until(lambda: bool(requests) and dialog.ai_button.isEnabled(), application)
+        assert dialog.description.toPlainText() == ("Proposed description" if change is None else "")
+        assert project.get_character(character.id).description == ""
+        assert project.read_note(first.id) == "OLD_OPEN_DISK"
+        assert "OPEN_REFERENCE_END" in editor.toPlainText()
+        if change in {"model_closed", "review_closed"}:
+            assert warnings
+        if change == "model_closed":
+            assert not reviews
+    finally:
+        dialog.reject()
+        editor.document_state.mark_saved()
+        window.close()

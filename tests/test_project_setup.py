@@ -396,7 +396,7 @@ def test_auto_writer_refines_whole_project_and_snapshots_originals(tmp_path):
     assert chapter.title in str(snapshot.structure)
 
 
-def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
+def test_auto_writer_has_full_cast_background_and_only_associated_scene_focus(tmp_path):
     from app.project import CharacterStateChange, SceneCharacterAssociation
 
     project = Project.create(tmp_path / "novel", "Novel")
@@ -431,7 +431,10 @@ def test_auto_writer_uses_only_scene_associated_character_context(tmp_path):
     assert "Expose the council" in provider.prompt
     assert "learned the code" in provider.prompt
     assert "Read the letter" in provider.prompt
-    assert "Unrelated secret plan" not in provider.prompt
+    assert "Unrelated secret plan" in provider.prompt
+    scene_focus = provider.prompt.split("<associated_character_context>\n", 1)[1].split("</associated_character_context>", 1)[0]
+    assert "Expose the council" in scene_focus
+    assert "Unrelated secret plan" not in scene_focus
 
 
 def test_story_planning_context_includes_directed_relationship_conflicts(tmp_path):
@@ -945,3 +948,71 @@ def test_suggest_action_fills_template_using_private_local_ai(tmp_path, monkeypa
     window._project_setup_brief_dialog = None
     dialog.close()
     window.close()
+
+
+def test_auto_writer_sends_full_notes_and_all_character_profiles_to_each_scene(tmp_path):
+    project = Project.create(tmp_path / "complete-context", "Novel")
+    scenes = [project.add_scene("First"), project.add_scene("Second")]
+    first = project.add_note("Long reference", "research", content="x" * 11000 + "LAST_NOTE_TEXT")
+    project.add_note("Last reference", "timeline", content="FINAL_REFERENCE")
+    character = project.add_character("Unassociated character")
+    character.description = "COMPLETE_CHARACTER_DESCRIPTION"
+    character.background = {"history": "COMPLETE_CHARACTER_HISTORY"}
+    character.arc = {"expected_end_state": "COMPLETE_CHARACTER_ARC"}
+    project.update_character(character.id, character)
+    prompts = []
+
+    class Provider:
+        def generate_private(self, prompt, **options):
+            prompts.append(prompt)
+            return "Draft"
+
+    run_auto_writer(Provider(), project, "write_empty", "", {first.id: "OPEN_REFERENCE" + "x" * 11000 + "LAST_NOTE_TEXT"},
+                    maximum_tokens=300, temperature=0.2, snapshot_name="Before", is_cancelled=lambda: False)
+    assert len(prompts) == 2
+    for prompt, scene in zip(prompts, scenes):
+        assert f"Target scene: {scene.title} [{scene.id}]" in prompt
+        for text in ("OPEN_REFERENCE", "LAST_NOTE_TEXT", "FINAL_REFERENCE", "COMPLETE_CHARACTER_DESCRIPTION",
+                     "COMPLETE_CHARACTER_HISTORY", "COMPLETE_CHARACTER_ARC", character.id):
+            assert text in prompt
+        assert "Reference notes truncated" not in prompt
+
+
+@pytest.mark.parametrize("source", ["notes", "profiles"])
+def test_auto_writer_refuses_incomplete_reference_context_before_generation(tmp_path, source):
+    from app.project.reference_context import MAX_PROJECT_REFERENCE_BYTES
+
+    project = Project.create(tmp_path / "oversized-context", "Novel")
+    project.add_scene("Empty")
+    if source == "notes":
+        project.add_note("Oversized", content="x" * (MAX_PROJECT_REFERENCE_BYTES + 1))
+    else:
+        character = project.add_character("Character")
+        character.description = "x" * (MAX_PROJECT_REFERENCE_BYTES + 1)
+        project.update_character(character.id, character)
+
+    class Provider:
+        def generate_private(self, *args, **kwargs):
+            pytest.fail("No incomplete context may be sent")
+
+    before = project.manifest_path.read_bytes()
+    with pytest.raises(ProjectError, match="limit"):
+        run_auto_writer(Provider(), project, "write_empty", "", {}, maximum_tokens=300, temperature=0.2,
+                        snapshot_name="Before", is_cancelled=lambda: False)
+    assert project.manifest_path.read_bytes() == before
+
+
+def test_auto_writer_discards_generation_if_any_reference_changes(tmp_path):
+    project = Project.create(tmp_path / "stale-context", "Novel")
+    scene = project.add_scene("Empty")
+    note = project.add_note("World", content="Original")
+
+    class Provider:
+        def generate_private(self, *args, **kwargs):
+            (project.root / note.path).write_text("External edit", encoding="utf-8")
+            return "Stale draft"
+
+    with pytest.raises(ProjectError, match="changed"):
+        run_auto_writer(Provider(), project, "write_empty", "", {}, maximum_tokens=300, temperature=0.2,
+                        snapshot_name="Before", is_cancelled=lambda: False)
+    assert project.read_scene(scene.id) == ""

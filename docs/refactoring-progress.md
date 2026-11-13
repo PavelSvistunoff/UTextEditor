@@ -1,5 +1,26 @@
 # Refactoring progress
 
+## Complete project references for Auto-writer and character suggestions
+
+- COMPLETE: direct user request; no unfinished backlog ticket was added.
+- Auto-writer sends every project note and complete textual character/relationship mappings.
+- Explicit scene associations still determine scene presence; portraits are excluded.
+- Character empty-field generation receives every project note, including bound unsaved buffers.
+- Shared worker capture verifies note contents and manifest before/after generation.
+- Character review verifies disk context again off-thread before staging accepted fields.
+- UI revisions, request/settings/project generations and cancellation reject stale results.
+- Complete reference context is bounded at 64 KiB; excess fails without silent omission.
+- Ollama requests disable truncation/shifting; server support and sufficient context remain required.
+- Focused checks: 444 passed; final scene-identity checks: 351 passed.
+- Final full offscreen suite: 1190 passed, 2 skipped in 158.85s.
+- Full log: /private/tmp/utexteditor-reference-final-control.log.
+- Translation validation passed: 1028 extracted source messages; 1041 compiled catalog messages.
+- No live Ollama, native accessibility or model-comprehension verification claimed.
+- Evidence and limits: docs/project-reference-context-verification.md; README/README.uk updated.
+- Clean Code review passed: shared capture, explicit boundaries/errors, deterministic regressions.
+- Branch: main; unrelated staged/unstaged bytecode and DS_Store changes preserved.
+- Next step: optional live smoke with sufficiently sized Ollama context; no pending code gate.
+
 ## Character AI format — reported arc rejection fixed
 
 - COMPLETE: reproduce and normalize the concrete deviations from supplied model diagnostics.
