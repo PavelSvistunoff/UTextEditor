@@ -324,7 +324,9 @@ keyboard/screen-reader checks and release translation compilation remain open.
   Character, directed-relationship and scene-association changes now include
   deterministic Unicode JSON diffs of captured values, including additions and
   removals. Missing fields remain distinct from explicit null. Broader structure
-  coverage and native review remain open.
+  coverage and native review remain open. Scene and note text diffs also mark
+  missing final newlines instead of joining adjacent changed lines. Character
+  and relationship reordering is reported without false moves on add/remove.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-009.05** — Add optional scheduled snapshots and retention policies.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

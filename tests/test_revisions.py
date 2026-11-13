@@ -43,6 +43,32 @@ def test_snapshot_captures_in_memory_state_and_text_comparison(tmp_path) -> None
     assert before.documents["one"] == "A first draft.\n"
 
 
+@pytest.mark.parametrize("item_type", ["scene", "note"])
+def test_comparison_keeps_unterminated_lines_separate_and_reports_newline_changes(tmp_path, item_type) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+
+    def snapshot(text):
+        if item_type == "scene":
+            return create_snapshot(store, order=["item"], titles={"item": "Title"}, documents={"item": text})
+        return store.create("Draft", structure={"notes": [{"id": "item", "title": "Title", "type": "note"}]},
+                            scene_order=[], scene_titles={}, documents={"item": text})
+
+    before = snapshot("old")
+    after = snapshot("new")
+    diff = next(c.diff for c in store.compare(before, after).changes if c.kind == "text-changed")
+    assert "-old\n\\ No newline at end of file\n+new\n\\ No newline at end of file\n" in diff
+
+    with_newline = snapshot("old\n")
+    diff = next(c.diff for c in store.compare(before, with_newline).changes if c.kind == "text-changed")
+    assert "-old\n\\ No newline at end of file\n+old\n" in diff
+
+    unicode_separator = snapshot("one\u2028two\n")
+    unicode_changed = snapshot("one\u2028three\n")
+    diff = next(c.diff for c in store.compare(unicode_separator, unicode_changed).changes if c.kind == "text-changed")
+    assert "\\ No newline at end of file" not in diff
+    assert "-one\u2028two\n+one\u2028three\n" in diff
+
+
 def test_comparison_reports_removal_and_reorder_without_false_moves_from_additions(tmp_path) -> None:
     store = RevisionStore(tmp_path / "revisions")
     before = create_snapshot(
@@ -151,6 +177,25 @@ def test_comparison_reports_project_title_and_scene_and_note_path_changes(tmp_pa
     ]
     assert (changes[1].old_path, changes[1].new_path) == ("manuscript/old.txt", "manuscript/new.txt")
     assert (changes[2].old_path, changes[2].new_path) == ("notes/old.txt", "notes/new.txt")
+
+
+@pytest.mark.parametrize("field,item_type", [("characters", "character"),
+                                             ("character_relationships", "relationship")])
+def test_comparison_reports_metadata_reordering_without_false_moves_for_additions(tmp_path, field, item_type) -> None:
+    store = RevisionStore(tmp_path / "revisions")
+
+    def snapshot(ids):
+        return store.create("Draft", structure={field: [{"id": value} for value in ids]},
+                            scene_order=[], scene_titles={}, documents={})
+
+    before = snapshot(["a", "b", "removed"])
+    same_order = snapshot(["new", "a", "b"])
+    assert not any(c.kind == "moved" for c in store.compare(before, same_order).changes)
+    reordered = snapshot(["new", "b", "a"])
+    assert {(c.item_id, c.kind, c.item_type) for c in store.compare(before, reordered).changes} == {
+        ("removed", "removed", item_type), ("new", "added", item_type),
+        ("a", "moved", item_type), ("b", "moved", item_type),
+    }
 
 
 def test_comparison_reports_character_and_directed_relationship_metadata(tmp_path) -> None:

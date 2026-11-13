@@ -1,5 +1,21 @@
 # Implementation progress
 
+## TASK-009.04 comparison checkpoint (2026-11-13)
+
+- **TASK-009.04: CHECKPOINT; parent TASK-009: open.** Text diffs distinguish
+  unterminated final lines for scenes and notes, including newline-only changes;
+  Unicode separators are not misidentified as missing newlines. Character and
+  relationship relative reordering is reported without false moves from
+  additions/removals. Broader structure coverage and native review remain.
+- Changed `app/document/revisions.py`, `tests/test_revisions.py`, `README.md`,
+  `TASKS.md`, and this checkpoint on `codex/task-continuation`. The conventional
+  diff notice is English; native and translation catalog checks were not run.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py`: 27 passed.
+  Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 902 passed, 2 skipped.
+- Blocker: none for further offline comparison work. Next: audit remaining
+  version-1 manifest structure fields and comparison display; resume .04 with
+  `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_revisions.py tests/test_project_ui.py -k revision`.
+
 ## TASK-006.04 wider project sample (2026-11-13)
 
 - **TASK-006.04: CHECKPOINT; parent TASK-006: partial.** A 5,000-scene,
