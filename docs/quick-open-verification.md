@@ -1,5 +1,7 @@
 # Quick Open verification — TASK-013.V1
 
+> **Evidence snapshot:** This document records an earlier investigation or verification, not a fresh test run or a second implementation queue. Check [active tickets](../TASKS.md) and the [latest checkpoint](../IMPLEMENTATION_PROGRESS.md) before using it to close a gate. Native GUI and screen-reader checks require real platform evidence.
+
 Reviewed 2026-11-01 from MainWindow's action/capture/open path and
 `QuickOpenDialog`. All numbered tickets are implemented; this audit adds no
 UI or product behavior.

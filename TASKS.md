@@ -1,18 +1,41 @@
-# UTextEditor — active task backlog
+# UTextEditor — executable Codex backlog
 
-> This file tracks unfinished work only. Completed tasks and subtasks are removed after verification; historical evidence is in `IMPLEMENTATION_PROGRESS.md`, the linked verification documents and Git history. Parent acceptance gates remain until the parent is complete. Partial status does not mean its acceptance criteria are satisfied.
+> **Unfinished work only.** `[ ]` does not mean a feature is absent: inspect code and tests before changing it. `README.md` is the current product guide; `UNIMPLEMENTED_FEATURES.md` describes risks and optional proposals, not authorized implementation work.
 
-## Working agreement
+## Codex run contract
 
-**Execution authority:** Follow `AGENTS.md` → “Documentation entry points and authority” and “Logical task batches and continuation”. This file lists *unfinished* work only; the latest checkpoint at the top of `IMPLEMENTATION_PROGRESS.md` identifies what to resume first. For an explicitly authorized whole-backlog run, move between parents after verifying and checkpointing each bounded batch; otherwise stay within the assigned parent.
+1. Inspect `git status --short`, [AGENTS.md](AGENTS.md), the newest [checkpoint](IMPLEMENTATION_PROGRESS.md), one selected parent and exact subtask IDs, then source and related tests.
+2. Execute one high-risk ticket or 1–4 related subtasks **within one parent** per bounded batch. An explicitly authorized whole-backlog run can continue in additional **verified, checkpointed batches**.
+3. Write success, failure, stale-state and undo/data-safety checks before coding. Verify what already exists; never implement a duplicate merely to satisfy an open checkbox.
+4. Run focused tests and the full offline suite when practical. For UI changes, validate translations and packaged catalogs. Never claim a native OS or screen-reader check that was not performed.
+5. Report `COMPLETE`, `CHECKPOINT` or `BLOCKED` **per ticket**, parent status separately, and exact commands/results. Prepend a short resume checkpoint. Remove a verified ticket only after preserving evidence.
+6. Preserve dirty buffers, Qt undo, stable project IDs, local-first editing, AI consent/generation guards and transaction rollback. Leave unrelated files and user changes alone.
 
-**Batch contract:** Select 1–4 related atomic subtasks of one parent (usually one for high-risk data integrity), inspect existing code and tests, check each “Done when” and the parent gate, run focused tests and the full offscreen suite when practical, and record evidence. Never infer missing functionality from `[ ]` or `[~]` alone. Do not touch unrelated worktree changes. Preserve unsaved manuscripts, Qt undo/redo, transactional saves, compatibility and offline editing.
+**Statuses:** `[ ]` open; `[~]` partial; `[?]` needs inspection. `.V2` is a **native verification gate**, not a request to rewrite built features. Without real Linux/macOS GUI and necessary assistive technologies, record `BLOCKED (native environment)` and leave it open. Green offscreen Qt tests alone never close native acceptance.
 
-**Status convention:** `[~]` means partial or verification outstanding; `[ ]` means not documented complete; `[?]` needs code-level confirmation. On verified completion, record evidence in `IMPLEMENTATION_PROGRESS.md` and remove completed entries from this active backlog. Parent completes only after every child and parent acceptance gate pass. Native keyboard, accessibility and release-catalog checks require actual evidence; mark unavailable checks as blocked, not passed.
+## Recommended execution sequence
 
-**Verification baseline:** `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q` and `git diff --check`; report commands actually run and skipped checks.
+| Priority | Ticket(s) | Runnable outcome |
+| --- | --- | --- |
+| 1 | TASK-001.02 | Measured reachable Qt undo metadata bound without throwing away undo or daily-count correctness |
+| 2 | TASK-001.03, TASK-001.05 | Branch/rekey/reset regressions, realistic long undo workload, repeated memory and RSS figures |
+| 3 | TASK-032.01, .02, .04 | Audit/translate concrete dynamic UI and service errors, test contexts/placeholders |
+| 4 | TASK-032.03 | Re-extract, validate and compile en/uk catalogs; prove packaged parity |
+| 5 | TASK-027.03, TASK-030.03 | Measure Markdown preview native latency; complete narrow profile keyboard test |
+| 6 | TASK-034 and remaining .V2 | Record real native keyboard, palette, screen-reader and Ukrainian runtime evidence |
 
-**Selection order:** Resume the latest unfinished selected batch first. Then prefer `TASK-001` memory/undo correctness; follow with remaining functional/UX verification and localization/accessibility tasks, accounting for dependencies and available native platforms. `V2` tickets are verification gates, not automatic instructions to rewrite existing features.
+**Dependencies:** TASK-001.02 precedes asserting a memory bound; TASK-032 source/catalog work precedes localized `.V2` acceptance, TASK-034 coordinates accessibility. The cross-process save race is a separate known limitation in [docs/save-coordination.md](docs/save-coordination.md).
+
+## Standard verification (run only what applies)
+
+```bash
+QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/check_translations.py translations/utexteditor_uk.ts
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/audit_ui_strings.py
+git diff --check
+```
+
+For localization extraction/compilation, use the commands in [README.md](README.md#interface-localization). Record actual runs and skips rather than treating this example as evidence.
 
 ## Summary of parent tasks
 
@@ -46,11 +69,13 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 ### TASK-001 — Fix writing-goal history memory growth
 **Priority:** High · **Parent status:** open
 
+**Inspect first:** `app/document/writing_goals.py; tests/test_writing_goals.py; benchmarks/writing_goal_history.py`.
+
 - [~] **TASK-001.02** — Implement bounded history metadata without breaking word counts.
   Consecutive checkpoints on one day share unchanged prior-day counts, including
   after a daily reset or rekey to an existing destination. Reachable checkpoint
   count is still unbounded.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Demonstrate a measurable memory bound across 10,000 reachable Qt undo commands without clearing undo, dropping exact daily counts or masking storage failures; add a focused regression.
 - [~] **TASK-001.03** — Preserve correct behavior across undo, redo, pause, and reset.
   Saving to an unused tracking identity now retains checkpoints; same-ID rekeys
   retain matching history. Existing-destination progress and mismatched text
@@ -62,7 +87,7 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   A UI regression test verifies that Save As to an already-open file is
   rejected and preserves both tabs' progress through undo and redo. This guard
   is covered alongside tracker and editor collision regressions.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Test undo/redo branching, pause/reset, rekey/Save As and identity collisions; assert document buffers, persisted counts and new-word credit after each transition.
 - [~] **TASK-001.05** — Benchmark realistic long editing sessions.
   History benchmark now accepts command/undo counts and checks branching after
   undo; 100-command smoke and 10,000-command runs passed. The latter retained
@@ -71,7 +96,7 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   adds/removes punctuation; a 10,000-command run verified undo, redo and
   branching, retaining 10,001 states and 2,206,486 Python-traced bytes. It
   remains synthetic and does not establish a memory bound.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Benchmark 100 and 10,000 separate commands with undo/redo and branching; compare repeated checkpoint counts, tracemalloc and process RSS with a documented baseline.
 
 **Parent acceptance gate (all must pass):**
 - Memory growth is measured and bounded for the supported editing history.
@@ -82,6 +107,8 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
 ### TASK-012 — Implement project-wide full-text search
 **Priority:** High · **Parent status:** partial
 
+**Inspect first:** `app/project/search.py; tests/test_project_search.py`.
+
 Evidence: [docs/project-search-verification.md](docs/project-search-verification.md).
 
 **Parent acceptance gate (all must pass):**
@@ -91,11 +118,13 @@ Evidence: [docs/project-search-verification.md](docs/project-search-verification
 - Search does not modify project files.
 - Large-project and cancellation tests pass.
 
-- [ ] **TASK-012.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-012.V2** — Native test: Search unsaved Ukrainian/emoji scene and note, activate result via Down/Enter, then change source and confirm stale selection rejection.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-013 — Implement Quick Open
 **Priority:** High · **Parent status:** partial
+
+**Inspect first:** `app/ui/quick_open_dialog.py; tests/test_project_ui.py`.
 
 Evidence: [docs/quick-open-verification.md](docs/quick-open-verification.md).
 
@@ -105,11 +134,13 @@ Evidence: [docs/quick-open-verification.md](docs/quick-open-verification.md).
 - Existing unsaved tabs are preserved.
 - Keyboard navigation works.
 
-- [ ] **TASK-013.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-013.V2** — Native test: Quick Open duplicate scene and alias from keyboard without losing a dirty tab.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-015 — Implement related-item navigation
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/ui/character_dialog.py; tests/test_project_ui.py`.
 
 Evidence: [docs/related-navigation-verification.md](docs/related-navigation-verification.md).
 
@@ -118,29 +149,33 @@ Evidence: [docs/related-navigation-verification.md](docs/related-navigation-veri
 - Navigation does not create new metadata relationships.
 - Unsaved changes are never silently discarded.
 
-- [ ] **TASK-015.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-015.V2** — Native test: Open linked note and character-associated scene, return to profile with staged edits unchanged.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-016 — Improve tab navigation
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/ui/tab_widget.py; tests/test_editor_widget.py`.
 
 Evidence: [docs/tab-navigation-verification.md](docs/tab-navigation-verification.md).
 
 - [~] **TASK-016.05** — Verify native Qt shortcuts.
   Offscreen Ctrl+Tab/Ctrl+Shift+Tab tests pass; actual native OS shortcut and
   assistive-technology verification remains outstanding.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Demonstrate this named criterion in a focused regression or reviewed implementation, record failures and limits; no unrelated refactoring.
 
 **Parent acceptance gate (all must pass):**
 - No shortcut conflicts exist.
 - Closing tabs uses existing unsaved-change handling.
 - Tab switching works with keyboard only.
 
-- [ ] **TASK-016.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-016.V2** — Native test: Use native next/previous tab shortcuts, Open Tabs picker, and Cancel on dirty-tab close.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-017 — Add recent standalone documents
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/settings/settings.py; tests/test_settings.py`.
 
 Evidence: [docs/recent-files-verification.md](docs/recent-files-verification.md).
 
@@ -150,11 +185,13 @@ Evidence: [docs/recent-files-verification.md](docs/recent-files-verification.md)
 - Unsaved buffers remain safe.
 - Recent-file history can be cleared.
 
-- [ ] **TASK-017.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-017.V2** — Native test: Reopen an existing tab from Recent Files, handle a missing path, and clear recents without losing edits.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-018 — Improve menu organization
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/ui/main_window.py; tests/test_project_ui.py`.
 
 Evidence: [docs/menu-organization-verification.md](docs/menu-organization-verification.md).
 
@@ -164,11 +201,13 @@ Evidence: [docs/menu-organization-verification.md](docs/menu-organization-verifi
 - No shortcut conflicts are introduced.
 - Manual accessibility review is documented.
 
-- [ ] **TASK-018.V2** — Complete outstanding translation compilation/native verification where this task changes UI.  
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-018.V2** — Native test: Traverse Project/AI menus by keyboard and inspect disabled-action explanations and shortcut collisions.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-019 — Implement navigation history
 **Priority:** Low · **Parent status:** partial
+
+**Inspect first:** `app/ui/navigation_history.py; tests/test_navigation_history.py`.
 
 Verification evidence and remaining native/catalog gates are recorded in
 `docs/navigation-history-verification.md`. Path-resolution failures are skipped
@@ -179,11 +218,13 @@ without changing dirty buffers. Parent remains partial for V2.
 - Unsaved buffers are preserved.
 - Removed targets are handled gracefully.
 
-- [ ] **TASK-019.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-019.V2** — Native test: Back/Forward through scene, search and note, then remove/relink a destination and confirm safe skipping.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-020 — Improve Find and Replace
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/ui/find_replace.py; tests/test_find_replace.py`.
 
 Automated verification: tests/test_find_replace.py (21 passed) covers default
 case-sensitive semantics, case/whole-word options, Unicode offsets, batched
@@ -198,11 +239,13 @@ release catalog verification. Offscreen Qt tests do not replace that review.
 - Replacements preserve undo behavior.
 - Keyboard focus returns predictably.
 
-- [ ] **TASK-020.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-020.V2** — Native test: Find/Replace Unicode with case/whole-word toggles in a narrow window, check focus and undo.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-021 — Implement batch spelling and grammar review
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/ui/spellcheck_review_dialog.py; tests/test_spellcheck_service.py`.
 
 Typed provider suggestions now receive field/range/length validation before
 sorting, matching the JSON safety bounds. Verification evidence is recorded in
@@ -214,11 +257,13 @@ sorting, matching the JSON safety bounds. Verification evidence is recorded in
 - Model output is validated before application.
 - Undo restores the original document.
 
-- [ ] **TASK-021.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-021.V2** — Native test: Select spelling suggestions with arrows/Space, cancel/apply, undo and verify spoken labels.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-022 — Implement AI context preview and controls
 **Priority:** High · **Parent status:** partial
+
+**Inspect first:** `app/ai/completion_service.py; tests/test_ai_workflows_e2e.py`.
 
 Captured context/provenance, cancellation, note controls and disclosure guards
 are verified in `docs/completion-context-verification.md`. Parent remains
@@ -230,11 +275,13 @@ partial for native/catalog V2 checks.
 - Unassociated characters are not implicitly included.
 - No document content is transmitted without required disclosure.
 
-- [ ] **TASK-022.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-022.V2** — Native test: Review captured completion context and destination, exclude notes, then cancel without sending.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-023 — Add AI translation batch review
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/project/translation.py; tests/test_project_translation.py`.
 
 Numbered tickets are verified in `docs/translation-review-verification.md`.
 Native/catalog checks and the shared independent-writer race remain open;
@@ -246,11 +293,13 @@ parent remains partial.
 - Apply remains all-or-nothing.
 - Translation failures do not partially modify project data.
 
-- [ ] **TASK-023.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-023.V2** — Native test: Navigate side-by-side translation with duplicate titles and cancel without modifying the project.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-024 — Improve AI scene draft review
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/project/auto_writer.py; tests/test_ai_workflows_e2e.py`.
 
 Numbered tickets verified in `docs/auto-writer-review-verification.md`.
 Selected drafts commit together; later drafts are not regenerated after earlier
@@ -263,11 +312,13 @@ partial for native/catalog checks and shared filesystem limitations.
 - Stale project state is detected.
 - Failed batches do not leave unintended partial changes.
 
-- [ ] **TASK-024.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-024.V2** — Native test: Toggle Auto-writer scene draft selection and verify Cancel versus explicit Apply.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-025 — Add optional streaming AI previews
 **Priority:** Low · **Parent status:** partial
+
+**Inspect first:** `app/ai/ollama_client.py; tests/test_ollama_client.py`.
 
 Numbered tickets verified in `docs/streaming-preview-verification.md`; parent
 remains partial for native/catalog V2 checks. Cancellation may wait for an
@@ -279,11 +330,13 @@ in-flight network read or timeout.
 - Cancellation leaves existing content unchanged.
 - Non-streaming behavior remains supported.
 
-- [ ] **TASK-025.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-025.V2** — Native test: Inspect provisional streaming text, cancel, and verify completed output inserts only on acceptance.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-026 — Improve inline completion display
 **Priority:** Low · **Parent status:** partial
+
+**Inspect first:** `app/ui/editor_widget.py; tests/test_editor_widget.py`.
 
 Investigation retains a single-line ghost with safe rejection instead of
 adding a popup; evidence/design tradeoff is in
@@ -296,14 +349,16 @@ whole-document copy. Parent remains partial for native/catalog V2 checks.
 - Cursor and selection behavior remain correct.
 - Small-window and multiline cases are tested.
 
-- [ ] **TASK-026.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-026.V2** — Native test: Test long, multiline, mid-line and narrow-window completion and normal Tab fallback.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-027 — Implement Markdown preview
 **Priority:** Medium · **Parent status:** partial
 
+**Inspect first:** `app/ui/markdown_preview.py; tests/test_markdown_preview.py`.
+
 - [~] **TASK-027.03** — Update preview when appropriate without blocking typing.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Measure capture/render/HTML installation and Qt timer gaps for small, 1M and oversized Unicode documents; exercise stale-result cancellation and native responsiveness.
 
 Bounded-prefix/background-render/stale-result tests pass; .03 remains partial
 for representative native GUI latency and bounded HTML installation timings.
@@ -315,11 +370,13 @@ for representative native GUI latency and bounded HTML installation timings.
 - Large documents do not freeze the UI.
 - Feature works without Ollama.
 
-- [ ] **TASK-027.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-027.V2** — Native test: Update read-only Markdown preview for unsaved Unicode and oversized content without stealing focus.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-028 — Improve manuscript export and PDF settings
 **Priority:** Medium · **Parent status:** partial
+
+**Inspect first:** `app/document/book_compiler.py; tests/test_book_compiler.py`.
 
 Markdown/plain-text export now offers an optional captured preview with explicit
 Export/Cancel and bounded display. This is not a PDF page preview. Existing
@@ -333,14 +390,16 @@ PDF paper/title/heading/selection controls are verified in
 - Existing files require overwrite confirmation.
 - PDF output is tested for pagination and layout.
 
-- [ ] **TASK-028.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-028.V2** — Native test: Verify text-export preview, PDF paper/heading/scene choices, overwrite Cancel and native pagination.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-030 — Improve character profile navigation
 **Priority:** Low · **Parent status:** partial
 
+**Inspect first:** `app/ui/character_dialog.py; tests/test_project_ui.py`.
+
 - [~] **TASK-030.03** — Ensure usability in small windows.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** On a narrow native window, traverse every profile field, save/cancel and return from an associated scene; assert exact staged values survive.
 
 Saving now retains exact captured values for untouched fields, avoiding
 whitespace normalization and lossy reparsing of multiline/delimited values.
@@ -352,20 +411,22 @@ partial for all-field native keyboard/focus review in small windows; V2 open.
 - Existing values round-trip unchanged.
 - Navigating away does not discard unsaved edits.
 
-- [ ] **TASK-030.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-030.V2** — Native test: Tab through all character fields in a narrow window and return from a scene with staged edits intact.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-032 — Complete Ukrainian interface localization
 **Priority:** High · **Parent status:** partial
 
+**Inspect first:** `app/ui/, translations/; tests/test_i18n.py, tests/test_translation_validation.py`.
+
 - [~] **TASK-032.01** — Audit all UI strings.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Inventory visible strings outside the narrow AST heuristic, including dynamically wrapped service errors; attach a reproducible path and owning widget to each finding.
 - [~] **TASK-032.02** — Migrate untranslated strings into Qt translation mechanisms.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Migrate inventoried UI wrappers to the owning tr() context; retain placeholders/IDs and add focused temporary or packaged Ukrainian runtime tests.
 - [~] **TASK-032.03** — Complete Ukrainian Qt Linguist catalogs.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Run source extraction, placeholder/plural validation and both lrelease commands; compare packaged .qm runtime output to fresh compilation and record native gaps.
 - [~] **TASK-032.04** — Include dialogs, errors, confirmations, and status messages.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Reproduce invalid UTF-8, binary, missing-file, save-conflict, project and AI errors; translate typed user-facing categories while retaining diagnostic details.
 
 Source extraction, placeholder checks and release catalog compilation pass;
 automated tests compare packaged translations against freshly compiled sources.
@@ -379,24 +440,26 @@ workflows remain incomplete. Evidence and limits are in
 - No unintended English fallback remains in the audited scope.
 - Document content and AI prompts are not translated implicitly.
 
-- [ ] **TASK-032.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-032.V2** — Native test: Run packaged Ukrainian UI through menus, dialogs, status and failure paths, recording fallbacks.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ### TASK-034 — Perform accessibility audit and fixes
 **Priority:** Medium · **Parent status:** partial
 
+**Inspect first:** `app/ui/; tests/test_review_accessibility.py`.
+
 - [~] **TASK-034.01** — Audit keyboard-only workflows.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Document native keyboard navigation of open/save, project search, tabs, AI review and dialogs with OS/Qt version and focus outcomes.
 - [~] **TASK-034.02** — Check accessible names and descriptions.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Test accessible names/descriptions and spoken labels for fields, lists, actions and status; add offscreen regressions for confirmed failures.
 - [~] **TASK-034.03** — Review focus order and modal dialogs.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Reproduce initial focus, Tab traversal, Enter/Esc cancellation and return focus for modal and non-modal dialogs; fix and retest failures.
 - [~] **TASK-034.04** — Verify behavior under system palettes.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Record native light/dark/high-contrast palette behavior, focus visibility and readable error/disabled/ghost text with screenshots.
 - [ ] **TASK-034.05** — Test with screen readers on supported platforms.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Test core workflows with Orca (Linux) or VoiceOver (macOS) and record actual spoken output; offscreen tests do not substitute.
 - [~] **TASK-034.06** — Fix identified barriers.
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
+  **Done when:** Fix each reproduced barrier, add automated regression and rerun native acceptance; otherwise leave native retest blocked.
 
 Offscreen keyboard/name/focus/palette evidence and outstanding manual coverage
 are recorded in `docs/localization-accessibility-checkpoint.md`. No native
@@ -409,8 +472,8 @@ or partial as indicated.
 - Automated tests cover testable accessibility behavior.
 - Manual verification results and limitations are documented.
 
-- [ ] **TASK-034.V2** — Complete outstanding translation compilation/native verification where this task changes UI.
-  **Done when:** release catalog and native keyboard/accessibility checks are recorded, or marked N/A with reason.
+- [ ] **TASK-034.V2** — Native test: Perform the documented native keyboard, screen-reader and system-palette matrix.
+  **Done when:** Record OS, Qt, actual keyboard/focus/screen-reader steps, packaged Ukrainian runtime result and evidence link. Without native GUI: BLOCKED, keep unchecked.
 
 ## Completion checklist
 
@@ -437,7 +500,6 @@ For each atomic ticket record: date, commit/diff, relevant files, test command a
 
 ## Source notes
 
-- `IMPLEMENTATION_PROGRESS.md` provides per-task progress and test evidence; its snapshots differ in time and should not be read as a single current test run.
-- `README.md` describes shipped behavior; `UNIMPLEMENTED_FEATURES.md` records remaining limitations and optional candidates.
-- `README.uk.md` contains some older status claims; prefer the current English README when they disagree.
-- This is a task decomposition and reconciliation plan, not proof of the current repository state.
+- [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) points to the latest work and archived evidence.
+- [README.md](README.md) records shipped behavior; [UNIMPLEMENTED_FEATURES.md](UNIMPLEMENTED_FEATURES.md) records unapproved options and risks.
+- A .V2 script is a planned test, **not** proof of native execution.

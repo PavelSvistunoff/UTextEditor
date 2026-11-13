@@ -1,5 +1,7 @@
 # Localization and accessibility checkpoint — TASK-032/034.V1
 
+> **Evidence snapshot:** This document records an earlier investigation or verification, not a fresh test run or a second implementation queue. Check [active tickets](../TASKS.md) and the [latest checkpoint](../IMPLEMENTATION_PROGRESS.md) before using it to close a gate. Native GUI and screen-reader checks require real platform evidence.
+
 Reviewed 2026-11-01 against the 879-passed/2-skipped offline suite. This is an
 acceptance reconciliation, not a completed native localization/accessibility
 audit. No generated release catalogs or unrelated staged artifacts were changed.
@@ -23,7 +25,7 @@ remain outstanding; this update does not complete the localization audit.
   translated, particularly dynamically assembled messages and service errors.
 - .02/.04 partial: menus and common dialogs/status paths use Qt translation,
   including the new export preview. Raw service exception details still surface
-  through str(error), e.g. file decoding/binary errors and project validation.
+  through str(error), especially project validation and other service paths; standalone invalid UTF-8/binary open errors were translated on 2026-11-13.
   Translating error titles is not a complete translation of those details.
   A broader service-error/localization design and workflow inventory remain.
 - .03 partial: the Ukrainian source contains 956 message records. Source
