@@ -2162,6 +2162,88 @@ def test_save_conflict_shows_translated_category_and_preserves_dirty_buffer(
         window.close()
 
 
+@pytest.mark.parametrize("notify", [False, True])
+@pytest.mark.parametrize("state", ["current", "project", "generation", "closing"])
+def test_project_document_open_failure_preserves_dirty_text_and_rejects_stale_feedback(
+    application, tmp_path, monkeypatch, notify, state,
+):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved manuscript")
+    key = (id(project), "scene", "missing")
+    generation = window._project_generation
+    window._pending_project_opens.add(key)
+    warnings, messages = [], []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    monkeypatch.setattr(window.statusBar(), "showMessage", lambda message, *args: messages.append(message))
+    if state == "project":
+        window.project = None
+    elif state == "generation":
+        window._project_generation += 1
+    elif state == "closing":
+        window._closing_confirmed = True
+    _, translator = install_translation(application, "uk")
+    try:
+        window._project_document_open_failed(key, ProjectPathError("path detail %1"), notify=notify, project_generation=generation)
+        assert key not in window._pending_project_opens
+        if state == "current":
+            message = warnings[0][2] if notify else messages[-1]
+            assert "Неприпустимий шлях проєкту" in message and "path detail %1" in message
+        else:
+            assert not warnings and not messages
+        assert editor.toPlainText() == "unsaved manuscript" and editor.document_state.dirty
+    finally:
+        application.removeTranslator(translator)
+        window._closing_confirmed = False
+        editor.document_state.mark_saved()
+        window.close()
+
+
+@pytest.mark.parametrize("existing_tab", [False, True])
+@pytest.mark.parametrize("stale", [False, True])
+def test_project_open_worker_failure_uses_captured_generation(
+    application, tmp_path, monkeypatch, existing_tab, stale,
+):
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="saved text")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    if existing_tab:
+        window.tabs.add_document(FileManager().open(project.root / scene.path))
+    started, release = Event(), Event()
+    warnings, messages = [], []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    monkeypatch.setattr(window.statusBar(), "showMessage", lambda message, *args: messages.append(message))
+
+    def failed_read(item_id):
+        started.set()
+        if not release.wait(5):
+            raise TimeoutError("test release timed out")
+        raise ProjectPathError("captured failure detail")
+
+    monkeypatch.setattr(project, "read_scene", failed_read)
+    try:
+        window._open_project_document("scene", scene.id)
+        wait_until(started.is_set, application)
+        if stale:
+            window._project_generation += 1
+        release.set()
+        wait_until(lambda: not window._pending_project_opens, application)
+        feedback = [args[2] for args in warnings] + messages
+        assert any("captured failure detail" in message for message in feedback) is not stale
+        assert (project.root / scene.path).read_text() == "saved text"
+    finally:
+        release.set()
+        window.thread_pool.waitForDone(3000)
+        window.close()
+
+
 def test_binding_ignores_editor_moved_while_project_read_pending(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening", content="original")

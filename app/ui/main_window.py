@@ -4861,6 +4861,7 @@ class MainWindow(QMainWindow):
 
     def _open_project_document(self, kind: str, item_id: str) -> None:
         project = self.project
+        project_generation = self._project_generation
         if project is None:
             return
         if kind == "character":
@@ -4912,9 +4913,9 @@ class MainWindow(QMainWindow):
                     Qt.ConnectionType.QueuedConnection,
                 )
                 worker.signals.failed.connect(
-                    lambda error, open_key=open_key:
+                    lambda error, open_key=open_key, project_generation=project_generation:
                         self._project_document_open_failed(
-                            open_key, error, notify=False
+                            open_key, error, notify=False, project_generation=project_generation
                         ),
                     Qt.ConnectionType.QueuedConnection,
                 )
@@ -4930,8 +4931,8 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
-            lambda error, open_key=open_key:
-                self._project_document_open_failed(open_key, error),
+            lambda error, open_key=open_key, project_generation=project_generation:
+                self._project_document_open_failed(open_key, error, project_generation=project_generation),
             Qt.ConnectionType.QueuedConnection,
         )
         self.statusBar().showMessage(self.tr("Opening {title}…").format(title=item.title))
@@ -5022,14 +5023,19 @@ class MainWindow(QMainWindow):
             self._schedule_project_autosave(editor)
 
     def _project_document_open_failed(
-        self, open_key: tuple[int, str, str], error, *, notify: bool = True
+        self, open_key: tuple[int, str, str], error, *, notify: bool = True,
+        project_generation: int | None = None,
     ) -> None:
         self._pending_project_opens.discard(open_key)
+        if (self.project is None or id(self.project) != open_key[0] or self._closing_confirmed
+                or (project_generation is not None and project_generation != self._project_generation)):
+            return
+        message = self._project_error_message(error)
         if notify:
-            QMessageBox.warning(self, self.tr("Document could not be opened"), str(error))
+            QMessageBox.warning(self, self.tr("Document could not be opened"), message)
         else:
             self.statusBar().showMessage(
-                self.tr("Project document could not be verified for safe saving: {error}").format(error=error),
+                self.tr("Project document could not be verified for safe saving: {error}").format(error=message),
                 8000,
             )
 

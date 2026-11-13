@@ -69,6 +69,8 @@ checks separately; offscreen tests cannot establish native behavior.
    guards; visibility, project identity and selection-generation behavior tested.
    Project search success/failure callbacks share request completion/context checks;
    obsolete callbacks retain newer search state and error details are localized.
+   Project-document open failure routes share project error presentation and
+   captured generation checks; new-open and existing-tab workers are tested.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

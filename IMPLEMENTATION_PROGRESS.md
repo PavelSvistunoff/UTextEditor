@@ -4,6 +4,25 @@
 
 
 
+## TASK-032.01/.02/.04 checkpoint — project document-open failures
+
+- TASK-032.01, .02, .04: **CHECKPOINT** each; parent TASK-032 partial.
+- Warning and binding-verification status share typed project error formatting.
+- Separate behavior fix: failure callbacks capture generation and reject changed
+  projects/generations or closing windows, while releasing pending-open keys.
+- Eight callback tests preserve dirty text and diagnostic placeholders; four
+  worker tests cover new-open/existing-tab routes and captured generation.
+- Focused UI/domain/i18n/translation tests: 352 passed; full offscreen suite:
+  1036 passed, 2 skipped. `git diff --check` passed; packaged parity tested.
+- No new strings/catalog rebuild. Native UI/accessibility and live Ollama untested.
+- Clean Code review: existing presentation reused; explicit stale guard; no
+  file-read/save/undo/domain/API change or dependency. Broader audit incomplete.
+- Files: main window, UI tests, README, refactoring/localization evidence docs.
+- Existing three pyc changes preserved; branch `main`.
+- Next: revision-creation and recovery typed errors, then remaining UI inventory.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.01/.02/.04 checkpoint — project-search completion
 
 - TASK-032.01, .02, .04: **CHECKPOINT** each; parent TASK-032 partial.

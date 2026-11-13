@@ -191,3 +191,13 @@ preserves exact diagnostics; shared completion logic prevents stale feedback or
 clearing a newer request. Three baseline cases failed before the fix. Native UI
 review remains open. Source extraction and packaged parity checks are recorded
 in the current implementation checkpoint.
+
+## Project document-open failure — TASK-032.01/.02/.04
+
+MainWindow._project_document_open_failed now shares typed project error
+presentation for both the warning and nonblocking binding-verification status.
+Both worker connections capture project generation. Eight callback cases check
+current/project/generation/closing states and dirty text; four real-worker cases
+check new opens and existing-tab bindings across a generation change. Pending
+keys are released even for stale failures. Original diagnostic details remain;
+no new translation strings. Native runtime remains unverified.
