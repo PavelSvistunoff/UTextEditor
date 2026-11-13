@@ -790,16 +790,29 @@ class MainWindow(QMainWindow):
         return document_id
 
     def _attach_writing_goal_document(self, editor, *, reset_history: bool = False) -> None:
-        document_id = self._goal_document_id(editor)
+        logical_id = self._goal_document_id(editor)
         old_id = getattr(editor, "_writing_goal_document_id", None)
-        if old_id == document_id and not reset_history:
+        old_logical_id = getattr(editor, "_writing_goal_logical_id", old_id)
+        if old_logical_id == logical_id and not reset_history:
             return
-        if isinstance(old_id, str) and old_id != document_id:
-            self.writing_goals.rekey_document(old_id, document_id, editor.toPlainText())
+        document_id = logical_id
+        if old_logical_id == logical_id and isinstance(old_id, str):
+            document_id = old_id
+            self.writing_goals.attach(document_id, editor.toPlainText())
+        elif isinstance(old_id, str) and old_id != logical_id:
+            if not self.writing_goals.rekey_document(old_id, logical_id, editor.toPlainText()):
+                document_id = f"goal-alias:{uuid4().hex}"
+                self.writing_goals.rekey_document(old_id, document_id, editor.toPlainText())
+                self.writing_goals.associate_alias(document_id, logical_id)
             self._schedule_writing_goal_persist()
         else:
+            if old_id is None and self.writing_goals.is_attached(logical_id):
+                document_id = f"goal-alias:{uuid4().hex}"
+                self.writing_goals.associate_alias(document_id, logical_id)
+                self._schedule_writing_goal_persist()
             self.writing_goals.attach(document_id, editor.toPlainText())
         editor._writing_goal_document_id = document_id
+        editor._writing_goal_logical_id = logical_id
         editor._goal_undo_merge_active = False
         editor._goal_undo_command_added = False
         editor._goal_undo_steps = editor.document().availableUndoSteps()
@@ -807,9 +820,9 @@ class MainWindow(QMainWindow):
         self._refresh_writing_goal()
 
     def _record_writing_goal_text(self, editor) -> None:
-        document_id = self._goal_document_id(editor)
-        if getattr(editor, "_writing_goal_document_id", None) != document_id:
+        if getattr(editor, "_writing_goal_logical_id", None) != self._goal_document_id(editor):
             self._attach_writing_goal_document(editor)
+        document_id = editor._writing_goal_document_id
         history_action = editor._history_action
         document = editor.document()
         # Qt's standard context menu can invoke the native undo slot without
@@ -895,7 +908,7 @@ class MainWindow(QMainWindow):
                     project_words += count.count
                     project_observation_complete = project_observation_complete and count.complete
         if not document_ids and editor is not None:
-            document_ids.add(self._goal_document_id(editor))
+            document_ids.add(editor._writing_goal_document_id)
         progress = self.writing_goals.goal_progress(
             active_scene_words=active_words,
             project_words=project_words,

@@ -1,5 +1,23 @@
 # Implementation progress
 
+## TASK-001.03 collision continuation (2026-11-13)
+
+- **.03: CHECKPOINT; parent TASK-001: open.** Active-identity rekey collisions
+  no longer replace another editor's history. Independent history keys retain
+  undo/redo and their persisted aliases contribute to the same logical scene;
+  reset, pause, alias rekey and reload have regression coverage. Bounded
+  reachable history remains outstanding (.02/.03), so the parent memory gate
+  and long-session stress gate are not yet satisfied.
+- Changed `app/document/writing_goals.py`, `app/ui/main_window.py`, their
+  tests, `README.md`, `TASKS.md` and this checkpoint on
+  `codex/task-continuation`. Existing staged generated artifacts are unrelated.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py`:
+  118 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  917 passed, 2 skipped. Native checks not run.
+- Next: resume .03/.02; design bounded storage for every reachable Qt undo
+  state without discarding undo or silently changing daily counts; measure it
+  with the .05 workload. Resume: `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+
 ## TASK-001.03 continuation review (2026-11-13)
 
 - **.03: CHECKPOINT; parent TASK-001: open.** Batch: .03 alone, because

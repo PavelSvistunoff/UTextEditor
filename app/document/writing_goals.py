@@ -24,6 +24,7 @@ class WritingGoalTracker:
         paused: bool = False,
         progress: Mapping[str, Mapping[str, int]] | None = None,
         scope_history: Mapping[str, Mapping[str, Mapping[str, int]]] | None = None,
+        aliases: Mapping[str, str] | None = None,
     ) -> None:
         self.target = self._validate_target(target)
         if scope not in _SCOPES:
@@ -67,6 +68,12 @@ class WritingGoalTracker:
             self.scope_history[day] = checked_scopes
         self._histories: dict[str, tuple[list[tuple[bytes, dict[str, int]]], int]] = {}
         self._current_text: dict[str, str] = {}
+        if aliases is not None and not isinstance(aliases, Mapping):
+            raise ValueError("Writing-goal aliases must be a mapping.")
+        self.aliases: dict[str, str] = dict(aliases or {})
+        if any(not isinstance(key, str) or not key or not isinstance(value, str) or not value
+               or key == value or value in self.aliases for key, value in self.aliases.items()):
+            raise ValueError("Writing-goal aliases must map distinct identities to primary identities.")
 
     @staticmethod
     def _fingerprint(text: str) -> bytes:
@@ -99,11 +106,31 @@ class WritingGoalTracker:
         self._histories[document_id] = ([(self._fingerprint(text), counts)], 0)
         self._current_text[document_id] = text
 
-    def rekey_document(self, old_id: str, new_id: str, text: str) -> None:
+    def is_attached(self, document_id: str) -> bool:
+        return document_id in self._histories
+
+    def associate_alias(self, alias: str, primary: str) -> None:
+        if not alias or not primary or alias == primary or primary in self.aliases:
+            raise ValueError("An alias and a distinct primary identity are required.")
+        for key, value in tuple(self.aliases.items()):
+            if value == alias:
+                self.aliases[key] = primary
+        self.aliases[alias] = primary
+
+    def rekey_document(self, old_id: str, new_id: str, text: str) -> bool:
+        """Move history to an unused identity; leave both histories intact on collision."""
         if old_id == new_id:
             if self._current_text.get(old_id) != text:
                 self.attach(new_id, text)
-            return
+            return True
+        if new_id in self._histories:
+            return False
+        if new_id in self.aliases:
+            raise ValueError("Cannot rekey to an alias identity.")
+        self.aliases.pop(old_id, None)
+        for alias, primary in tuple(self.aliases.items()):
+            if primary == old_id:
+                self.aliases[alias] = new_id
         preserve_history = (
             old_id in self._histories
             and self._current_text.get(old_id) == text
@@ -134,6 +161,7 @@ class WritingGoalTracker:
             self._current_text[new_id] = text
         else:
             self.attach(new_id, text)
+        return True
 
     def detach(self, document_id: str) -> None:
         """Release transient undo history while retaining saved progress."""
@@ -218,7 +246,9 @@ class WritingGoalTracker:
         today = local_date or self.local_date()
         date.fromisoformat(today)
         counts = self.progress.get(today, {})
-        return sum(counts.get(document_id, 0) for document_id in set(document_ids))
+        primary_ids = {self.aliases.get(document_id, document_id) for document_id in document_ids}
+        identities = primary_ids | {alias for alias, primary in self.aliases.items() if primary in primary_ids}
+        return sum(counts.get(document_id, 0) for document_id in identities)
 
     def goal_progress(
         self,
@@ -290,6 +320,7 @@ class WritingGoalTracker:
             "paused": self.paused,
             "progress": deepcopy(self.progress),
             "scope_history": deepcopy(self.scope_history),
+            "aliases": dict(self.aliases),
         }
 
     @classmethod
@@ -300,12 +331,15 @@ class WritingGoalTracker:
             raise ValueError("Writing-goal progress must be a mapping.")
         if "scope_history" in value and not isinstance(value["scope_history"], Mapping):
             raise ValueError("Writing-goal scope history must be a mapping.")
+        if "aliases" in value and not isinstance(value["aliases"], Mapping):
+            raise ValueError("Writing-goal aliases must be a mapping.")
         return cls(
             target=value.get("target", 0),
             scope=value.get("scope", "active_scene"),
             paused=value.get("paused", False),
             progress=value.get("progress", {}),
             scope_history=value.get("scope_history", {}),
+            aliases=value.get("aliases", {}),
         )
 
     @staticmethod

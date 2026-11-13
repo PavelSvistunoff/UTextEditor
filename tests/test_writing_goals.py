@@ -248,6 +248,69 @@ def test_rekeying_a_saved_document_preserves_its_daily_contribution() -> None:
     assert tracker.count_new_words({"file:/draft.txt"}, local_date="2026-10-17") == 2
 
 
+def test_rekey_collision_leaves_both_histories_and_progress_intact() -> None:
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("source", "")
+    tracker.attach("destination", "")
+    tracker.record_text("source", "one two", local_date="2026-10-17")
+    tracker.record_text("destination", "three", local_date="2026-10-17")
+
+    assert not tracker.rekey_document("source", "destination", "one two")
+    for identity, text, count in (("source", "one two", 2), ("destination", "three", 1)):
+        tracker.record_text(identity, "", local_date="2026-10-17", undo=True)
+        assert tracker.count_new_words({identity}, local_date="2026-10-17") == 0
+        tracker.record_text(identity, text, local_date="2026-10-17", redo=True)
+        assert tracker.count_new_words({identity}, local_date="2026-10-17") == count
+    tracker.reset_today(local_date="2026-10-17")
+    for identity in ("source", "destination"):
+        tracker.record_text(identity, "", local_date="2026-10-17", undo=True)
+        assert tracker.count_new_words({identity}, local_date="2026-10-17") == 0
+
+
+def test_alias_progress_survives_reload_and_deduplicates_project_selection() -> None:
+    day = "2026-10-17"
+    tracker = WritingGoalTracker(100, "new_words")
+    tracker.attach("scene", "")
+    tracker.attach("other", "")
+    tracker.record_text("scene", "one", local_date=day)
+    tracker.record_text("other", "two three", local_date=day)
+    assert tracker.rekey_document("other", "goal-alias:unique", "two three")
+    tracker.associate_alias("goal-alias:unique", "scene")
+    assert tracker.count_new_words({"scene", "goal-alias:unique"}, local_date=day) == 3
+    loaded = WritingGoalTracker.from_mapping(tracker.to_mapping())
+    assert loaded.count_new_words({"scene"}, local_date=day) == 3
+    loaded.attach("scene", "one")
+    loaded.set_paused(True)
+    loaded.record_text("scene", "one paused", local_date=day)
+    loaded.set_paused(False)
+    loaded.record_text("scene", "one", local_date=day, undo=True)
+    assert loaded.count_new_words({"scene"}, local_date=day) == 3
+    loaded.reset_today(local_date=day)
+    loaded.record_text("scene", "one paused", local_date=day, redo=True)
+    assert loaded.count_new_words({"scene"}, local_date=day) == 0
+
+
+def test_rekey_primary_keeps_aliases_and_rekey_alias_leaves_others() -> None:
+    day = "2026-10-17"
+    tracker = WritingGoalTracker(100, "new_words")
+    for identity in ("scene", "alias-a", "alias-b"):
+        tracker.attach(identity, "")
+        tracker.record_text(identity, identity, local_date=day)
+    tracker.associate_alias("alias-a", "scene")
+    tracker.associate_alias("alias-b", "scene")
+    assert tracker.rekey_document("scene", "renamed", "scene")
+    assert tracker.count_new_words({"renamed"}, local_date=day) == 3
+    assert tracker.rekey_document("alias-a", "separate", "alias-a")
+    assert tracker.count_new_words({"renamed"}, local_date=day) == 2
+    assert tracker.count_new_words({"separate"}, local_date=day) == 1
+
+
+@pytest.mark.parametrize("aliases", [None, [], {"a": "a"}, {"a": "b", "b": "c"}])
+def test_invalid_persisted_aliases_are_rejected(aliases) -> None:
+    with pytest.raises(ValueError):
+        WritingGoalTracker.from_mapping({"aliases": aliases})
+
+
 def test_detach_releases_history_but_preserves_daily_progress() -> None:
     tracker = WritingGoalTracker(100, "new_words")
     tracker.attach("doc", "")

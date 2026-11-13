@@ -53,14 +53,12 @@ Each checkbox is a separately executable ticket. Subtasks under a partially impl
   retain matching history. Existing-destination progress and mismatched text
   now form minimum daily counts in transferred checkpoints when the destination
   is not actively tracked. Scope/enable transitions now
-  preserve checkpoints, with no new-word credit for inactive edits; bounded
-  history and actively tracked identity collisions remain outstanding.
-  A direct tracker reproduction confirms rekeying into an active destination
-  replaces its tracked text and checkpoints; a per-editor identity design is
-  still needed to preserve both histories.
+  preserve checkpoints, with no new-word credit for inactive edits. Active
+  identity collisions now preserve independent histories and persist their
+  association for project aggregation; bounded history remains outstanding.
   A UI regression test verifies that Save As to an already-open file is
   rejected and preserves both tabs' progress through undo and redo. This guard
-  does not resolve arbitrary tracker identity collisions.
+  is covered alongside tracker and editor collision regressions.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-001.05** — Benchmark realistic long editing sessions.
   History benchmark now accepts command/undo counts and checks branching after

@@ -940,6 +940,35 @@ def test_save_as_open_file_preserves_both_writing_goal_histories(application, tm
     window.close()
 
 
+def test_writing_goal_identity_collision_keeps_editor_histories(application, monkeypatch):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.configure(10, "new_words")
+    first = window.tabs.current_editor()
+    second = window.tabs.new_document()
+    first.insertPlainText("first")
+    second.insertPlainText("second words")
+    first_id, second_id = first._writing_goal_document_id, second._writing_goal_document_id
+    original_id = window._goal_document_id
+    monkeypatch.setattr(window, "_goal_document_id", lambda editor: first_id if editor is second else original_id(editor))
+    window._attach_writing_goal_document(second)
+
+    alias_id = second._writing_goal_document_id
+    assert alias_id != second_id
+    assert window.writing_goals.aliases[alias_id] == first_id
+    for editor, identity, count in ((first, first_id, 1), (second, alias_id, 2)):
+        editor.undo()
+        states, position = window.writing_goals._histories[identity]
+        assert states[position][1].get(window.writing_goals.local_date(), 0) == 0
+        editor.redo()
+        states, position = window.writing_goals._histories[identity]
+        assert states[position][1][window.writing_goals.local_date()] == count
+        editor.document_state.mark_saved()
+    assert window.writing_goals.count_new_words({first_id}) == 3
+    window._writing_goal_persist_timer.stop()
+    window.close()
+
+
 def test_writing_goal_does_not_credit_undo_after_history_reattachment(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()
