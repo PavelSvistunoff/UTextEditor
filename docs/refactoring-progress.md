@@ -1,5 +1,21 @@
 # Refactoring progress
 
+## Repository completion run — R2 AI boundary batch
+
+- AI shared parsing/protocol refactor: COMPLETE; final repository reconciliation pending.
+- One complete JSON-fence rule serves character profile, development, continuity
+  and spellcheck; strict schemas and spellcheck's tolerant extraction stay distinct.
+- Added 12 strict-boundary cases before extraction (plain/fenced/prefixed responses).
+- Ollama completion, generation and streaming share their chat payload builder;
+  timeout, observer events, raw whitespace and cancellation behavior are retained.
+- Focused AI/activity corpus: 228 passed; final provider/project-worker/E2E/activity
+  corpus: 89 passed. Project/AI earlier focused corpus: 320 passed.
+- All network tests use fake HTTP/provider responses; no live Ollama gate claimed.
+- Clean Code review: one protocol owner; no schema, context, consent or worker change.
+- Full offscreen control run is in progress; staged bytecode remains excluded.
+- Next: commit verified UI-to-domain extraction and complete per-module audit report.
+- Resume: `git status --short && cat docs/refactoring-plan.md`.
+
 ## Repository completion run — R1 document batch
 
 - R1: COMPLETE; repository audit/extraction batches R2–R4 remain in progress.

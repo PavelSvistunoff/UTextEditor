@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 import json
-import re
+from .validation import unwrap_json_fence
 
 from app.project.model import CHARACTER_ARC_FIELDS
 
@@ -31,10 +31,7 @@ def suggest_character_development(provider, fields: dict[str, str], scene_text: 
                                          maximum_tokens=1600, temperature=temperature)
     if not isinstance(response, str) or len(response) > 30_000:
         raise ValueError("The model returned an invalid or oversized response.")
-    response = response.strip()
-    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", response, re.IGNORECASE | re.DOTALL)
-    if fenced:
-        response = fenced.group(1)
+    response = unwrap_json_fence(response)
     try:
         payload = json.loads(response)
     except (TypeError, ValueError) as exc:

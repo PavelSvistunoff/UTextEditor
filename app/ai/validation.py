@@ -7,14 +7,23 @@ from typing import Any
 from .models import Suggestion
 
 
+def unwrap_json_fence(payload: str) -> str:
+    """Remove only a complete optional JSON fence; keep surrounding prose invalid.
+
+    Schema-specific callers retain their own size limits and error messages.
+    Spellcheck's deliberately tolerant extraction remains a separate policy.
+    """
+    text = payload.strip()
+    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, re.IGNORECASE | re.DOTALL)
+    return fenced.group(1) if fenced else text
+
+
 def _extract_json_value(payload: str) -> str:
     text = payload.strip()
     if not text:
         return ""
 
-    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, re.IGNORECASE | re.DOTALL)
-    if fenced:
-        text = fenced.group(1).strip()
+    text = unwrap_json_fence(text).strip()
 
     if text.lower().startswith("json"):
         text = text[4:].lstrip()

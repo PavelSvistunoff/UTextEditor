@@ -1,3 +1,5 @@
+import pytest
+
 from app.ai.completion_service import build_context
 from app.ai.models import Suggestion
 from app.ai.validation import parse_suggestions, valid_suggestion
@@ -98,3 +100,39 @@ def test_build_context_clamps_out_of_range_positions_and_zero_length_limits() ->
     assert build_context(text, 999999) == text
     assert build_context(text, -3) == ""
     assert build_context(text, len(text), maximum_characters=0) == ""
+
+
+@pytest.mark.parametrize("service", ["profile", "development", "continuity"])
+@pytest.mark.parametrize("wrapper,accepted", [
+    ("{}", True), ("```JSON\n{}\n```", True),
+    ("```\n{}\n```", True), ("Explanation before JSON: {}", False),
+])
+def test_character_and_continuity_services_preserve_strict_json_boundaries(service, wrapper, accepted):
+    from app.ai.character_profile import suggest_character_fields
+    from app.ai.character_development import suggest_character_development
+    from app.ai.continuity import parse_continuity_findings
+
+    payload = {
+        "profile": '{"description":"A writer"}',
+        "development": '{"proposals":[]}',
+        "continuity": '{"findings":[]}',
+    }[service]
+    response = wrapper.format(payload)
+
+    class Provider:
+        def generate_private(self, *args, **kwargs):
+            return response
+
+    def parse():
+        if service == "profile":
+            return suggest_character_fields(Provider(), {"description": ""}, "English", 0.2)
+        if service == "development":
+            return suggest_character_development(Provider(), {}, "Scene text", "English", 0.2)
+        return parse_continuity_findings(response, scene_id="scene", character_ids=set(), sources={})
+
+    if accepted:
+        expected = {"description": "A writer"} if service == "profile" else ()
+        assert parse() == expected
+    else:
+        with pytest.raises(ValueError):
+            parse()

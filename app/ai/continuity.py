@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 import json
-import re
+from .validation import unwrap_json_fence
 
 
 @dataclass(frozen=True)
@@ -20,10 +20,7 @@ def parse_continuity_findings(response: object, *, scene_id: str,
                               character_ids: set[str], sources: dict[str, str]) -> tuple[ContinuityFinding, ...]:
     if not isinstance(response, str) or len(response) > 60_000:
         raise ValueError("The model returned an invalid or oversized continuity response.")
-    response = response.strip()
-    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", response, re.IGNORECASE | re.DOTALL)
-    if fenced:
-        response = fenced.group(1)
+    response = unwrap_json_fence(response)
     try:
         payload = json.loads(response)
     except (ValueError, TypeError) as exc:

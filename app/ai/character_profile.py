@@ -1,7 +1,7 @@
 """Generate and validate suggestions for empty character-profile fields."""
 
 import json
-import re
+from .validation import unwrap_json_fence
 
 from app.project.model import CHARACTER_ARC_FIELDS, CHARACTER_GOAL_STATES, CHARACTER_KNOWLEDGE_KINDS
 
@@ -30,10 +30,7 @@ def suggest_character_fields(provider, fields: dict[str, str], language: str, te
                                        timeout=CHARACTER_PROFILE_REQUEST_TIMEOUT_SECONDS, json_mode=True)
     if not isinstance(result, str) or len(result) > 30000:
         raise ValueError("The model returned an invalid or oversized response.")
-    result = result.strip()
-    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", result, re.IGNORECASE | re.DOTALL)
-    if fenced:
-        result = fenced.group(1)
+    result = unwrap_json_fence(result)
     try:
         values = json.loads(result)
     except (ValueError, TypeError) as exc:

@@ -111,16 +111,10 @@ class OllamaClient:
     ) -> str:
         response = self._post(
             "/api/chat",
-            {
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": role},
-                    {"role": "user", "content": completion_prompt(context, language, template)},
-                ],
-                "stream": False,
-                "think": False,
-                "options": {"num_predict": maximum_tokens, "temperature": temperature},
-            },
+            self._chat_payload(
+                completion_prompt(context, language, template),
+                role=role, maximum_tokens=maximum_tokens, temperature=temperature,
+            ),
         )
         message = response.get("message")
         result = message.get("content") if isinstance(message, dict) else None
@@ -154,9 +148,9 @@ class OllamaClient:
                         maximum_tokens: int = 300, temperature: float = 0.2) -> str:
         """Read bounded NDJSON generation output, emitting provisional text in the caller's thread."""
         path = "/api/chat"
-        payload = {"model": self.model, "messages": [{"role": "system", "content": role},
-                   {"role": "user", "content": prompt}], "stream": True, "think": False,
-                   "options": {"num_predict": maximum_tokens, "temperature": temperature}}
+        payload = self._chat_payload(
+            prompt, role=role, maximum_tokens=maximum_tokens, temperature=temperature, stream=True,
+        )
         self._observe("Request", path, payload)
         req = request.Request(f"{self.host}{path}", data=json.dumps(payload).encode("utf-8"),
                               headers={"Content-Type": "application/json"})
@@ -220,6 +214,22 @@ class OllamaClient:
             json_mode=json_mode,
         )
 
+    def _chat_payload(
+        self, prompt: str, *, role: str, maximum_tokens: int, temperature: float,
+        stream: bool = False,
+    ) -> dict[str, Any]:
+        """Keep the shared generation protocol in the Ollama boundary."""
+        return {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": role},
+                {"role": "user", "content": prompt},
+            ],
+            "stream": stream,
+            "think": False,
+            "options": {"num_predict": maximum_tokens, "temperature": temperature},
+        }
+
     def _generate(
         self,
         prompt: str,
@@ -231,16 +241,9 @@ class OllamaClient:
         timeout: float | None,
         json_mode: bool,
     ) -> str:
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": role},
-                {"role": "user", "content": prompt},
-            ],
-            "stream": False,
-            "think": False,
-            "options": {"num_predict": maximum_tokens, "temperature": temperature},
-        }
+        payload = self._chat_payload(
+            prompt, role=role, maximum_tokens=maximum_tokens, temperature=temperature,
+        )
         if json_mode:
             payload["format"] = "json"
         response = self._post(
