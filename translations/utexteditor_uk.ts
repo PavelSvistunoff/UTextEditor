@@ -2575,12 +2575,17 @@ Text is sent to the configured Ollama destination:
 <context>
     <name>WritingGoalHistoryDialog</name>
     <message><source>Writing goal history</source><translation>Історія цілі письма</translation></message>
-    <message><source>Approximate newly written words across stored document identities, by local date. Undo and redo can change counts; only an enabled, unpaused new-word goal records progress. Historical active-document and project word counts are not stored.</source><translation>Приблизна кількість нових слів за збереженими ідентифікаторами документів і місцевою датою. Скасування та повторення можуть змінювати кількість; прогрес записується лише для ввімкненої та непризупиненої цілі нових слів. Попередні кількості слів активного документа та проєкту не зберігаються.</translation></message>
+    <message><source>Approximate newly written words across stored document identities, by local date. Undo and redo can change counts; only an enabled, unpaused goal records progress. Document and project counts are the last complete observations for each local day; older observations may be unavailable.</source><translation>Приблизна кількість нових слів за збереженими ідентифікаторами документів і місцевою датою. Скасування та повторення можуть змінювати кількість; прогрес записується лише для ввімкненої та непризупиненої цілі. Кількість слів документа й проєкту — останнє повне значення за кожну місцеву дату; давніші значення можуть бути недоступні.</translation></message>
     <message><source>Local date</source><translation>Місцева дата</translation></message>
     <message><source>Measure</source><translation>Показник</translation></message>
     <message><source>Approximate words</source><translation>Приблизна кількість слів</translation></message>
     <message><source>Daily writing goal history</source><translation>Щоденна історія цілі письма</translation></message>
     <message><source>Newly written words</source><translation>Нові написані слова</translation></message>
+    <message><source>All stored documents</source><translation>Усі збережені документи</translation></message>
+    <message><source>Active document words</source><translation>Слова активного документа</translation></message>
+    <message><source>Project manuscript words</source><translation>Слова рукопису проєкту</translation></message>
+    <message><source>Document or project</source><translation>Документ або проєкт</translation></message>
+    <message><source>Words</source><translation>Слова</translation></message>
     <message><source>Close</source><translation>Закрити</translation></message>
 </context>
 </TS>

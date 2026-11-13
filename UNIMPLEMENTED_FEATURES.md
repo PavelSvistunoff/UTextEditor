@@ -252,10 +252,9 @@ network read may continue until data arrives or the connection times out.
 11. **Further find controls** (small/medium effort). Literal find supports
     optional case-insensitive and whole-word matching. Regular expressions
     would need separate safeguards and clear error reporting.
-12. **Writing-goal history** (medium effort). A read-only view shows stored
-    approximate new-word totals by local date and explains their semantics.
-    Historical active-document and project counts are not stored; a way to
-    remove all locally stored progress is still needed.
+12. **Writing-goal history** (medium effort). A read-only view shows approximate new-word totals and last observed
+    document or project counts by local date. Older observations may be absent;
+    a way to remove all locally stored progress is still needed.
 13. **Measure large-project responsiveness** (medium effort). Establish
     repeatable benchmarks for opening, editing, search, word counts, snapshots,
     and AI context construction before optimizing. Then address measured

@@ -5,6 +5,31 @@ import pytest
 from app.document.writing_goals import WritingGoalStore, WritingGoalTracker
 
 
+def test_scope_history_records_last_complete_observation_per_identity_and_round_trips(tmp_path):
+    tracker = WritingGoalTracker(100, "active_scene")
+    assert tracker.record_scope_count("file:a", 12, local_date="2026-10-17")
+    assert not tracker.record_scope_count("file:a", 12, local_date="2026-10-17")
+    assert tracker.record_scope_count("file:a", 9, local_date="2026-10-17")
+    tracker.set_paused(True)
+    assert not tracker.record_scope_count("file:a", 20, local_date="2026-10-17")
+    tracker.set_paused(False)
+    tracker.configure(100, "project_manuscript")
+    assert tracker.record_scope_count("project:p", 40, local_date="2026-10-18")
+    store = WritingGoalStore(tmp_path / "goals.json")
+    store.save(tracker)
+    loaded = store.load()
+    assert loaded.scope_history == {"2026-10-17": {"active_scene": {"file:a": 9}},
+                                    "2026-10-18": {"project_manuscript": {"project:p": 40}}}
+    assert WritingGoalTracker.from_mapping({"progress": {}}).scope_history == {}
+
+
+@pytest.mark.parametrize("history", [[], None, {"2026-10-17": {"new_words": {"x": 2}}},
+                                     {"2026-10-17": {"active_scene": {"x": -1}}}])
+def test_invalid_persisted_scope_history_is_rejected(history):
+    with pytest.raises(ValueError):
+        WritingGoalTracker.from_mapping({"scope_history": history})
+
+
 def test_new_words_count_tokens_added_by_typing_and_paste_once() -> None:
     tracker = WritingGoalTracker(100, "new_words")
     tracker.attach("doc", "")

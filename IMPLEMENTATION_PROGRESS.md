@@ -1,5 +1,22 @@
 # Implementation progress
 
+## TASK-029.02 completed (2026-11-13)
+
+- **TASK-029.02: COMPLETE; parent TASK-029 open.** The history stores the last
+  complete observed count per local day and document/project identity while the
+  corresponding goal is enabled and unpaused. Missing/incomplete project
+  counts are excluded; no past values are fabricated. Older settings load with
+  empty scope history, and malformed new data is rejected without startup writes.
+- Changed `app/document/writing_goals.py`, both writing-goal UI files, goal
+  tests, `README.md`, `UNIMPLEMENTED_FEATURES.md`, Ukrainian source catalog,
+  `TASKS.md`, and this file on `codex/task-continuation`; original staged
+  generated files remain unrelated. Native UI and release catalog not checked.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py -k 'writing_goal or goal_history or scope_history'`:
+  49 passed, 58 deselected. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  896 passed, 2 skipped. Translation source validation and temporary catalog
+  compilation passed. Next: TASK-029.05, confirmed removal including all
+  undo/redo checkpoints; do not change manuscript text.
+
 ## TASK-029.01–.04 checkpoint (2026-11-13)
 
 - **.01 COMPLETE, .02 CHECKPOINT, .03 COMPLETE, .04 COMPLETE; parent TASK-029

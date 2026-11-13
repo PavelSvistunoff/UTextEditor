@@ -23,6 +23,7 @@ class WritingGoalTracker:
         scope: str = "active_scene",
         paused: bool = False,
         progress: Mapping[str, Mapping[str, int]] | None = None,
+        scope_history: Mapping[str, Mapping[str, Mapping[str, int]]] | None = None,
     ) -> None:
         self.target = self._validate_target(target)
         if scope not in _SCOPES:
@@ -46,6 +47,24 @@ class WritingGoalTracker:
                     raise ValueError("Writing-goal counts must be non-negative integers.")
                 checked[document_id] = count
             self.progress[day] = checked
+        self.scope_history: dict[str, dict[str, dict[str, int]]] = {}
+        if scope_history is not None and not isinstance(scope_history, Mapping):
+            raise ValueError("Writing-goal scope history must be a mapping.")
+        for day, scopes in (scope_history or {}).items():
+            date.fromisoformat(day)
+            if not isinstance(scopes, Mapping):
+                raise ValueError("Writing-goal scope history must map dates to scopes.")
+            checked_scopes: dict[str, dict[str, int]] = {}
+            for name, values in scopes.items():
+                if name not in {"active_scene", "project_manuscript"} or not isinstance(values, Mapping):
+                    raise ValueError("Writing-goal scope history has an invalid scope.")
+                checked_values: dict[str, int] = {}
+                for identity, count in values.items():
+                    if not isinstance(identity, str) or not identity or isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                        raise ValueError("Writing-goal scope history has an invalid count or identity.")
+                    checked_values[identity] = count
+                checked_scopes[name] = checked_values
+            self.scope_history[day] = checked_scopes
         self._histories: dict[str, tuple[list[tuple[bytes, dict[str, int]]], int]] = {}
         self._current_text: dict[str, str] = {}
 
@@ -224,6 +243,20 @@ class WritingGoalTracker:
             raise TypeError("Writing-goal paused state must be a boolean.")
         self.paused = paused
 
+    def record_scope_count(self, identity: str, count: int, *, local_date: str | None = None) -> bool:
+        """Record the latest complete observed count for the active count-based scope."""
+        if self.target == 0 or self.paused or self.scope == "new_words":
+            return False
+        if not isinstance(identity, str) or not identity or isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise ValueError("A valid scope identity and count are required.")
+        day = local_date or self.local_date()
+        date.fromisoformat(day)
+        counts = self.scope_history.setdefault(day, {}).setdefault(self.scope, {})
+        if counts.get(identity) == count:
+            return False
+        counts[identity] = count
+        return True
+
     def reset_today(self, *, local_date: str | None = None) -> None:
         today = local_date or self.local_date()
         date.fromisoformat(today)
@@ -247,6 +280,7 @@ class WritingGoalTracker:
             "scope": self.scope,
             "paused": self.paused,
             "progress": deepcopy(self.progress),
+            "scope_history": deepcopy(self.scope_history),
         }
 
     @classmethod
@@ -255,11 +289,14 @@ class WritingGoalTracker:
             raise ValueError("Writing-goal settings must be a mapping.")
         if "progress" in value and not isinstance(value["progress"], Mapping):
             raise ValueError("Writing-goal progress must be a mapping.")
+        if "scope_history" in value and not isinstance(value["scope_history"], Mapping):
+            raise ValueError("Writing-goal scope history must be a mapping.")
         return cls(
             target=value.get("target", 0),
             scope=value.get("scope", "active_scene"),
             paused=value.get("paused", False),
             progress=value.get("progress", {}),
+            scope_history=value.get("scope_history", {}),
         )
 
     @staticmethod

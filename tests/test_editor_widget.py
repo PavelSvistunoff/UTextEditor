@@ -76,10 +76,10 @@ def test_goal_history_shows_stored_daily_new_word_totals_without_changing_tracke
     before = tracker.to_mapping()
     dialog = WritingGoalHistoryDialog(tracker.progress)
     assert dialog.table.rowCount() == 2
-    assert [dialog.table.item(0, col).text() for col in range(3)] == [
-        "2026-10-18", "Newly written words", "1",
+    assert [dialog.table.item(0, col).text() for col in range(4)] == [
+        "2026-10-18", "Newly written words", "All stored documents", "1",
     ]
-    assert dialog.table.item(1, 2).text() == "5"
+    assert dialog.table.item(1, 3).text() == "5"
     assert dialog.table.editTriggers() == dialog.table.EditTrigger.NoEditTriggers
     assert tracker.to_mapping() == before
     dialog.close()
@@ -105,13 +105,60 @@ def test_goal_history_reflects_pause_and_reset_without_changing_document(applica
     tracker.set_paused(True)
     tracker.record_text("doc", "one two", local_date="2026-10-17")
     dialog = WritingGoalHistoryDialog(tracker.progress)
-    assert dialog.table.item(0, 2).text() == "1"
+    assert dialog.table.item(0, 3).text() == "1"
     dialog.close()
     tracker.reset_today(local_date="2026-10-17")
     dialog = WritingGoalHistoryDialog(tracker.progress)
-    assert dialog.table.item(0, 2).text() == "0"
+    assert dialog.table.item(0, 3).text() == "0"
     assert tracker._current_text["doc"] == "one two" and tracker.paused
     dialog.close()
+
+
+def test_goal_history_records_active_document_count(application, monkeypatch):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    tracker = window.writing_goals
+    monkeypatch.setattr(tracker, "local_date", lambda: "2026-10-17")
+    tracker.configure(10, "active_scene")
+    editor = window.tabs.current_editor()
+    editor.setPlainText("one two")
+    window._refresh_writing_goal()
+    identity = editor._writing_goal_document_id
+    assert tracker.scope_history["2026-10-17"]["active_scene"][identity] == 2
+    dialog = WritingGoalHistoryDialog(tracker.progress, scope_history=tracker.scope_history)
+    assert any(dialog.table.item(row, 1).text() == "Active document words"
+               and dialog.table.item(row, 2).text() == identity
+               and dialog.table.item(row, 3).text() == "2"
+               for row in range(dialog.table.rowCount()))
+    dialog.close()
+    editor.document_state.mark_saved()
+    window.close()
+
+
+def test_goal_history_does_not_store_incomplete_project_count(application, tmp_path, monkeypatch):
+    from app.project import Project, WordCount
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Opening", content="one two")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    tracker = window.writing_goals
+    monkeypatch.setattr(tracker, "local_date", lambda: "2026-10-17")
+    tracker.configure(10, "project_manuscript")
+    window._scene_word_counts = {}
+    window._project_count_complete = True
+    window._refresh_writing_goal()
+    assert tracker.scope_history == {}
+    window._scene_word_counts = {scene.id: WordCount(2, True)}
+    window._project_count_complete = False
+    window._refresh_writing_goal()
+    assert tracker.scope_history == {}
+    window._project_count_complete = True
+    window._refresh_writing_goal()
+    assert tracker.scope_history["2026-10-17"]["project_manuscript"] == {
+        f"project:{project.manifest.project_id}": 2,
+    }
+    window.close()
 
 
 def test_editor_colors_follow_the_system_palette(application: QApplication) -> None:

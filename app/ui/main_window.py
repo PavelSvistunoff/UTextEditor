@@ -872,6 +872,7 @@ class MainWindow(QMainWindow):
         active_words = (count_words(editor.toPlainText())
                         if editor is not None and self.writing_goals.scope == "active_scene" else 0)
         project_words = 0
+        project_observation_complete = True
         document_ids: set[str] = set()
         if self.project is not None:
             open_scenes: dict[str, str] = {}
@@ -889,6 +890,7 @@ class MainWindow(QMainWindow):
                 else:
                     count = self._scene_word_counts.get(scene.id, WordCount(0, False))
                     project_words += count.count
+                    project_observation_complete = project_observation_complete and count.complete
         if not document_ids and editor is not None:
             document_ids.add(self._goal_document_id(editor))
         progress = self.writing_goals.goal_progress(
@@ -905,6 +907,14 @@ class MainWindow(QMainWindow):
             and self.project is not None
             and not self._project_count_complete
         )
+        scope_identity = None
+        if self.writing_goals.scope == "active_scene" and editor is not None:
+            scope_identity = self._goal_document_id(editor)
+        elif (self.writing_goals.scope == "project_manuscript" and self.project is not None
+              and not incomplete and project_observation_complete):
+            scope_identity = f"project:{self.project.manifest.project_id}"
+        if scope_identity is not None and self.writing_goals.record_scope_count(scope_identity, count):
+            self._schedule_writing_goal_persist()
         self._writing_goal_label.setText(
             (
                 "Daily goal complete "
@@ -927,7 +937,8 @@ class MainWindow(QMainWindow):
             self._refresh_writing_goal()
 
     def show_writing_goal_history(self) -> None:
-        WritingGoalHistoryDialog(self.writing_goals.to_mapping()["progress"], self).exec()
+        state = self.writing_goals.to_mapping()
+        WritingGoalHistoryDialog(state["progress"], self, scope_history=state["scope_history"]).exec()
 
     def toggle_writing_goal_pause(self) -> None:
         if self.writing_goals.target == 0:

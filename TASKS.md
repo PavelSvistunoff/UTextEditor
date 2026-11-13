@@ -886,9 +886,10 @@ PDF paper/title/heading/selection controls are verified in
   Read-only dialog shows saved new-word totals by local date across stored
   document identities; the menu action captures current tracker state.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [~] **TASK-029.02** — Show progress by date and scope.
-  The stored new-word measure is displayed. Historical active-document and
-  project counts are not persisted and are explicitly identified as unavailable.
+- [x] **TASK-029.02** — Show progress by date and scope.
+  New-word totals and last complete observations for each active document or
+  project are recorded by local date and identified separately. Older dates
+  without observations remain absent; incomplete project counts are excluded.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [x] **TASK-029.03** — Explain counting and local-date semantics.
   The dialog labels counts approximate and explains local dates, Undo/Redo,
