@@ -3,8 +3,6 @@
 Only unfinished work is listed. Inspect existing code and tests before changing it; historical results live in [docs/](docs/) and [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md). Follow [AGENTS.md](AGENTS.md) and the [Clean Code rules](docs/clean-code-codex.md).
 
 ## Partially completed subtasks
-
-- [~] **TASK-016.05** — Confirm Ctrl+Tab / Ctrl+Shift+Tab work on native Linux/macOS with no conflicts, including keyboard and assistive technology; offscreen tests already pass. [Evidence](docs/tab-navigation-verification.md)
 - [~] **TASK-027.03** — Measure Markdown preview capture/render/HTML installation and timer gaps on small, 1M and oversized Unicode documents; verify stale cancellation and native typing responsiveness. [Evidence](docs/markdown-preview-verification.md)
 - [~] **TASK-030.03** — In a narrow native window, traverse all character fields, save/cancel and return from a linked scene; retain exact staged values. [Evidence](docs/character-profile-verification.md)
 - [~] **TASK-032.01** — Inventory untranslated UI strings, including dynamic service errors; identify each owning widget and reproducible path.
