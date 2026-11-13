@@ -9,7 +9,7 @@ import re
 from typing import Protocol
 
 from app.document.revisions import RevisionStore
-from .model import ProjectError
+from .model import ProjectError, Scene
 from .service import Project
 
 MAX_TRANSLATION_ITEMS = 500
@@ -80,19 +80,8 @@ def run_project_translation(
     scene_order: list[str] = []
     scene_titles: dict[str, str] = {}
     snapshot_documents: dict[str, str] = {}
-    for chapter in project.manifest.chapters:
-        title_fields.append((chapter.id, f"Chapter title {chapter.title!r}", chapter.title))
-        for scene in chapter.scenes:
-            disk_text = disk_project.read_scene(scene.id)
-            text = open_text.get(scene.id, disk_text)
-            _validate_source_text(scene.id, text)
-            disk_contents[scene.id] = disk_text
-            source_contents[scene.id] = text
-            snapshot_documents[scene.id] = text
-            scene_order.append(scene.id)
-            scene_titles[scene.id] = scene.title
-            title_fields.append((scene.id, f"Scene title {scene.title!r}", scene.title))
-    for scene in project.manifest.ungrouped_scenes:
+
+    def capture_scene(scene: Scene) -> None:
         disk_text = disk_project.read_scene(scene.id)
         text = open_text.get(scene.id, disk_text)
         _validate_source_text(scene.id, text)
@@ -102,6 +91,13 @@ def run_project_translation(
         scene_order.append(scene.id)
         scene_titles[scene.id] = scene.title
         title_fields.append((scene.id, f"Scene title {scene.title!r}", scene.title))
+
+    for chapter in project.manifest.chapters:
+        title_fields.append((chapter.id, f"Chapter title {chapter.title!r}", chapter.title))
+        for scene in chapter.scenes:
+            capture_scene(scene)
+    for scene in project.manifest.ungrouped_scenes:
+        capture_scene(scene)
     for note in project.manifest.notes:
         disk_text = disk_project.read_note(note.id)
         text = open_text.get(note.id, disk_text)

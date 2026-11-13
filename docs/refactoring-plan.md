@@ -41,6 +41,10 @@ checks separately; offscreen tests cannot establish native behavior.
    `model.py`, paths, search, translation, auto-writer and remaining modules.
    Establish actual responsibility and duplication findings before extraction.
    Gate: stable IDs/YAML compatibility, conflict checks and rollback tests.
+   `translation.py` scene capture is shared while retaining traversal order.
+   Auto-writer rollback suppresses temporary-file unlink errors in
+   `_rollback_scene_replacements`; investigate a separate behavior fix with
+   failure injection before changing its diagnostics.
 3. **AI** — inspect provider, Ollama client, validation, prompts and services.
    Gate: offline tests, untrusted output validation, disclosure and unchanged
    provider protocol; retain worker-based invocation and stale-response guards.

@@ -108,6 +108,29 @@ def test_translation_rejects_unsupported_directions(tmp_path):
         )
 
 
+def test_translation_captures_grouped_and_ungrouped_scenes_in_order(tmp_path):
+    project = Project.create(tmp_path / "novel", "Novel")
+    chapter = project.add_chapter("Chapter")
+    grouped = project.add_scene("Grouped", chapter_id=chapter.id, content="Saved grouped")
+    ungrouped = project.add_scene("Ungrouped", content="Saved ungrouped")
+    provider = RecordingProvider()
+
+    translation = run_project_translation(
+        provider, project, "English", "Ukrainian", {ungrouped.id: "Unsaved ungrouped"},
+        is_cancelled=lambda: False,
+    )
+
+    snapshot = RevisionStore(project.root / ".utexteditor" / "revisions").read(translation.snapshot_path)
+    assert snapshot.scene_order == (grouped.id, ungrouped.id)
+    assert snapshot.documents == {grouped.id: "Saved grouped", ungrouped.id: "Unsaved ungrouped"}
+    assert translation.expected_contents[ungrouped.id] == "Saved ungrouped"
+    requested_text = [prompt.split("<text_to_translate>\n", 1)[1].split("\n</text_to_translate>", 1)[0]
+                      for prompt in provider.prompts]
+    assert requested_text == [
+        "Novel", "Chapter", "Grouped", "Ungrouped", "Saved grouped", "Unsaved ungrouped"
+    ]
+
+
 def test_failed_translation_does_not_modify_project(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening", content="Original.")

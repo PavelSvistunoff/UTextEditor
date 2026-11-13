@@ -1,5 +1,22 @@
 # Refactoring progress
 
+## 2026-11-13 — project translation scene capture
+
+- Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
+- Reviewed translation capture and transaction entry points plus project tests.
+  Grouped and ungrouped scenes duplicated capture; one operation now handles both.
+- Added regression for scene and request order, saved versus unsaved text and
+  snapshot contents. Translation tests passed before change; focused translation,
+  project domain and setup suite passed after change (93 passed).
+- Full offscreen suite: 945 passed, 2 skipped. `git diff --check` passed.
+- Transaction rollback and stale checks were not moved. Initial service review
+  found `_rollback_scene_replacements` suppresses temporary unlink failures;
+  determine impact and test separately before changing failure behavior.
+- Next: investigate that cleanup failure and finish project service/model audit;
+  retain transaction ordering, stable IDs and manifest compatibility.
+- Native GUI, accessibility and live Ollama were not tested.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — writing-goal checkpoint restoration
 
 - Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
