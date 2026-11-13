@@ -1,5 +1,23 @@
 # Implementation progress — current resume pointer
 
+## Character empty-field AI — explicit supported request language
+
+- COMPLETE: resolve the profile suggestion language before provider dispatch.
+- Root cause: literal Auto let the model infer a language independently of UI locale.
+- Explicit English/Ukrainian writing choice wins; clear profile prose resolves Auto locally.
+- Ambiguous/mixed/short/unsupported profile text uses the captured active UI language.
+- English JSON keys, goal codes and knowledge/arc prefixes are excluded from detection.
+- Both prompt and role name the resolved language and instruct against Russian output.
+- Existing field validation, worker/stale guards, consent and explicit review preserved.
+- Four regression cases failed before the fix; fallback, mixed/unsupported context and explicit precedence covered.
+- UI tests cover uk/en/System fallback, writing-language override and rejected review with unchanged data.
+- Focused offline suite: 501 passed; final full offscreen: 1159 passed, 2 skipped in 161.07s.
+- Full log: /private/tmp/utexteditor-character-language-full.log; live Ollama cases intentionally skipped.
+- No live response-language guarantee or new native GUI/accessibility claim; model instructions can be disobeyed.
+- README/README.uk and character-profile evidence updated; git diff --check passed.
+- Clean Code review: pure language policy, explicit captured fallback, no dependency or persistence/undo changes.
+- Existing staged/unstaged bytecode and DS_Store files preserved and excluded from scoped commit.
+
 ## Whole-project translation — character text included
 
 - COMPLETE: populated character profile, directed relationship and scene-association prose is translated.

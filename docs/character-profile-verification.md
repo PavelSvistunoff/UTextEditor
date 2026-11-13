@@ -56,3 +56,32 @@ edit without changing persisted data. Three structured-value cases retained exac
 untouched values. This is native automated Qt input, not a human screen-reader
 audit. TASK-030.03 is COMPLETE under its current criteria; speech/palette and
 application-wide focus acceptance remain under TASK-034.
+
+
+## Empty-field suggestion language resolution
+
+The previous request passed literal `Language: Auto` and told the model to infer
+language from the profile, independently of the interface locale. Four regression
+cases reproduced that missing explicit language before the fix.
+
+The service now resolves only English/Ukrainian before contacting the provider.
+Explicit writing-language selection wins. Auto uses the existing conservative
+local detector on human profile values; goal codes and knowledge/arc keys are
+excluded. If recognized values are mixed, short, ambiguous or unsupported, the
+captured active interface language is used. The UI passes its resolved `en`/`uk`
+locale, including when the saved choice is System. Standalone service callers
+have an English fallback unless they supply another supported fallback.
+
+Both the prompt and system role explicitly request the resolved language and
+instruct the model not to write Russian. Schema keys/codes remain English.
+This is request-language resolution, not a guarantee that a live model always
+obeys instructions; no speculative output-language classifier or automatic
+translation/retry was added. Existing schema checks, worker dispatch, stale-state
+checks and explicit review remain. Cancel still leaves profile/project values
+unchanged. Offline tests inspect fake-provider requests and lifecycle behavior;
+no live Ollama response-language or new native/screen-reader claim is made.
+
+Focused offline suite: **501 passed**. Full offscreen: **1159 passed, 2 skipped
+in 161.07s**. Log: `/private/tmp/utexteditor-character-language-full.log`.
+Clean Code completion review: intent, ownership, safety, errors, tests, diff and
+report checked; no new dependencies or changes to manuscript/undo/transactions.

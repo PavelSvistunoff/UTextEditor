@@ -3049,7 +3049,10 @@ class MainWindow(QMainWindow):
         settings_generation = self._settings_generation
         project_generation = self._project_generation
         active = [True]
-        worker = FunctionWorker(suggest_character_fields, self.provider, fields, self.settings.language, self.settings.temperature)
+        worker = FunctionWorker(
+            suggest_character_fields, self.provider, fields, self.settings.language, self.settings.temperature,
+            fallback_language="Ukrainian" if self.ui_language == "uk" else "English",
+        )
         dialog.ai_button.setEnabled(False)
         dialog.ai_button.setText(CharacterDialog.tr("Generating suggestions…"))
         self._track_worker(worker)

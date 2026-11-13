@@ -4672,3 +4672,62 @@ def test_project_translation_reviews_character_fields_before_atomic_apply(applic
                 assert warnings
     finally:
         window.close()
+
+
+@pytest.mark.parametrize("ui_language,writing_language,expected", [
+    ("uk", "Auto", "Ukrainian"), ("en", "Auto", "English"),
+    ("uk", "English", "English"), ("en", "Ukrainian", "Ukrainian"),
+    ("system", "Auto", "Ukrainian"),
+])
+def test_character_fill_request_uses_resolved_ui_fallback_and_retains_review(
+    application, tmp_path, monkeypatch, ui_language, writing_language, expected,
+):
+    from app.ui.generated_text_dialog import GeneratedTextDialog
+    import app.i18n as i18n
+
+    original_resolver = i18n.resolve_ui_language
+
+    AppSettings(ui_language=ui_language, language=writing_language,
+                ai_context_consent_host="http://localhost:11434").save()
+    if ui_language == "system":
+        monkeypatch.setattr("app.i18n.resolve_ui_language", lambda selection: "uk")
+    project = Project.create(tmp_path / "language-project", "Novel")
+    character = project.add_character("Mara")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    dialog = CharacterDialog(character)
+    requests, reviews = [], []
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+
+    def generate(prompt, **options):
+        requests.append((prompt, options))
+        return '{"description":"A proposed description"}'
+
+    def review(preview):
+        reviews.append(preview.output.toPlainText())
+        assert dialog.description.toPlainText() == ""
+        assert project.get_character(character.id).description == ""
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr(window.provider, "generate_private", generate)
+    monkeypatch.setattr(GeneratedTextDialog, "exec", review)
+    try:
+        window._suggest_character_profile(dialog, project)
+        wait_until(lambda: bool(reviews), application)
+        prompt, options = requests[0]
+        assert f"Language: {expected}\n" in prompt
+        assert "Language: Auto" not in prompt
+        assert f"in {expected} only" in options["role"]
+        assert dialog.description.toPlainText() == ""
+        assert project.get_character(character.id).description == ""
+    finally:
+        dialog.reject()
+        window.close()
+        if window._ui_translator is not None:
+            application.removeTranslator(window._ui_translator)
+        # Restore only this resolver, retaining the temporary settings-path fixture.
+        monkeypatch.setattr(i18n, "resolve_ui_language", original_resolver)
+        _, english = i18n.install_translation(application, "en")
+        if english is not None:
+            application.removeTranslator(english)
