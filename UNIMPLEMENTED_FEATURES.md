@@ -1,249 +1,45 @@
-# Remaining features and known limitations
+# UTextEditor — known gaps and product decisions
 
-> **Planning boundary:** This is a product-gap and risk inventory, **not** Codex's active task queue. For execution use `TASKS.md`, with the latest resume state in `IMPLEMENTATION_PROGRESS.md` and policy in `AGENTS.md`. Measurements and test totals below describe the review date, not the latest branch test result. Optional proposals are not automatically approved implementation tasks.
+> **Not an execution queue.** See [TASKS.md](TASKS.md) for approved unfinished tickets and [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) for the latest resume checkpoint. This is an inventory of known limitations and **proposals**, not a request to implement every item. Current capabilities are documented in [README.md](README.md).
 
-This inventory compares the repository's Markdown documents with the current
-implementation. `README.md` is the source of truth for current product scope;
-`SPEC.md` and the later sections of `README.uk.md` also describe older
-requirements and future ideas. Items below distinguish incomplete current
-requirements from optional future work. They are not promises to implement
-every candidate. Completed workflows are described in `README.md`.
+## Confirmed risks and incomplete guarantees
 
-The review also covered `AGENTS.md` (development instructions) and
-`codex_run.md` (command examples); neither defines a separate product feature.
+| Area | Current behavior and limitation | Evidence |
+| --- | --- | --- |
+| Writing-goal undo history | Reachable metadata can grow with separate Qt undo commands. Shared prior-day daily counts reduce some retention, but no measured universal bound is demonstrated. Preserve exact counts and Qt undo. | TASK-001; [history benchmark](docs/large-file-evaluation.md) and progress archive |
+| Concurrent saves | Fingerprint checks, staged atomic replacement and a shared process-local `RLock` protect cooperating in-process saves. An **independent writer can still change content between the last check and replace**; no arbitrary-writer no-overwrite guarantee. | [save-coordination](docs/save-coordination.md) |
+| Large documents | Standalone files are read into memory in full; the editor has no enforced safe size limit and some Qt callbacks are synchronous. Offscreen timings are diagnostic, not native latency promises. | [large-file](docs/large-file-evaluation.md), [GUI latency](docs/gui-latency-evaluation.md) |
+| Text formats | UTF-8 only; line-ending and encoding indicators are not selectable. Binary detection rejects NUL and suspicious ASCII controls but is not exhaustive. | [encoding evaluation](docs/encoding-support.md) |
+| Recovery | Recovery snapshots can be inspected and individually selected; partial/corrupt data repair and all diagnosis paths remain limited. Do not equate recovery with backup. | `app/document/recovery.py`, `tests/test_recovery.py` |
+| Revisions | Named snapshots can be previewed, compared and deleted after confirmation. Selective restore, scheduled creation and retention controls are not implemented; comparison coverage is broader but not total. | `app/document/revisions.py`, `tests/test_revisions.py` |
+| Localization and accessibility | Packaged catalogs and validation tests exist; the whole dynamic UI/service-error inventory, native screen-reader testing and cross-platform focus/palette checks are incomplete. | TASK-032/034; [checkpoint](docs/localization-accessibility-checkpoint.md) |
+| AI inline display | Long/multiline/mid-line completions that cannot be fully represented are rejected conservatively. Prompt streaming preview is optional and does not auto-insert. | [completion verification](docs/inline-completion-verification.md), [streaming](docs/streaming-preview-verification.md) |
+| Search and Markdown preview | Project search is literal/case-sensitive with bounded per-file and result limits. Markdown preview renders a labeled bounded prefix of very large buffers. Native responsiveness remains to be measured. | [search](docs/project-search-verification.md), [Markdown](docs/markdown-preview-verification.md) |
 
-## Code-review findings
+## Verification still required for existing features
 
-The following are unfixed findings from a code and offline-test review. Severity
-is an estimate of impact, not proof of how often the issue occurs. The existing
-315-test suite passed in the review environment; the reproductions below use
-temporary projects or in-memory objects and do not modify the user's documents.
+These items are largely implemented and must **not** be treated as missing features. `TASKS.md` names the actual unfinished gates.
 
-### Confirmed defects
+- Native Linux/macOS keyboard, focus, contrast and screen-reader tests for Quick Open, tabs, Back/Forward, linked items, Find/Replace, project search, AI context/spelling/translation/Auto-writer reviews, Markdown and export dialogs.
+- End-to-end Ukrainian interface coverage, including typed service errors and released `.qm` catalogs in a native GUI. Catalog extraction and parity tests are useful but not a whole-app visual audit.
+- Repeated native large-document/preview timing with realistic manuscript inputs and memory/Qt renderer observations, separately from offscreen synthetic benchmarks.
 
-1. **Medium — writing-goal history metadata grows during long sessions.**
-   The tracker keeps one current document copy and a fingerprint per reachable
-   state. Consecutive edits merged by Qt into one undo command now share one
-   endpoint, and a cleared Qt undo stack releases unreachable states. For a
-   synthetic 3,000-character typing session starting with 2,400 characters,
-   Python's `tracemalloc` measured about 510 KB retained before compaction and
-   6 KB after (3,001 versus 2 states; 0.88 versus 0.69 seconds). This measures
-   Python allocations in the tracker, not Qt memory or process RSS. Separate
-   Qt undo commands still each require a state, so metadata remains unbounded.
-   Qt offers no per-command pruning for its native text undo stack; a complete
-   solution must preserve counts without silently discarding supported undo.
+## Optional changes — not currently authorized
 
-### Risks requiring further verification
+| Proposal | Decision / prerequisite |
+| --- | --- |
+| Recovery repair and portable project backups | Design integrity checks, missing-file reporting, selection, destinations and no-overwrite/restore rules first |
+| Selective revision restore / automatic snapshots | Require preview, safety snapshot, rollback, unsaved-buffer handling and explicit retention policy |
+| Alternative encodings and selectable newlines | Define round-trip, BOM, file identity, conflict and recovery migration behavior before implementation |
+| Richer search, regular expressions and project-wide replace | Requires limits, cancellation, stale-result checks and a transactional replacement preview |
+| Large-file architecture | Measure real workload; whole-buffer Qt operations and peak memory may require a separate design |
+| Rich multiline ghost-text UI | Choose a fully readable, accessible non-destructive presentation; never accept invisible text |
+| Additional writing/interface languages | Evaluate detection and plural forms and first complete current supported UI audit |
+| Optional toolbar / appearance override | Defer pending native keyboard, focus, palette and maintainability review |
+| Alternative AI providers | Defer pending provider contract, credentials, destination privacy disclosure and data-handling decision |
 
-- **Save conflict check versus replacement:** standalone saves, project text,
-  and project manifests recheck disk contents after staging. Separate-process
-  tests detect edits made during staging. A separate-process edit injected
-  immediately after the final check was nevertheless overwritten by atomic
-  replacement, confirming a residual race. Investigate platform-appropriate
-  coordination; a check alone is not a cross-process lock. See
-  `app/document/file_manager.py` and `app/project/service.py`.
-- **Large-document UI latency:** goal tracking, match counts, and some cursor
-  conversions inspect or copy document text on the GUI thread. The user-visible
-  latency threshold has not been measured. Profile representative documents
-  before selecting an incremental implementation.
+These proposals do **not** override the existing local-first, UTF-8 project portability and explicit-author-acceptance principles.
 
-### Review coverage and verification limits
+## Evidence boundaries
 
-The review traced document save/recovery, project paths and mutations,
-translation and Auto-writer, character context and profiles, AI requests and
-validation, settings, search, writing goals, localization, and the UI worker
-pattern. The test baseline was
-`QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`
-(315 passed). The original reproductions were run with `.venv/bin/python` in
-temporary or in-memory state. No
-live Ollama, real multi-process race, screen-reader, or platform-specific GUI
-session was exercised, and this review does not prove other paths defect-free.
-
-## Current behavior that falls short of documented requirements
-
-
-## Project and revision workflows
-
-- **Recovery diagnosis:** recovery supports restore, inspection/comparison,
-  project relocation, discard, and defer. Repair and diagnosis for partial or
-  corrupt recovery sets remain limited.
-- **Large documents and encodings:** files are read into memory as a whole;
-  the editor supports UTF-8 only, and encoding and line-ending choices are not
-  selectable in the status bar. NUL, non-whitespace ASCII controls and DEL are rejected as likely binary
-  input; broader format-aware binary detection remains unimplemented.
-
-## Writing and language tools
-
-- **Batch spellcheck review:** the review dialog supports selecting current
-  validated findings and applying them as a single undoable edit; compiled
-  Ukrainian translations and native accessibility verification remain.
-- **Language detection:** automatic language choice uses local script and
-  common-word signals, leaving ambiguous or short text to the model.
-- **Project-wide search:** literal, case-sensitive scene and note text search
-  is available with bounded results and per-document size limits. Broader
-  matching options and larger-file support remain future work.
-- **Markdown preview:** the read-only preview is limited to the first 65,536 Qt text
-  units of larger documents. Large-document responsiveness
-  and native accessibility need further verification.
-- **Additional languages:** writing/spellcheck language choices are Auto,
-  English, and Ukrainian. More languages are a future candidate, not a current
-  requirement (`SPEC.md` §15).
-- **Inline completion limitations:** mid-line and multiline suggestions and suggestions too
-  wide for the available viewport are rejected rather than displayed. The
-  specification permits this safe fallback; a readable alternative is a
-  possible future improvement (`SPEC.md` §12).
-- **Per-scene AI draft review:** Auto-writer offers draft selection after the
-  batch completes and applies selected scenes transactionally. Compiled
-  Ukrainian strings and native accessibility verification remain outstanding.
-
-## Interface localization
-
-- **Complete UI translation:** English source text and Ukrainian Qt Linguist
-  catalogs are available for the main menus, project navigation, settings,
-  find/replace, and selected character, analysis, generation, writing-goal,
-  and Auto-writer dialogs. Many MainWindow prompts, error paths, and less-used
-  dialogs still fall back to English and need migration and translation.
-- **Catalog audit tooling:** a validator checks catalog completeness against
-  extracted marked strings, placeholder parity and plural forms. A separate
-  heuristic reports likely unmarked literals in selected Qt calls. These do
-  not replace the remaining full UI audit or release catalog compilation.
-
-## Navigation assessment and suggestions
-
-The app already has a project tree with context actions, a character filter,
-tabbed documents, active-document Find, character-name scene search, linked
-notes, and recent projects. The following ideas extend those workflows; they
-are proposals except where explicitly identified as a confirmed defect. Priorities
-and effort are relative estimates.
-
-### Make destinations easier to find
-
-4. **Extend project text search** — medium priority. The persistent search
-   panel searches scenes and notes including unsaved buffers and reports files
-   it cannot read. Searches are literal and case-sensitive, limited to 1,000
-   matches and 4 MiB per document. Error details are limited to 100 files;
-   the panel reports the number of additional errors. Additional matching
-   options and larger-file support remain future work.
-7. **Verify related-item navigation** — medium priority. Linked notes and
-   explicitly associated character scenes can be opened directly. Profiles
-   retain staged edits while viewing a scene and provide a return control;
-   native keyboard and accessibility verification remains outstanding.
-
-### Reduce navigation friction
-
-8. **Verify open-tab navigation on native platforms** — small effort. Qt's
-   next/previous-tab shortcuts and the searchable open-tab list are available;
-   manual native-platform shortcut verification remains outstanding.
-10. **Validate menu discoverability** — medium priority. Project actions are
-    grouped into submenus and describe their prerequisites. Review Project and
-    AI workflows with keyboard and screen-reader users; a command picker or
-    further changes should be driven by that feedback.
-11. **Add navigation history and return-to-writing** — lower priority, medium
-    effort. Record a bounded, session-only back/forward history of explicit
-    scene, note, and search-result jumps, including cursor position where safe.
-    Skip removed or stale targets with clear feedback and preserve unsaved
-    buffers. Do not treat ordinary typing or every cursor move as a history
-    entry.
-12. **Verify find controls in small windows** — lower priority. Find and
-    Replace offer distinct focus targets, case and whole-word controls, and
-    focus return on close. Check the layout and keyboard navigation on native
-    platforms and in small windows.
-
-All navigation changes should work without Ollama, be translated into the
-supported interface languages, preserve the editor's current text and selection
-unless navigation explicitly requires a change, and have offscreen Qt tests plus
-manual keyboard and accessibility checks. The proposals are not claims that every workflow
-has been manually usability-tested.
-
-## Prioritized upgrade proposals
-
-These are recommendations derived from the product goals and current workflows,
-not confirmed defects or commitments. Effort and priority are relative estimates;
-they need design and validation before scheduling. The existing gaps above remain
-the authoritative description of what is missing today.
-
-### Optional streaming previews
-
-Prompt-based generation offers an optional bounded streaming preview. Other AI
-workflows remain non-streaming. Cancellation is cooperative and a blocked
-network read may continue until data arrives or the connection times out.
-
-### High priority
-
-1. **Review AI context before it is sent** (medium effort). Project-scene
-   completion already uses bounded associated characters and reference notes,
-   while Auto-writer and analysis have confirmation flows. An explicit
-   completion review displays captured text, destination, unsaved buffers and
-   note truncation before sending, and flags an omitted document prefix or
-   character context cut by the length limit. Closed notes are checked before
-   and after generation; other character-detail limits still need additional
-   handling. Individual reference notes can already be
-   excluded for the project session, and automatic completions can be
-   configured to omit project context.
-   Acceptance: the preview matches the captured request, unsaved buffers are
-   identified, and changing the selection invalidates stale results. Preserve
-   scene association boundaries and do not expose other characters implicitly.
-   This complements the first-use disclosure gap above; it adds UI complexity
-   and must avoid interrupting every keystroke.
-### Medium priority
-
-5. **Extend project-wide search** (medium/high effort). Add matching options
-   and investigate larger-file support. Project-wide replacement would need a
-   separate preview and transactional design.
-6. **Project translation review verification**. The complete translation now
-   has a navigable side-by-side review and explicit all-or-nothing application.
-   Compile Ukrainian strings and verify the dialog on a native platform.
-   Selective application and translation of character metadata would require
-   separate decisions about consistency and scope.
-7. **Batch spelling review verification**. The review dialog offers a
-   navigable list, explanations and explicit selection, rejects stale or
-   overlapping ranges, and groups accepted edits into one undo step. Compile
-   the Ukrainian catalog and verify native keyboard and accessibility behavior.
-9. **Improve manuscript export and PDF options** (medium effort). Existing
-   Markdown/plain-text export supports scene subsets; PDF now offers paper
-   size, title-page title and author, optional chapter and scene headings, and scene selection.
-   Markdown/plain-text export now offers an optional bounded read-only preview
-   of the captured output before explicit Export/Cancel; PDF page preview is
-   still unavailable. Acceptance: use a captured buffer
-   state, show omissions and unsaved content, preserve source files, and retain
-   explicit replacement confirmation. Page-numbered contents and stable
-   pagination need dedicated PDF testing across platforms.
-10. **Accessibility and localization audit** (medium effort). Extend the
-    current keyboard-accessible menus and partial Ukrainian catalogs by testing
-    complete workflows with keyboard navigation, accessible names, screen
-    readers, and system palettes. Include translation completeness and
-    placeholder checks in automated tooling. Acceptance: report unresolved
-    strings and barriers without translating manuscript data or AI prompts.
-    Screen-reader and platform behavior also needs manual verification.
-
-### Lower priority and exploratory
-
-11. **Further find controls** (small/medium effort). Literal find supports
-    optional case-insensitive and whole-word matching. Regular expressions
-    would need separate safeguards and clear error reporting.
-14. **Optional interface and provider extensions** (design decision). The
-    following options have been evaluated independently; none is selected for
-    implementation in the current scope:
-    - **Toolbar:** defer. An optional toolbar could expose existing file and
-      editing actions, but needs a keyboard/accessibility review and a choice
-      of commands before adding another navigation surface.
-    - **Appearance override:** defer. The editor follows the system palette;
-      a light/dark override would need consistent palette coverage and native
-      platform testing across dialogs before it could be offered reliably.
-    - **Additional interface languages:** defer until the Ukrainian catalog
-      audit and ongoing translation validation are complete. Each new locale
-      needs maintained translations, plural rules, and native UI review.
-    - **Additional writing/spellcheck languages:** defer until detection and
-      model behavior are evaluated for each language. Explicit selection and
-      uncertainty handling would need tests without changing existing text.
-    - **Alternative AI providers:** defer. A provider would require explicit
-      destination, credential, data-handling, disclosure, configuration and
-      compatibility decisions. No provider or cloud service is enabled by
-      this evaluation; the existing local-first default is preserved.
-15. **Verify character-profile navigation** (small/medium effort). The Story
-    and Background tabs scroll, and associated scenes can be opened while
-    staged profile edits are retained. Verify field access and the return path
-    with native keyboard and accessibility testing, including small windows.
-
-These gaps are independent of basic standalone editing, which remains usable
-without a project or a running Ollama server.
+Historical test totals in older `docs/` notes and [the progress archive](docs/archive/implementation-progress-2026-11-13.md) are snapshots of earlier runs; they do not prove the current branch passes. The latest recorded execution checkpoint should be consulted before starting a Codex batch. No native screen-reader or external-writer guarantee may be inferred from offscreen tests.

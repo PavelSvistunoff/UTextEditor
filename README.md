@@ -198,7 +198,15 @@ The project-workspace, character reference, Ollama AI planning and review, manus
 - Update tests and this README when behavior changes.
 - Avoid unrelated changes and unnecessary dependencies.
 
-## REFERENCES
+## Documentation map
+
+- [Український огляд](README.uk.md) — concise Ukrainian guide aligned with the current feature set.
+- [Codex task backlog](TASKS.md) and [execution rules](AGENTS.md) — active tickets with reproducible acceptance criteria.
+- [Current progress checkpoint](IMPLEMENTATION_PROGRESS.md) — resume pointer, with a historical archive.
+- [Known gaps and decisions](UNIMPLEMENTED_FEATURES.md) — risks and proposals; not a second backlog.
+- [Documentation and targeted static audit](docs/repository-audit-2026-11-13.md) — review scope and verification boundaries.
+
+## References
 specification: [SPEC.md](SPEC.md)
 unimplemented features: [UNIMPLEMENTED_FEATURES.md](UNIMPLEMENTED_FEATURES.md)
 agents and architecture: [AGENTS.md](AGENTS.md)

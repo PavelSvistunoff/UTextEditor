@@ -18,7 +18,7 @@ The application targets people who need a straightforward multi-document text ed
 
 ## 2. Release scope and status
 
-The current application includes the original editor MVP and the project, recovery, writing-goal, export, snapshot, and project-AI features listed in `README.md`. This document retains detailed requirements for the original editor workflows and ongoing edge cases; it is not an exhaustive status checklist. Where requirements here conflict with current behavior or documented scope, `README.md` and `UNIMPLEMENTED_FEATURES.md` take precedence.
+The current application includes the original editor MVP and the project, recovery, writing-goal, export, snapshot, and project-AI features listed in `README.md`. This document retains detailed requirements for the original editor workflows and ongoing edge cases; it is not an exhaustive status checklist. Where requirements here conflict with current behavior or documented scope, `README.md` and `UNIMPLEMENTED_FEATURES.md` take precedence. Implementation work is selected only from `TASKS.md`, and historical verification numbers must not be treated as a fresh test run.
 
 Project recovery snapshots retain the scene or note identity independently of
 the recovery ID. Older snapshots can use their original project-relative path;
