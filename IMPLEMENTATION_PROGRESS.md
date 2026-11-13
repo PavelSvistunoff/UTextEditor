@@ -1,5 +1,20 @@
 # Implementation progress
 
+## TASK-006.04 checkpoint (2026-11-13)
+
+- **TASK-006.04: CHECKPOINT; parent TASK-006: partial.** The configurable
+  project-search probe exercises temporary multilingual and non-BMP scenes,
+  checks expected match counts and verifies source files are unchanged. Two
+  2,000-scene offscreen samples and result-limit caveats are recorded in
+  `docs/gui-latency-evaluation.md`. Native and wider workloads remain unverified.
+- Changed `benchmarks/project_search_responsiveness.py`, `README.md`, `TASKS.md`,
+  `docs/gui-latency-evaluation.md`, and this file on `codex/task-continuation`;
+  unrelated pre-existing staged generated artifacts were preserved.
+- Focused benchmark: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/project_search_responsiveness.py --scenes 2000 --lines 40 --repetitions 2` passed.
+- Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`: 898 passed, 2 skipped.
+- Blocker: none for more benchmark work; native input/paint and wider project
+  measurements remain. Resume .04 and use the benchmark command above.
+
 ## TASK-029.05 and parent complete (2026-11-13)
 
 - **TASK-029.05: COMPLETE; parent TASK-029: COMPLETE.** Explicit confirmation

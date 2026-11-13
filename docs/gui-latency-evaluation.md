@@ -43,6 +43,25 @@ do not establish a supported file-size limit, bounded undo metadata or a
 responsiveness guarantee. TASK-006 remains partial for those broader checks.
 There are no new product strings or controls to localize or verify natively.
 
+## Multilingual project search workload
+
+The project-search probe accepts scene count, lines per scene and repetition
+count. It creates temporary English, Ukrainian and French text with non-BMP
+characters, verifies that source files are unchanged, and reports startup,
+elapsed time, maximum 5 ms timer gap and displayed results. Reproduce with:
+
+```sh
+QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python benchmarks/project_search_responsiveness.py --scenes 2000 --lines 40 --repetitions 2
+```
+
+On the development machine, 2026-11-13, offscreen Qt: absent search took
+111.0/121.1 ms with maximum timer gaps 5.8/5.9 ms; Ukrainian `книга` took
+39.3/26.5 ms with 5.3/21.4 ms gaps; emoji `🌿` took 24.4/35.1 ms with 5.6/29.1 ms
+gaps. Matching searches each reached the 1,000-result cap and did not traverse
+the entire project; absent search traversed all files. Warm cache, synthetic
+content and two samples limit comparisons. These values are diagnostic rather
+than thresholds or native input/paint measurements.
+
 ## Acceptance reconciliation — TASK-006.V1 / V2
 
 Reviewed 2026-11-01 against all three benchmark scripts, completion context,

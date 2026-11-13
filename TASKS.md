@@ -210,6 +210,10 @@ remain unverified.
   Native input/paint latency and representative project workloads remain open.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-006.04** — Establish representative document sizes and repeatable benchmarks.
+  Project-search probe now has configurable scene/line/repetition counts and
+  checks multilingual, non-BMP temporary scenes remain unchanged; 2,000-scene
+  offscreen results and match-limit caveats are in docs/gui-latency-evaluation.md.
+  Native and wider representative workloads remain unverified.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [~] **TASK-006.05** — Optimize confirmed bottlenecks without weakening correctness.
   Writing-goal token scanning is limited to the changed span plus boundary
