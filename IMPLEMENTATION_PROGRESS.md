@@ -3,6 +3,26 @@
 > This short file records the **latest actionable checkpoint**. Earlier execution history is recorded in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
+## TASK-032.01/.02/.03/.04 checkpoint — revision error messages
+
+- TASK-032.01, .02, .03, .04: **CHECKPOINT** each; parent TASK-032 partial;
+  native .V2 open. Repository-wide refactor/audit remains incomplete.
+- Inventoried unmarked revision load/compare error wrappers; translated templates
+  retain exact details and explicit project/visibility/selection guards.
+- Eight injected UI cases; three untranslated cases failed before change, stale
+  cases already passed. Diagnostic placeholders remain literal data.
+- Focused UI/revisions/i18n/translation tests: 307 passed; full offscreen:
+  1014 passed, 2 skipped. `git diff --check` passed.
+- Source extraction/reference validation passed; en/uk compiled; Ukrainian package
+  rebuilt and packaged parity tested. Native Ukrainian UI/accessibility untested.
+- Clean Code review: explicit guards and existing formatter; no domain, storage,
+  undo, public API or dependency changes. Live Ollama not tested.
+- Files: main window, UI tests, Ukrainian TS/QM, README and evidence/checkpoints.
+- Existing TASKS.md and three pyc changes preserved outside this package.
+- Next: remaining revision/project search error paths and UI inventory.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.01/.02/.03 checkpoint — analysis context heading
 
 - TASK-032.01, TASK-032.02, TASK-032.03: **CHECKPOINT** each; parent TASK-032

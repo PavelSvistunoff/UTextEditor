@@ -151,3 +151,13 @@ visible result. The caller now uses a single MainWindow translation template
 with timestamp and joined source labels as arguments. Two packaged Ukrainian
 regressions failed before the change and retain literal placeholder-like source
 names and model output. Native UI verification remains open.
+
+## Revision load/compare failures — TASK-032.01/.02/.03/.04
+
+Inventory: MainWindow._revision_snapshots_failed and _revision_comparison_failed
+passed unmarked f-strings to RevisionHistoryDialog.show_error. Reproduce by
+opening revision history on an unreadable store or comparing an unavailable
+snapshot. Both now format translated MainWindow templates. Eight injected UI
+cases cover load/compare, visible/hidden dialog, project identity and selection
+generation changes, preserving exact error details. Three untranslated cases
+failed before change; stale checks already passed. Native UI remains open.

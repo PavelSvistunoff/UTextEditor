@@ -3582,6 +3582,49 @@ def test_revision_history_deletion_requires_confirmation(application, tmp_path, 
     window.close()
 
 
+@pytest.mark.parametrize("operation,expected", [
+    ("load", "Не вдалося завантажити знімки ревізій"),
+    ("compare", "Не вдалося порівняти знімки"),
+])
+@pytest.mark.parametrize("state", ["current", "hidden", "changed_project", "changed_selection"])
+def test_revision_errors_are_localized_and_ignore_stale_dialogs(
+    application, tmp_path, monkeypatch, operation, expected, state,
+):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    dialog = RevisionHistoryDialog(parent=window)
+    dialog.show()
+    application.processEvents()
+    generation = dialog.selection_generation
+    dialog.status.setText("previous status")
+    if state == "hidden":
+        dialog.hide()
+    elif state == "changed_project":
+        window.project = None
+    elif state == "changed_selection":
+        dialog.selection_generation += 1
+    _, translator = install_translation(application, "uk")
+    try:
+        error = OSError("disk detail %1 {error}")
+        if operation == "load":
+            window._revision_snapshots_failed(dialog, project, error)
+        else:
+            window._revision_comparison_failed(dialog, project, error, generation)
+        stale = state in {"hidden", "changed_project"} or (state == "changed_selection" and operation == "compare")
+        if stale:
+            assert dialog.status.text() == "previous status"
+        else:
+            assert expected in dialog.status.text() and str(error) in dialog.status.text()
+    finally:
+        application.removeTranslator(translator)
+        dialog.close()
+        window.close()
+
+
 def test_revision_history_dialog_labels_reference_note_changes(application):
     dialog = RevisionHistoryDialog()
 

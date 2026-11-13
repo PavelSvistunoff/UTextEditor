@@ -65,6 +65,8 @@ checks separately; offscreen tests cannot establish native behavior.
    success/failure feedback and fsync failures are tested.
    Project-analysis context heading now uses one translated template rather than
    concatenation; source labels/model output remain captured data, tested verbatim.
+   Revision load/compare failure messages use translated templates and explicit
+   guards; visibility, project identity and selection-generation behavior tested.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

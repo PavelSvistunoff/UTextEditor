@@ -4792,8 +4792,9 @@ class MainWindow(QMainWindow):
         self.thread_pool.start(worker)
 
     def _revision_snapshots_failed(self, dialog, project, error) -> None:
-        if project is self.project and dialog.isVisible():
-            dialog.show_error(f"Could not load revision snapshots: {error}")
+        if project is not self.project or not dialog.isVisible():
+            return
+        dialog.show_error(format_qt(self.tr("Could not load revision snapshots: %1"), error))
 
     def _revision_snapshots_loaded(self, dialog, project, result) -> None:
         if project is not self.project or not dialog.isVisible():
@@ -4822,8 +4823,9 @@ class MainWindow(QMainWindow):
         self.thread_pool.start(worker)
 
     def _revision_comparison_failed(self, dialog, project, error, generation) -> None:
-        if project is self.project and dialog.isVisible() and generation == dialog.selection_generation:
-            dialog.show_error(f"Could not compare snapshots: {error}")
+        if project is not self.project or not dialog.isVisible() or generation != dialog.selection_generation:
+            return
+        dialog.show_error(format_qt(self.tr("Could not compare snapshots: %1"), error))
 
     def _revision_comparison_finished(self, dialog, project, comparison, generation) -> None:
         if project is self.project and dialog.isVisible() and generation == dialog.selection_generation:

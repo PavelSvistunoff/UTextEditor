@@ -1095,6 +1095,8 @@ Text is sent to the configured Ollama destination:
     <message><source>File not found: %1</source><translation>Файл не знайдено: %1</translation></message>
     <message><source>Invalid project data: %1</source><translation>Некоректні дані проєкту: %1</translation></message>
     <message><source>Invalid project path: %1</source><translation>Неприпустимий шлях проєкту: %1</translation></message>
+    <message><source>Could not load revision snapshots: %1</source><translation>Не вдалося завантажити знімки ревізій: %1</translation></message>
+    <message><source>Could not compare snapshots: %1</source><translation>Не вдалося порівняти знімки: %1</translation></message>
     <message><source>Captured local context at %1:
 %2</source><translation>Локальний контекст зафіксовано о %1:
 %2</translation></message>
