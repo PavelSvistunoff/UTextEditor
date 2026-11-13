@@ -1,5 +1,17 @@
 # UTextEditor — Codex Instructions
 
+## Documentation entry points and authority
+
+1. `AGENTS.md` — execution policy, safety, verification, and checkpoint contract (this file).
+2. `TASKS.md` — **only active implementation backlog**; select exact remaining subtask IDs and parent acceptance gates here. Completed IDs are intentionally removed, not forgotten.
+3. `IMPLEMENTATION_PROGRESS.md` — newest-first execution evidence and resume checkpoints; **read the first current checkpoint**, then consult older entries only for the selected task. Old checkpoints are historical, not current blockers.
+4. `README.md` — current shipped behavior and product scope; `SPEC.md` — detailed requirements and acceptance background, including historical/future scope.
+5. `UNIMPLEMENTED_FEATURES.md` — limitations, risks and optional proposals, **not** a second execution queue. `README.uk.md` contains legacy specification sections; defer to the current English README on status disagreements.
+
+**Fast start:** check `git status --short` and branch; read the `TASKS.md` summary and selected parent; read the top `IMPLEMENTATION_PROGRESS.md` checkpoint and any linked task evidence; inspect code/tests; implement a bounded batch; verify; update backlog and checkpoint. Do not scan the entire progress archive before every batch.
+
+**User-authorized multi-task runs:** if the user's current request explicitly authorizes completing the whole backlog, the 1–4 subtask limit applies **per batch**, not to the entire run. Finish/checkpoint each batch before selecting the next parent; respect time, tools, safety and genuine external blockers. Otherwise stop at the assigned parent/batch.
+
 ## Project
 
 UTextEditor is a desktop text editor inspired by GEdit.
