@@ -1,5 +1,23 @@
 # Implementation progress — current resume pointer
 
+## Character AI — repeated exact arc key retained for review
+
+- COMPLETE: direct reported-response bug; no unrelated backlog task selected.
+- Reproduced rejection of two initial_state lines with equal/different prose.
+- Exact repeated arc keys now preserve all values together for explicit review.
+- No value is silently overwritten or chosen; author can edit the staged proposal.
+- Prompt requests each arc key at most once; no retry or extra AI request added.
+- Unknown/empty fields, alias collisions and existing output limits remain guarded.
+- Regression tests include duplicate/empty values and request → review → Save/YAML.
+- Original author fields, consent, note context and stale/cancellation guards retained.
+- Focused: 331 passed; full offscreen: 1193 passed, 2 skipped in 146.47s.
+- Logs: /private/tmp/utexteditor-duplicate-arc-{focused,full}.log.
+- README/README.uk and docs/character-profile-verification.md updated.
+- Clean Code checklist: intent, ownership, safety, errors, tests, diff, report reviewed.
+- No live Ollama or native GUI/accessibility run claimed; git diff --check passed.
+- Branch main; unrelated bytecode/DS_Store changes preserved and excluded.
+- No remaining code gate for this reported defect; optional next step is live smoke.
+
 ## Complete project references for Auto-writer and character suggestions
 
 - COMPLETE: direct user request; no unfinished backlog ticket was added.

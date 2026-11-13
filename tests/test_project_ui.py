@@ -4748,7 +4748,7 @@ def test_character_model_format_deviations_are_reviewed_then_saved_canonically(a
     window._edit_character(character)
     dialog = window._active_character_dialog
     response = {
-        "arc": "initial_state: Самотня\nturnings_points: Зустріч із друзями; важливе рішення",
+        "arc": "initial_state: Самотня\ninitial_state: Ізольована\nturnings_points: Зустріч із друзями; важливе рішення",
         "knowledge": "knows: Важливий факт;conceals: Таємниця",
         "goals": "Знайти дім | active | 3 | Перша мета | Допомогти друзям | blocked | 2 | Друга мета",
     }
@@ -4776,7 +4776,7 @@ def test_character_model_format_deviations_are_reviewed_then_saved_canonically(a
         saved = Project.open(project.root).get_character(character.id)
         assert saved.description == "Existing author text"
         assert saved.full_name == "Мара"
-        assert saved.arc == {"initial_state": "Самотня", "turning_points": "Зустріч із друзями; важливе рішення"}
+        assert saved.arc == {"initial_state": "Самотня; Ізольована", "turning_points": "Зустріч із друзями; важливе рішення"}
         assert [item.kind for item in saved.knowledge] == ["knows", "conceals"]
         assert [item.description for item in saved.goals] == ["Знайти дім", "Допомогти друзям"]
         assert [item.status for item in saved.goals] == ["active", "blocked"]

@@ -136,3 +136,21 @@ def test_normalized_goal_text_still_obeys_field_size_limit():
     assert len(goals) <= 2000
     with pytest.raises(ValueError, match="Invalid suggestion for goals"):
         suggest_character_fields(Provider(json.dumps({"goals": goals})), {"goals": ""}, "English", 0.2)
+
+
+@pytest.mark.parametrize("second", ["відсторонений майстер", "ізольований майстер"])
+def test_repeated_exact_arc_field_preserves_both_suggestions_for_review(second):
+    arc = ("initial_state: відсторонений майстер\n"
+           "desired_transformation: до активного опору\n"
+           f"initial_state: {second}\nturning_points: знахідка малюнка")
+    result = suggest_character_fields(Provider(json.dumps({"arc": arc})), {"arc": ""}, "Ukrainian", 0.2)
+    assert result["arc"].splitlines() == [
+        f"initial_state: відсторонений майстер; {second}",
+        "desired_transformation: до активного опору", "turning_points: знахідка малюнка",
+    ]
+
+
+def test_repeated_arc_field_with_empty_value_remains_invalid():
+    with pytest.raises(ValueError, match="invalid arc"):
+        suggest_character_fields(Provider(json.dumps({"arc": "initial_state: Alone\ninitial_state: "})),
+                                 {"arc": ""}, "English", 0.2)

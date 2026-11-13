@@ -115,3 +115,28 @@ in 159.08s**. Log: `/private/tmp/utexteditor-character-format-full.log`.
 Clean Code checklist reviewed: intent/ownership/safety/errors/tests/diff/report.
 Supplied real model diagnostics identify the defect; no fresh live-model or
 native/accessibility claim is made for this parsing-only change.
+
+
+## Repeated exact arc key — reported 2026-11-13 response
+
+The new diagnostic contains two `initial_state` lines with different prose.
+The earlier validator rejected any repeated canonical field, discarding otherwise
+valid suggestions. Synthetic regressions reproduced that refusal before the fix.
+
+Exact repeated keys now retain every proposed value in order in a single
+semicolon-separated field, for explicit author review. This does not infer that
+the statements agree, select a preferred value, deduplicate prose or overwrite an
+earlier suggestion. The prompt requests each arc key at most once. Unknown keys,
+empty values, canonical/alias collisions and existing output limits still fail.
+Normalization only affects generated suggestions; dirty fields, consent, stale
+context verification and the explicit Save action remain unchanged.
+
+Regression cases cover equal/different repeated values and an invalid empty
+repeat. The Qt integration checks review → staging → explicit Save → YAML,
+retaining both values and existing author text. Clean Code completion review:
+intent, ownership, safety, errors, tests, diff and report checked; no dependency,
+public API or manifest schema change. No live-model or native verification claimed.
+
+Focused offline suite: **331 passed**. Full offscreen suite: **1193 passed,
+2 skipped in 146.47s**. Logs: `/private/tmp/utexteditor-duplicate-arc-focused.log`
+and `/private/tmp/utexteditor-duplicate-arc-full.log`. `git diff --check` passed.

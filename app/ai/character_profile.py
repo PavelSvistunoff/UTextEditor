@@ -37,7 +37,7 @@ def suggest_character_fields(
         "Use newline-separated entries (\\n in JSON strings), not semicolons. "
         "For goals use 'description | active | 3 | notes' per line; do not join multiple goals with '|'. "
         "For knowledge use 'kind: statement' with kinds: " + ', '.join(sorted(CHARACTER_KNOWLEDGE_KINDS)) + ". "
-        "For arc use 'field: value' on separate lines, copying field names exactly, with fields: " + ', '.join(sorted(CHARACTER_ARC_FIELDS)) + ". "
+        "For arc use 'field: value' on separate lines, copying field names exactly and using each at most once, with fields: " + ', '.join(sorted(CHARACTER_ARC_FIELDS)) + ". "
         "Keep each suggestion concise. Write every human-readable suggestion only in the requested language. "
         "Do not write Russian. Keep JSON field names, goal status codes, knowledge kinds and arc field "
         "identifiers in their specified English form.\n"
@@ -126,20 +126,28 @@ def _profile_language_samples(fields: dict[str, str]) -> Iterator[str]:
 
 
 def _normalize_structured_suggestion(key: str, value: str) -> str:
-    """Adapt unambiguous model formatting before the unchanged schema checks."""
+    """Normalize model formatting without discarding proposed prose before review."""
     if key == "knowledge":
         # A semicolon in prose is retained unless a supported category follows it.
         return _KNOWLEDGE_SEPARATOR.sub("\n", value)
     if key == "arc":
         lines = []
-        seen = set()
+        seen: dict[str, tuple[str, int]] = {}
         for line in value.splitlines():
             field, separator, prose = line.partition(":")
             canonical = _ARC_FIELD_ALIASES.get(field.strip(), field.strip())
             if separator and canonical in CHARACTER_ARC_FIELDS:
+                if not prose.strip():
+                    raise ValueError("The model returned an invalid arc entry.")
                 if canonical in seen:
-                    raise ValueError("The model returned a duplicate arc field.")
-                seen.add(canonical)
+                    original, index = seen[canonical]
+                    if original != field.strip():
+                        raise ValueError("The model returned a duplicate arc field.")
+                    # Retain every suggestion for author review instead of letting
+                    # the form's dictionary conversion overwrite an earlier value.
+                    lines[index] += "; " + prose.strip()
+                    continue
+                seen[canonical] = (field.strip(), len(lines))
                 if field.strip() in _ARC_FIELD_ALIASES:
                     line = f"{canonical}:{prose}"
             lines.append(line)
