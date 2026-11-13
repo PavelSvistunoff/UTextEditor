@@ -2,6 +2,10 @@
 
 > These notes capture the state and test evidence **at their recorded dates**. They are not implementation instructions and their test totals are not automatically current. Start with [TASKS.md](../TASKS.md), [AGENTS.md](../AGENTS.md), and the [latest checkpoint](../IMPLEMENTATION_PROGRESS.md).
 
+## Development practices
+
+- [Clean Code guidelines for Codex](clean-code-codex.md) — naming, focused functions, clear boundaries, error handling, tests and scoped refactoring for Python/PySide6.
+
 ## Data integrity and performance
 
 - [Save coordination](save-coordination.md) — in-process lock guarantee, cross-process overwrite race and platform trade-offs.

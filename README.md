@@ -200,6 +200,8 @@ The project-workspace, character reference, Ollama AI planning and review, manus
 
 ## Documentation map
 
+- [Clean Code guidelines for Codex](docs/clean-code-codex.md) — practical, scope-limited code quality rules and a completion checklist.
+
 - [Український огляд](README.uk.md) — concise Ukrainian guide aligned with the current feature set.
 - [Codex task backlog](TASKS.md) and [execution rules](AGENTS.md) — active tickets with reproducible acceptance criteria.
 - [Current progress checkpoint](IMPLEMENTATION_PROGRESS.md) — resume pointer, with a historical archive.
