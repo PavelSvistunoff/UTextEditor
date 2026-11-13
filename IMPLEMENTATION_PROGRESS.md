@@ -4,14 +4,13 @@
 
 - Removed eight previously completed parent tasks and 132 completed subtasks
   from `TASKS.md`; their historical evidence remains in this file, verification
-  documents and Git history. All previously open/partial subtasks and open
-  parent acceptance gates remain. TASK-008.V2 and TASK-011.06 make existing
-  native-verification and safe-large-file gaps explicit; they are not new
-  claims of completion. Stable task IDs are retained.
+  documents and Git history. At that checkpoint, open/partial subtasks and
+  parent acceptance gates were preserved. TASK-008.V2 makes an existing native-
+  verification gap explicit; it is not a new claim of completion. Stable
+  task IDs are retained.
 - Updated `README.uk.md` where its current-state claims conflicted with
   `README.md`, including the save-race limitation and implemented AI review,
-  disclosure and navigation features. Updated `docs/encoding-support.md`
-  to refer to the open parent rather than a completed evaluation ticket.
+  disclosure and navigation features.
 - Documentation-only change: tests not run. Checked backlog preservation, local
   evidence links and `git diff --check`. Native checks not performed.
 - Resume another open backlog task; independent TASK-005/007 save
@@ -191,7 +190,6 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   claimed. Next implementation gaps remain TASK-001 reachable-history bounds
   and active identity collisions; TASK-005/.007 independent-writer race;
   broader recovery diagnosis;
-  encoding/line-ending selection and large-file safety;
   TASK-029 history viewer. TASK-027.03 and TASK-030.03 retain native latency/
   all-field focus requirements. Native/accessibility/release catalog checks in
   UI V2 remain open. Do not redo completed audits or silently truncate Qt undo.
@@ -364,8 +362,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   The overall backlog is still incomplete: earliest open work remains
   TASK-001's reachable-history bound/active-identity collision/stress gate;
   TASK-005/.007's independent-writer race; broader TASK-008 diagnosis;
-  TASK-011
-  encoding/line-ending/large-file safety. TASK-019 and later
+  TASK-019 and later
   inherited UI tickets still need acceptance reconciliation or implementation
   as appropriate. Continue from these gaps, preserving completed evidence;
   do not truncate Qt undo, weaken conflict checks or promote native gates on
@@ -444,8 +441,7 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   preserve actively tracked identity collisions, then stress validation).
   TASK-005/.007 still share the independent-writer final-check overwrite race;
   no broader guarantee may be claimed. Further feasible work includes broader
-  TASK-008 diagnosis, TASK-011 encoding/line-ending/large-
-  file safety, and the remaining UI verification queue. Native screen-reader,
+  TASK-008 diagnosis and the remaining UI verification queue. Native screen-reader,
   filesystem and release-catalog checks remain explicitly open. TASK-012's
   numbered tickets are verified; its parent still awaits V2. Do not redo the
   completed investigations/benchmarks merely because their parents are partial.
@@ -556,47 +552,8 @@ For each logical batch, record parent TASK, 1–4 selected subtask IDs, per-subt
   TASK-005.04 and parent independent-writer acceptance remain incomplete.
   No product behavior or UI changed. Changes uncommitted; no push attempted.
 
-- **TASK-011.05 — DONE (2026-10-31):** evaluated 1M/5M/10M-character
-  sessions with ten samples per repeated operation, new-word tracking and AI
-  disabled. Extended benchmark to time saves and verify exact saved buffer
-  bytes. At 10M: GUI open 399.06 ms; typing median/max 17.98/19.08 ms;
-  word count median 144.89 ms; save 19.37 ms; cumulative RSS 601,669,632
-  bytes. docs/large-file-evaluation.md records all sizes, workload limitations,
-  whole-buffer allocation review and follow-up safety requirements. README
-  and TASKS updated. Document tests: 31 passed; full suite: 810 passed,
-  2 skipped; diff reviewed and whitespace check passed. Evaluation complete;
-  no safe maximum or native responsiveness guarantee claimed. Parent remains
-  open: size policy/failure safety, encoding and line-ending selectors remain.
-  No product change or new UI strings; benchmark save assertions supply direct
-  validation without redundant implementation-mirroring tests. Uncommitted.
 
-- **TASK-011.04 — DONE (2026-10-31):** added shared has_binary_controls
-  detection for NUL, non-whitespace ASCII controls and DEL. Standalone reads,
-  project reads/import/relink/save verification and conflict-version reads use
-  it. Tab/LF/CR/vertical-tab/form-feed and Unicode prose/NEL remain allowed.
-  Regex search avoids Python per-character scanning. Added five control-input
-  cases, Unicode/whitespace acceptance and project read/import preservation
-  regression. Focused document/project suites: 78 passed; full suite:
-  810 passed, 2 skipped. Diff reviewed and whitespace check passed. README,
-  UNIMPLEMENTED_FEATURES and TASKS updated. No new controls or UI strings;
-  existing errors handle rejection. This conservative heuristic deliberately
-  does not identify every binary format; encoding selection/large-file limits
-  remain separate tickets. Changes uncommitted; no push attempted.
 
-- **TASK-011.01 — DONE (2026-10-31):** inspected FileManager, Document,
-  line-ending helpers and dependent conflict/recovery/project workflows.
-  Added docs/encoding-support.md with standard-library codec experiment,
-  ambiguity example, explicit-selection recommendation, BOM/endian policy,
-  compatibility boundaries and follow-up acceptance requirements. UTF-8,
-  UTF-16, UTF-16-LE, CP1251 and CP1252 synthetic samples round-trip; CP1251
-  also decodes incorrectly but successfully as CP1252, ruling out decode
-  success as an automatic selection rule. Added five FileManager regressions
-  for unsupported opens and unrepresentable saves preserving source bytes,
-  dirty text/digest and temporary-file cleanup. Document tests: 25 passed;
-  full offline suite: 803 passed, 2 skipped; diff reviewed and whitespace
-  check passed. README links design; TASKS updated. No new UI or dependencies.
-  This investigation is complete; encoding selection, broader binary detection
-  and large-file work remain separate TASK-011 tickets. Uncommitted, no push.
 
 - **TASK-020.05 — DONE; .01–.04/V1 — verified (2026-10-31):** audited
   shared Qt matching flags, batched/stale-safe counting, current-match checks,

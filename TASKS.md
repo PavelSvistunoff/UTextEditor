@@ -23,7 +23,6 @@ By default, implement one logical batch of **1–4 closely related atomic subtas
 | TASK-006 | Benchmark large-document responsiveness | partial |
 | TASK-007 | Implement external file conflict resolution | partial |
 | TASK-008 | Improve recovery diagnosis | partial |
-| TASK-011 | Improve file encoding and large-file handling | open |
 | TASK-012 | Implement project-wide full-text search | partial |
 | TASK-013 | Implement Quick Open | partial |
 | TASK-015 | Implement related-item navigation | partial |
@@ -165,24 +164,6 @@ remain outstanding; see `IMPLEMENTATION_PROGRESS.md` for completed evidence.
 - Invalid entries do not prevent recovery of valid entries.
 - Canonical files are never silently overwritten.
 - Unrecoverable data is clearly identified.
-
-### TASK-011 — Improve file encoding and large-file handling
-**Priority:** Medium · **Parent status:** open
-
-Evidence: [docs/encoding-support.md](docs/encoding-support.md), [docs/large-file-evaluation.md](docs/large-file-evaluation.md).
-
-- [ ] **TASK-011.02** — Add encoding selection where appropriate.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-011.03** — Add line-ending detection and selection.  
-  **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-011.06** — Make unsupported large files fail safely without losing user data.
-  **Done when:** supported limits or another safe approach are defined and verified; see [docs/large-file-evaluation.md](docs/large-file-evaluation.md).
-
-**Parent acceptance gate (all must pass):**
-- Encoding failures are reported without data loss.
-- Supported encodings round-trip correctly.
-- Line endings are preserved unless explicitly changed.
-- Unsupported large files fail safely.
 
 ### TASK-012 — Implement project-wide full-text search
 **Priority:** High · **Parent status:** partial
@@ -532,7 +513,7 @@ or partial as indicated.
 
 1. **Safety first:** TASK-005 and TASK-007 share the unresolved cross-process overwrite race; implement a defined coordination guarantee before declaring either complete.
 2. **Memory/performance:** TASK-001 and TASK-006 need measured bounds and repeated GUI benchmarks; do not truncate Qt undo silently.
-3. **Recovery and file safety:** TASK-008 and TASK-011 require failure-mode tests before new UI polish.
+3. **Recovery safety:** TASK-008 requires failure-mode tests before new UI polish.
 4. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
 5. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.
 

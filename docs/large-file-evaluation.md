@@ -1,6 +1,5 @@
-# Large-file evaluation — TASK-011.05
+# Large-file evaluation
 
-This completes the evaluation ticket, not the parent large-file safety gate.
 There is no enforced standalone-file size limit or bounded-memory loading path.
 
 ## Reproduction
@@ -32,7 +31,7 @@ are single synthetic offscreen sessions, not portable thresholds or native
 interaction guarantees. Real manuscripts, huge individual lines, non-ASCII
 text, many tabs and long undo sessions may behave differently.
 
-## Implementation review and decision
+## Implementation review
 
 FileManager reads all raw bytes, decodes a complete string, normalizes line
 endings and hashes the raw bytes. Saving allocates a normalized encoded payload
@@ -41,13 +40,9 @@ required word counts remain synchronous. Worker-based file I/O alone therefore
 does not bound memory or eliminate GUI stalls. New-word undo metadata is also
 unbounded (TASK-001).
 
-Keep the current UTF-8 behavior; do not infer a supported maximum from these
-measurements. A subsequent implementation needs a documented file-size policy,
-a preflight failure path that preserves tabs and unsaved content, and tests for
-files growing after preflight. A warning alone is not a memory bound. Evaluate
-chunked decoding and a cancellation/generation-checked load design before
-claiming support beyond available memory. Avoid destructive OOM experiments
-against the user's session.
+Do not infer a supported maximum from these measurements. A warning alone is
+not a memory bound; the results do not establish support beyond available memory.
+Avoid destructive OOM experiments against the user's session.
 
 Current offline tests verify decoding/encoding failures and preservation of
 source bytes and dirty buffers. They do not prove safe behavior on exhaustion
