@@ -1,8 +1,28 @@
 import json
+import os
+import subprocess
+import sys
 
 import pytest
 
 from app.document.revisions import RevisionStore
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="FIFOs are unavailable")
+def test_fifo_revision_is_reported_without_blocking_other_snapshots(tmp_path):
+    store = RevisionStore(tmp_path / "revisions")
+    valid = create_snapshot(store, order=[], titles={}, documents={})
+    fifo = store.root / "damaged.json"
+    os.mkfifo(fifo)
+    script = """
+import sys
+from app.document.revisions import RevisionStore
+snapshots, issues = RevisionStore(sys.argv[1]).list_snapshots()
+assert len(snapshots) == 1 and len(issues) == 1
+assert 'not a regular file' in issues[0].message
+"""
+    subprocess.run([sys.executable, "-c", script, str(store.root)], check=True, timeout=3)
+    assert fifo.exists() and valid.snapshot_path.exists()
 
 
 def create_snapshot(store, *, order, titles, documents):

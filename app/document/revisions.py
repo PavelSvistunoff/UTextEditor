@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 import tempfile
 from typing import Mapping, Sequence
 from uuid import uuid4
@@ -141,7 +142,11 @@ class RevisionStore:
         path = snapshot.snapshot_path if isinstance(snapshot, RevisionSnapshot) else Path(snapshot)
         if path.is_symlink():
             raise ValueError("Revision snapshot must not be a symbolic link.")
-        with path.open("r", encoding="utf-8") as stream:
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags)
+        with os.fdopen(descriptor, "r", encoding="utf-8") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("Revision snapshot is not a regular file.")
             payload = json.load(stream)
         if not isinstance(payload, dict) or payload.get("format_version") != self.FORMAT_VERSION:
             raise ValueError("Unsupported or malformed revision snapshot.")

@@ -1,5 +1,21 @@
 # Refactoring progress
 
+## 2026-11-13 — revision FIFO behavior fix
+
+- Status: **CHECKPOINT**; overall audit and refactoring remain incomplete.
+- Confirmed revision listing blocked on a FIFO with a `.json` suffix. A bounded
+  regression failed with a timeout before the fix.
+- `RevisionStore.read` now opens nonblocking where supported and validates the
+  opened descriptor as a regular file, following the existing recovery pattern.
+  Invalid entries are diagnosed, retained and do not hide valid snapshots.
+- This is a separate behavior fix; README now describes the diagnostic.
+- Focused revision/recovery suite: 77 passed. FIFO regression ran on macOS;
+  other platform behavior and native GUI were not independently verified.
+- Full offscreen suite: 943 passed, 2 skipped. `git diff --check` passed.
+- Next: finish examining revision comparison ownership and failure coverage,
+  then audit `writing_goals.py` without truncating Qt undo.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — recovery identity validation
 
 - Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.

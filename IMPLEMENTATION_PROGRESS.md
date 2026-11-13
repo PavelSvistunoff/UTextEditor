@@ -2,6 +2,17 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+## Refactoring checkpoint — revision FIFO fix
+
+- Repository-wide refactoring: **CHECKPOINT**; backlog task statuses unchanged.
+- Separate behavior fix: revision scan reports non-regular snapshot files instead of blocking on a FIFO.
+- Bounded regression failed by timeout before the fix; revision/recovery suite now has 77 passing tests.
+- Full offscreen suite: 943 passed, 2 skipped; `git diff --check` passed.
+- README updated; corrupt entries remain on disk and valid snapshots remain visible.
+- FIFO regression ran on macOS; no native GUI, accessibility or live Ollama checks.
+- Next: finish revision comparison review, then inspect writing-goal history without truncating undo.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — recovery identity
 
 - Repository-wide refactoring: **CHECKPOINT**; backlog task statuses unchanged.
