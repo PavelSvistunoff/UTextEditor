@@ -1,5 +1,7 @@
 # Save coordination evaluation
 
+> **Evidence snapshot:** This document records an earlier investigation or verification, not a fresh test run or a second implementation queue. Check [active tickets](../TASKS.md) and the [latest checkpoint](../IMPLEMENTATION_PROGRESS.md) before using it to close a gate. Native GUI and screen-reader checks require real platform evidence.
+
 The supported guarantee remains process-local: a shared reentrant lock covers
 fingerprint checks, staging and replacement for standalone/project text and
 manifest saves. Independent writers can still change the destination after the
