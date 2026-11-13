@@ -85,6 +85,20 @@ def test_undo_and_redo_restore_daily_insertion_contribution() -> None:
     assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 3
 
 
+def test_undo_and_redo_choose_nearest_matching_text_checkpoint() -> None:
+    tracker = WritingGoalTracker(10, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "one", local_date="2026-10-17")
+    tracker.record_text("doc", "one two", local_date="2026-10-17")
+    tracker.record_text("doc", "one", local_date="2026-10-17")
+    tracker.record_text("doc", "one three", local_date="2026-10-17")
+
+    tracker.record_text("doc", "one", local_date="2026-10-17", undo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 2
+    tracker.record_text("doc", "one three", local_date="2026-10-17", redo=True)
+    assert tracker.count_new_words({"doc"}, local_date="2026-10-17") == 3
+
+
 @pytest.mark.parametrize("action", ["undo", "redo"])
 def test_unknown_undo_or_redo_state_does_not_count_restored_words(action: str) -> None:
     tracker = WritingGoalTracker(10, "new_words")

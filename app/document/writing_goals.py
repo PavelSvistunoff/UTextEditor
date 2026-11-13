@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import date, datetime
 import hashlib
+from itertools import chain
 import json
 import os
 from pathlib import Path
@@ -249,20 +250,14 @@ class WritingGoalTracker:
         if before == text:
             return 0
         fingerprint = self._fingerprint(text)
-        if undo:
-            for candidate in range(index - 1, -1, -1):
-                if states[candidate][0] == fingerprint:
-                    self._histories[document_id] = (states, candidate)
-                    self._current_text[document_id] = text
-                    self._replace_document_progress(document_id, states[candidate][1])
-                    return 0
-        if redo:
-            for candidate in range(index + 1, len(states)):
-                if states[candidate][0] == fingerprint:
-                    self._histories[document_id] = (states, candidate)
-                    self._current_text[document_id] = text
-                    self._replace_document_progress(document_id, states[candidate][1])
-                    return 0
+        undo_candidates = range(index - 1, -1, -1) if undo else ()
+        redo_candidates = range(index + 1, len(states)) if redo else ()
+        for candidate in chain(undo_candidates, redo_candidates):
+            if states[candidate][0] == fingerprint:
+                self._histories[document_id] = (states, candidate)
+                self._current_text[document_id] = text
+                self._replace_document_progress(document_id, states[candidate][1])
+                return 0
 
         del states[index + 1:]
         # A Qt undo/redo may reach a state that predates our attached history

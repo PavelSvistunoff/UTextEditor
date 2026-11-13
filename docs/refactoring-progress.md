@@ -1,5 +1,24 @@
 # Refactoring progress
 
+## 2026-11-13 — writing-goal checkpoint restoration
+
+- Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
+- Reviewed `writing_goals.py`, its tests and editor integration. Undo and redo
+  duplicated the same restore operation; they now share one lazy candidate scan.
+- Added a repeated-text regression verifying the nearest reachable checkpoint;
+  document/editor tests passed before and after. No Qt undo state was removed.
+- Focused writing goals, editor and benchmark suite: 124 passed.
+- Full offscreen suite: 944 passed, 2 skipped. `git diff --check` passed.
+- Reachable checkpoint metadata still grows with Qt undo; TASK-001.02 remains open.
+- Initial additional review: project paths/search, AI validation/provider/models,
+  and settings; these are not yet complete package audits. Settings recent-file
+  and recent-project handling differ in normalization and limits;
+  do not merge without verifying compatibility.
+- Next: finish revision comparison review and document package inventory, then
+  investigate project service and its transaction/rollback tests.
+- Native GUI, accessibility and live Ollama were not tested.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — revision FIFO behavior fix
 
 - Status: **CHECKPOINT**; overall audit and refactoring remain incomplete.

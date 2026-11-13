@@ -31,6 +31,8 @@ checks separately; offscreen tests cannot establish native behavior.
    identity predicate, with damaged snapshot preservation tested. Initial review
    of `revisions.py` confirmed that scanning a FIFO named `.json` blocks; a
    separate fix rejects non-regular revision files with a bounded regression.
+   `writing_goals.py`: shared undo/redo checkpoint restoration without copying
+   or truncating reachable history. Memory growth remains open under TASK-001.02.
    Audit `file_manager.py`, `recovery.py`, `revisions.py`, `writing_goals.py`,
    `merge.py`, export/compiler and remaining modules with their corresponding
    tests. Risk: external-write conflicts, rollback, data loss and undo; do not

@@ -2,6 +2,18 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+## Refactoring checkpoint — writing-goal undo/redo
+
+- Repository-wide refactoring: **CHECKPOINT**; backlog statuses unchanged.
+- Shared undo/redo checkpoint restoration in `app/document/writing_goals.py`.
+- Added nearest repeated-text checkpoint regression; focused pre-change tests passed.
+- Writing goals/editor/benchmark suite: 124 passed after change.
+- Full offscreen suite: 944 passed, 2 skipped; `git diff --check` passed.
+- No history truncation; TASK-001.02 reachable undo metadata remains unbounded.
+- No native GUI, accessibility or live Ollama checks performed.
+- Next: finish revision and document inventory, then review project transaction/rollback.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — revision FIFO fix
 
 - Repository-wide refactoring: **CHECKPOINT**; backlog task statuses unchanged.
