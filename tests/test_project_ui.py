@@ -110,6 +110,33 @@ def test_invalid_project_open_is_localized_and_preserves_active_project(applicat
         window.close()
 
 
+@pytest.mark.parametrize("route", ["open", "mutation"])
+def test_project_path_error_is_localized_without_losing_diagnostics(application, tmp_path, monkeypatch, route):
+    from app.i18n import install_translation
+    from app.project import ProjectPathError, validate_project_path
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with pytest.raises(ProjectPathError) as raised:
+        validate_project_path(project.root, "../outside %1.txt")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    _, translator = install_translation(application, "uk")
+    try:
+        if route == "open":
+            window._project_open_failed(raised.value)
+        else:
+            window._project_mutation_failed(project, raised.value)
+        assert "Неприпустимий шлях проєкту" in warnings[0][2]
+        assert str(raised.value) in warnings[0][2]
+        assert window.project is project
+    finally:
+        application.removeTranslator(translator)
+        window.close()
+
+
 def test_recovery_chooser_displays_captured_disk_status_in_ukrainian(application, tmp_path):
     import subprocess
     import sys

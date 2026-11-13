@@ -439,7 +439,8 @@ Standalone open errors for invalid UTF-8, binary content and missing files are
 translated; missing-file diagnostics retain the original system detail and path.
 Standalone save conflicts use a translated category for manual and automatic
 saves while preserving the original diagnostics and dirty buffer. Invalid project
-format errors during opening also have a translated category with original details.
+format/path errors during opening and project changes use shared typed UI
+formatting with translated categories and original details.
 AI generation/completion network failures have packaged Ukrainian runtime coverage,
 including stale request/settings rejection and preservation of dirty text/details.
 Automated literal candidates were reviewed; other raw service errors and native

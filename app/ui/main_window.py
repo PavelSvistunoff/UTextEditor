@@ -52,7 +52,7 @@ from app.document.file_manager import BinaryTextError, ExternalChangeError, File
 from app.document.merge import merge_text
 from app.document.encoding import has_binary_controls
 from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryEntry, RecoveryScan, RecoveryStore
-from app.project import Project, ProjectError, ProjectFormatError, WordCount, count_words
+from app.project import Project, ProjectError, ProjectFormatError, ProjectPathError, WordCount, count_words
 from app.project.search import (MAX_DOCUMENT_BYTES, MAX_OPEN_BUFFER_UTF16_UNITS,
                                 OmittedSearchBuffer, SearchDocument, search_project)
 from app.project.autopilot import (
@@ -2560,10 +2560,15 @@ class MainWindow(QMainWindow):
 
     def _project_open_failed(self, error) -> None:
         self._set_project_busy(False)
+        QMessageBox.warning(self, self.tr("Project could not be opened"), self._project_error_message(error))
+
+    def _project_error_message(self, error: Exception) -> str:
         message = str(error)
         if isinstance(error, ProjectFormatError):
-            message = format_qt(self.tr("Invalid project data: %1"), message)
-        QMessageBox.warning(self, self.tr("Project could not be opened"), message)
+            return format_qt(self.tr("Invalid project data: %1"), message)
+        if isinstance(error, ProjectPathError):
+            return format_qt(self.tr("Invalid project path: %1"), message)
+        return message
 
     def _show_project_dock(self) -> None:
         if self.project is None:
@@ -2792,7 +2797,7 @@ class MainWindow(QMainWindow):
             on_failure(error)
         if project is self.project:
             if on_failure is None:
-                QMessageBox.warning(self, self.tr("Project change failed"), str(error))
+                QMessageBox.warning(self, self.tr("Project change failed"), self._project_error_message(error))
 
     def add_project_chapter(self) -> None:
         if self.project is None:

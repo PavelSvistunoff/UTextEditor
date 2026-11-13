@@ -96,3 +96,11 @@ uses a real OllamaClient failure with mocked networking. Packaged Ukrainian
 generation/completion messages preserve diagnostics, including `%1`, and dirty
 manuscript text. Stale request and settings generations preserve prior UI status.
 Other AI workflows and native Ukrainian operation remain to be audited.
+
+## Project path failures — TASK-032.04
+
+Opening and project mutation warnings share typed project-error formatting.
+`test_project_path_error_is_localized_without_losing_diagnostics` exercises an
+actual traversal rejection in both UI paths and preserves the diagnostic,
+including `%1` in the rejected path. The earlier format-error test remains valid.
+Native Ukrainian operation and remaining service error categories are still open.

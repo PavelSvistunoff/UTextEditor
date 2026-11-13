@@ -1,5 +1,23 @@
 # Refactoring progress
 
+## TASK-032.04 checkpoint — shared project error presentation
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
+- Opening/mutation warnings share typed project error formatting; format and path
+  categories are translated while exact original diagnostics remain visible.
+- Real traversal rejection tests failed before fix for both UI routes; prior
+  malformed-manifest regression still passes after extraction.
+- Focused UI/domain/i18n/translation tests: 288 passed; full offscreen suite:
+  965 passed, 2 skipped. `git diff --check` passed.
+- Source extraction/reference validation and en/uk compilation passed; packaged
+  parity covered. Native Ukrainian UI/accessibility and live Ollama not tested.
+- Clean Code review: shared UI rule, domain path checks/workers/callback guards
+  retained, no dependencies or public API changes; broader audit incomplete.
+- Files: main window, UI tests, Ukrainian TS/QM, README, TASKS and evidence docs.
+- Next: custom character/project workflow error callbacks; branch `main`.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.04 checkpoint — AI failure audit
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
