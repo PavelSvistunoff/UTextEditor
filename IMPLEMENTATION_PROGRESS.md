@@ -1,5 +1,13 @@
 # Implementation progress
 
+## Current resume pointer (documentation routing; 2026-11-13)
+
+- **Branch:** `codex/task-continuation`. **Parent:** TASK-001 open. **Next batch:** TASK-001.02 and TASK-001.03 (high-risk: split into one subtask if needed), then TASK-001.05 benchmark. This pointer summarizes the latest recorded checkpoint below; it is not a new test run or a completion claim.
+- **Verified in latest recorded implementation checkpoint:** active-identity collisions preserve independent histories and persisted aliases; focused writing-goal/editor suite 118 passed, full offscreen suite 917 passed / 2 skipped. These are historical run results, not freshly executed here.
+- **Unverified:** bounded memory across reachable Qt undo states; parent stress/acceptance gate; native platform checks. Preserve undo/redo and daily-count semantics; do not truncate history silently.
+- **Next action:** inspect `TASKS.md` TASK-001 gates, then `app/document/writing_goals.py`, `app/ui/main_window.py` and related tests. Resume investigation with `rg -n '_histories|discard_unreachable_history' app/document/writing_goals.py app/ui/main_window.py`.
+- **After each implementation batch:** replace this pointer with the newly verified state and add a concise dated checkpoint below it. Preserve older records as historical evidence; do not treat superseded checkpoints as current blockers.
+
 ## TASK-001.03 collision continuation (2026-11-13)
 
 - **.03: CHECKPOINT; parent TASK-001: open.** Active-identity rekey collisions
