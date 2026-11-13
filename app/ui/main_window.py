@@ -4694,10 +4694,12 @@ class MainWindow(QMainWindow):
 
     def create_revision_snapshot(self) -> None:
         project = self.project
-        if project is None:
+        project_generation = self._project_generation
+        if project is None or self._project_busy:
             return
         name, accepted = QInputDialog.getText(self, self.tr("Create revision snapshot"), self.tr("Snapshot name:"))
-        if not accepted:
+        if (not accepted or project is not self.project
+                or project_generation != self._project_generation or self._project_busy):
             return
         open_text: dict[str, str] = {}
         for editor, binding in tuple(self._project_documents.items()):
@@ -4718,11 +4720,13 @@ class MainWindow(QMainWindow):
         )
         self._track_worker(worker)
         worker.signals.finished.connect(
-            lambda snapshot, project=project: self._revision_snapshot_created(project, snapshot),
+            lambda snapshot, project=project, generation=project_generation:
+                self._revision_snapshot_created(project, snapshot, generation),
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
-            lambda error, project=project: self._revision_snapshot_failed(project, error),
+            lambda error, project=project, generation=project_generation:
+                self._revision_snapshot_failed(project, error, generation),
             Qt.ConnectionType.QueuedConnection,
         )
         self.statusBar().showMessage(self.tr("Creating revision snapshot…"))
@@ -4849,15 +4853,22 @@ class MainWindow(QMainWindow):
             documents=documents,
         )
 
-    def _revision_snapshot_created(self, project: Project, snapshot: RevisionSnapshot) -> None:
+    def _finish_revision_snapshot(self, project: Project, generation: int | None) -> bool:
         self._set_project_busy(False)
+        return (project is self.project and not self._closing_confirmed
+                and (generation is None or generation == self._project_generation))
+
+    def _revision_snapshot_created(self, project: Project, snapshot: RevisionSnapshot, generation: int | None = None) -> None:
+        if not self._finish_revision_snapshot(project, generation):
+            return
         self.statusBar().showMessage(
             self.tr("Revision “{name}” saved locally at {path}").format(name=snapshot.name, path=snapshot.snapshot_path), 10000
         )
 
-    def _revision_snapshot_failed(self, project: Project, error) -> None:
-        self._set_project_busy(False)
-        QMessageBox.warning(self, self.tr("Revision snapshot failed"), str(error))
+    def _revision_snapshot_failed(self, project: Project, error, generation: int | None = None) -> None:
+        if not self._finish_revision_snapshot(project, generation):
+            return
+        QMessageBox.warning(self, self.tr("Revision snapshot failed"), self._project_error_message(error))
 
     def _open_project_document(self, kind: str, item_id: str) -> None:
         project = self.project

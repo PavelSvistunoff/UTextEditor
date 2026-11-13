@@ -71,6 +71,8 @@ checks separately; offscreen tests cannot establish native behavior.
    obsolete callbacks retain newer search state and error details are localized.
    Project-document open failure routes share project error presentation and
    captured generation checks; new-open and existing-tab workers are tested.
+   Revision creation shares completion cleanup/context checks; name-prompt state
+   changes and success/failure worker feedback are covered by regressions.
 4. **UI** — inspect `main_window.py` (large orchestration surface), workers,
    editor and each dialog, together with UI and end-to-end tests. Extract only
    cohesive responsibilities supported by tests. Risk: Qt lifetime, focus,

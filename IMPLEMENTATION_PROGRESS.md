@@ -4,6 +4,25 @@
 
 
 
+## TASK-032.01/.02/.04 checkpoint — revision creation feedback
+
+- TASK-032.01, .02, .04: **CHECKPOINT** each; parent TASK-032 partial.
+- Revision failure uses shared typed project formatting; success/failure share
+  completion cleanup and captured project/generation/closing checks.
+- Separate behavior fix rejects stale feedback and changed/cancelled name prompts;
+  busy operations cannot start another revision creation through this entry point.
+- Five baseline cases failed; 12 final cases cover worker feedback and prompt state.
+- Focused UI/revisions/i18n/translation tests: 341 passed; full offscreen suite:
+  1048 passed, 2 skipped. `git diff --check` passed; packaged parity tested.
+- No new strings/catalog rebuild; native UI/accessibility and live Ollama untested.
+- Clean Code review: shared completion rule, explicit guards, original diagnostics;
+  no revision-store/file-write/undo/YAML/API change or new dependency.
+- Files: main window, UI tests, README, localization/refactoring evidence docs.
+- Existing three pyc changes preserved; broader audit/refactoring incomplete.
+- Next: remaining recovery error presentation and dynamic UI inventory.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.01/.02/.04 checkpoint — project document-open failures
 
 - TASK-032.01, .02, .04: **CHECKPOINT** each; parent TASK-032 partial.

@@ -3731,6 +3731,89 @@ def test_revision_history_deletion_requires_confirmation(application, tmp_path, 
     window.close()
 
 
+@pytest.mark.parametrize("state", ["cancel", "busy", "project", "generation"])
+def test_revision_creation_rechecks_state_after_name_prompt(application, tmp_path, monkeypatch, state):
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    workers = []
+    monkeypatch.setattr(window, "_track_worker", workers.append)
+
+    def name_prompt(*args):
+        if state == "busy":
+            window._set_project_busy(True)
+        elif state == "project":
+            window.project = None
+        elif state == "generation":
+            window._project_generation += 1
+        return "snapshot", state != "cancel"
+
+    monkeypatch.setattr(QInputDialog, "getText", name_prompt)
+    try:
+        window.create_revision_snapshot()
+        assert not workers
+        assert not (project.root / ".utexteditor" / "revisions").exists()
+    finally:
+        window._set_project_busy(False)
+        window.close()
+
+
+@pytest.mark.parametrize("fails", [False, True])
+@pytest.mark.parametrize("change", [None, "project", "generation", "closing"])
+def test_revision_creation_feedback_is_localized_and_ignores_stale_context(
+    application, tmp_path, monkeypatch, fails, change,
+):
+    from types import SimpleNamespace
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    monkeypatch.setattr(QInputDialog, "getText", lambda *args: ("snapshot %1", True))
+    started, release = Event(), Event()
+    warnings, messages = [], []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    monkeypatch.setattr(window.statusBar(), "showMessage", lambda message, *args: messages.append(message))
+
+    def create(*args):
+        started.set()
+        if not release.wait(5):
+            raise TimeoutError("test release timed out")
+        if fails:
+            raise ProjectFormatError("snapshot detail %1")
+        return SimpleNamespace(name="snapshot %1", snapshot_path=tmp_path / "snapshot.json")
+
+    monkeypatch.setattr(window, "_create_project_snapshot", create)
+    _, translator = install_translation(application, "uk")
+    try:
+        window.create_revision_snapshot()
+        wait_until(started.is_set, application)
+        if change == "project":
+            window.project = None
+        elif change == "generation":
+            window._project_generation += 1
+        elif change == "closing":
+            window._closing_confirmed = True
+        messages.clear()
+        release.set()
+        wait_until(lambda: not window._project_busy, application)
+        if change:
+            assert not warnings and not any("snapshot %1" in message for message in messages)
+        elif fails:
+            assert "Некоректні дані проєкту" in warnings[0][2]
+            assert "snapshot detail %1" in warnings[0][2]
+        else:
+            assert any("snapshot %1" in message and "snapshot.json" in message for message in messages)
+    finally:
+        release.set()
+        window.thread_pool.waitForDone(3000)
+        application.removeTranslator(translator)
+        window._closing_confirmed = False
+        window.close()
+
+
 @pytest.mark.parametrize("operation,expected", [
     ("load", "Не вдалося завантажити знімки ревізій"),
     ("compare", "Не вдалося порівняти знімки"),

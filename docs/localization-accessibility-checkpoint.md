@@ -201,3 +201,12 @@ current/project/generation/closing states and dirty text; four real-worker cases
 check new opens and existing-tab bindings across a generation change. Pending
 keys are released even for stale failures. Original diagnostic details remain;
 no new translation strings. Native runtime remains unverified.
+
+## Revision creation — TASK-032.01/.02/.04
+
+MainWindow._revision_snapshot_failed now uses shared typed project categories.
+Success and failure share captured project/generation/closing checks and existing
+busy-state cleanup. Eight worker cases check current/changed/closing feedback;
+four name-prompt cases reject cancelled or changed project/generation/busy state.
+Five baseline cases failed before the fix. No new strings; Ukrainian packaged
+category and exact diagnostic placeholders are verified. Native UI unverified.
