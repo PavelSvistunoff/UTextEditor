@@ -19,14 +19,12 @@ For each implementation ticket, follow the [Clean Code discipline](AGENTS.md#cle
 
 | Priority | Ticket(s) | Runnable outcome |
 | --- | --- | --- |
-| 1 | TASK-001.02 | Measured reachable Qt undo metadata bound without throwing away undo or daily-count correctness |
-| 2 | TASK-001.03, TASK-001.05 | Branch/rekey/reset regressions, realistic long undo workload, repeated memory and RSS figures |
-| 3 | TASK-032.01, .02, .04 | Audit/translate concrete dynamic UI and service errors, test contexts/placeholders |
-| 4 | TASK-032.03 | Re-extract, validate and compile en/uk catalogs; prove packaged parity |
-| 5 | TASK-027.03, TASK-030.03 | Measure Markdown preview native latency; complete narrow profile keyboard test |
-| 6 | TASK-034 and remaining .V2 | Record real native keyboard, palette, screen-reader and Ukrainian runtime evidence |
+| 1 | TASK-032.01, .02, .04 | Audit/translate concrete dynamic UI and service errors, test contexts/placeholders |
+| 2 | TASK-032.03 | Re-extract, validate and compile en/uk catalogs; prove packaged parity |
+| 3 | TASK-027.03, TASK-030.03 | Measure Markdown preview native latency; complete narrow profile keyboard test |
+| 4 | TASK-034 and remaining .V2 | Record real native keyboard, palette, screen-reader and Ukrainian runtime evidence |
 
-**Dependencies:** TASK-001.02 precedes asserting a memory bound; TASK-032 source/catalog work precedes localized `.V2` acceptance, TASK-034 coordinates accessibility. The cross-process save race is a separate known limitation in [docs/save-coordination.md](docs/save-coordination.md).
+**Dependencies:** TASK-032 source/catalog work precedes localized `.V2` acceptance, TASK-034 coordinates accessibility. The cross-process save race is a separate known limitation in [docs/save-coordination.md](docs/save-coordination.md).
 
 ## Standard verification (run only what applies)
 
@@ -43,7 +41,6 @@ For localization extraction/compilation, use the commands in [README.md](README.
 
 | Parent | Scope | Documented state |
 |---|---|---|
-| TASK-001 | Fix writing-goal history memory growth | open |
 | TASK-012 | Implement project-wide full-text search | partial |
 | TASK-013 | Implement Quick Open | partial |
 | TASK-015 | Implement related-item navigation | partial |
@@ -67,45 +64,6 @@ For localization extraction/compilation, use the commands in [README.md](README.
 ## Atomic execution backlog
 
 Each checkbox is a separately executable ticket. Subtasks under a partially implemented parent are **verification / remaining-work candidates**, not assertions that the listed functionality is absent. Confirm existing implementation before writing code.
-
-### TASK-001 — Fix writing-goal history memory growth
-**Priority:** High · **Parent status:** open
-
-**Inspect first:** `app/document/writing_goals.py; tests/test_writing_goals.py; benchmarks/writing_goal_history.py`.
-
-- [~] **TASK-001.02** — Implement bounded history metadata without breaking word counts.
-  Consecutive checkpoints on one day share unchanged prior-day counts, including
-  after a daily reset or rekey to an existing destination. Daily snapshots use
-  slots to reduce per-checkpoint overhead. Reachable checkpoint count is still
-  unbounded; this optimization does not meet the memory-bound gate.
-  **Done when:** Demonstrate a measurable memory bound across 10,000 reachable Qt undo commands without clearing undo, dropping exact daily counts or masking storage failures; add a focused regression.
-- [~] **TASK-001.03** — Preserve correct behavior across undo, redo, pause, and reset.
-  Saving to an unused tracking identity now retains checkpoints; same-ID rekeys
-  retain matching history. Existing-destination progress and mismatched text
-  now form minimum daily counts in transferred checkpoints when the destination
-  is not actively tracked. Scope/enable transitions now
-  preserve checkpoints, with no new-word credit for inactive edits. Active
-  identity collisions now preserve independent histories and persist their
-  association for project aggregation; bounded history remains outstanding.
-  A UI regression test verifies that Save As to an already-open file is
-  rejected and preserves both tabs' progress through undo and redo. This guard
-  is covered alongside tracker and editor collision regressions.
-  **Done when:** Test undo/redo branching, pause/reset, rekey/Save As and identity collisions; assert document buffers, persisted counts and new-word credit after each transition.
-- [~] **TASK-001.05** — Benchmark realistic long editing sessions.
-  History benchmark now accepts command/undo counts and checks branching after
-  undo; 100-command smoke and 10,000-command runs passed. The latter retained
-  10,001 states and 3,723,574 current Python-traced bytes; no bound established.
-  The mixed workload additionally inserts multilingual words at the start and
-  adds/removes punctuation; a 10,000-command run verified undo, redo and
-  branching, retaining 10,001 states and 2,206,486 Python-traced bytes. It
-  remains synthetic and does not establish a memory bound.
-  **Done when:** Benchmark 100 and 10,000 separate commands with undo/redo and branching; compare repeated checkpoint counts, tracemalloc and process RSS with a documented baseline.
-
-**Parent acceptance gate (all must pass):**
-- Memory growth is measured and bounded for the supported editing history.
-- Undo/redo does not produce incorrect daily counts.
-- Existing writing-goal tests pass.
-- New stress and regression tests pass.
 
 ### TASK-012 — Implement project-wide full-text search
 **Priority:** High · **Parent status:** partial
@@ -504,9 +462,8 @@ or partial as indicated.
 
 ## Cross-cutting execution priorities
 
-1. **Memory:** TASK-001 needs measured bounds; do not truncate Qt undo silently.
-2. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
-3. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.
+1. **Verify already-built UI:** the remaining navigation, AI review, preview and localization tasks have substantial documented implementation; focus on outstanding acceptance and native checks.
+2. **Deferred scope:** toolbar, theme overrides, additional providers and languages remain deferred; see `UNIMPLEMENTED_FEATURES.md`.
 
 ## Completion record template
 

@@ -40,7 +40,7 @@ endings and hashes the raw bytes. Saving allocates a normalized encoded payload
 and reads existing content for conflict checks. Qt document construction and
 required word counts remain synchronous. Worker-based file I/O alone therefore
 does not bound memory or eliminate GUI stalls. New-word undo metadata is also
-unbounded (TASK-001).
+unbounded.
 
 Do not infer a supported maximum from these measurements. A warning alone is
 not a memory bound; the results do not establish support beyond available memory.

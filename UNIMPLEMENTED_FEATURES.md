@@ -6,7 +6,7 @@
 
 | Area | Current behavior and limitation | Evidence |
 | --- | --- | --- |
-| Writing-goal undo history | Reachable metadata can grow with separate Qt undo commands. Shared prior-day daily counts reduce some retention, but no measured universal bound is demonstrated. Preserve exact counts and Qt undo. | TASK-001; [history benchmark](docs/large-file-evaluation.md) and progress archive |
+| Writing-goal undo history | Reachable metadata can grow with separate Qt undo commands. Shared prior-day daily counts reduce some retention, but no measured universal bound is demonstrated. Preserve exact counts and Qt undo. | [history benchmark](docs/large-file-evaluation.md) and progress archive |
 | Concurrent saves | Fingerprint checks, staged atomic replacement and a shared process-local `RLock` protect cooperating in-process saves. An **independent writer can still change content between the last check and replace**; no arbitrary-writer no-overwrite guarantee. | [save-coordination](docs/save-coordination.md) |
 | Large documents | Standalone files are read into memory in full; the editor has no enforced safe size limit and some Qt callbacks are synchronous. Offscreen timings are diagnostic, not native latency promises. | [large-file](docs/large-file-evaluation.md), [GUI latency](docs/gui-latency-evaluation.md) |
 | Text formats | UTF-8 only; line-ending and encoding indicators are not selectable. Binary detection rejects NUL and suspicious ASCII controls but is not exhaustive. | [encoding evaluation](docs/encoding-support.md) |

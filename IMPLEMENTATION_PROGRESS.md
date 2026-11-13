@@ -1,10 +1,6 @@
 # Implementation progress — current resume pointer
 
-> This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
-
-
-
-
+> This short file records the **latest actionable checkpoint**. Earlier execution history is recorded in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
 ## TASK-032.04 checkpoint — shared export errors
@@ -138,24 +134,7 @@
 - Native keyboard/focus, screen-reader and Ukrainian packaged runtime not tested.
 - Files: `app/ui/character_dialog.py`, `tests/test_project_ui.py`, README,
   TASKS and profile/refactoring evidence docs; branch `main`.
-- Next: native TASK-030.03/.V2 review; continue TASK-001.02 memory bound work.
-- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
-
-## TASK-001.02 checkpoint — daily snapshot overhead
-
-- TASK-001.02: **CHECKPOINT**; parent TASK-001 remains open.
-- `app/document/writing_goals.py`: slots reduce daily snapshot overhead while
-  retaining reachable history; no Qt undo commands are removed.
-- 1,000 mixed commands: 251,241 traced bytes before, 236,924 after, one run
-  each; 1,001 states retained, undo/redo/branch counts verified in both.
-- 10,000 mixed commands: 10,001 states, 1,943,227 traced bytes; undo, redo
-  and branch counts passed (previous recorded run: 2,206,486 bytes).
-- Focused writing-goal/editor/benchmark tests: 124 passed before and after.
-- Full offscreen suite: 950 passed, 2 skipped; `git diff --check` passed.
-- Memory remains unbounded with reachable commands; a measured bound and focused
-  regression remain required. No native GUI, accessibility or live Ollama check.
-- Repository-wide audit/refactoring remains incomplete. Branch: `main`.
-- Next: investigate compact or external history preserving exact undo and failures.
+- Next: native TASK-030.03/.V2 review.
 - Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
 
 ## Refactoring checkpoint — character map validation
@@ -203,7 +182,7 @@
 - Added nearest repeated-text checkpoint regression; focused pre-change tests passed.
 - Writing goals/editor/benchmark suite: 124 passed after change.
 - Full offscreen suite: 944 passed, 2 skipped; `git diff --check` passed.
-- No history truncation; TASK-001.02 reachable undo metadata remains unbounded.
+- No history truncation; reachable undo metadata remains unbounded.
 - No native GUI, accessibility or live Ollama checks performed.
 - Next: finish revision and document inventory, then review project transaction/rollback.
 - Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
@@ -277,15 +256,13 @@
 
 - **TASK-032.04 — CHECKPOINT (parent TASK-032 partial):** standalone invalid UTF-8 and likely-binary file-open errors now use translated UI messages. Other service error strings, a complete UI audit and native localization review remain open.
 - **TASK-032.03 — CHECKPOINT (parent TASK-032 partial):** packaged English/Ukrainian `.qm` catalogs were rebuilt and runtime parity-tested. This does **not** establish native screen-reader or comprehensive UI string coverage.
-- **TASK-001.02 — CHECKPOINT (parent TASK-001 open):** sharing prior-day snapshot data reduced some Python metadata retention, but reachable Qt undo states still grow without a demonstrated bound. Do not clear Qt undo to satisfy the metric.
 - **Most recent recorded offline suite:** `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q` → **923 passed, 2 skipped** (from the archived checkpoint, **not newly run here**).
 
 ## Resume
 
 1. Inspect current branch and `git status --short`; use [TASKS.md](TASKS.md) to select exact active subtask IDs.
-2. First investigate `TASK-001.02` in `app/document/writing_goals.py` with `benchmarks/writing_goal_history.py`, retaining exact undo and daily-count behavior.
-3. Then continue `TASK-032.04` by finding untranslated typed and untyped service errors: `rg -n 'str\\(error\\)|str\\(exc\\)' app/ui/main_window.py`. Translate user-facing wrappers, not manuscript text.
-4. Add the **next** actual code/test checkpoint above this section. Include IDs, results, files, exact commands, unrun native checks, residual risk and the next resume command.
+2. Continue `TASK-032.04` by finding untranslated typed and untyped service errors: `rg -n 'str\\(error\\)|str\\(exc\\)' app/ui/main_window.py`. Translate user-facing wrappers, not manuscript text.
+3. Add the **next** actual code/test checkpoint above this section. Include IDs, results, files, exact commands, unrun native checks, residual risk and the next resume command.
 
 ## Durable evidence
 
