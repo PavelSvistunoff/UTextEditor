@@ -27,6 +27,10 @@ checks separately; offscreen tests cannot establish native behavior.
    staging cleanup, dirty state and the documented independent-writer race.
    `export.py` and `book_compiler.py`: shared scene ID and text validation;
    selection and the distinct validation order are covered by regressions.
+   `recovery.py`: save and snapshot parsing now use the same project-item
+   identity predicate, with damaged snapshot preservation tested. Initial review
+   of `revisions.py` confirmed that scanning a FIFO named `.json` blocks; add a
+   bounded regression and handle it as a separate behavior fix.
    Audit `file_manager.py`, `recovery.py`, `revisions.py`, `writing_goals.py`,
    `merge.py`, export/compiler and remaining modules with their corresponding
    tests. Risk: external-write conflicts, rollback, data loss and undo; do not

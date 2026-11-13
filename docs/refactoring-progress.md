@@ -1,5 +1,24 @@
 # Refactoring progress
 
+## 2026-11-13 — recovery identity validation
+
+- Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
+- Reviewed `recovery.py` and recovery test inventory. The save and parse paths
+  duplicated the same project-item identity rule; they now share a predicate.
+- Added valid and malformed identity cases on both paths; verified invalid files
+  remain available for diagnosis. Recovery tests passed before modification.
+- Focused document/recovery tests: 87 passed. Existing snapshot format, errors,
+  canonical conflict checks and cleanup policy are unchanged.
+- Full offscreen suite: 942 passed, 2 skipped. `git diff --check` passed.
+- Confirmed separately: a FIFO named `fifo.json` in the revision root makes
+  `RevisionStore.list_snapshots()` block. A child process calling it timed out
+  after one second with no FIFO writer. No behavior fix is included in this batch;
+  assess worker callers, non-regular files, symlink races and diagnostics separately.
+- Next: add a bounded FIFO regression and address this behavior in its own batch
+  after reviewing revisions tests and call sites.
+- Native GUI, accessibility and live Ollama were not tested.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — export scene validation
 
 - Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.

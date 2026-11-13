@@ -353,6 +353,31 @@ def test_scan_rejects_malformed_project_item_identity(tmp_path: Path) -> None:
     assert entry.snapshot_path.exists()
 
 
+@pytest.mark.parametrize(
+    ("item_id", "item_kind", "valid"),
+    [(None, None, True), ("scene-1", "scene", True), ("note-1", "note", True),
+     (None, "scene", False), ("scene-1", None, False), ("", "scene", False),
+     (42, "scene", False), ("scene-1", [], False)],
+)
+def test_recovery_item_identity_has_same_rules_on_save_and_scan(
+    tmp_path: Path, item_id, item_kind, valid: bool
+) -> None:
+    store = RecoveryStore(tmp_path / "recovery")
+    if valid:
+        entry = store.save("document", "text", project_item_id=item_id, project_item_kind=item_kind)
+        assert store.scan().entries == (entry,)
+    else:
+        with pytest.raises(ValueError, match="identity"):
+            store.save("invalid", "text", project_item_id=item_id, project_item_kind=item_kind)
+        entry = store.save("document", "text")
+        payload = json.loads(entry.snapshot_path.read_text(encoding="utf-8"))
+        payload.update(project_item_id=item_id, project_item_kind=item_kind)
+        entry.snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+        scan = store.scan()
+        assert not scan.entries and len(scan.issues) == 1
+        assert entry.snapshot_path.exists()
+
+
 def test_unreadable_directory_does_not_hide_other_recovery_snapshots(tmp_path, monkeypatch):
     store = RecoveryStore(tmp_path / "recovery")
     inaccessible = store.save("unreadable", "preserve me")

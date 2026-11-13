@@ -68,6 +68,12 @@ class RecoveryConflictError(ValueError):
     """Raised when a canonical file no longer matches a recovery snapshot."""
 
 
+def _valid_project_item_identity(item_id: object, item_kind: object) -> bool:
+    if item_id is None:
+        return item_kind is None
+    return isinstance(item_id, str) and bool(item_id) and item_kind in ("scene", "note")
+
+
 class RecoveryStore:
     """Persist recoverable editor buffers without modifying their source files."""
 
@@ -105,10 +111,7 @@ class RecoveryStore:
             raise ValueError("A document ID is required for recovery.")
         if not isinstance(text, str):
             raise TypeError("Recovery text must be a string.")
-        if (project_item_id is None) != (project_item_kind is None) or (
-            project_item_id is not None
-            and (not isinstance(project_item_id, str) or not project_item_id or project_item_kind not in ("scene", "note"))
-        ):
+        if not _valid_project_item_identity(project_item_id, project_item_kind):
             raise ValueError("Recovery project item identity is invalid.")
         canonical_existed = False
         if canonical_path is not None:
@@ -369,10 +372,7 @@ class RecoveryStore:
             raise ValueError("Recovery snapshot has an invalid project ID.")
         item_id = payload.get("project_item_id")
         item_kind = payload.get("project_item_kind")
-        if (item_id is None) != (item_kind is None) or (
-            item_id is not None
-            and (not isinstance(item_id, str) or not item_id or item_kind not in ("scene", "note"))
-        ):
+        if not _valid_project_item_identity(item_id, item_kind):
             raise ValueError("Recovery snapshot has an invalid project item identity.")
         return RecoveryEntry(
             snapshot_id=payload["snapshot_id"],

@@ -2,6 +2,19 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+## Refactoring checkpoint — recovery identity
+
+- Repository-wide refactoring: **CHECKPOINT**; backlog task statuses unchanged.
+- Shared project-item identity validation between recovery save and snapshot parsing.
+- Valid and malformed cases checked on both paths; invalid snapshots remain on disk.
+- Focused document/recovery suite: 87 passed; recovery tests passed before the refactor.
+- Full offscreen suite: 942 passed, 2 skipped; `git diff --check` passed.
+- Revision scan blocked on a FIFO named `.json` in a one-second subprocess test;
+  treat a fix as a separate behavior change with a bounded regression.
+- Native GUI, accessibility and live Ollama were not tested.
+- Next: investigate revision FIFO reads and inspect revision tests and callers.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — export validation
 
 - Repository-wide refactoring: **CHECKPOINT**; backlog task statuses unchanged.
