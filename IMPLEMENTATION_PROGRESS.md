@@ -1,5 +1,24 @@
 # Implementation progress
 
+## TASK-029.01–.04 checkpoint (2026-11-13)
+
+- **.01 COMPLETE, .02 CHECKPOINT, .03 COMPLETE, .04 COMPLETE; parent TASK-029
+  open.** Read-only history shows approximate stored new-word totals by local
+  date and explains pause, Undo/Redo and unavailable historical scopes. It
+  preserves tracker state and manuscript text. Historical active-document and
+  project counts are not recorded, so .02 remains partial; .05 remains open.
+- Changed `app/ui/writing_goal_history_dialog.py`, `app/ui/main_window.py`,
+  `tests/test_editor_widget.py`, `translations/utexteditor_uk.ts`, `README.md`,
+  `UNIMPLEMENTED_FEATURES.md`, `TASKS.md` and this file on
+  `codex/task-continuation`. Pre-existing staged generated files are unrelated.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_writing_goals.py tests/test_editor_widget.py -k 'writing_goal or goal_history'`:
+  42 passed, 58 deselected. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  889 passed, 2 skipped. Ukrainian source validation and temporary compilation
+  passed. Native accessibility and release catalog verification not run.
+- Blocker: none. Next: design recording historical scope values without
+  inventing past data; implement confirmed removal of local progress while
+  clearing undo/redo checkpoints. Resume .02 before selecting further work.
+
 ## TASK-008.03 completed (2026-11-13)
 
 - **TASK-008.03: COMPLETE; parent TASK-008: partial.** Scans report damaged

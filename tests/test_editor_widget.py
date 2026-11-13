@@ -23,6 +23,7 @@ from app.ui.font_utils import configure_application_font, editor_font
 from app.ui.main_window import MainWindow
 from app.ui.settings_dialog import SettingsDialog
 from app.ui.tab_widget import DocumentTabWidget
+from app.ui.writing_goal_history_dialog import WritingGoalHistoryDialog
 from app.ui.workers import FunctionWorker
 
 
@@ -65,6 +66,52 @@ def test_closing_tab_releases_writing_goal_history(application: QApplication) ->
     assert document_id not in window.writing_goals._histories
     assert document_id not in window.writing_goals._current_text
     window.close()
+
+
+def test_goal_history_shows_stored_daily_new_word_totals_without_changing_tracker(application):
+    from app.document.writing_goals import WritingGoalTracker
+    tracker = WritingGoalTracker(10, "new_words", progress={
+        "2026-10-17": {"a": 3, "b": 2}, "2026-10-18": {"a": 1},
+    })
+    before = tracker.to_mapping()
+    dialog = WritingGoalHistoryDialog(tracker.progress)
+    assert dialog.table.rowCount() == 2
+    assert [dialog.table.item(0, col).text() for col in range(3)] == [
+        "2026-10-18", "Newly written words", "1",
+    ]
+    assert dialog.table.item(1, 2).text() == "5"
+    assert dialog.table.editTriggers() == dialog.table.EditTrigger.NoEditTriggers
+    assert tracker.to_mapping() == before
+    dialog.close()
+
+
+def test_goal_history_action_uses_current_progress(application):
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.writing_goals.progress = {"2026-10-17": {"doc": 3}}
+    with patch("app.ui.main_window.WritingGoalHistoryDialog") as dialog:
+        action = next(action for action in window.findChildren(QAction) if action.text() == "Writing Goal History…")
+        action.trigger()
+    assert dialog.call_args.args[0] == {"2026-10-17": {"doc": 3}}
+    dialog.return_value.exec.assert_called_once()
+    window.close()
+
+
+def test_goal_history_reflects_pause_and_reset_without_changing_document(application):
+    from app.document.writing_goals import WritingGoalTracker
+    tracker = WritingGoalTracker(10, "new_words")
+    tracker.attach("doc", "")
+    tracker.record_text("doc", "one", local_date="2026-10-17")
+    tracker.set_paused(True)
+    tracker.record_text("doc", "one two", local_date="2026-10-17")
+    dialog = WritingGoalHistoryDialog(tracker.progress)
+    assert dialog.table.item(0, 2).text() == "1"
+    dialog.close()
+    tracker.reset_today(local_date="2026-10-17")
+    dialog = WritingGoalHistoryDialog(tracker.progress)
+    assert dialog.table.item(0, 2).text() == "0"
+    assert tracker._current_text["doc"] == "one two" and tracker.paused
+    dialog.close()
 
 
 def test_editor_colors_follow_the_system_palette(application: QApplication) -> None:

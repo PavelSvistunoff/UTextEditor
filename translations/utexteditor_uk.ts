@@ -2543,6 +2543,7 @@ Text is sent to the configured Ollama destination:
     <message><source>Save failed</source><translation>Не вдалося зберегти</translation></message>
     <message><source>That file is already open in another tab.</source><translation>Цей файл уже відкрито в іншій вкладці.</translation></message>
     <message><source>Another tab is already saving to that file.</source><translation>Інша вкладка вже зберігає дані в цей файл.</translation></message>
+    <message><source>Writing Goal History…</source><translation>Історія цілі письма…</translation></message>
     <message><source>The file is being saved. Try opening it again when saving finishes.</source><translation>Файл зберігається. Спробуйте відкрити його знову після завершення збереження.</translation></message>
     <message><source>Saving file…</source><translation>Збереження файлу…</translation></message>
     <message><source>Old recovery data could not be removed: {error}</source><translation>Не вдалося видалити старі дані відновлення: {error}</translation></message>
@@ -2570,5 +2571,16 @@ Text is sent to the configured Ollama destination:
     <message><source>Captured manuscript export</source><translation>Зафіксований результат експорту рукопису</translation></message>
     <message><source>Only the beginning is displayed; export includes the entire captured manuscript.</source><translation>Показано лише початок; експорт міститиме весь зафіксований рукопис.</translation></message>
     <message><source>Export</source><translation>Експортувати</translation></message>
+</context>
+<context>
+    <name>WritingGoalHistoryDialog</name>
+    <message><source>Writing goal history</source><translation>Історія цілі письма</translation></message>
+    <message><source>Approximate newly written words across stored document identities, by local date. Undo and redo can change counts; only an enabled, unpaused new-word goal records progress. Historical active-document and project word counts are not stored.</source><translation>Приблизна кількість нових слів за збереженими ідентифікаторами документів і місцевою датою. Скасування та повторення можуть змінювати кількість; прогрес записується лише для ввімкненої та непризупиненої цілі нових слів. Попередні кількості слів активного документа та проєкту не зберігаються.</translation></message>
+    <message><source>Local date</source><translation>Місцева дата</translation></message>
+    <message><source>Measure</source><translation>Показник</translation></message>
+    <message><source>Approximate words</source><translation>Приблизна кількість слів</translation></message>
+    <message><source>Daily writing goal history</source><translation>Щоденна історія цілі письма</translation></message>
+    <message><source>Newly written words</source><translation>Нові написані слова</translation></message>
+    <message><source>Close</source><translation>Закрити</translation></message>
 </context>
 </TS>

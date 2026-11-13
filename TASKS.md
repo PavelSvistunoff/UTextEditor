@@ -882,13 +882,20 @@ PDF paper/title/heading/selection controls are verified in
 ### TASK-029 — Add writing-goal history viewer
 **Priority:** Low · **Parent status:** open
 
-- [ ] **TASK-029.01** — Display daily writing-goal history.  
+- [x] **TASK-029.01** — Display daily writing-goal history.
+  Read-only dialog shows saved new-word totals by local date across stored
+  document identities; the menu action captures current tracker state.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-029.02** — Show progress by date and scope.  
+- [~] **TASK-029.02** — Show progress by date and scope.
+  The stored new-word measure is displayed. Historical active-document and
+  project counts are not persisted and are explicitly identified as unavailable.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-029.03** — Explain counting and local-date semantics.  
+- [x] **TASK-029.03** — Explain counting and local-date semantics.
+  The dialog labels counts approximate and explains local dates, Undo/Redo,
+  pause, disabled tracking, and the limits of historical scope data.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
-- [ ] **TASK-029.04** — Preserve pause/reset behavior.  
+- [x] **TASK-029.04** — Preserve pause/reset behavior.
+  The read-only view reflects tracker pause/reset state without changing text.
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.
 - [ ] **TASK-029.05** — Allow users to remove locally stored progress.  
   **Done when:** implementation or existing behavior is demonstrated by a focused test/review, with no unrelated changes.

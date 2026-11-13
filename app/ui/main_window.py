@@ -115,6 +115,7 @@ from .settings_dialog import SettingsDialog
 from .tab_widget import DocumentTabWidget
 from .workers import FunctionWorker, StreamingWorker
 from .writing_goal_dialog import WritingGoalDialog
+from .writing_goal_history_dialog import WritingGoalHistoryDialog
 
 
 @dataclass
@@ -360,6 +361,9 @@ class MainWindow(QMainWindow):
         configure_goal.triggered.connect(self.configure_writing_goal)
         writing_menu.addAction(configure_goal)
         writing_menu.addAction(self._writing_goal_pause_action)
+        goal_history = QAction(self.tr("Writing Goal History…"), self)
+        goal_history.triggered.connect(self.show_writing_goal_history)
+        writing_menu.addAction(goal_history)
         reset_goal = QAction(self.tr("Reset Today's Progress…"), self)
         reset_goal.triggered.connect(self.reset_writing_goal)
         writing_menu.addAction(reset_goal)
@@ -921,6 +925,9 @@ class MainWindow(QMainWindow):
             self._attach_open_writing_goal_documents()
             self._schedule_writing_goal_persist()
             self._refresh_writing_goal()
+
+    def show_writing_goal_history(self) -> None:
+        WritingGoalHistoryDialog(self.writing_goals.to_mapping()["progress"], self).exec()
 
     def toggle_writing_goal_pause(self) -> None:
         if self.writing_goals.target == 0:

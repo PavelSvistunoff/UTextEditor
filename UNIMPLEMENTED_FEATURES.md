@@ -252,12 +252,10 @@ network read may continue until data arrives or the connection times out.
 11. **Further find controls** (small/medium effort). Literal find supports
     optional case-insensitive and whole-word matching. Regular expressions
     would need separate safeguards and clear error reporting.
-12. **Writing-goal history** (medium effort). Daily progress is stored locally
-    and already accounts for undo/redo. A local history view could show past
-    days and scope without changing manuscript text. Acceptance: explain the
-    local-date and counting semantics, honor pause/reset, and provide a clear
-    way to remove local progress. Avoid presenting approximate inserted-word
-    counts as exact writing analytics.
+12. **Writing-goal history** (medium effort). A read-only view shows stored
+    approximate new-word totals by local date and explains their semantics.
+    Historical active-document and project counts are not stored; a way to
+    remove all locally stored progress is still needed.
 13. **Measure large-project responsiveness** (medium effort). Establish
     repeatable benchmarks for opening, editing, search, word counts, snapshots,
     and AI context construction before optimizing. Then address measured
