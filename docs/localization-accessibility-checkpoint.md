@@ -210,3 +210,22 @@ busy-state cleanup. Eight worker cases check current/changed/closing feedback;
 four name-prompt cases reject cancelled or changed project/generation/busy state.
 Five baseline cases failed before the fix. No new strings; Ukrainian packaged
 category and exact diagnostic placeholders are verified. Native UI unverified.
+
+## All-remaining-task pass — native capability and findings
+
+Direct Cocoa Qt is available (one screen), macOS 27.0.1 arm64 / Qt 6.11.2.
+Native profile/review run: 31 passed. Narrow all-field/structured profile run:
+5 passed; TASK-030.03 closed in profile evidence. Native Find/Replace/context/
+review run: 24 passed, 1 failed: FindReplaceWidget minimum width 429 vs requested
+420. This is a reproduced TASK-034.03/.06 defect, not a successful full audit.
+Spoken VoiceOver labels cannot be observed with the available tools; TASK-034.02
+remains BLOCKED for speech acceptance. System light/dark/high-contrast switching
+and screenshot matrix not performed; TASK-034.04 remains BLOCKED for native matrix.
+
+Expanded AST audit covers show_error, AnalysisWindow sources, concatenations,
+format/replace wrappers and conditionals. It found writing-goal status/pause and
+autosave feedback missed by the earlier heuristic; these are migrated to owning
+MainWindow templates. Remaining ten candidates are compositions of translated
+labels/data, application name, paths, filters and language autonyms. This is
+still a heuristic; recovery-worker English explanations and broad raw-service
+workflow inventory keep TASK-032.01/.02/.04 at CHECKPOINT rather than COMPLETE.

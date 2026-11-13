@@ -49,3 +49,18 @@ tabs.addTab(page, self.tr("Translated"))
     findings = audit_source(source, Path("example.py"))
     assert len(findings) == 7
     assert all("Translated" not in item for item in findings)
+
+
+def test_audit_covers_dynamic_wrappers_without_flagging_translated_templates():
+    source = '''
+dialog.show_error(f"Could not load: {error}")
+status.setText("Failed: {}".format(error))
+AnalysisWindow(title, "Captured at " + timestamp + ":\\n" + sources, result)
+label.setText("Count: %1".replace("%1", count))
+status.setText("Ready" if ready else "Waiting")
+dialog.show_error(self.tr("Failed: {error}").format(error=error))
+AnalysisWindow(title, format_qt(self.tr("Captured at %1"), timestamp), result)
+'''
+    findings = audit_source(source, Path("example.py"))
+    assert len(findings) == 5
+    assert any("Captured at" in item for item in findings)

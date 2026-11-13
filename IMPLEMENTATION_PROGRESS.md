@@ -4,6 +4,26 @@
 
 
 
+## TASK-032.01/.02/.04 — expanded dynamic-string audit
+
+- Each selected ticket: **CHECKPOINT**; parent TASK-032 partial.
+- Audit now detects conditional/concatenated/formatted wrappers and show_error/
+  AnalysisWindow source text. Ten residual candidates reviewed as translated data
+  compositions, application name, paths/filters and language autonyms.
+- Fixed newly found daily-goal progress/completion/incomplete/pause and autosave
+  success/failure labels; use owning MainWindow templates with original counts.
+- Audit/status/profile focus: 11 passed after adding incomplete-count regression;
+  full earlier batch: 1055 passed, 2 skipped; final new branch tested separately.
+- Source reference/placeholder validation and en/uk compilation passed; Ukrainian
+  package rebuilt. No native or heuristic claim of complete runtime inventory.
+- Broader recovery/service-error inventory remains outstanding; native speech and
+  system palette requirements are recorded as blocked, not complete.
+- Clean Code: existing formatter, clearer branch templates, no data-format/undo
+  changes or dependencies; no raw manuscript/AI content translated.
+- Next: native Find/Replace width defect and remaining inventory; pyc preserved.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-030.03 — direct native completion
 
 - TASK-030.03: **COMPLETE**, removed from TASKS.md; broader parent/native audit

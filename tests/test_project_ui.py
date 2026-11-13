@@ -4138,6 +4138,65 @@ def test_project_translation_review_cancels_or_discards_changed_buffer(applicati
     window.close()
 
 
+@pytest.mark.parametrize("target,paused,scope,expected", [
+    (5, False, "active_scene", "Щоденна ціль: 2/5"),
+    (1, False, "active_scene", "Щоденну ціль виконано 2/1"),
+    (5, True, "active_scene", ""),
+    (5, False, "project_manuscript", "Щоденна ціль: щонайменше 0/5"),
+])
+def test_daily_goal_status_and_pause_action_are_localized(application, tmp_path, target, paused, scope, expected):
+    from app.i18n import install_translation
+
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.tabs.current_editor().setPlainText("one two")
+    window.writing_goals.configure(target, scope)
+    if scope == "project_manuscript":
+        window.project = Project.create(tmp_path / "novel", "Novel")
+        window._project_count_complete = False
+    window.writing_goals.set_paused(paused)
+    _, translator = install_translation(application, "uk")
+    try:
+        window._refresh_writing_goal(record_history=False)
+        assert window._writing_goal_label.text() == expected
+        assert window._writing_goal_pause_action.text() == ("Відновити щоденну ціль" if paused else "Призупинити щоденну ціль")
+    finally:
+        application.removeTranslator(translator)
+        window.tabs.current_editor().document_state.mark_saved()
+        window.close()
+
+
+@pytest.mark.parametrize("saved,expected", [
+    (True, "Документ проєкту автоматично збережено."),
+    (False, "Не вдалося автоматично зберегти; документ залишається незбереженим."),
+])
+def test_autosave_callback_status_is_localized(application, tmp_path, monkeypatch, saved, expected):
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="original")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.project = project
+    window._project_document_opened(project, "scene", scene.id, project.root / scene.path, "original")
+    editor = window.tabs.current_editor()
+    editor.setPlainText("unsaved")
+
+    def save(editor, callback, **kwargs):
+        callback(saved)
+        return True
+
+    monkeypatch.setattr(window, "_save_editor", save)
+    _, translator = install_translation(application, "uk")
+    try:
+        window._autosave_project_document(editor)
+        assert window.statusBar().currentMessage() == expected
+    finally:
+        application.removeTranslator(translator)
+        editor.document_state.mark_saved()
+        window.close()
+
+
 def test_project_scene_autosaves_after_idle_and_can_be_disabled(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening", content="original")

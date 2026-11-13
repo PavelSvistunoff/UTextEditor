@@ -14,7 +14,7 @@ WIDGET_CONSTRUCTORS = {"QAction", "QCheckBox", "QLabel", "QMenu", "QPushButton",
 TEXT_METHODS = {"addAction", "addButton", "setAccessibleDescription", "setAccessibleName", "setPlaceholderText",
                 "setStatusTip", "setText", "setToolTip", "setWindowTitle", "showMessage",
                 "setTitle", "setLabelText", "setCancelButtonText", "setInformativeText",
-                "setDetailedText", "setHeaderLabel", "addItem"}
+                "setDetailedText", "setHeaderLabel", "addItem", "show_error"}
 INDEXED_TEXT_METHODS = {"setItemText", "setTabText"}
 MESSAGE_METHODS = {"critical", "information", "question", "warning"}
 INPUT_METHODS = {"getItem", "getMultiLineText", "getText"}
@@ -25,6 +25,17 @@ def _literal(node: ast.AST) -> str | None:
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
         value = node.value
     elif isinstance(node, ast.JoinedStr):
+        value = ast.unparse(node)
+    elif isinstance(node, ast.IfExp):
+        if _literal(node.body) is None and _literal(node.orelse) is None:
+            return None
+        value = ast.unparse(node)
+    elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        if _literal(node.left) is None and _literal(node.right) is None:
+            return None
+        value = ast.unparse(node)
+    elif (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+          and node.func.attr in {"format", "replace"} and _literal(node.func.value) is not None):
         value = ast.unparse(node)
     else:
         return None
@@ -41,6 +52,8 @@ def audit_source(source: str, path: Path) -> list[str]:
         positions = ()
         if isinstance(target, ast.Name) and target.id in WIDGET_CONSTRUCTORS:
             positions = (0,)
+        elif isinstance(target, ast.Name) and target.id == "AnalysisWindow":
+            positions = (0, 1)
         elif isinstance(target, ast.Attribute):
             owner = target.value.id if isinstance(target.value, ast.Name) else None
             if owner == "QMessageBox" and target.attr in MESSAGE_METHODS:

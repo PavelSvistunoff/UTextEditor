@@ -880,7 +880,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "_writing_goal_label"):
             return
         self._writing_goal_pause_action.setText(
-            "Resume Daily Goal" if self.writing_goals.paused else "Pause Daily Goal"
+            self.tr("Resume Daily Goal") if self.writing_goals.paused else self.tr("Pause Daily Goal")
         )
         if self.writing_goals.target == 0 or self.writing_goals.paused:
             self._writing_goal_label.clear()
@@ -932,15 +932,13 @@ class MainWindow(QMainWindow):
             scope_identity = f"project:{self.project.manifest.project_id}"
         if record_history and scope_identity is not None and self.writing_goals.record_scope_count(scope_identity, count):
             self._schedule_writing_goal_persist()
-        self._writing_goal_label.setText(
-            (
-                "Daily goal complete "
-                if count >= target and not incomplete
-                else "Daily goal: "
-            )
-            + ("at least " if incomplete else "")
-            + f"{count}/{target}"
-        )
+        if incomplete:
+            template = self.tr("Daily goal: at least %1/%2")
+        elif count >= target:
+            template = self.tr("Daily goal complete %1/%2")
+        else:
+            template = self.tr("Daily goal: %1/%2")
+        self._writing_goal_label.setText(format_qt(template, count, target))
 
     def configure_writing_goal(self) -> None:
         dialog = WritingGoalDialog(
@@ -1048,7 +1046,7 @@ class MainWindow(QMainWindow):
             editor,
             autosave=True,
             callback=lambda saved: self.statusBar().showMessage(
-                "Project document autosaved." if saved else "Autosave failed; the document remains unsaved.",
+                self.tr("Project document autosaved.") if saved else self.tr("Autosave failed; the document remains unsaved."),
                 5000,
             ),
         )

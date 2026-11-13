@@ -1098,6 +1098,12 @@ Text is sent to the configured Ollama destination:
     <message><source>Could not load revision snapshots: %1</source><translation>Не вдалося завантажити знімки ревізій: %1</translation></message>
     <message><source>Could not compare snapshots: %1</source><translation>Не вдалося порівняти знімки: %1</translation></message>
     <message><source>Project search failed: %1</source><translation>Не вдалося виконати пошук у проєкті: %1</translation></message>
+    <message><source>Resume Daily Goal</source><translation>Відновити щоденну ціль</translation></message>
+    <message><source>Daily goal: at least %1/%2</source><translation>Щоденна ціль: щонайменше %1/%2</translation></message>
+    <message><source>Daily goal complete %1/%2</source><translation>Щоденну ціль виконано %1/%2</translation></message>
+    <message><source>Daily goal: %1/%2</source><translation>Щоденна ціль: %1/%2</translation></message>
+    <message><source>Project document autosaved.</source><translation>Документ проєкту автоматично збережено.</translation></message>
+    <message><source>Autosave failed; the document remains unsaved.</source><translation>Не вдалося автоматично зберегти; документ залишається незбереженим.</translation></message>
     <message><source>Captured local context at %1:
 %2</source><translation>Локальний контекст зафіксовано о %1:
 %2</translation></message>
