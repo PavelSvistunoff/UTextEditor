@@ -318,7 +318,11 @@ class RecoveryStore:
     def _read_entry(cls, path: Path) -> RecoveryEntry:
         if path.is_symlink():
             raise ValueError("Recovery snapshot must not be a symbolic link.")
-        with path.open("r", encoding="utf-8") as stream:
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags)
+        with os.fdopen(descriptor, "r", encoding="utf-8") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("Recovery snapshot is not a regular file.")
             payload = json.load(stream)
         if not isinstance(payload, dict) or payload.get("format_version") != cls.FORMAT_VERSION:
             raise ValueError("Unsupported recovery snapshot format.")

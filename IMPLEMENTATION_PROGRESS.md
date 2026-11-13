@@ -1,5 +1,23 @@
 # Implementation progress
 
+## TASK-008.03 checkpoint (2026-11-13)
+
+- **TASK-008.03: CHECKPOINT; parent TASK-008: open.** Non-regular snapshot
+  candidates are diagnosed without blocking the recovery scan or automatic
+  cleanup; valid snapshots remain accessible and the damaged entry is retained.
+  Broader damaged-entry diagnosis and the full parent acceptance gate remain.
+- Changed `app/document/recovery.py`, `tests/test_recovery.py`, `README.md`,
+  `TASKS.md`, and this checkpoint on `codex/task-continuation`; existing staged
+  generated files remain unrelated. The new raw diagnostic is in English,
+  consistent with existing service-error details; localization remains open.
+- Focused: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_recovery.py`:
+  38 passed. Full: `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q`:
+  884 passed, 2 skipped. The FIFO regression runs in a subprocess with timeout;
+  it skips where FIFOs are unavailable. Native cross-platform checks not run.
+- Blocker: none for further diagnosis. Next: inspect how damaged metadata and
+  readable text can be presented without changing canonical files; resume .03
+  using `QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_recovery.py tests/test_project_ui.py`.
+
 ## TASK-005.04 / V2 checkpoint (2026-11-13)
 
 - **.04: CHECKPOINT; V2: BLOCKED; parent TASK-005: partial.** A standalone

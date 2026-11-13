@@ -1,10 +1,33 @@
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
 from app.document.recovery import RecoveryComparisonLabels, RecoveryConflictError, RecoveryStore
 from app.document.file_manager import FileManager
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="FIFOs are unavailable")
+def test_fifo_snapshot_is_reported_without_blocking_scan_or_cleanup(tmp_path):
+    store = RecoveryStore(tmp_path / "recovery")
+    valid = store.save("doc", "first draft")
+    fifo = valid.snapshot_path.parent / "damaged.json"
+    os.mkfifo(fifo)
+    script = """
+import sys
+from app.document.recovery import RecoveryStore
+store = RecoveryStore(sys.argv[1])
+store.save('doc', 'second draft')
+scan = store.scan()
+assert {entry.text for entry in scan.entries} == {'first draft', 'second draft'}
+assert len(scan.issues) == 1 and 'not a regular file' in scan.issues[0].message
+"""
+    subprocess.run([sys.executable, "-c", script, str(store.root)], check=True, timeout=5)
+    assert fifo.exists()
+    assert valid.snapshot_path.exists()
 
 
 @pytest.mark.parametrize("state", ["untitled", "unchanged", "changed", "missing", "appeared", "unreadable"])
