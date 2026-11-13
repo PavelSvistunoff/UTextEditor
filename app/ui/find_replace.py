@@ -61,24 +61,27 @@ class FindReplaceWidget(QWidget):
             self.previous_button,
             self.next_button,
             self.match_count,
-            self.message,
             self.close_button,
         ):
             find_row.addWidget(widget)
         find_row.setStretchFactor(self.find_edit, 2)
-        find_row.setStretchFactor(self.message, 1)
 
         replace_row = QHBoxLayout()
         replace_row.addWidget(self.replace_edit, 2)
-        replace_row.addWidget(self.case_sensitive)
-        replace_row.addWidget(self.whole_word)
         replace_row.addWidget(self.replace_button)
         replace_row.addWidget(self.replace_all_button)
+
+        options_row = QHBoxLayout()
+        options_row.addWidget(self.case_sensitive)
+        options_row.addWidget(self.whole_word)
+        options_row.addStretch()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 2, 4, 2)
         layout.addLayout(find_row)
         layout.addLayout(replace_row)
+        layout.addLayout(options_row)
+        layout.addWidget(self.message)
 
         for sequence, handler in (
             ("F3", self.find_next),

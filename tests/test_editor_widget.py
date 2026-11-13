@@ -842,9 +842,10 @@ def test_ai_settings_action_is_in_settings_menu(application: QApplication) -> No
     window.close()
 
 
-def test_distraction_free_mode_can_be_exited_without_changing_document(application: QApplication) -> None:
+def test_distraction_free_mode_restores_embedded_menu_without_changing_document(application: QApplication) -> None:
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()
+    window.menuBar().setNativeMenuBar(False)
     editor = window.tabs.current_editor()
     assert editor is not None
     editor.setPlainText("Draft text")

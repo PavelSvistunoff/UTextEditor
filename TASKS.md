@@ -9,4 +9,3 @@ Only unfinished work is listed. Inspect existing code and tests before changing 
 - [~] **TASK-034.02** — Check accessible names/descriptions and spoken labels; add focused regressions for defects.
 - [~] **TASK-034.03** — Check dialog initial/return focus, Tab order, Enter/Esc and cancellation; fix/retest issues.
 - [~] **TASK-034.04** — Verify native light/dark/high-contrast palettes, focus and readable disabled/error/ghost text; capture evidence.
-- [~] **TASK-034.06** — Fix reproduced barriers, add regressions and repeat native tests; keep unverifiable cases blocked. [Accessibility evidence](docs/localization-accessibility-checkpoint.md)

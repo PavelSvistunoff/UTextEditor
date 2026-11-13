@@ -4,6 +4,24 @@
 
 
 
+## TASK-034.03/.04/.06 — direct native retest
+
+- TASK-034.06: **COMPLETE** for reproduced barriers; removed from open backlog.
+- TASK-034.03: **CHECKPOINT**; .04: **BLOCKED** for actual OS palette matrix.
+  .02 spoken labels also BLOCKED: VoiceOver output not observable with these tools.
+- Fixed native Find/Replace width 429->420 and clipped status using dedicated rows;
+  regression checks wrapped status geometry. Native focused run: 25 passed.
+- Expanded final Cocoa UI/editor/settings run: 392 passed, macOS 27.0.1/Qt 6.11.2.
+- Embedded-menu test precondition made explicit; macOS global-menu behavior unverified.
+- System/dark-test/contrast-test native widget grabs visually inspected at 420px;
+  synthetic palette overrides do not establish real OS appearance transitions.
+- Full offscreen suite: 1056 passed, 2 skipped; `git diff --check` passed.
+- Clean Code review: layout-only UI fix, keyboard/undo/domain semantics preserved;
+  no strings or dependencies. Sources and task evidence updated; pyc preserved.
+- Next: remaining localization/recovery inventory and native gaps.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## TASK-032.01/.02/.04 — expanded dynamic-string audit
 
 - Each selected ticket: **CHECKPOINT**; parent TASK-032 partial.

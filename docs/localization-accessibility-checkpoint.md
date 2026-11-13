@@ -229,3 +229,23 @@ MainWindow templates. Remaining ten candidates are compositions of translated
 labels/data, application name, paths, filters and language autonyms. This is
 still a heuristic; recovery-worker English explanations and broad raw-service
 workflow inventory keep TASK-032.01/.02/.04 at CHECKPOINT rather than COMPLETE.
+
+## Native narrow Find/Replace retest — TASK-034.03/.06
+
+macOS 27.0.1 arm64, Qt 6.11.2 Cocoa: original native run had 24 passed and
+1 failed (429px minimum width at 420px request). Options now occupy a separate
+row; visual inspection then found clipped status text, so status also has its
+own row. Regression checks a full word and wrapped-text height. Final focused
+native run: **25 passed**; offscreen Find/Replace/review: **23 passed**.
+Native widget grabs were inspected at 420px in current system, dark-test and
+contrast-test palettes: `/private/tmp/utexteditor-native-acceptance/{system,dark-test,contrast-test}.png`.
+The latter two are synthetic Qt palettes on Cocoa, not actual OS theme/high-contrast
+transitions; they do not close TASK-034.04. VoiceOver speech was not captured.
+
+Final expanded Cocoa run of project UI, editor, Find/Replace, context/review
+dialogs and settings: **392 passed**. An earlier run found one test assuming an
+embedded menu on Cocoa; the test now explicitly uses embedded menu mode. Actual
+macOS global-menu restoration is not established by that test. Full offscreen:
+**1056 passed, 2 skipped**. TASK-034.06 is COMPLETE for reproduced width/clipping
+barriers and removed from backlog; .02 speech, .03 comprehensive focus inventory
+and .04 actual OS palette matrix remain incomplete.

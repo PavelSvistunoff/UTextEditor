@@ -199,6 +199,7 @@ def test_find_replace_focus_and_close_return_to_editor(application, monkeypatch,
 
 
 def test_status_message_does_not_force_find_bar_wider_than_small_window(application):
+    from PySide6.QtCore import Qt
     editor = EditorWidget()
     bar = make_find_bar(editor)
     bar.message.setText("Replaced 1 match. Selected the next match.")
@@ -207,6 +208,11 @@ def test_status_message_does_not_force_find_bar_wider_than_small_window(applicat
     application.processEvents()
     assert bar.width() <= 420
     assert bar.next_button.isVisible() and bar.replace_all_button.isVisible()
+    assert bar.message.width() >= bar.message.fontMetrics().horizontalAdvance("Replaced")
+    needed = bar.message.fontMetrics().boundingRect(
+        0, 0, bar.message.width(), 10_000, Qt.TextFlag.TextWordWrap, bar.message.text(),
+    )
+    assert needed.height() <= bar.message.height()
     bar.close()
 
 
