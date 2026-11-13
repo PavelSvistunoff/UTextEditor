@@ -1047,6 +1047,63 @@ def test_scene_development_discards_result_when_scene_changes(window, tmp_path, 
     dialog.reject()
 
 
+@pytest.mark.parametrize("change", [None, "scene", "profile", "settings", "project"])
+def test_scene_development_failure_is_localized_and_rejects_stale_context(
+    window, app, tmp_path, monkeypatch, change,
+):
+    from app.ai.ollama_client import OllamaError
+    from app.i18n import install_translation
+
+    project = Project.create(tmp_path / "failed-development", "Novel")
+    scene = project.add_scene("Opening", content="Mara opens the door.")
+    character = project.add_character("Mara")
+    project.associate_character(scene.id, SceneCharacterAssociation(character.id))
+    window._project_opened(project)
+    window._open_project_document("scene", scene.id)
+    wait_until(lambda: any(binding.item_id == scene.id for binding in window._project_documents.values()))
+    editor = next(editor for editor, binding in window._project_documents.items() if binding.item_id == scene.id)
+    dialog = CharacterDialog(character, parent=window)
+    started, release = Event(), Event()
+    warnings = []
+
+    def generate(*args, **kwargs):
+        started.set()
+        if not release.wait(5):
+            raise TimeoutError("test release timed out")
+        raise OllamaError("offline %1")
+
+    monkeypatch.setattr(window.provider, "generate_private", generate)
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    monkeypatch.setattr(QInputDialog, "getItem", lambda _parent, _title, _label, choices, *args: (choices[0], True))
+    _, translator = install_translation(app, "uk")
+    try:
+        window._suggest_scene_development(dialog, project)
+        wait_until(started.is_set)
+        if change == "scene":
+            editor.insertPlainText("Changed ")
+        elif change == "profile":
+            dialog.motivation.setPlainText("My motivation")
+        elif change == "settings":
+            window._settings_generation += 1
+        elif change == "project":
+            window.project = None
+        release.set()
+        wait_until(lambda: dialog.development_button.isEnabled())
+        if change:
+            assert not warnings
+        else:
+            assert warnings[0][1] == "Не вдалося запропонувати розвиток персонажа"
+            assert warnings[0][2] == "offline %1"
+        assert not dialog.arc.toPlainText() and not character.arc
+        assert project.read_scene(scene.id) == "Mara opens the door."
+    finally:
+        release.set()
+        window.thread_pool.waitForDone(3000)
+        dialog.reject()
+        app.removeTranslator(translator)
+
+
 def test_portrait_load_is_staged_and_cancel_preserves_profile(window, tmp_path):
     project = Project.create(tmp_path / "portrait-project", "Novel")
     character = project.add_character("Mara")

@@ -133,3 +133,11 @@ Six injected UI cases cover generic/format/path failures and overwrite confirm/
 cancel. Typed categories use the packaged Ukrainian catalog; exact diagnostics
 and existing destination content are preserved. Filesystem export now runs in a worker on a captured profile. Project/generation
 changes suppress stale success/failure feedback. Native UI unverified.
+
+## Character-development failure feedback — TASK-032.04
+
+Five worker-based offline cases verify the packaged Ukrainian title and original
+Ollama diagnostic for current failures, and no warning after scene/profile/settings/
+project changes. Four stale cases failed before adding the existing context guard
+to the failure callback. Button reset remains available; no proposal is staged.
+Native Ukrainian runtime and accessibility remain unverified.

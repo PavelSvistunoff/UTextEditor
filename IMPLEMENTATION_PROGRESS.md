@@ -3,6 +3,25 @@
 > This short file records the **latest actionable checkpoint**. Earlier execution history is recorded in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
 
+## TASK-032.04 checkpoint — stale character-development failure
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 open.
+- Separate behavior fix: development failure callback uses existing captured
+  context guard before warning; button reset still permits retry.
+- Four regressions reproduced warnings after scene/profile/settings/project
+  changes; current failure retains packaged Ukrainian title and exact detail.
+- Five new worker scenarios preserve scene file and unstaged character arc.
+- Focused AI workflow/development/i18n/translation tests: 105 passed; full
+  offscreen suite: 1004 passed, 2 skipped. `git diff --check` passed.
+- Clean Code review: reused context predicate, no duplicate state rule, dependency,
+  provider protocol or persistence change. No new translation strings.
+- Native Ukrainian UI/accessibility and live Ollama not tested; pyc preserved.
+- Concurrent concise TASKS rewrite preserved; detailed evidence in localization doc.
+- Files: main window, workflow tests, README, localization/refactoring checkpoints.
+- Next: remaining project/character failure categories and package audit.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
+
 ## Refactoring / TASK-032.04 checkpoint — background character export
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; repository refactor incomplete.

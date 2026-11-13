@@ -3125,7 +3125,8 @@ class MainWindow(QMainWindow):
             if active[0] and not worker.cancelled:
                 dialog.development_button.setEnabled(True)
                 dialog.development_button.setText(CharacterDialog.tr("Suggest Scene Development with AI…"))
-                QMessageBox.warning(dialog, CharacterDialog.tr("Character development failed"), str(error))
+                if current():
+                    QMessageBox.warning(dialog, CharacterDialog.tr("Character development failed"), str(error))
 
         worker.signals.finished.connect(finished, Qt.ConnectionType.QueuedConnection)
         worker.signals.failed.connect(failed, Qt.ConnectionType.QueuedConnection)
