@@ -5368,13 +5368,15 @@ class MainWindow(QMainWindow):
         self._saving_editors.discard(editor)
         self._save_targets.pop(editor, None)
         if self.tabs.indexOf(editor) >= 0:
+            message = str(error)
+            if isinstance(error, ExternalChangeError):
+                message = format_qt(self.tr("The file changed or was removed on disk: %1"), message)
             if notify:
-                message = str(error)
                 if isinstance(error, ExternalChangeError) or (isinstance(error, ProjectError) and "changed on disk" in message):
                     message += "\n\n" + self.tr("Use File > Review External Changes… to compare versions and choose how to proceed.")
                 QMessageBox.warning(self, self.tr("Save failed"), message)
             else:
-                self.statusBar().showMessage(self.tr("Autosave failed: {error}").format(error=error), 10000)
+                self.statusBar().showMessage(self.tr("Autosave failed: {error}").format(error=message), 10000)
         if callback:
             callback(False)
 

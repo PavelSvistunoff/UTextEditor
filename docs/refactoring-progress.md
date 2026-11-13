@@ -1,5 +1,20 @@
 # Refactoring progress
 
+## 2026-11-13 — TASK-032.04 standalone save conflict
+
+- TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.
+- Shared typed conflict formatting in manual and autosave paths; original error,
+  filename, dirty buffer and existing manual review guidance are retained.
+- Actual modified and removed file regressions exercise both save routes.
+- Focused UI/i18n/translation/document suite: 269 passed; final four targeted
+  tests passed; full offscreen: 956 passed, 2 skipped.
+- Translation source/reference validation and both compilations passed; packaged
+  parity covered. Native Ukrainian UI, accessibility and live Ollama not tested.
+- Clean Code review: existing formatting helper reused, no new dependency or
+  domain/persistence change; stale and conflict protections remain in place.
+- Next: typed project and AI errors; repository-wide refactoring incomplete.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## 2026-11-13 — TASK-032.04 missing-file category
 
 - TASK-032.04: **CHECKPOINT**; parent TASK-032 partial; native .V2 remains open.

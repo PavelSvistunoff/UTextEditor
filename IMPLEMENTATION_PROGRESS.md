@@ -6,6 +6,23 @@
 
 
 
+
+## TASK-032.04 checkpoint — standalone save conflict
+
+- TASK-032.04: **CHECKPOINT**; TASK-032 parent partial; .V2 native gate open.
+- Shared manual/autosave error formatting adds Ukrainian conflict category for
+  `ExternalChangeError`, retaining original details, filename and review advice.
+- Real changed/removed file regressions cover both paths, callback failure,
+  dirty buffer and unchanged disk; original two cases failed before the fix.
+- Focused UI/i18n/translation/document suite: 269 passed; four final targeted
+  cases passed; full offscreen suite: 956 passed, 2 skipped.
+- Extracted reference and placeholder validation plus both lrelease runs passed;
+  packaged catalog parity covered by tests. `git diff --check` passed.
+- Native Ukrainian UI/accessibility and live Ollama were not tested.
+- Files: main window, UI tests, Ukrainian TS/QM, README, TASKS and evidence docs;
+  branch `main`. Next: audit typed project and AI error categories.
+- Resume: `git status --short && cat IMPLEMENTATION_PROGRESS.md TASKS.md`.
+
 ## TASK-032.04 checkpoint — missing file localization
 
 - TASK-032.04: **CHECKPOINT**; TASK-032 parent remains partial; .V2 native gate open.

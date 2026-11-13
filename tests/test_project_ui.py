@@ -1894,6 +1894,45 @@ def test_binding_open_file_preserves_external_change_protection(application, tmp
     window.close()
 
 
+@pytest.mark.parametrize("autosave", [False, True])
+@pytest.mark.parametrize("disk_change", ["edited", "removed"])
+def test_save_conflict_shows_translated_category_and_preserves_dirty_buffer(
+    application, tmp_path, monkeypatch, autosave, disk_change,
+):
+    from app.i18n import install_translation
+
+    path = tmp_path / "draft %1.txt"
+    path.write_text("original", encoding="utf-8")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    editor = window.tabs.add_document(FileManager().open(path))
+    editor.setPlainText("unsaved manuscript")
+    if disk_change == "edited":
+        path.write_text("external edit", encoding="utf-8")
+    else:
+        path.unlink()
+    warnings, results = [], []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    _, translator = install_translation(application, "uk")
+    try:
+        assert window._save_editor(editor, callback=results.append, autosave=autosave)
+        wait_until(lambda: bool(results), application)
+        message = window.statusBar().currentMessage() if autosave else warnings[0][2]
+        assert "Файл змінено або видалено на диску" in message
+        assert str(path) in message
+        assert ("changed on disk" if disk_change == "edited" else "was removed") in message
+        assert results == [False]
+        assert editor.toPlainText() == "unsaved manuscript" and editor.document_state.dirty
+        if disk_change == "edited":
+            assert path.read_text(encoding="utf-8") == "external edit"
+        else:
+            assert not path.exists()
+    finally:
+        application.removeTranslator(translator)
+        editor.document_state.mark_saved()
+        window.close()
+
+
 def test_binding_ignores_editor_moved_while_project_read_pending(application, tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Opening", content="original")

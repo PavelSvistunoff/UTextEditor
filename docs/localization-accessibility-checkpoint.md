@@ -14,6 +14,14 @@ entry and representative plural numbers. Native UI and screen-reader checks
 remain outstanding; this update does not complete the localization audit.
 
 
+
+## TASK-032.04 — standalone save conflict (2026-11-13)
+
+Manual save and autosave now show a translated category for typed external-change
+conflicts while retaining the original diagnostic and filename. Regressions use
+actual changed and removed files, check dirty text and external contents, and
+exercise both UI paths. Project/AI errors and native Ukrainian workflows remain.
+
 ## TASK-032.04 — missing standalone file (2026-11-13)
 
 A real `FileManager.open` failure now receives a translated missing-file category
