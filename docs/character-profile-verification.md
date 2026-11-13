@@ -85,3 +85,33 @@ Focused offline suite: **501 passed**. Full offscreen: **1159 passed, 2 skipped
 in 161.07s**. Log: `/private/tmp/utexteditor-character-language-full.log`.
 Clean Code completion review: intent, ownership, safety, errors, tests, diff and
 report checked; no new dependencies or changes to manuscript/undo/transactions.
+
+
+## Observed model formatting deviations — targeted normalization
+
+The supplied diagnostics showed `turnings_points` in both otherwise Ukrainian
+responses, while the canonical schema requires `turning_points`. This caused the
+whole proposal to fail the arc validator. Synthetic regressions reproducing both
+reported formatting combinations failed before this fix; no manuscript/log text
+was copied into the repository.
+
+The service now canonicalizes only that explicitly known arc-key typo. Unknown
+fields are not guessed, and aliases colliding with another canonical arc entry
+are rejected. Knowledge records joined by semicolons are separated only where a
+supported category token follows; ordinary prose semicolons remain. Flattened
+goals split only into complete repeated four-part records with valid status and
+priority. Other pipes in notes remain untouched. The existing schema and field
+size checks still run after normalization, including a second size check for
+canonical text. Prompt instructions now explicitly request one entry per line.
+
+Normalization affects generated proposals only, before explicit review. An
+integration test verifies the complete request → review → staged form → Save/YAML
+path: original author description/name remain intact, arc keys persist canonically,
+and distinct goals/knowledge entries are not hidden inside notes. No extra model
+request, automatic retry, persistence bypass or language-policy change was added.
+
+Focused offline suite: **571 passed**. Full offscreen: **1168 passed, 2 skipped
+in 159.08s**. Log: `/private/tmp/utexteditor-character-format-full.log`.
+Clean Code checklist reviewed: intent/ownership/safety/errors/tests/diff/report.
+Supplied real model diagnostics identify the defect; no fresh live-model or
+native/accessibility claim is made for this parsing-only change.

@@ -4731,3 +4731,56 @@ def test_character_fill_request_uses_resolved_ui_fallback_and_retains_review(
         _, english = i18n.install_translation(application, "en")
         if english is not None:
             application.removeTranslator(english)
+
+
+def test_character_model_format_deviations_are_reviewed_then_saved_canonically(application, tmp_path, monkeypatch):
+    import json
+    from app.ui.generated_text_dialog import GeneratedTextDialog
+
+    project = Project.create(tmp_path / "model-format", "Novel")
+    character = project.add_character("Мара")
+    character.description = "Existing author text"
+    project.update_character(character.id, character)
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    window.settings.language = "Ukrainian"
+    window._project_opened(project)
+    window._edit_character(character)
+    dialog = window._active_character_dialog
+    response = {
+        "arc": "initial_state: Самотня\nturnings_points: Зустріч із друзями; важливе рішення",
+        "knowledge": "knows: Важливий факт;conceals: Таємниця",
+        "goals": "Знайти дім | active | 3 | Перша мета | Допомогти друзям | blocked | 2 | Друга мета",
+    }
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(window.provider, "generate_private", lambda *args, **kwargs: json.dumps(response))
+    reviews = []
+
+    def accept_review(preview):
+        reviews.append(preview.output.toPlainText())
+        assert "turning_points:" in reviews[-1]
+        assert "turnings_points:" not in reviews[-1]
+        assert dialog.arc.toPlainText() == ""
+        assert Project.open(project.root).get_character(character.id).arc == {}
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(GeneratedTextDialog, "exec", accept_review)
+    try:
+        dialog.ai_button.click()
+        wait_until(lambda: bool(dialog.arc.toPlainText()), application)
+        assert reviews
+        assert dialog.description.toPlainText() == "Existing author text"
+        assert Project.open(project.root).get_character(character.id).arc == {}
+        dialog._accept()
+        wait_until(lambda: window._active_character_dialog is None, application)
+        saved = Project.open(project.root).get_character(character.id)
+        assert saved.description == "Existing author text"
+        assert saved.full_name == "Мара"
+        assert saved.arc == {"initial_state": "Самотня", "turning_points": "Зустріч із друзями; важливе рішення"}
+        assert [item.kind for item in saved.knowledge] == ["knows", "conceals"]
+        assert [item.description for item in saved.goals] == ["Знайти дім", "Допомогти друзям"]
+        assert [item.status for item in saved.goals] == ["active", "blocked"]
+    finally:
+        if window._active_character_dialog is not None:
+            window._active_character_dialog.reject()
+        window.close()

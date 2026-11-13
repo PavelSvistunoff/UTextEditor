@@ -1,5 +1,23 @@
 # Implementation progress — current resume pointer
 
+## Character AI format — reported arc rejection fixed
+
+- COMPLETE: reproduce and normalize the concrete deviations from supplied model diagnostics.
+- Both reported responses used turnings_points instead of canonical turning_points.
+- Two synthetic response-format regressions failed before the fix, then passed.
+- AI service maps that one known typo; unknown keys and canonical/alias collisions remain invalid.
+- Joined knowledge splits only before supported category tokens; prose semicolons remain.
+- Joined goals split only as complete repeated valid four-part records; other note pipes remain.
+- Existing output caps/schema checks retained after normalization; no extra requests or retries.
+- Ukrainian/English language resolution, consent, stale guards and explicit review remain intact.
+- Qt integration verifies request → review → staged form → Save/YAML with existing author text preserved.
+- Focused offline corpus: 571 passed; full offscreen: 1168 passed, 2 skipped in 159.08s.
+- Full log: /private/tmp/utexteditor-character-format-full.log; skipped tests require live Ollama.
+- Real model diagnostics supplied by user informed this fix; no new live model/native/screen-reader run claimed.
+- README/README.uk and character-profile verification updated; git diff --check passed.
+- Clean Code review: narrow boundary normalization, explicit guards, no schema/API/dependency/persistence change.
+- Existing staged/unstaged bytecode and DS_Store changes preserved, excluded from scoped commit.
+
 ## Character empty-field AI — explicit supported request language
 
 - COMPLETE: resolve the profile suggestion language before provider dispatch.

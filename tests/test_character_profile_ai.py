@@ -85,3 +85,54 @@ def test_profile_suggestions_reject_unsupported_language_before_request(selectio
     with pytest.raises(ValueError, match="English or Ukrainian"):
         suggest_character_fields(provider, {"description": ""}, selection, 0.2, fallback_language=fallback)
     assert provider.prompt == ""
+
+
+@pytest.mark.parametrize("knowledge,goals", [
+    ("knows: Факт;conceals: Таємниця;believes: Припущення", "Знайти дім | active | 3 | Пошук підтримки"),
+    ("knows: Факт\nconceals: Таємниця", "Знайти дім | active | 3 | Перша мета | Допомогти друзям | blocked | 2 | Друга мета"),
+])
+def test_model_arc_typo_and_joined_records_are_normalized_before_review(knowledge, goals):
+    provider = Provider(json.dumps({
+        "description": "Ідея персонажа",
+        "arc": "initial_state: Самотній\nturnings_points: Зустріч із друзями; важливе рішення",
+        "knowledge": knowledge,
+        "goals": goals,
+    }))
+    result = suggest_character_fields(provider, {"description": "", "arc": "", "knowledge": "", "goals": ""}, "Ukrainian", 0.2)
+    assert result["description"] == "Ідея персонажа"
+    assert result["arc"] == "initial_state: Самотній\nturning_points: Зустріч із друзями; важливе рішення"
+    assert ";conceals:" not in result["knowledge"]
+    assert result["knowledge"].splitlines()[0] == "knows: Факт"
+    if "blocked" in goals:
+        assert result["goals"].splitlines() == [
+            "Знайти дім | active | 3 | Перша мета", "Допомогти друзям | blocked | 2 | Друга мета",
+        ]
+    else:
+        assert result["knowledge"].splitlines() == ["knows: Факт", "conceals: Таємниця", "believes: Припущення"]
+
+
+@pytest.mark.parametrize("arc", [
+    "turning_point: Подія", "unknown: Подія", "розвиток: Подія",
+    "turning_points: Перша подія\nturnings_points: Інша подія",
+])
+def test_arc_normalization_does_not_guess_unknown_or_duplicate_fields(arc):
+    with pytest.raises(ValueError):
+        suggest_character_fields(Provider(json.dumps({"arc": arc})), {"arc": ""}, "Ukrainian", 0.2)
+
+
+def test_structured_normalization_retains_semicolons_and_pipes_in_prose():
+    knowledge = "knows: Уміє слухати; зберігає спокій\nconceals: Таємниця; згадка про друзів"
+    goals = "Знайти дім | active | 3 | Варіант A | Варіант B"
+    result = suggest_character_fields(
+        Provider(json.dumps({"knowledge": knowledge, "goals": goals})),
+        {"knowledge": "", "goals": ""}, "Ukrainian", 0.2,
+    )
+    assert result == {"knowledge": knowledge, "goals": goals}
+
+
+def test_normalized_goal_text_still_obeys_field_size_limit():
+    # Adding canonical record spacing must not bypass the validated output cap.
+    goals = "|".join(["x", "active", "3", "n"] * 150)
+    assert len(goals) <= 2000
+    with pytest.raises(ValueError, match="Invalid suggestion for goals"):
+        suggest_character_fields(Provider(json.dumps({"goals": goals})), {"goals": ""}, "English", 0.2)
