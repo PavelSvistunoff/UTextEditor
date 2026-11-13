@@ -49,6 +49,21 @@ def test_line_ending_helpers() -> None:
     assert detect_line_ending("a\nb\r\nc\r\nd\r\n") == "CRLF"
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("no line endings", "LF"),
+        ("a\r\nb\nc\r", "CRLF"),
+        ("a\rb\r\nc\n", "CR"),
+        ("a\nb\rc\r\n", "LF"),
+        ("\r\n\n\n", "LF"),
+        ("\r\r\n", "CR"),
+    ],
+)
+def test_detect_line_ending_uses_most_common_then_first_style(text: str, expected: str) -> None:
+    assert detect_line_ending(text) == expected
+
+
 def test_python_and_qt_positions_round_trip_around_non_bmp_characters() -> None:
     text = "a😀б"
 

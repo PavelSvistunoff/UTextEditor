@@ -1,30 +1,20 @@
 """Encoding and line-ending helpers."""
 
 import re
+from collections import Counter
 
 _BINARY_CONTROLS = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")
+_LINE_ENDINGS = re.compile(r"\r\n|\r|\n")
+_LINE_ENDING_NAMES = {"\r\n": "CRLF", "\r": "CR", "\n": "LF"}
 
 
 def detect_line_ending(text: str) -> str:
-    counts = {"CRLF": text.count("\r\n"), "CR": text.count("\r") - text.count("\r\n")}
-    counts["LF"] = text.count("\n") - text.count("\r\n")
-    if not any(counts.values()):
+    """Choose the most frequent ending, breaking ties by first occurrence."""
+    counts = Counter(match.group() for match in _LINE_ENDINGS.finditer(text))
+    if not counts:
         return "LF"
-    first_positions = {"CRLF": len(text), "CR": len(text), "LF": len(text)}
-    index = 0
-    while index < len(text):
-        if text.startswith("\r\n", index):
-            first_positions["CRLF"] = min(first_positions["CRLF"], index)
-            index += 2
-        elif text[index] == "\r":
-            first_positions["CR"] = min(first_positions["CR"], index)
-            index += 1
-        elif text[index] == "\n":
-            first_positions["LF"] = min(first_positions["LF"], index)
-            index += 1
-        else:
-            index += 1
-    return max(counts, key=lambda style: (counts[style], -first_positions[style]))
+    # Counter preserves insertion order, so max retains the first style on a tie.
+    return _LINE_ENDING_NAMES[max(counts, key=counts.get)]
 
 
 def normalize_line_endings(text: str, line_ending: str = "LF") -> str:
