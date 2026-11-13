@@ -1,5 +1,19 @@
 # Refactoring progress
 
+## Recovery chooser — Ukrainian labels fixed
+
+- COMPLETE: recovery action labels no longer collapse into a single narrow row.
+- Reproduced 87 px button width versus 212 px needed at 12 pt; both new size cases failed first.
+- app/ui/main_window.py: Qt widget message box with vertical action layout.
+- tests/test_project_ui.py: Ukrainian labels fit natural sizes and the screen at 12/18 pt.
+- Default Defer, details, enablement, recovery handlers and manuscript data preserved.
+- Focused offscreen: 4 passed; direct native Cocoa: 4 passed.
+- Full offscreen: 1119 passed, 2 skipped in 118.32s (opt-in live Ollama skipped).
+- Full log: /private/tmp/utexteditor-recovery-button-tests.log.
+- README and localization evidence updated; git diff --check passed.
+- Clean Code review: scoped layout change, existing Qt controls, no dependencies or domain changes.
+- Unrelated staged/unstaged bytecode and DS_Store changes preserved.
+
 ## Repository refactoring — COMPLETE
 
 - All six inventories in docs/refactoring-plan.md are closed; 135 Python files reviewed.

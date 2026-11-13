@@ -4143,6 +4143,7 @@ class MainWindow(QMainWindow):
                     "changes after the latest snapshot and hardware failures may not be recoverable.")
         )
         dialog = QMessageBox(self)
+        dialog.setOption(QMessageBox.Option.DontUseNativeDialog, True)
         dialog.setWindowTitle(self.tr("Recover unsaved work"))
         dialog.setText(self.tr("Recovery data is available. Choose how to proceed."))
         dialog.setDetailedText("\n".join(details))
@@ -4156,6 +4157,9 @@ class MainWindow(QMainWindow):
         discard = dialog.addButton(self.tr("Discard recovery data"), QMessageBox.ButtonRole.DestructiveRole)
         defer = dialog.addButton(self.tr("Defer"), QMessageBox.ButtonRole.RejectRole)
         dialog.setDefaultButton(defer)
+        # Seven translated actions cannot fit on one row on a typical screen.
+        # A vertical button box lets Qt honor each label's natural size.
+        dialog.findChild(QDialogButtonBox).setOrientation(Qt.Orientation.Vertical)
         dialog.open()
         self._recovery_dialog = dialog
         self._recovery_scan = scan

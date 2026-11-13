@@ -302,3 +302,15 @@ matrix: 27 passed; final native subset: 44 passed; earlier expanded native: 392 
 See [final acceptance](all-remaining-tasks-checkpoint.md) for exact scope and limits.
 VoiceOver speech and actual OS appearance gates were removed externally, not
 completed. Synthetic palettes and offscreen tests do not establish those checks.
+
+
+## Recovery chooser — Ukrainian button labels
+
+The seven recovery actions previously shared one row. A Ukrainian label needed
+212 px at 12 pt but received only 87 px; the geometry regression failed at both
+12 pt and 18 pt before the fix. The chooser now explicitly uses Qt widget layout
+with a vertical button box, allowing each translated action its natural size.
+Default Defer, detailed diagnostics, enabled states and action handlers remain.
+Focused offscreen and direct native Cocoa checks each passed 4 cases, including
+label/screen geometry and existing recovery paths. No VoiceOver claim is made.
+Final full offscreen verification: **1119 passed, 2 skipped in 118.32s**.

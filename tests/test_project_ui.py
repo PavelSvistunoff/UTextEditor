@@ -4582,3 +4582,37 @@ def test_revision_preview_uses_captured_note_titles_and_stable_ids(application, 
     assert "Same title [note-two]\nsecond" in preview
     assert "legacy [legacy]\nold" in preview
     dialog.close()
+
+
+@pytest.mark.parametrize("point_size", [12, 18])
+def test_ukrainian_recovery_buttons_fit_full_labels_and_available_screen(application, tmp_path, point_size):
+    from app.i18n import install_translation
+
+    store = RecoveryStore(tmp_path / "recovery")
+    store.save("document", "unsaved text")
+    with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
+        window = MainWindow()
+    _, translator = install_translation(application, "uk")
+    try:
+        window._recovery_scan_finished(store.scan())
+        dialog = window._recovery_dialog
+        font = dialog.font()
+        font.setPointSize(point_size)
+        dialog.setFont(font)
+        dialog.adjustSize()
+        application.processEvents()
+        assert dialog.width() <= dialog.screen().availableGeometry().width()
+        assert dialog.height() <= dialog.screen().availableGeometry().height()
+        assert any("Відновити" in button.text() for button in dialog.buttons())
+        for button in dialog.buttons():
+            assert button.width() >= button.sizeHint().width(), button.text()
+            assert button.width() > button.fontMetrics().horizontalAdvance(button.text().replace("&", "")), button.text()
+            assert button.height() >= button.sizeHint().height(), button.text()
+        assert dialog.defaultButton().text() == "Відкласти"
+    finally:
+        window._recovery_dialog.close()
+        application.removeTranslator(translator)
+        _, english = install_translation(application, "en")
+        if english is not None:
+            application.removeTranslator(english)
+        window.close()
