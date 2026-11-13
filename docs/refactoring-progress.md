@@ -1,5 +1,22 @@
 # Refactoring progress
 
+## 2026-11-13 — Auto-writer rollback cleanup diagnostics
+
+- Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.
+- A failure-injection regression showed rollback silently omitted a failed
+  temporary-file cleanup from the error. Original scene was restored, but the
+  generated temporary file remained; the regression failed before the fix.
+- Separate behavior fix reports remaining temporary names, also retaining
+  rollback failure details when both operations fail. README updated.
+- Focused project setup, translation and domain suite: 94 passed.
+- Full offscreen suite: 946 passed, 2 skipped; a second combined-failure test
+  was added afterward and the setup module passed all 41 tests. `git diff --check` passed.
+- Cross-process races and failed rollback itself remain independent risks; this
+  change does not claim stronger transaction guarantees.
+- Next: complete project service/model and transaction failure-path inventory.
+- Native GUI, accessibility and live Ollama were not tested.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## 2026-11-13 — project translation scene capture
 
 - Status: **CHECKPOINT**; repository-wide audit and refactoring remain incomplete.

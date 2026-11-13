@@ -1244,15 +1244,26 @@ class Project:
                 _fsync_directory(target.parent)
             except OSError:
                 rollback_failures.append(str(target.relative_to(self.root)))
+        cleanup_failures: list[str] = []
         for temporary in temporary_files.values():
             try:
                 temporary.unlink(missing_ok=True)
             except OSError:
-                pass
+                cleanup_failures.append(temporary.name)
         if rollback_failures:
+            cleanup_detail = (
+                f" Temporary files remain: {', '.join(cleanup_failures)}."
+                if cleanup_failures else ""
+            )
             raise ProjectError(
                 f"Auto-writer replacement failed and rollback also failed for "
                 f"{', '.join(rollback_failures)}. The pre-run revision snapshot is available."
+                f"{cleanup_detail}"
+            )
+        if cleanup_failures:
+            raise ProjectError(
+                "Auto-writer replacement failed; temporary files remain: "
+                + ", ".join(cleanup_failures)
             )
 
     def _cleanup_scene_backups(self, backups: dict[str, Path]) -> None:

@@ -2,6 +2,19 @@
 
 > This short file records the **latest actionable checkpoint**. The original full execution history is preserved verbatim in [docs/archive/implementation-progress-2026-11-13.md](docs/archive/implementation-progress-2026-11-13.md). Do not confuse historical test totals with tests performed today. For a new run, prepend a concise checkpoint following [AGENTS.md](AGENTS.md#logical-task-batches-and-continuation).
 
+## Refactoring checkpoint — Auto-writer cleanup diagnostics
+
+- Repository-wide refactoring: **CHECKPOINT**; backlog statuses unchanged.
+- Separate behavior fix reports temporary files remaining after failed rollback cleanup.
+- Failure-injection regression failed before fix; original scene remains restored.
+- Focused setup/translation/domain suite: 94 passed; README updated.
+- Full offscreen suite: 946 passed, 2 skipped; subsequently added combined-failure
+  regression passed in the setup module (41 passed); `git diff --check` passed.
+- Cross-process races and actual rollback failures remain separate risks.
+- No native GUI, accessibility or live Ollama checks performed.
+- Next: finish project service/model and transaction failure-path inventory.
+- Resume: `git status --short && cat docs/refactoring-progress.md docs/refactoring-plan.md`.
+
 ## Refactoring checkpoint — translation scene capture
 
 - Repository-wide refactoring: **CHECKPOINT**; backlog statuses unchanged.

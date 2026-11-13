@@ -677,6 +677,67 @@ def test_auto_writer_stage_failure_cleans_temporary_files(tmp_path, monkeypatch)
     assert not list(project.root.rglob("*.tmp"))
 
 
+def test_auto_writer_reports_temporary_cleanup_failure_after_rollback(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="Original")
+    target = project.root / scene.path
+    original_rename = Path.rename
+    original_unlink = Path.unlink
+
+    def fail_install(path, destination):
+        if path.name.endswith(".tmp") and Path(destination) == target:
+            raise OSError("install failed")
+        return original_rename(path, destination)
+
+    def fail_temporary_cleanup(path, *args, **kwargs):
+        if path.name.endswith(".tmp"):
+            raise OSError("cleanup failed")
+        return original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "rename", fail_install)
+    monkeypatch.setattr(Path, "unlink", fail_temporary_cleanup)
+    with pytest.raises(ProjectError, match="temporary.*remain"):
+        project.replace_scenes_transactionally(
+            {scene.id: "Generated"}, expected_contents={scene.id: "Original"}
+        )
+
+    assert target.read_text(encoding="utf-8") == "Original"
+    assert list(project.root.rglob("*.tmp"))
+
+
+def test_auto_writer_reports_both_rollback_and_cleanup_failures(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    scene = project.add_scene("Scene", content="Original")
+    target = project.root / scene.path
+    original_rename = Path.rename
+    original_unlink = Path.unlink
+
+    def fail_install_and_restore(path, destination):
+        if Path(destination) == target and path.name.endswith((".tmp", ".bak")):
+            raise OSError("install or restore failed")
+        return original_rename(path, destination)
+
+    def fail_temporary_cleanup(path, *args, **kwargs):
+        if path.name.endswith(".tmp"):
+            raise OSError("cleanup failed")
+        return original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "rename", fail_install_and_restore)
+    monkeypatch.setattr(Path, "unlink", fail_temporary_cleanup)
+    with pytest.raises(ProjectError, match="rollback also failed.*Temporary files remain"):
+        project.replace_scenes_transactionally(
+            {scene.id: "Generated"}, expected_contents={scene.id: "Original"}
+        )
+
+    assert not target.exists()
+    assert len(list(project.root.rglob("*.bak"))) == 1
+    assert len(list(project.root.rglob("*.tmp"))) == 1
+
+
 def test_auto_writer_keeps_pre_run_snapshot_if_generation_fails(tmp_path):
     project = Project.create(tmp_path / "novel", "Novel")
     scene = project.add_scene("Scene", content="Original text.")
