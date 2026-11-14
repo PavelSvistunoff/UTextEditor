@@ -75,7 +75,15 @@ class IndexedMatch:
     end: int
     field: str
     score: float
-    source_json: str
+    source_json: str = ""
+
+
+@dataclass(frozen=True)
+class IndexLookup:
+    generation: str
+    state: str
+    current_source_ids: frozenset[str]
+    matches: tuple[IndexedMatch, ...]
 
 
 class LexicalIndex:
@@ -291,3 +299,65 @@ class LexicalIndex:
                 return tuple(IndexedMatch(*row) for row in rows)
         except (OSError, sqlite3.Error, ValueError, KeyError) as exc:
             raise IndexUnavailable(f"Could not read retrieval cache: {exc}") from exc
+
+    def lookup_capture(self, terms: tuple[str, ...], sources: tuple[SourceSnapshot, ...], *,
+                       limits: CaptureLimits = CaptureLimits(),
+                       is_cancelled: Callable[[], bool] = lambda: False) -> IndexLookup:
+        """Filter request scope and freshness before ranking, in one read snapshot.
+
+        The temporary allowlist lives only in memory, even on a read-only main
+        connection. Stored source JSON is not returned for every passage; callers
+        already hold authoritative source captures and must validate chunk spans.
+        """
+        if len(terms) > 64 or any(not isinstance(term, str) or len(term) > 256 for term in terms):
+            raise ValueError("Retrieval query exceeds its term limit.")
+        if len(sources) > limits.sources or any(source.project_id != self.project_id for source in sources):
+            raise IndexUnavailable("Retrieval allowlist exceeds its source limit or project scope.")
+        query = " OR ".join('"' + term.replace('"', '""') + '"' for term in terms if term.strip())
+        _check_cancelled(is_cancelled)
+        cancellation_observed = False
+
+        def progress() -> int:
+            nonlocal cancellation_observed
+            cancellation_observed = cancellation_observed or is_cancelled()
+            return int(cancellation_observed)
+
+        try:
+            with closing(self._open_readonly()) as connection:
+                connection.set_progress_handler(progress, 1000)
+                connection.execute("PRAGMA temp_store=MEMORY")
+                connection.execute("BEGIN")
+                status = self._status(connection, limits)
+                if status.state not in {"ready", "incomplete"}:
+                    raise IndexUnavailable("Retrieval index requires a rebuild.")
+                connection.execute("CREATE TEMP TABLE request_sources (source_id TEXT PRIMARY KEY, fingerprint TEXT)")
+                connection.executemany("INSERT INTO request_sources VALUES (?, ?)", (
+                    (source.id, _fingerprint(replace(source, buffer_revision=None))) for source in sources
+                ))
+                current = frozenset(row[0] for row in connection.execute("""
+                    SELECT sources.source_id FROM sources JOIN request_sources
+                    ON sources.source_id = request_sources.source_id
+                    AND sources.fingerprint = request_sources.fingerprint
+                """))
+                matches = []
+                if query:
+                    rows = connection.execute("""
+                        SELECT chunk_id, chunks.source_id, title, text, start, end, field, bm25(chunks)
+                        FROM chunks JOIN sources ON chunks.source_id = sources.source_id
+                        JOIN request_sources ON sources.source_id = request_sources.source_id
+                            AND sources.fingerprint = request_sources.fingerprint
+                        WHERE chunks MATCH ?
+                        ORDER BY bm25(chunks), chunks.source_id, start, chunk_id LIMIT ?
+                    """, (query, limits.chunks))
+                    for row in rows:
+                        _check_cancelled(is_cancelled)
+                        matches.append(IndexedMatch(*row))
+                _check_cancelled(is_cancelled)
+                return IndexLookup(status.generation, status.state, current, tuple(matches))
+        except sqlite3.Error as exc:
+            if cancellation_observed:
+                raise CaptureCancelled("Retrieval query was cancelled or became stale.") from exc
+            _check_cancelled(is_cancelled)
+            raise IndexUnavailable(f"Could not query retrieval cache: {exc}") from exc
+        except (OSError, ValueError, KeyError) as exc:
+            raise IndexUnavailable(f"Could not query retrieval cache: {exc}") from exc

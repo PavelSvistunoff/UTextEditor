@@ -1,3 +1,24 @@
+## RAG-04 — retrieval and budgeted context assembly
+
+- COMPLETE: RAG-04 / RAG-04.V1; all six acceptance criteria and the offline gate passed.
+- RAG-01–03 COMPLETE; preceding commit 49db4d6; RAG parent remains OPEN.
+- Changed: app/project/rag_context.py, app/ai/context_prompt.py, rag_index.py, docs/backlog/tests.
+- Explicit mandatory sources, target associations and existing scene character helper are retained.
+- Read-only index lookup filters source scope/fingerprints before candidate ranking.
+- Changed/uncached sources and unsaved buffers use current captured passages, without index writes.
+- Deterministic weighted ranking, source diversity, overlap/dedup and exact prefix shortening implemented.
+- Exclusions/earlier-scene policy apply before search; later/unplaced/ambiguous context is labeled.
+- Full rendered prompt, response reserve and wrappers are checked against one explicit budget.
+- Returned manifest records budget, query, source decisions/fingerprints and incomplete/unavailable states.
+- Source/metadata changes and cancellation reject observed stale captures; no unknown source is trusted from cache.
+- Focused: 132 passed in 1.62s; log /private/tmp/utexteditor-rag04-focused.log.
+- Full offscreen: 1366 passed, 2 live-only skips in 174.61s; log /private/tmp/utexteditor-rag04-final-full.log.
+- Existing model/UI calls remain unchanged; integration is RAG-05 and later workflow tickets.
+- Clean Code checklist reviewed: intent, ownership, safety, errors, tests, diff, report.
+- Branch main; git diff --check passed; unrelated bytecode/DS_Store preserved; no native/live claims.
+- Resume: RAG-05 manual completion integration; parent remains OPEN and RAG-12 cross-workflow gates pending.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+
 ## RAG-03 — local lexical index
 
 - COMPLETE: RAG-03 / RAG-03.V1; all four criteria and required offline gate passed.

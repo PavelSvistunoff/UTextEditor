@@ -106,26 +106,29 @@ concurrent reads and stale workers. No index operation may write manuscripts.
 
 ### RAG-04 — deterministic retrieval and context assembly
 
-Status: OPEN. Dependencies: RAG-01, RAG-03.
+Status: COMPLETE. Dependencies: RAG-01, RAG-03. Gate RAG-04.V1: COMPLETE.
+Evidence: [context assembly verification](docs/rag-context-assembly.md),
+IMPLEMENTATION_PROGRESS.md; final full offscreen suite: 1366 passed, 2 skipped.
+Cross-workflow provider-payload association verification remains RAG-12 scope.
 
-- [ ] Expose a shared context service returning a captured, budgeted context and
+- [x] Expose a shared context service returning a captured, budgeted context and
   source manifest from explicit workflow inputs. Keep project retrieval outside
   the HTTP provider; reuse the same assembly for streaming and non-streaming
   generation. Do not add implicit project access inside every provider method.
-- [ ] Include explicit scene-character associations as mandatory structured
+- [x] Include explicit scene-character associations as mandatory structured
   context for scene-based requests, independent of lexical/vector matches.
   Implement and verify the complete association contract in RAG-12; never
   substitute name mentions or retrieval similarity for explicit association.
-- [ ] Build bounded queries from the author request, current passage and explicit
+- [x] Build bounded queries from the author request, current passage and explicit
   scene associations; support names/aliases and exact terminology without
   treating manuscript text as executable instructions.
-- [ ] Rank lexical matches, deduplicate overlapping passages and limit per-source
+- [x] Rank lexical matches, deduplicate overlapping passages and limit per-source
   dominance. Keep mandatory context regardless of retrieval ranking.
-- [ ] Apply exclusions and chronology filters before ranking/assembly. Distinguish
+- [x] Apply exclusions and chronology filters before ranking/assembly. Distinguish
   earlier/current/later scenes and unrestricted reference notes; do not claim
   manuscript order alone proves the story's temporal order. Treat unplaced or
   ambiguous material explicitly, with conservative defaults for scene writing.
-- [ ] Assemble labeled, data-delimited passages within the remaining budget;
+- [x] Assemble labeled, data-delimited passages within the remaining budget;
   record included, omitted and shortened sources and the reason for each choice.
   A no-hit result must be explicit and must not imply project-wide consistency.
 

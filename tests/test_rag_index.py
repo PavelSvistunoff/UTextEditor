@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 import sqlite3
 from threading import Event, Thread
+import sys
 
 import pytest
 
@@ -311,3 +312,80 @@ def test_interrupted_staging_failure_cleans_private_files_and_keeps_committed_ca
         index.refresh(capture_project_sources(project), force=True)
     assert index.status().generation == original.generation
     assert not tuple(index.path.parent.glob("*.building*"))
+
+
+def test_captured_lookup_filters_scope_and_stale_sources_without_writing_cache(corpus):
+    project, scene, note, index = corpus
+    original = index.refresh(capture_project_sources(project))
+    project.write_note(note.id, "Current reference", expected_content=project.read_note(note.id))
+    capture = capture_project_sources(project)
+    allowed = tuple(source for source in capture.sources if source.id == note.id)
+    before = index.path.read_bytes()
+    result = index.lookup_capture(("silver", "Марія"), allowed)
+    assert result.generation == original.generation
+    assert not result.current_source_ids and not result.matches
+    assert index.path.read_bytes() == before
+    result = index.lookup_capture(("Марія",), capture.sources)
+    assert result.current_source_ids == frozenset({scene.id})
+    assert result.matches[0].source_id == scene.id
+    assert result.matches[0].source_json == ""
+
+
+def test_lookup_cancellation_is_not_downgraded_to_unavailable_cache(corpus):
+    project, _scene, _note, index = corpus
+    index.refresh(capture_project_sources(project))
+    capture = capture_project_sources(project)
+    calls = 0
+
+    def cancel_once():
+        nonlocal calls
+        calls += 1
+        return calls == 2
+
+    with pytest.raises(CaptureCancelled):
+        index.lookup_capture(("silver",), capture.sources, is_cancelled=cancel_once)
+
+
+def test_lookup_generation_and_rows_come_from_one_read_snapshot(corpus, monkeypatch):
+    project, scene, _note, index = corpus
+    original = index.refresh(capture_project_sources(project))
+    capture = capture_project_sources(project)
+    entered, release = Event(), Event()
+    original_status = LexicalIndex._status
+    results, failures = [], []
+
+    def paused_status(self, connection, limits):
+        from threading import current_thread
+
+        result = original_status(self, connection, limits)
+        if current_thread().name == "captured-lookup":
+            entered.set()
+            if not release.wait(5):
+                raise RuntimeError("Test did not release captured lookup")
+        return result
+
+    def lookup():
+        try:
+            results.append(index.lookup_capture(("Марія",), capture.sources))
+        except Exception as exc:
+            failures.append(exc)
+
+    monkeypatch.setattr(LexicalIndex, "_status", paused_status)
+    reader = Thread(target=lookup, name="captured-lookup")
+    reader.start()
+    try:
+        assert entered.wait(5)
+        project.write_scene(scene.id, "Replacement phrase", expected_content=project.read_scene(scene.id))
+        try:
+            index.refresh(capture_project_sources(project), force=True)
+        except IndexUnavailable as exc:
+            if sys.platform != "win32" or not isinstance(exc.__cause__, PermissionError):
+                raise
+    finally:
+        release.set()
+        reader.join(5)
+    assert not reader.is_alive() and not failures
+    assert results[0].generation == original.generation
+    assert "Марія" in results[0].matches[0].text
+    with pytest.raises(ProjectError, match="changed on disk"):
+        capture.verify_current()

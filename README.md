@@ -171,6 +171,14 @@ retrieved passages are not yet added to AI requests. See
 [source capture boundaries](docs/rag-source-capture.md) and
 [lexical index maintenance](docs/rag-lexical-index.md).
 
+`ProjectContextService` assembles captured context with explicit source exclusions,
+scene associations, manuscript-order filters, names/alias queries and a complete
+request budget. It validates cache passages against current source snapshots,
+uses unsaved-buffer text without persisting it, and records exact included,
+shortened and omitted spans for review. Its frozen prompt can be reused for
+streaming or ordinary generation. UI request integration is still pending; see
+[context assembly boundaries](docs/rag-context-assembly.md).
+
 AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No separate cloud AI provider is configured; a remote Ollama host can nevertheless receive document text.
 
 ## Interface localization
