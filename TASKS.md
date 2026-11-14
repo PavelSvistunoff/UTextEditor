@@ -327,3 +327,60 @@ Report native and live evidence separately; do not infer either from mocks.
   user/developer documentation, evaluation evidence and required native/live
   reports. Offscreen tests do not close native gates. Recording this plan does
   not complete any implementation ticket.
+
+## FILE-NAME-01 — transliterate Ukrainian titles into project filenames
+
+Status: OPEN. Independent of the RAG parent; this request records a task only.
+
+Problem: `Project._slug_for_title` currently retains only ASCII letters and
+digits. Ukrainian-only titles therefore produce `untitled.txt`,
+`untitled-2.txt`, etc.; mixed titles lose their Ukrainian words.
+
+Owning code: `app/project/service.py` (`_slug_for_title`, `_new_path`,
+`_unique_new_path`). Trace all callers before implementation, including project
+setup, scene/note creation, duplication, import and AI-generated project items.
+
+Acceptance criteria:
+
+- [ ] Define and document one deterministic Ukrainian-to-Latin transliteration
+  policy, including case, word-initial/context-dependent letters, `зг`,
+  `ґ/г`, `є/ї/й/ю/я`, soft signs and straight/typographic apostrophes.
+  Normalize equivalent Unicode input before transliteration. Use a small local
+  implementation unless a dependency has demonstrated value.
+- [ ] Transliterate Ukrainian title text before the existing ASCII slug cleanup;
+  lowercase the result, join word separators with single hyphens and remove
+  leading/trailing hyphens. Preserve existing English/digit filename behavior.
+  Required examples: `Ніч у Києві` → `nich-u-kyievi.txt`;
+  `Розділ 2 — Повернення` → `rozdil-2-povernennia.txt`;
+  `Scene 3: Зустріч` → `scene-3-zustrich.txt`.
+- [ ] Use `untitled` only when the accepted title yields no usable letters or
+  digits after normalization/transliteration (for example, punctuation/emoji
+  only). Preserve current validation of blank/invalid titles. Document handling
+  of unsupported scripts rather than claiming general transliteration support.
+- [ ] Reuse the same slug rule for both filename allocation helpers and all
+  applicable callers. Preserve numbered collision suffixes, reserved batch
+  paths, existing on-disk files, safe path containment and no-overwrite behavior.
+  Handle distinct titles that transliterate to the same slug deterministically.
+- [ ] Bound the generated filename component for supported filesystem limits,
+  retaining `.txt` and room for collision suffixes; test very long titles and
+  reserved platform basenames. Do not weaken existing path validation.
+- [ ] Preserve original Ukrainian display titles, stable IDs, links and scene
+  associations. Apply the new rule when allocating new paths; opening/saving
+  existing projects must not automatically rename `untitled*` or other files.
+  Existing title-rename/path behavior must remain explicit and documented;
+  bulk migration of existing filenames is outside this ticket.
+- [ ] Add focused domain and workflow regressions; update README with the
+  user-visible naming rule when implemented.
+
+Gate FILE-NAME-01.V1: table-driven tests for the Ukrainian alphabet and contextual
+rules, mixed Latin/Ukrainian/digits, punctuation/apostrophes, Unicode equivalence,
+empty-slug fallback, long names, reserved names and repeated/transliteration
+collisions. Exercise both allocation helpers, occupied disk paths and reserved
+batch paths; verify file contents and original titles survive failures.
+
+Gate FILE-NAME-01.V2: offline integration tests for manual scene/note creation
+and AI-generated project setup/Auto-pilot, duplication/import where applicable;
+verify legacy project reopen/save leaves existing paths unchanged and references
+resolve correctly. Run focused tests, the full offscreen suite and
+`git diff --check`; review the Clean Code completion checklist. No live Ollama
+is required. Report this ticket separately from the RAG parent.
