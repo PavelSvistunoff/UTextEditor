@@ -117,6 +117,10 @@ from .planning_retrieval import start_planning_retrieval
 from .inline_retrieval import InlineRetrieval
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
+from .translation_glossary_dialog import TranslationGlossaryDialog
+from app.project.translation_context import TranslationRetrieval, project_terminology
+from app.project.rag_sources import BufferText
+from app.project.spelling_context import SpellingDictionary
 from .export_preview_dialog import ExportPreviewDialog
 from .editor_widget import EditorWidget
 from .auto_writer_review_dialog import AutoWriterReviewDialog
@@ -508,6 +512,9 @@ class MainWindow(QMainWindow):
             self.cancel_project_translation
         )
         group_menus["ai"].addAction(self._project_translation_cancel_action)
+        self._translation_retrieval_action = QAction(self.tr("Review glossary and retrieved translation context"), self)
+        self._translation_retrieval_action.setCheckable(True)
+        group_menus["ai"].addAction(self._translation_retrieval_action)
 
         self.focus_mode_action = QAction(self.tr("Distraction-free mode"), self)
         self.focus_mode_action.setCheckable(True)
@@ -1508,6 +1515,26 @@ class MainWindow(QMainWindow):
             return
         if not self._ensure_ai_context_consent():
             return
+        glossary = None
+        if self._translation_retrieval_action.isChecked():
+            if self.settings.ollama_context_length <= 0:
+                QMessageBox.information(self, self.tr("Project translation"),
+                    self.tr("Set an explicit Ollama token window before using retrieved translation context."))
+                return
+            try:
+                terms = project_terminology(project)
+            except ProjectError as exc:
+                QMessageBox.warning(self, self.tr("Project translation"), str(exc))
+                return
+            glossary_generation = (self._project_generation, self._settings_generation)
+            glossary_manifest = deepcopy(project.manifest.to_mapping())
+            glossary_dialog = TranslationGlossaryDialog(terms, self)
+            if glossary_dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+            glossary = glossary_dialog.glossary()
+            if (project is not self.project or glossary_generation != (self._project_generation, self._settings_generation)
+                    or project.manifest.to_mapping() != glossary_manifest):
+                return
 
         open_text: dict[str, str] = {}
         editor_states: dict[str, tuple[object, int]] = {}
@@ -1545,6 +1572,29 @@ class MainWindow(QMainWindow):
         self._project_translation_progress_dialog = progress
         progress.show()
 
+        retrieval_options = {}
+        review_bridge = None
+        if glossary is not None:
+            def current_translation():
+                current_editors = {binding.item_id: (editor, editor.revision)
+                    for editor, binding in self._project_documents.items()
+                    if binding.project is project and self.tabs.indexOf(editor) >= 0}
+                return (generation == self._project_translation_generation and project is self.project
+                    and project_generation == self._project_generation
+                    and settings_generation == self._settings_generation and self.settings.ai_enabled
+                    and current_editors == editor_states)
+            review_bridge = AutoWriterContextReview(self.provider.host + " / " + self.provider.model,
+                is_current=current_translation, is_cancelled=cancel_event.is_set,
+                cancel=cancel_event.set, parent=self, excludable_kinds=frozenset({"scene", "note"}),
+                review_title=AutoWriterContextReview.tr("Review translation context"),
+                extra_summary=AutoWriterContextReview.tr(
+                    "The full target and approved glossary are required. Optional passages are usage "
+                    "examples only. Exclusions persist for this run. No embeddings are sent."))
+            retrieval_options["retrieval"] = TranslationRetrieval(project,
+                AppSettings._default_settings_path().parent, self.settings.ollama_context_length,
+                {item_id: BufferText(open_text[item_id], revision)
+                 for item_id, (_editor, revision) in editor_states.items()}, glossary,
+                review=review_bridge.review, is_cancelled=cancel_event.is_set)
         worker = FunctionWorker(
             run_project_translation,
             self.provider,
@@ -1557,7 +1607,10 @@ class MainWindow(QMainWindow):
                 generation, message
             ),
             temperature=self.settings.temperature,
+            **retrieval_options,
         )
+        if review_bridge is not None:
+            worker.signals.done.connect(review_bridge.deleteLater, Qt.ConnectionType.QueuedConnection)
         self._translation_activity = self.ai_activity.add(AIActivityPanel.tr("Project translation"), context=project.manifest.title, cancel=self.cancel_project_translation,
                                                           show=lambda: self._project_translation_progress_dialog.show() if self._project_translation_progress_dialog else None)
         activity = self._translation_activity
@@ -6726,10 +6779,38 @@ class MainWindow(QMainWindow):
         if self._spellcheck_worker is not None:
             # A synchronous provider call cannot be interrupted. Remember only
             # the newest eligible request until that call has actually ended.
-            self._spellcheck_pending = (weakref.ref(editor), revision, settings_generation, active_generation)
+            self._spellcheck_pending = (weakref.ref(editor), revision, settings_generation, active_generation, automatic)
             self._discard_ai_worker(self._spellcheck_worker)
             return
-        worker = FunctionWorker(self.spellcheck_service.check, text, self.settings.language, revision)
+        dictionary_options = {}
+        dictionary_bridge = None
+        dictionary_current = lambda: True
+        binding = self._project_documents.get(editor)
+        if (not automatic and self.settings.spelling_project_dictionary and self.project is not None
+                and binding is not None and binding.project is self.project):
+            if self.settings.ollama_context_length <= 0:
+                self.status.showMessage(self.tr("Set an explicit Ollama token window before using a spelling dictionary."))
+                return
+            project, project_generation = self.project, self._project_generation
+            manifest = deepcopy(project.manifest.to_mapping())
+            cancelled = Event()
+            dictionary_current = lambda: (self.project is project and self._project_generation == project_generation
+                and project.manifest.to_mapping() == manifest
+                and self.settings.ai_enabled and editor is self.tabs.current_editor() and editor.revision == revision
+                and settings_generation == self._settings_generation and active_generation == self._active_document_generation
+                and spellcheck_generation == self._spellcheck_generation)
+            dictionary_bridge = AutoWriterContextReview(self.provider.host + " / " + self.provider.model,
+                is_current=dictionary_current, is_cancelled=lambda: cancelled.is_set() or worker.cancelled,
+                cancel=cancelled.set, parent=self, excludable_kinds=frozenset(),
+                review_title=AutoWriterContextReview.tr("Review spelling dictionary"),
+                extra_summary=AutoWriterContextReview.tr(
+                    "Only the target text, names and reference-note titles are sent. No manuscript examples "
+                    "or embeddings are included. Dictionary matches never hide validated corrections."))
+            dictionary_options["dictionary"] = SpellingDictionary(project, self.settings.ollama_context_length,
+                review=dictionary_bridge.review, is_cancelled=lambda: cancelled.is_set() or worker.cancelled)
+        worker = FunctionWorker(self.spellcheck_service.check, text, self.settings.language, revision, **dictionary_options)
+        if dictionary_bridge is not None:
+            worker.signals.done.connect(dictionary_bridge.deleteLater, Qt.ConnectionType.QueuedConnection)
         self._track_ai_activity(
             worker, AIActivityPanel.tr("Spellcheck"), context=editor.document_state.display_name,
             cancel=lambda: self._cancel_activity_spellcheck(worker),
@@ -6742,11 +6823,11 @@ class MainWindow(QMainWindow):
         self._track_worker(worker)
         worker.signals.done.connect(lambda worker=worker: self._spellcheck_done(worker), Qt.ConnectionType.QueuedConnection)
         worker.signals.finished.connect(
-            lambda suggestions: self._apply_spellcheck_results(editor, revision, suggestions, settings_generation, active_generation, spellcheck_generation),
+            lambda suggestions: self._apply_spellcheck_results(editor, revision, suggestions, settings_generation, active_generation, spellcheck_generation) if dictionary_current() else None,
             Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.failed.connect(
-            lambda exc: self._spellcheck_failed(exc, editor, revision, settings_generation, active_generation, spellcheck_generation),
+            lambda exc: self._spellcheck_failed(exc, editor, revision, settings_generation, active_generation, spellcheck_generation) if dictionary_current() else None,
             Qt.ConnectionType.QueuedConnection,
         )
         self.thread_pool.start(worker)
@@ -6758,7 +6839,7 @@ class MainWindow(QMainWindow):
         pending, self._spellcheck_pending = self._spellcheck_pending, None
         if pending is None or self._closing_confirmed:
             return
-        editor_ref, revision, settings_generation, active_generation = pending
+        editor_ref, revision, settings_generation, active_generation, automatic = pending
         editor = editor_ref()
         if (
             editor is not None and editor is self.tabs.current_editor()
@@ -6767,7 +6848,7 @@ class MainWindow(QMainWindow):
             and active_generation == self._active_document_generation
             and self.settings.ai_enabled and self.settings.spellcheck_enabled
         ):
-            self.check_spelling()
+            self.check_spelling(automatic=automatic)
 
     def _spellcheck_failed(self, error, editor, revision, settings_generation, active_generation, spellcheck_generation) -> None:
         if (editor is not self.tabs.current_editor() or editor.revision != revision

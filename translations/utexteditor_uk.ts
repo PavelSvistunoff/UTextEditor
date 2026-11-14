@@ -2884,4 +2884,32 @@ Generation sends project text and reference notes to this configured model. A co
     <message><source>No retrieved inline suggestion is displayed.</source><translation>Зараз немає показаної inline-підказки з пошуком контексту.</translation></message>
     <message><source>Apply exclusions for future suggestions</source><translation>Застосувати виключення для наступних підказок</translation></message>
 </context>
+<context>
+    <name>AutoWriterContextReview</name>
+    <message><source>Review translation context</source><translation>Перегляд контексту перекладу</translation></message>
+    <message><source>The full target and approved glossary are required. Optional passages are usage examples only. Exclusions persist for this run. No embeddings are sent.</source><translation>Повний цільовий текст і погоджений словник є обов’язковими. Додаткові уривки — лише приклади вживання. Виключення діють протягом цього запуску. Запити векторизації не надсилаються.</translation></message>
+    <message><source>Review spelling dictionary</source><translation>Перегляд словника правопису</translation></message>
+    <message><source>Only the target text, names and reference-note titles are sent. No manuscript examples or embeddings are included. Dictionary matches never hide validated corrections.</source><translation>Надсилаються лише цільовий текст, імена та заголовки довідкових нотаток. Приклади з рукопису й запити векторизації не додаються. Збіги зі словником не приховують перевірені виправлення.</translation></message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Review glossary and retrieved translation context</source><translation>Перегляд словника та знайденого контексту перекладу</translation></message>
+    <message><source>Set an explicit Ollama token window before using retrieved translation context.</source><translation>Перш ніж використовувати знайдений контекст перекладу, задайте явне контекстне вікно Ollama в токенах.</translation></message>
+    <message><source>Set an explicit Ollama token window before using a spelling dictionary.</source><translation>Перш ніж використовувати словник правопису, задайте явне контекстне вікно Ollama в токенах.</translation></message>
+</context>
+<context>
+    <name>SettingsDialog</name>
+    <message><source>Review project dictionary for manual spellcheck</source><translation>Перегляд словника проєкту під час ручної перевірки правопису</translation></message>
+    <message><source>Default off. Manual checks of project documents can review names and reference-note titles. Automatic checks and standalone files send target text only. An explicit token window is required.</source><translation>Типово вимкнено. Під час ручної перевірки документів проєкту можна переглянути імена та заголовки довідкових нотаток. Автоматичні перевірки й окремі файли надсилають лише цільовий текст. Потрібне явно задане контекстне вікно в токенах.</translation></message>
+</context>
+<context>
+    <name>TranslationGlossaryDialog</name>
+    <message><source>Review translation glossary</source><translation>Перегляд словника перекладу</translation></message>
+    <message><source>Edit approved translations for names and reference-note titles. Unchanged values preserve the original spelling. Ambiguous names require your review. These decisions apply to every translated item in this run; reference examples are reviewed separately.</source><translation>Укажіть погоджені переклади імен і заголовків довідкових нотаток. Незмінені значення зберігають оригінальне написання. Неоднозначні імена потребують вашої перевірки. Ці рішення діють для кожного елемента перекладу протягом запуску; довідкові приклади переглядаються окремо.</translation></message>
+    <message><source>Translation glossary</source><translation>Словник перекладу</translation></message>
+    <message><source>Source term</source><translation>Вихідний термін</translation></message>
+    <message><source>Approved translation</source><translation>Погоджений переклад</translation></message>
+    <message><source>Review</source><translation>Перевірка</translation></message>
+    <message><source>Ambiguous name</source><translation>Неоднозначне ім’я</translation></message>
+</context>
 </TS>

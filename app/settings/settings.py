@@ -35,6 +35,7 @@ class AppSettings:
     ollama_context_length: int = 0  # Tokens; zero preserves the server default.
     spellcheck_enabled: bool = True
     automatic_spellcheck: bool = True
+    spelling_project_dictionary: bool = False
     language: str = "Auto"
     ui_language: str = "system"
     font_family: str = "Monospace"
@@ -178,6 +179,7 @@ class AppSettings:
         self.streaming_preview = self._bool(self.streaming_preview, defaults.streaming_preview)
         self.spellcheck_enabled = self._bool(self.spellcheck_enabled, defaults.spellcheck_enabled)
         self.automatic_spellcheck = self._bool(self.automatic_spellcheck, defaults.automatic_spellcheck)
+        self.spelling_project_dictionary = self._bool(self.spelling_project_dictionary, defaults.spelling_project_dictionary)
         self.completion_debounce_ms = self._bounded_int(self.completion_debounce_ms, 100, 5000, defaults.completion_debounce_ms)
         self.maximum_suggestion_length = self._bounded_int(self.maximum_suggestion_length, 1, 10000, defaults.maximum_suggestion_length)
         self.context_size = self._bounded_int(self.context_size, 64, 65536, defaults.context_size)

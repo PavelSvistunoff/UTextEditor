@@ -1,7 +1,7 @@
 # AI context policies and request budgets
 
-RAG-01 contract. Retrieval is **not implemented** by this ticket. Existing
-workflow captures remain in use; later tickets supply the shared context service.
+RAG-01 contract, updated through RAG-11. The shared context service is integrated
+into the opt-in workflows below; ordinary paths retain explicit bounded policies.
 Infrastructure operations (model metadata/listing, connection, warm-up and
 embeddings) never recursively retrieve project text.
 
@@ -50,7 +50,7 @@ The current settings default for automatic project context remains unchanged.
 | Outline planning, RAG-09 | Brief and existing compact motivation summary | Relevant project facts | Do not force background characters into scenes | Brief-only for a new project; existing summary remains bounded |
 | Auto-pilot planning/drafting, RAG-09 | Brief, full outline metadata, compact characters, full generated plan and earlier transient drafts | Reviewed existing project passages | Proposed additions are not established facts; transient IDs/digests/text stay request-local and never enter the canonical index | Mandatory-only fallback with visible coverage; empty new projects supported; existing additive mode remains available |
 | Auto-writer, RAG-07/12 | Instructions, bounded outline, **all** notes/textual profiles/relationships, target metadata, associations, current scene for refinement | Relevant earlier manuscript passages | Later development is not knowledge in an earlier scene | Retain existing full-reference operation; no silent reduced-reference fallback; project required |
-| Translation, RAG-11 | Complete target item and language direction | Captured shared glossary and usage examples | Examples are reference data, not text to emit | Translate target only; current project-translation entry point requires a project |
+| Translation, RAG-11 | Complete target item, direction and author-approved run-wide glossary | Reviewed lexical usage examples | Exclusions persist across items; examples are never extra output | Target/glossary only on no hits; current entry point requires a project |
 
 Reviewed manual completion, Auto-writer, opt-in automatic retrieval and RAG-09
 free-prompt/planning/Auto-pilot integration and opt-in RAG-10 analysis/character workflows are implemented. Ordinary free-prompt
@@ -58,7 +58,12 @@ generation remains prompt-only and unchecked planning retains its existing input
 The [RAG-09 gate report](rag-planning-autopilot.md) describes the explicit source
 review, mandatory transient chain, budget refusal and pre-application checks.
 [RAG-10 verification](rag-analysis-characters.md) covers exact sent continuity citations, full-note retention and selected-scene-only arc evidence.
-Translation has no shared glossary yet; spelling receives the full target text.
+Translation now optionally shares an approved glossary across the whole run and
+reviews per-item usage examples. Manual spelling optionally reviews names and
+note titles with a shared-service policy allowing no prose passages; automatic,
+standalone and disabled dictionary checks remain target-only.
+The [completed dispatch audit and RAG-11 gates](rag-translation-spelling.md)
+list owning call sites, retries/streams, consent, exclusions and behavioral tests.
 No project implies no scanning neighboring files, other tabs or other projects.
 RAG-12 requires structured scene links independent of text/vector matches.
 Actual plot time may differ from manuscript order; ambiguous chronology must be

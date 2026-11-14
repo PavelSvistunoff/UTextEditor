@@ -81,6 +81,11 @@ class SettingsDialog(QDialog):
         self.spellcheck_enabled.setChecked(settings.spellcheck_enabled)
         self.automatic_spellcheck = QCheckBox(self.tr("Automatic spellcheck"))
         self.automatic_spellcheck.setChecked(settings.automatic_spellcheck)
+        self.spelling_project_dictionary = QCheckBox(self.tr("Review project dictionary for manual spellcheck"))
+        self.spelling_project_dictionary.setChecked(settings.spelling_project_dictionary)
+        self.spelling_project_dictionary.setToolTip(self.tr(
+            "Default off. Manual checks of project documents can review names and reference-note titles. "
+            "Automatic checks and standalone files send target text only. An explicit token window is required."))
         # Language selection
         self.language = QComboBox()
         self.language.addItem(self.tr("Automatic"), "Auto")
@@ -170,6 +175,7 @@ class SettingsDialog(QDialog):
         assistance_form.addRow(self.tr("Context size (chars)"), self.context_size)
         assistance_form.addRow(self.spellcheck_enabled)
         assistance_form.addRow(self.automatic_spellcheck)
+        assistance_form.addRow(self.spelling_project_dictionary)
         tabs.addTab(assistance_tab, self.tr("AI assistance"))
 
         prompts_tab = QWidget(tabs)
@@ -238,6 +244,7 @@ class SettingsDialog(QDialog):
         self.ollama_context_length.setValue(defaults.ollama_context_length)
         self.spellcheck_enabled.setChecked(defaults.spellcheck_enabled)
         self.automatic_spellcheck.setChecked(defaults.automatic_spellcheck)
+        self.spelling_project_dictionary.setChecked(defaults.spelling_project_dictionary)
         self.language.setCurrentIndex(self.language.findData(defaults.language))
         self.ui_language.setCurrentIndex(self.ui_language.findData(defaults.ui_language))
         self.font_family.setCurrentFont(
@@ -300,6 +307,7 @@ class SettingsDialog(QDialog):
         self.settings.streaming_preview = bool(self.streaming_preview.isChecked())
         self.settings.spellcheck_enabled = bool(self.spellcheck_enabled.isChecked())
         self.settings.automatic_spellcheck = bool(self.automatic_spellcheck.isChecked())
+        self.settings.spelling_project_dictionary = self.spelling_project_dictionary.isChecked()
         self.settings.language = self.language.currentData()
         self.settings.ui_language = self.ui_language.currentData()
         self.settings.font_family = self.font_family.currentFont().family()

@@ -1,18 +1,25 @@
 """Spellcheck service with revision-aware validation."""
 
 from dataclasses import replace
+from typing import TYPE_CHECKING
 
 from .models import Suggestion
 from .provider import AIProvider
 from .validation import parse_suggestions, valid_suggestion
+
+if TYPE_CHECKING:
+    from app.project.spelling_context import SpellingDictionary
 
 
 class SpellcheckService:
     def __init__(self, provider: AIProvider) -> None:
         self.provider = provider
 
-    def check(self, text: str, language: str, revision: int) -> list[Suggestion]:
-        raw = self.provider.check_spelling(text, language)
+    def check(self, text: str, language: str, revision: int, *,
+              dictionary: "SpellingDictionary | None" = None) -> list[Suggestion]:
+        # Default policy is deliberately target-only, including standalone files.
+        raw = (dictionary.generate(self.provider, text, language) if dictionary is not None
+               else self.provider.check_spelling(text, language))
         if isinstance(raw, str):
             suggestions = parse_suggestions(raw, text, revision)
         elif isinstance(raw, list):

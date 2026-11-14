@@ -1,3 +1,24 @@
+## RAG-11 — translation glossary, spelling dictionary and workflow audit
+
+- COMPLETE: RAG-11 / RAG-11.V1 / RAG-11.V2; all five criteria and separate offline/native/live gates met.
+- Selected all five RAG-11 criteria; broader RAG parent remains OPEN until RAG-12 and dependent gates close.
+- Default-off translation session action: approved 256-term/16 KiB glossary across titles/scenes/character fields; ambiguity flags.
+- Each full target/direction plus glossary is mandatory; exact lexical-example review, persistent exclusions/rebuild, strict single-field JSON.
+- Baseline and task-read/capture checks, full unsaved targets/CRLF, cancellation, existing snapshot/final review/transaction preserved.
+- Separate default-off manual spelling dictionary setting; no scene/note prose or embeddings; automatic/standalone/disabled remain target-only.
+- Dictionary matches do not suppress validated findings; original Unicode offsets, underlines, explicit review and Undo retained.
+- Owners: translation_context, spelling_context, translation, SpellcheckService, glossary dialog, settings and existing UI workers.
+- Audit: 21 provider/bound-method references / 19 policy records, streams/retry callers inspected; infrastructure intentionally outside RAG.
+- Focused final: 196 passed in 5.00s; /private/tmp/utexteditor-rag11-final-focused.log.
+- Full offline: 1707 passed / 15 expected native/live skips in 380.07s; QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -xq; /private/tmp/utexteditor-rag11-full.log.
+- Native V2: 7 Cocoa workflows passed in 2.89s; real keyboard/dialog controls, fake generation; /private/tmp/utexteditor-rag11-native.log.
+- Live V2: 1 real hybrid inline + two-step Auto-writer smoke passed in 6.66s; /private/tmp/utexteditor-rag11-live.log.
+- Live models: gemma4:12b / embeddinggemma:latest (768 dimensions), localhost:11434, requested window 26000; synthetic text, no application.
+- Fresh extraction 1129 sources; UK/English validation and runtime Ukrainian headings passed; official UK QM rebuilt (1143 finished).
+- Criterion matrix, completed workflow audit and seven Clean Code checklist items: docs/rag-translation-spelling.md; diff --check passed.
+- Preserve unrelated staged bytecode and DS_Store; no dependencies, model installs or user configuration changes; branch main, predecessor a5722ad.
+- Resume RAG-12 / RAG-12.V1: inspect association capture/assembly/provider payloads; baseline QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_rag_sources.py tests/test_rag_context.py.
+
 ## RAG-10 — reviewed analysis and character retrieval
 
 - COMPLETE: RAG-10 / RAG-10.V1; all four criteria met; broader RAG parent OPEN.

@@ -306,26 +306,28 @@ full-note retention, profile edits during requests and explicit staged review.
 
 ### RAG-11 — translation, spelling and complete workflow coverage
 
-Status: OPEN. Dependencies: RAG-09, RAG-10, RAG-08.V1.
+Status: COMPLETE. RAG-11.V1 and RAG-11.V2 COMPLETE; broader RAG parent OPEN.
+Dependencies: RAG-09, RAG-10, RAG-08.V1 complete. Evidence, completed dispatch
+matrix and separate offline/native/live reports: [RAG-11](docs/rag-translation-spelling.md).
 
-- [ ] Build a captured project terminology/name glossary for translation and
+- [x] Build a captured project terminology/name glossary for translation and
   retrieve relevant usage examples per item through the shared service. Delimit
   reference examples from text to translate so they cannot be emitted as extra
   translation. Keep the entire target item and translation direction mandatory.
-- [ ] Reuse glossary decisions across scenes, titles and character fields within
+- [x] Reuse glossary decisions across scenes, titles and character fields within
   a run; flag ambiguous terms for author review. Preserve translation snapshots,
   stale checks, cancellation and transactional application. Standalone/no-project
   translation must remain possible wherever currently supported.
-- [ ] Give spelling/grammar an explicit shared-service policy: default to the
+- [x] Give spelling/grammar an explicit shared-service policy: default to the
   target text only; optionally retrieve a bounded project dictionary of names
   and terms when enabled. Do not send unrelated manuscript passages or let
   dictionary matches silently suppress validated errors. Keep original-text
   offsets, evidence validation, underlines, author review and undo unchanged.
-- [ ] Audit every user-facing AI call site, including retries and streaming,
+- [x] Audit every user-facing AI call site, including retries and streaming,
   against the RAG-01 matrix. Require a tested explicit policy, correct consent,
   source exclusions and safe no-project/failure behavior at each site. Document
   infrastructure/embedding calls as intentionally outside retrieval.
-- [ ] Update README, README.uk, settings descriptions and translations to explain
+- [x] Update README, README.uk, settings descriptions and translations to explain
   workflow coverage, defaults, cache privacy, fallbacks and actual context review.
 
 Gate RAG-11.V1: offline tests for consistent glossary use, ambiguous/no-match
