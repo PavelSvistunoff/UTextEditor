@@ -221,7 +221,8 @@ class OllamaClient:
 
     def generate_stream(self, prompt: str, *, on_chunk: Callable[[str], None],
                         is_cancelled: Callable[[], bool], role: str = DEFAULT_AI_ROLE,
-                        maximum_tokens: int = 300, temperature: float = 0.2) -> str:
+                        maximum_tokens: int = 300, temperature: float = 0.2,
+                        require_full_context: bool = False) -> str:
         """Read bounded NDJSON generation output, emitting provisional text in the caller's thread."""
         if is_cancelled():
             return ""
@@ -229,6 +230,9 @@ class OllamaClient:
         payload = self._chat_payload(
             prompt, role=role, maximum_tokens=maximum_tokens, temperature=temperature, stream=True,
         )
+        if require_full_context:
+            payload["truncate"] = False
+            payload["shift"] = False
         if is_cancelled():
             return ""
         self._observe("Request", path, payload)

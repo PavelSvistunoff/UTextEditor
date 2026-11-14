@@ -1827,6 +1827,10 @@ Generation sends project text and reference notes to this configured model. A co
 Для генерації текст проєкту та довідкові нотатки надсилаються цій налаштованій моделі. Перед генеруванням створюється повний локальний знімок редакції. Усі зміни сцен застосовуються разом лише після успішного генерування всіх сцен і перегляду чернеток. Режим покращення може замінити наявний текст.</translation></message>
 
     <message><source>Inspect Inline Retrieval Context…</source><translation>Переглянути контекст пошуку inline-підказки…</translation></message>
+    <message>
+        <source>Generate with Project Context…</source>
+        <translation>Генерувати з контекстом проєкту…</translation>
+    </message>
 </context>
 <context>
     <name>QuickOpenDialog</name>
@@ -2800,6 +2804,26 @@ Generation sends project text and reference notes to this configured model. A co
     <message>
         <source>Token budget: window %1; output reserve %2; safety %3; message overhead %4; estimated remaining %5.</source>
         <translation>Бюджет токенів: вікно %1; резерв відповіді %2; запас %3; накладні витрати повідомлення %4; орієнтовний залишок %5.</translation>
+    </message>
+    <message>
+        <source>Project generation requires an open project and an explicit Ollama token window.</source>
+        <translation>Для генерації з контекстом проєкту потрібні відкритий проєкт і явно задане вікно контексту Ollama в токенах.</translation>
+    </message>
+    <message>
+        <source>Generate with Project Context…</source>
+        <translation>Генерувати з контекстом проєкту…</translation>
+    </message>
+    <message>
+        <source>Describe what you want the AI to write:</source>
+        <translation>Опишіть, що має написати ШІ:</translation>
+    </message>
+    <message>
+        <source>Current scene context</source>
+        <translation>Контекст поточної сцени</translation>
+    </message>
+    <message>
+        <source>Include the selected text, or the whole current scene when nothing is selected, as required context? No uses only your prompt to search the project.</source>
+        <translation>Включити виділений текст або всю поточну сцену, якщо нічого не виділено, як обов’язковий контекст? «Ні» використовує лише ваш запит для пошуку в проєкті.</translation>
     </message>
 </context>
 <context>

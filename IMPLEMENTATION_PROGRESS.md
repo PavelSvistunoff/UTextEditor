@@ -1,3 +1,24 @@
+## RAG-09.1 — reviewed free-prompt project generation
+
+- COMPLETE: RAG-09.1; RAG-09 / RAG-09.V1 and RAG parent remain OPEN; branch main, predecessor 088fd89.
+- Separate AI > Generate with Project Context action; ordinary Generate remains prompt-only.
+- Requires an open project and explicit token window; current scene/selection inclusion requires an explicit choice.
+- Shared lexical capture, source exclusions/rebuild, exact role/prompt/destination/source/budget review; no embedding requests.
+- Missing-index mandatory-only fallback is visible; author-required text is not shortened to fit.
+- Streaming/non-streaming send the same captured request and full-context flags; streaming chunks remain provisional.
+- Request/project/settings/editor/cursor/selection/open-buffer guards; sources verified before/after generation.
+- Insert requires author review followed by another worker source check; one Qt edit block preserves Undo and disk files.
+- Cancellation, stale sources/late failures, both review rejections, source exclusions and selected-text replacement covered offline.
+- Changed: captured-generation/provider contract, rag_generation UI controller/menu, regression tests, README/UK and TS/QM catalogs.
+- Focused final: 106 passed in 1.15s; /private/tmp/utexteditor-rag09-focused.log (new workflow/provider plus i18n).
+- Full offline: 1548 passed / 7 expected skips in 298.08s; /private/tmp/utexteditor-rag09-full.log.
+- Translation validation passed against fresh 1098-source extraction; English intentionally partial; git diff --check passed.
+- Native/live-model checks not run; no native gate exists for RAG-09.1 and no live quality/runtime allocation claim is made.
+- Criterion matrix and Clean Code completion review: docs/rag-free-prompt-generation.md; unrelated bytecode/DS_Store preserved.
+- Resume RAG-09.2: read app/ai/project_planning.py, app/ui/project_brief_dialog.py and main_window project-setup callers/tests.
+- Remaining RAG-09.3 Auto-pilot transient provenance and RAG-09.4 cross-workflow gate are OPEN; do not close RAG-09.V1 yet.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_setup.py
+
 ## RAG-08 — bounded automatic inline retrieval
 
 - COMPLETE: RAG-08 / RAG-08.V1 / RAG-08.V2; RAG parent OPEN; branch main, predecessor 715fc4f.

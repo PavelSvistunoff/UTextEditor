@@ -254,7 +254,14 @@ from live-model latency. Without a native report: BLOCKED.
 
 Status: OPEN. Dependencies: RAG-05, RAG-06.V1.
 
-- [ ] Add explicit project-context retrieval to free-prompt generation, using the
+Execution subtasks (parent and V1 remain OPEN until all are verified):
+- RAG-09.1: explicit free-prompt retrieval and streaming parity — COMPLETE;
+  [implementation and criterion review](docs/rag-free-prompt-generation.md).
+- RAG-09.2: brief suggestions and outline planning — OPEN.
+- RAG-09.3: Auto-pilot planning/drafting and transient provenance — OPEN.
+- RAG-09.4: cross-workflow review, budget, consent and stale-state gate — OPEN.
+
+- [x] Add explicit project-context retrieval to free-prompt generation, using the
   author prompt and optional selected/current scene as the query. Preserve
   prompt-only operation; do not silently attach the active document or project.
   Streaming and non-streaming modes must send the same captured source context.

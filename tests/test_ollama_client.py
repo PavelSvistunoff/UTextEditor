@@ -62,6 +62,21 @@ def test_stream_generation_rejects_oversized_response(monkeypatch):
             OllamaClient().generate_stream("prompt", on_chunk=lambda _: None, is_cancelled=lambda: False)
 
 
+def test_full_context_stream_disables_truncation_without_changing_request_text():
+    response = MagicMock()
+    response.__enter__.return_value = response
+    response.readline.return_value = b'{"message":{"content":"Draft"},"done":true}\n'
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response) as urlopen:
+        result = OllamaClient().generate_stream("Frozen context", role="Frozen role",
+            maximum_tokens=80, temperature=.3, on_chunk=lambda text: None,
+            is_cancelled=lambda: False, require_full_context=True)
+    payload = json.loads(urlopen.call_args.args[0].data)
+    assert result == "Draft"
+    assert payload["truncate"] is payload["shift"] is False
+    assert payload["messages"] == [{"role": "system", "content": "Frozen role"},
+                                   {"role": "user", "content": "Frozen context"}]
+
+
 def test_complete_sends_a_non_streaming_request_and_returns_text() -> None:
     client = OllamaClient(model="test-model")
     with patch("app.ai.ollama_client.request.urlopen", return_value=response_with({"message": {"content": " done "}})) as urlopen:

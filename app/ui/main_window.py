@@ -111,6 +111,7 @@ from .conflict_dialog import ConflictDialog
 from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
 from .rag_completion import request_rag_completion
+from .rag_generation import request_project_generation
 from .inline_retrieval import InlineRetrieval
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
@@ -433,6 +434,7 @@ class MainWindow(QMainWindow):
             "Undo": self.tr("Undo"), "Redo": self.tr("Redo"), "Copy": self.tr("Copy"),
             "Cut": self.tr("Cut"), "Paste": self.tr("Paste"), "Select All": self.tr("Select All"),
             "Find": self.tr("Find"), "Replace": self.tr("Replace"), "Generate..": self.tr("Generate.."),
+            "Generate with Project Context…": self.tr("Generate with Project Context…"),
             "Generate Completion": self.tr("Generate Completion"), "Check Spelling": self.tr("Check Spelling"),
             "Completion Reference Notes…": self.tr("Completion Reference Notes…"),
             "Review Spelling and Grammar…": self.tr("Review Spelling and Grammar…"),
@@ -541,6 +543,7 @@ class MainWindow(QMainWindow):
             (search_menu, "Find", self.show_find_replace, QKeySequence.StandardKey.Find),
             (search_menu, "Replace", lambda: self.show_find_replace(replace=True), QKeySequence.StandardKey.Replace),
             (ai_menu, "Generate..", self.generate_from_prompt, QKeySequence()),
+            (ai_menu, "Generate with Project Context…", lambda: request_project_generation(self), QKeySequence()),
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
             (ai_menu, "Review Completion Context…", lambda: self.request_completion(review=True), QKeySequence()),
             (ai_menu, "Review RAG Completion Context…", lambda: request_rag_completion(self), QKeySequence()),

@@ -71,6 +71,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Continuity analysis requires the complete selected scene, selected notes and bounded associated-character context to fit the analysis character limit. If they do not fit, or character details were limited, it refuses before generation instead of dropping later sources. Increase Context size, select fewer notes or reduce profile detail before retrying. Summaries retain explicitly labeled scene excerpts. The character limit remains separate from the optional token window.
 - In spelling and Auto-writer reviews, arrow keys navigate the lists and Space includes or excludes an item; the lists expose these instructions to accessibility tools.
 - Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance. Results for a changed document or another active tab are discarded, and the cancel action follows the current request when requests overlap.
+- AI > Generate with Project Context… is a separate, explicit lexical-retrieval mode. Review its exact prompt, destination and source manifest, exclude sources and rebuild before sending. Including the current scene or selection requires a separate choice; ordinary Generate remains prompt-only. An open project and an explicit token window are required; missing indexes use visibly reported mandatory-only context. Streaming uses the same captured role, prompt and full-context contract. Insertion requires author acceptance and a fresh worker check of all captured sources, including after the result review. Planning and Auto-pilot retain their existing context paths.
 - Settings are grouped into Connection, Writing, AI assistance, and Advanced prompts tabs, with a reset-to-defaults option; the Connection tab can test the configured Ollama host/model and suggests how to install a missing model.
 - The interface language can be set from Settings > Application Language or from AI Settings, choosing System default, English, or Українська. The menu shows the saved choice; selecting a language stores its stable code, reports save errors, and explains that the change takes effect after restarting. System locale matching recognizes regional language tags and falls back to English. The selection is stored separately from the writing/spellcheck language. Qt Linguist catalogs currently cover the main menus, project navigation and creation prompts, settings, find/replace, recovery comparison labels, and common character, analysis, generation, writing-goal, and Auto-writer dialogs; untranslated interface text falls back to English.
 - Editor background, text, and selection colors follow the system palette.
@@ -185,7 +186,8 @@ shortened and omitted spans for review. Its frozen prompt can be reused for
 streaming or ordinary generation. The opt-in manual completion integration is
 described in [manual RAG completion](docs/rag-manual-completion.md) and
 [Auto-writer retrieval and evaluation](docs/rag-auto-writer-evaluation.md), plus
-[automatic inline retrieval](docs/rag-inline-retrieval.md);
+[automatic inline retrieval](docs/rag-inline-retrieval.md) and
+[explicit free-prompt project generation](docs/rag-free-prompt-generation.md);
 remaining workflows retain their existing context paths. See also
 [context assembly boundaries](docs/rag-context-assembly.md).
 

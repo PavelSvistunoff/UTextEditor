@@ -55,6 +55,10 @@
     <name>MainWindow</name>
     <message numerus="yes"><source>Found %n spelling suggestions. Right-click an underline to review.</source><translation><numerusform>Found %n spelling suggestion. Right-click an underline to review.</numerusform><numerusform>Found %n spelling suggestions. Right-click an underline to review.</numerusform></translation></message>
     <message><source>Markdown Preview</source><translation>Markdown Preview</translation></message>
+    <message>
+        <source>Generate with Project Context…</source>
+        <translation>Generate with Project Context…</translation>
+    </message>
 </context>
 <context>
     <name>MarkdownPreview</name>
@@ -107,5 +111,28 @@
     <name>SettingsDialog</name>
     <message><source>Use retrieval for automatic inline completion</source><translation>Use retrieval for automatic inline completion</translation></message>
     <message><source>Use hybrid retrieval for RAG completion</source><translation>Use hybrid retrieval for RAG completion</translation></message>
+</context>
+<context>
+    <name>RAGCompletionDialog</name>
+    <message>
+        <source>Generate with Project Context…</source>
+        <translation>Generate with Project Context…</translation>
+    </message>
+    <message>
+        <source>Project generation requires an open project and an explicit Ollama token window.</source>
+        <translation>Project generation requires an open project and an explicit Ollama token window.</translation>
+    </message>
+    <message>
+        <source>Describe what you want the AI to write:</source>
+        <translation>Describe what you want the AI to write:</translation>
+    </message>
+    <message>
+        <source>Current scene context</source>
+        <translation>Current scene context</translation>
+    </message>
+    <message>
+        <source>Include the selected text, or the whole current scene when nothing is selected, as required context? No uses only your prompt to search the project.</source>
+        <translation>Include the selected text, or the whole current scene when nothing is selected, as required context? No uses only your prompt to search the project.</translation>
+    </message>
 </context>
 </TS>

@@ -14,7 +14,8 @@ class AIProvider(Protocol):
 
     def generate_stream(self, prompt: str, *, on_chunk: Callable[[str], None],
                         is_cancelled: Callable[[], bool], role: str = DEFAULT_AI_ROLE,
-                        maximum_tokens: int = 300, temperature: float = 0.2) -> str:
+                        maximum_tokens: int = 300, temperature: float = 0.2,
+                        require_full_context: bool = False) -> str:
         ...
 
     def complete(
