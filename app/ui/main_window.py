@@ -118,6 +118,7 @@ from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
 from .settings_dialog import SettingsDialog
+from .retrieval_index_dialog import RetrievalIndexDialog
 from .tab_widget import DocumentTabWidget
 from .workers import FunctionWorker, StreamingWorker
 from .writing_goal_dialog import WritingGoalDialog
@@ -196,6 +197,7 @@ class MainWindow(QMainWindow):
         self._project_generation = 0
         self._completion_excluded_notes: set[str] = set()
         self._revision_history_dialog: RevisionHistoryDialog | None = None
+        self._retrieval_index_dialog: RetrievalIndexDialog | None = None
         self._project_refresh_generation = 0
         self._project_ai_generation = 0
         self._project_ai_worker: FunctionWorker | None = None
@@ -397,6 +399,7 @@ class MainWindow(QMainWindow):
             ("Export Manuscript…", self.export_project, True),
             ("Compile Book as PDF…", self.compile_project_book, True),
             ("AI Project Setup…", self.setup_project_with_ai, True),
+            ("Retrieval Index…", self.show_retrieval_index, True),
             ("Auto-writer…", self.start_auto_writer, True),
             ("Translate Project to Ukrainian…", self.translate_project_to_ukrainian, True),
             ("Translate Project to English…", self.translate_project_to_english, True),
@@ -407,6 +410,7 @@ class MainWindow(QMainWindow):
             "New Project…": self.tr("New Project…"), "Open Project…": self.tr("Open Project…"),
             "Close Project": self.tr("Close Project"), "AI Project Setup…": self.tr("AI Project Setup…"),
             "Auto-writer…": self.tr("Auto-writer…"), "New Chapter…": self.tr("New Chapter…"),
+            "Retrieval Index…": self.tr("Retrieval Index…"),
             "New Scene…": self.tr("New Scene…"), "New Reference Note…": self.tr("New Reference Note…"),
             "New Character…": self.tr("New Character…"), "Import Scene…": self.tr("Import Scene…"),
             "Rename Selected…": self.tr("Rename Selected…"), "Duplicate Selected…": self.tr("Duplicate Selected…"),
@@ -447,6 +451,7 @@ class MainWindow(QMainWindow):
             "Create Revision Snapshot…": "revisions", "Review Revision Snapshots…": "revisions",
             "Export Manuscript…": "export", "Compile Book as PDF…": "export",
             "AI Project Setup…": "ai", "Auto-writer…": "ai",
+            "Retrieval Index…": "ai",
             "Translate Project to Ukrainian…": "ai", "Translate Project to English…": "ai",
         }
         group_labels = {"move": self.tr("Move Items"), "links": self.tr("Links"),
@@ -1239,6 +1244,23 @@ class MainWindow(QMainWindow):
         ) != QMessageBox.StandardButton.Yes:
             return
         self._start_project_outline_request(project, brief, character_context)
+
+    def show_retrieval_index(self) -> None:
+        project = self.project
+        if project is None:
+            return
+        if self._retrieval_index_dialog is not None:
+            self._retrieval_index_dialog.close()
+        generation = self._project_generation
+        dialog = RetrievalIndexDialog(
+            project, AppSettings._default_settings_path().parent,
+            is_current=lambda: (self.project is project and self._project_generation == generation
+                                and not self._closing_confirmed),
+            parent=self,
+        )
+        self._retrieval_index_dialog = dialog
+        dialog.worker_started.connect(self._track_worker)
+        dialog.show()
 
     def start_auto_writer(self) -> None:
         project = self.project

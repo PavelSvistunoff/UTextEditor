@@ -1,3 +1,23 @@
+## RAG-03 — local lexical index
+
+- COMPLETE: RAG-03 / RAG-03.V1; all four criteria and required offline gate passed.
+- RAG-01/02 committed as aab39ee; unrelated staged bytecode/DS_Store preserved.
+- Added project-ID/root-scoped SQLite FTS5 cache outside project files.
+- Runtime FTS5 probe reports unavailable support without affecting existing AI/editor.
+- Schema/chunk policy versions and source fingerprints drive incremental refresh.
+- Private staging databases publish atomically; unchanged sources are not re-tokenized.
+- Corruption/version mismatch rebuilds from source; orphan staging is never read.
+- Disk-only sources persist; partial captures remove stale omitted-source passages.
+- Locks/cancellation and source rechecks prevent observed obsolete publications.
+- Changed: app/project/rag_index.py, app/ui/retrieval_index_dialog.py, MainWindow wiring, docs/tests/catalog.
+- Focused: 392 passed in 47.52s; final targeted: 60 passed in 9.15s.
+- Full offscreen: 1318 passed, 2 live-only skips in 164.65s; log /private/tmp/utexteditor-rag03-final-full.log.
+- Translations validated against 1055 extracted strings; 1068 compiled translations.
+- Clean Code checklist reviewed: intent, ownership, safety, errors, tests, diff, report.
+- Branch main; git diff --check passed; no native/live claims or RAG-03 native gate.
+- Resume: RAG-04 context retrieval/assembly; RAG parent remains OPEN; index not yet used in AI requests.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+
 ## RAG-02 — source capture and chunk provenance
 
 - COMPLETE: RAG-02 and RAG-02.V1; all four acceptance criteria verified.

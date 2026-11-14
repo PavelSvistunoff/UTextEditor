@@ -272,6 +272,22 @@ def test_settings_context_window_accept_cancel_and_reset(application):
     dialog.close()
 
 
+def test_retrieval_maintenance_controls_are_localized(application, tmp_path):
+    from app.ui.retrieval_index_dialog import RetrievalIndexDialog
+
+    project = Project.create(tmp_path / "novel", "Novel")
+    _, translator = install_translation(application, "uk")
+    try:
+        dialog = RetrievalIndexDialog(project, tmp_path / "cache", is_current=lambda: True)
+        assert dialog.windowTitle() == "Індекс пошуку контексту"
+        assert dialog.refresh_button.text() == "Оновити"
+        assert dialog.delete_button.text() == "Видалити кеш"
+        assert MainWindow.tr("Retrieval Index…") == "Індекс пошуку контексту…"
+        dialog.close()
+    finally:
+        application.removeTranslator(translator)
+
+
 def test_goal_and_revision_workflows_use_ukrainian_catalog(application):
     _, translator = install_translation(application, "uk")
     try:

@@ -682,6 +682,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Retrieval Index…</source><translation>Індекс пошуку контексту…</translation></message>
     <message><source>Project or AI settings changed; no files were added.</source><translation>Проєкт або налаштування ШІ змінилися; файли не додано.</translation></message>
     <message><source>Generated %1 chapters, %2 scenes, and %3 character notes. Applying the complete batch…</source><translation>Згенеровано розділів: %1, сцен: %2 та нотаток персонажів: %3. Застосування повного пакета…</translation></message>
     <message><source>Could not apply generated content: %1</source><translation>Не вдалося застосувати згенерований вміст: %1</translation></message>
@@ -2714,5 +2715,31 @@ Project text and reference notes are sent only to this configured model. A compl
     <message><source>Document or project</source><translation>Документ або проєкт</translation></message>
     <message><source>Words</source><translation>Слова</translation></message>
     <message><source>Close</source><translation>Закрити</translation></message>
+</context>
+<context>
+    <name>RetrievalIndexDialog</name>
+    <message><source>Retrieval Index</source><translation>Індекс пошуку контексту</translation></message>
+    <message><source>This local cache contains saved manuscript and character text and can be rebuilt from project files. Unsaved edits are not stored. Index maintenance is local.</source><translation>Цей локальний кеш містить збережені тексти рукопису й персонажів; його можна перебудувати з файлів проєкту. Незбережені зміни не зберігаються в кеші. Обслуговування індексу виконується локально.</translation></message>
+    <message><source>Checking index…</source><translation>Перевірка індексу…</translation></message>
+    <message><source>Retrieval index status</source><translation>Стан індексу пошуку контексту</translation></message>
+    <message><source>Cache directory: {path}</source><translation>Каталог кешу: {path}</translation></message>
+    <message><source>Check Status</source><translation>Перевірити стан</translation></message>
+    <message><source>Refresh</source><translation>Оновити</translation></message>
+    <message><source>Rebuild</source><translation>Перебудувати</translation></message>
+    <message><source>Delete Cache</source><translation>Видалити кеш</translation></message>
+    <message><source>Cancel Operation</source><translation>Скасувати операцію</translation></message>
+    <message><source>Close</source><translation>Закрити</translation></message>
+    <message><source>Cancelling…</source><translation>Скасування…</translation></message>
+    <message><source>Working…</source><translation>Виконується…</translation></message>
+    <message><source>Ready: {sources} sources, {chunks} passages. Refresh to check saved changes.</source><translation>Готово: {sources} джерел, {chunks} фрагментів. Оновіть індекс, щоб перевірити збережені зміни.</translation></message>
+    <message><source>Incomplete: {sources} sources, {chunks} passages. Some sources were omitted.</source><translation>Неповний індекс: {sources} джерел, {chunks} фрагментів. Деякі джерела пропущено.</translation></message>
+    <message><source>No index. Refresh or rebuild to create it from saved project files.</source><translation>Індексу немає. Оновіть або перебудуйте його зі збережених файлів проєкту.</translation></message>
+    <message><source>SQLite FTS5 is unavailable. Editing and existing AI workflows remain available.</source><translation>SQLite FTS5 недоступний. Редагування та наявні функції ШІ залишаються доступними.</translation></message>
+    <message><source>Index format changed. Refresh or rebuild before using it.</source><translation>Формат індексу змінився. Оновіть або перебудуйте його перед використанням.</translation></message>
+    <message><source>Index could not be read. Try rebuilding it.</source><translation>Не вдалося прочитати індекс. Спробуйте перебудувати його.</translation></message>
+    <message><source>{count} additional source diagnostics.</source><translation>Додаткових діагностичних повідомлень джерел: {count}.</translation></message>
+    <message><source>Index operation failed: {error}</source><translation>Не вдалося виконати операцію з індексом: {error}</translation></message>
+    <message><source>Operation cancelled. Check status before retrying.</source><translation>Операцію скасовано. Перевірте стан перед повторною спробою.</translation></message>
+    <message><source>Project changed. Close and reopen index maintenance.</source><translation>Проєкт змінився. Закрийте й повторно відкрийте обслуговування індексу.</translation></message>
 </context>
 </TS>

@@ -85,17 +85,19 @@ precedence, external modification and cross-project isolation.
 
 ### RAG-03 — rebuildable local lexical index
 
-Status: OPEN. Dependencies: RAG-02.
+Status: COMPLETE. Dependencies: RAG-02. Gate RAG-03.V1: COMPLETE.
+Evidence: [lexical index verification](docs/rag-lexical-index.md),
+IMPLEMENTATION_PROGRESS.md; final full offscreen suite: 1318 passed, 2 skipped.
 
-- [ ] Add a project-identity-scoped cache using SQLite FTS5, after checking its
+- [x] Add a project-identity-scoped cache using SQLite FTS5, after checking its
   availability on supported Python installations. Provide a clear unavailable
   state without preventing ordinary editing or existing AI workflows.
-- [ ] Version the index schema and chunking policy; incrementally refresh changed
+- [x] Version the index schema and chunking policy; incrementally refresh changed
   sources and remove deleted ones. Rebuild safely after corruption, version
   mismatch, relocation or interrupted indexing.
-- [ ] Publish index updates atomically so requests cannot see partially replaced
+- [x] Publish index updates atomically so requests cannot see partially replaced
   generations. Cancellation/project switches must discard obsolete work.
-- [ ] Provide index status, rebuild and cache deletion controls. Explain that the
+- [x] Provide index status, rebuild and cache deletion controls. Explain that the
   local cache contains manuscript text and can be recreated from source files.
 
 Gate RAG-03.V1: temporary-database tests for insert/update/delete/rename, reopened
