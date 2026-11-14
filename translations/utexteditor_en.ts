@@ -135,4 +135,43 @@
         <translation>Include the selected text, or the whole current scene when nothing is selected, as required context? No uses only your prompt to search the project.</translation>
     </message>
 </context>
+<context>
+    <name>ProjectBriefDialog</name>
+    <message>
+        <source>Set an explicit Ollama token window before using planning retrieval.</source>
+        <translation>Set an explicit Ollama token window before using planning retrieval.</translation>
+    </message>
+    <message>
+        <source>Confirm retrieved Auto-pilot</source>
+        <translation>Confirm retrieved Auto-pilot</translation>
+    </message>
+    <message>
+        <source>Auto-pilot will review project passages before planning and each new scene. After all requests succeed, it automatically appends the complete plan, scene drafts and character notes without a final draft approval. Existing files are preserved. Cancel or failure before application adds nothing. Continue?</source>
+        <translation>Auto-pilot will review project passages before planning and each new scene. After all requests succeed, it automatically appends the complete plan, scene drafts and character notes without a final draft approval. Existing files are preserved. Cancel or failure before application adds nothing. Continue?</translation>
+    </message>
+    <message>
+        <source>Review planning context</source>
+        <translation>Review planning context</translation>
+    </message>
+    <message>
+        <source>The brief and compact character motivations are required. Retrieved passages are partial project records; invented plans and earlier generated drafts are provisional. No embeddings are sent. Source exclusions require rebuilding before Send.</source>
+        <translation>The brief and compact character motivations are required. Retrieved passages are partial project records; invented plans and earlier generated drafts are provisional. No embeddings are sent. Source exclusions require rebuilding before Send.</translation>
+    </message>
+    <message>
+        <source>Planning retrieval failed; no generated changes were applied: %1</source>
+        <translation>Planning retrieval failed; no generated changes were applied: %1</translation>
+    </message>
+    <message>
+        <source>Applying the complete retrieved Auto-pilot batch…</source>
+        <translation>Applying the complete retrieved Auto-pilot batch…</translation>
+    </message>
+    <message>
+        <source>Approved retrieved outline added; existing manuscript text was preserved.</source>
+        <translation>Approved retrieved outline added; existing manuscript text was preserved.</translation>
+    </message>
+    <message>
+        <source>Review retrieved project context for planning and Auto-pilot</source>
+        <translation>Review retrieved project context for planning and Auto-pilot</translation>
+    </message>
+</context>
 </TS>

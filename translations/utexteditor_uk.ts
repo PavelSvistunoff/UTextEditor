@@ -1909,6 +1909,42 @@ Generation sends project text and reference notes to this configured model. A co
         <source>Cancel</source>
         <translation>Скасувати</translation>
     </message>
+    <message>
+        <source>Set an explicit Ollama token window before using planning retrieval.</source>
+        <translation>Перед використанням пошуку контексту для планування явно задайте вікно токенів Ollama.</translation>
+    </message>
+    <message>
+        <source>Confirm retrieved Auto-pilot</source>
+        <translation>Підтвердження Auto-pilot із пошуком контексту</translation>
+    </message>
+    <message>
+        <source>Auto-pilot will review project passages before planning and each new scene. After all requests succeed, it automatically appends the complete plan, scene drafts and character notes without a final draft approval. Existing files are preserved. Cancel or failure before application adds nothing. Continue?</source>
+        <translation>Auto-pilot запропонує перегляд уривків проєкту перед плануванням і кожною новою сценою. Після успішного завершення всіх запитів він автоматично додасть увесь план, чернетки сцен і нотатки персонажів без фінального затвердження чернеток. Наявні файли зберігаються. Скасування або помилка до застосування не додають нічого. Продовжити?</translation>
+    </message>
+    <message>
+        <source>Review planning context</source>
+        <translation>Перегляд контексту планування</translation>
+    </message>
+    <message>
+        <source>The brief and compact character motivations are required. Retrieved passages are partial project records; invented plans and earlier generated drafts are provisional. No embeddings are sent. Source exclusions require rebuilding before Send.</source>
+        <translation>Задум і стислий виклад мотивацій персонажів є обов’язковими. Знайдені уривки охоплюють лише частину проєкту; запропоновані плани та раніше згенеровані чернетки є попередніми. Запити векторизації не надсилаються. Після виключення джерел перебудуйте контекст перед надсиланням.</translation>
+    </message>
+    <message>
+        <source>Planning retrieval failed; no generated changes were applied: %1</source>
+        <translation>Помилка пошуку контексту для планування; згенеровані зміни не застосовано: %1</translation>
+    </message>
+    <message>
+        <source>Applying the complete retrieved Auto-pilot batch…</source>
+        <translation>Застосування всієї порції змін Auto-pilot із пошуком контексту…</translation>
+    </message>
+    <message>
+        <source>Approved retrieved outline added; existing manuscript text was preserved.</source>
+        <translation>Затверджений план із пошуком контексту додано; наявний текст рукопису збережено.</translation>
+    </message>
+    <message>
+        <source>Review retrieved project context for planning and Auto-pilot</source>
+        <translation>Перегляд знайденого контексту проєкту для планування й Auto-pilot</translation>
+    </message>
 </context>
 <context>
     <name>ProjectSetupDialog</name>

@@ -64,7 +64,7 @@ def _validate_outline_title(title: str, line_number: int) -> None:
         raise ProjectError(f"Control characters are not allowed in titles (line {line_number}).")
 
 
-def project_outline_metadata(project: Project) -> str:
+def project_outline_metadata(project: Project, *, complete: bool = False) -> str:
     metadata = {
         "project": project.manifest.title,
         "chapters": [
@@ -72,15 +72,18 @@ def project_outline_metadata(project: Project) -> str:
                 "title": chapter.title,
                 "scenes": [scene.title for scene in chapter.scenes],
             }
-            for chapter in project.manifest.chapters[:30]
+            for chapter in (project.manifest.chapters if complete else project.manifest.chapters[:30])
         ],
         "ungrouped_scenes": [
-            scene.title for scene in project.manifest.ungrouped_scenes[:50]
+            scene.title for scene in (project.manifest.ungrouped_scenes if complete else project.manifest.ungrouped_scenes[:50])
         ],
         "characters": [
             note.title
             for note in project.manifest.notes
             if note.type == "character"
-        ][:30],
+        ],
     }
-    return json.dumps(metadata, ensure_ascii=False)[:5000]
+    if not complete:
+        metadata["characters"] = metadata["characters"][:30]
+    rendered = json.dumps(metadata, ensure_ascii=False)
+    return rendered if complete else rendered[:5000]

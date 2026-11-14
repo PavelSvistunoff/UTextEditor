@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
-from PySide6.QtCore import QThreadPool, QTimer, Qt
+from PySide6.QtCore import QEventLoop, QThreadPool, QTimer, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox, QPushButton, QDialogButtonBox
 
@@ -30,7 +30,9 @@ def wait(predicate,application):
     while not predicate():
         application.processEvents()
         assert monotonic()<deadline,'Auto-writer UI did not finish'
-        QTest.qWait(5)
+        loop = QEventLoop()
+        QTimer.singleShot(5, loop.quit)
+        loop.exec()  # Allow Python workers to run while processing queued reviews.
 
 
 @pytest.fixture

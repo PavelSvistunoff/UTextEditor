@@ -46,15 +46,18 @@ The current settings default for automatic project context remains unchanged.
 | Continuity, RAG-10/12 | Full selected scene, selected notes, associated bounded profiles; explicit links in RAG-12 | Additional evidence passages | Earlier facts for target-state claims; later comparisons must be explicitly labeled | Partial-coverage review, never a consistency guarantee; no project means unavailable |
 | Empty character fields, RAG-10/12 | Current staged fields and **all** project notes | Relevant manuscript passages | Background evidence does not imply presence | Existing complete-note operation; requires project/profile |
 | Scene-based character development, RAG-10/12 | Staged profile and selected associated scene excerpt | Supporting background passages | Only exact selected-scene evidence can support an arc update | Existing evidence-backed operation; requires project/profile/associated scene |
-| Brief suggestions, RAG-09 | Author brief/template | Explicitly selected existing project references | Separate existing facts from inventions | Brief-only operation when creating a project |
+| Brief suggestions, RAG-09 | Author brief/template and compact motivation summary | Reviewed existing project scenes/notes | Separate source-backed records from marked inventions | Mandatory input only when no eligible facts/index exist |
 | Outline planning, RAG-09 | Brief and existing compact motivation summary | Relevant project facts | Do not force background characters into scenes | Brief-only for a new project; existing summary remains bounded |
-| Auto-pilot planning/drafting, RAG-09 | Brief, outline metadata, compact characters, generated scene plan and prior-draft context | Existing project evidence and earlier transient drafts | Proposed additions are not established facts; transient drafts are not canonical index content | Existing bounded additive workflow with no retrieval |
+| Auto-pilot planning/drafting, RAG-09 | Brief, full outline metadata, compact characters, full generated plan and earlier transient drafts | Reviewed existing project passages | Proposed additions are not established facts; transient IDs/digests/text stay request-local and never enter the canonical index | Mandatory-only fallback with visible coverage; empty new projects supported; existing additive mode remains available |
 | Auto-writer, RAG-07/12 | Instructions, bounded outline, **all** notes/textual profiles/relationships, target metadata, associations, current scene for refinement | Relevant earlier manuscript passages | Later development is not knowledge in an earlier scene | Retain existing full-reference operation; no silent reduced-reference fallback; project required |
 | Translation, RAG-11 | Complete target item and language direction | Captured shared glossary and usage examples | Examples are reference data, not text to emit | Translate target only; current project-translation entry point requires a project |
 
-Until those tickets land, manual/automatic completion, planning and Auto-pilot
-keep their current bounded context; free-prompt generation is prompt-only;
-translation has no shared glossary; spelling receives the full target text.
+Reviewed manual completion, Auto-writer, opt-in automatic retrieval and RAG-09
+free-prompt/planning/Auto-pilot integration are implemented. Ordinary free-prompt
+generation remains prompt-only and unchecked planning retains its existing inputs.
+The [RAG-09 gate report](rag-planning-autopilot.md) describes the explicit source
+review, mandatory transient chain, budget refusal and pre-application checks.
+Translation has no shared glossary yet; spelling receives the full target text.
 No project implies no scanning neighboring files, other tabs or other projects.
 RAG-12 requires structured scene links independent of text/vector matches.
 Actual plot time may differ from manuscript order; ambiguous chronology must be

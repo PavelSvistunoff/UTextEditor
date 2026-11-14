@@ -3,11 +3,17 @@
 Call from workers; returned text still requires author review before project edits.
 """
 
+from typing import TYPE_CHECKING
+
 from .provider import AIProvider
+
+if TYPE_CHECKING:
+    from app.project.planning_context import PlanningRetrievalRun
 
 
 def suggest_project_brief(
-    provider: AIProvider, brief: str, maximum_tokens: int, temperature: float
+    provider: AIProvider, brief: str, maximum_tokens: int, temperature: float, *,
+    retrieval: "PlanningRetrievalRun | None" = None,
 ) -> str:
     prompt = (
         "Help an author complete the planning template below. Return the full template "
@@ -22,15 +28,13 @@ def suggest_project_brief(
         f"{brief}\n"
         "</planning_template>"
     )
-    result = provider.generate_private(
-        prompt,
-        role=(
-            "You assist with story planning. Return only an editable completed template "
-            "for author review; do not write manuscript prose."
-        ),
-        maximum_tokens=min(maximum_tokens, 1400),
-        temperature=temperature,
+    role = (
+        "You assist with story planning. Return only an editable completed template "
+        "for author review; do not write manuscript prose."
     )
+    options = dict(role=role, maximum_tokens=min(maximum_tokens, 1400), temperature=temperature)
+    result = (retrieval.generate(provider, "Brief suggestions", prompt, **options)
+              if retrieval is not None else provider.generate_private(prompt, **options))
     if not isinstance(result, str) or not result.strip():
         raise ValueError("The model returned empty or malformed template suggestions.")
     if len(result) > 15000:
@@ -38,7 +42,9 @@ def suggest_project_brief(
     return result
 
 
-def generate_project_outline(provider: AIProvider, brief: str, maximum_tokens: int, temperature: float, character_context: str = "") -> str:
+def generate_project_outline(provider: AIProvider, brief: str, maximum_tokens: int, temperature: float,
+                             character_context: str = "", *,
+                             retrieval: "PlanningRetrievalRun | None" = None) -> str:
     prompt = (
         "Create a concise, author-editable writing-project outline from the brief below. "
         "Return only Markdown outline lines, with each chapter written as '# Chapter title' "
@@ -54,15 +60,13 @@ def generate_project_outline(provider: AIProvider, brief: str, maximum_tokens: i
         f"{character_context or '[No character profiles have been created.]'}\n"
         "</character_context>"
     )
-    result = provider.generate_private(
-        prompt,
-        role=(
-            "You help authors plan writing projects. Return an outline for author review; "
-            "never claim that files or project data have been changed."
-        ),
-        maximum_tokens=min(maximum_tokens, 1800),
-        temperature=temperature,
+    role = (
+        "You help authors plan writing projects. Return an outline for author review; "
+        "never claim that files or project data have been changed."
     )
+    options = dict(role=role, maximum_tokens=min(maximum_tokens, 1800), temperature=temperature)
+    result = (retrieval.generate(provider, "Project outline", prompt, **options)
+              if retrieval is not None else provider.generate_private(prompt, **options))
     if not isinstance(result, str) or not result.strip():
         raise ValueError("The model returned an empty or malformed outline.")
     return result

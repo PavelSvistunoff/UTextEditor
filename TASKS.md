@@ -252,27 +252,28 @@ from live-model latency. Without a native report: BLOCKED.
 
 ### RAG-09 — free-prompt generation, planning and Auto-pilot
 
-Status: OPEN. Dependencies: RAG-05, RAG-06.V1.
+Status: COMPLETE. RAG-09.V1 COMPLETE. Dependencies: RAG-05, RAG-06.V1.
 
-Execution subtasks (parent and V1 remain OPEN until all are verified):
+Execution subtasks (RAG-09 and V1 COMPLETE; the broader RAG parent remains OPEN):
 - RAG-09.1: explicit free-prompt retrieval and streaming parity — COMPLETE;
   [implementation and criterion review](docs/rag-free-prompt-generation.md).
-- RAG-09.2: brief suggestions and outline planning — OPEN.
-- RAG-09.3: Auto-pilot planning/drafting and transient provenance — OPEN.
-- RAG-09.4: cross-workflow review, budget, consent and stale-state gate — OPEN.
+- RAG-09.2: brief suggestions and outline planning — COMPLETE.
+- RAG-09.3: Auto-pilot planning/drafting and transient provenance — COMPLETE.
+- RAG-09.4: cross-workflow review, budget, consent and stale-state gate — COMPLETE;
+  [criterion matrix and gate report](docs/rag-planning-autopilot.md).
 
 - [x] Add explicit project-context retrieval to free-prompt generation, using the
   author prompt and optional selected/current scene as the query. Preserve
   prompt-only operation; do not silently attach the active document or project.
   Streaming and non-streaming modes must send the same captured source context.
-- [ ] Integrate brief suggestions and outline planning using the brief and
+- [x] Integrate brief suggestions and outline planning using the brief and
   existing mandatory motivation summary. Support new-project/no-index operation;
   distinguish retrieved established facts from proposed inventions.
-- [ ] Integrate both Auto-pilot planning and scene drafting. Capture source
+- [x] Integrate both Auto-pilot planning and scene drafting. Capture source
   provenance per step and include earlier newly generated drafts as transient
   sources where appropriate; never persist them in the canonical index before
   successful project application. Preserve additive/transactional behavior.
-- [ ] Reuse review, budget, consent and stale-state handling; report fallback or
+- [x] Reuse review, budget, consent and stale-state handling; report fallback or
   insufficient context explicitly rather than claiming complete project access.
 
 Gate RAG-09.V1: offline tests for prompt-only/project modes, streaming parity,

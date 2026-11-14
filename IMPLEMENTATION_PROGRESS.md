@@ -1,3 +1,23 @@
+## RAG-09.2–4 — reviewed planning and sequential Auto-pilot
+
+- COMPLETE: RAG-09.2 / RAG-09.3 / RAG-09.4 / RAG-09.V1 / RAG-09; broader RAG parent OPEN; main, predecessor e10338b.
+- Default-off setup checkbox adds lexical RAG to Suggest, outline and every Auto-pilot request; unchecked paths retained.
+- Shared queued review shows exact destination/role/prompt/budget/source decisions; optional scene/note exclusions require rebuild.
+- Brief/compact motivations mandatory; full outline title metadata and generated plan/prior drafts are not silently cut in RAG mode.
+- Provisional records carry run-local IDs/full text/SHA256/status; step evidence is immutable and estimated request records capped at 16 MiB.
+- New/empty projects and unavailable indexes have explicit coverage fallback; Auto-pilot refuses incomplete source snapshots.
+- Baseline checked across steps and before transaction; GUI checks submitted brief/all open buffers/project/settings/request generations.
+- Cancellation, late success/error, queued old callbacks and final-review changes cannot apply; old callbacks preserve new form/worker state.
+- Existing additive transaction/rollback reused; no canonical index writes; successful Auto-pilot exits without an extra outline request.
+- Changed: planning_context/planning_retrieval owners, AI planning/Auto-pilot, outline helper, shared review/dialog/menu callers, tests/docs/catalogs.
+- Focused final: 91 passed / 1 native skip in 2.48s; /private/tmp/utexteditor-rag09-final-focused.log.
+- Final full: 1603 passed / 7 expected native/live skips in 330.45s; /private/tmp/utexteditor-rag09-frozen-full.log; frozen production code.
+- Translation validation passed against fresh 1107-source extraction; English intentionally partial; git diff --check passed.
+- Native/live checks not run; RAG-09.V1 is offline-only; no model-quality/runtime allocation or arbitrary-writer safety claim.
+- Criterion matrix and all seven Clean Code review items: docs/rag-planning-autopilot.md; unrelated bytecode/DS_Store preserved.
+- Resume RAG-10 / RAG-10.V1: inspect app/ai/project_analysis.py, character workflows and their tests before selecting the next bounded batch.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_analysis.py tests/test_character_development.py
+
 ## RAG-09.1 — reviewed free-prompt project generation
 
 - COMPLETE: RAG-09.1; RAG-09 / RAG-09.V1 and RAG parent remain OPEN; branch main, predecessor 088fd89.

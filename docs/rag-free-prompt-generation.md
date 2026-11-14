@@ -1,8 +1,9 @@
 # RAG-09.1 — explicit free-prompt project generation
 
-This bounded batch covers the first RAG-09 requirement. The parent and
-RAG-09.V1 remain open: brief suggestions, outline planning and Auto-pilot still
-need RAG-09.2–4. No native gate or live-model quality claim is closed here.
+This document covers the first RAG-09 requirement. Brief suggestions, outline
+planning, Auto-pilot and the parent gate are covered separately in
+[planning and Auto-pilot retrieval](rag-planning-autopilot.md).
+No native gate or live-model quality claim is closed here.
 
 ## Preconditions and behavior
 
@@ -72,4 +73,4 @@ QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -
   no live server is required. Native and live-model behavior were not evaluated.
 - Diff: no dependencies, broad refactors, local configuration or unrelated
   bytecode changes included; English/Ukrainian UI catalogs updated.
-- Report: RAG-09.1 is separate from the still-open planning/Auto-pilot parent gate.
+- Report: RAG-09.1 verification is separate from the planning/Auto-pilot gate evidence linked above.

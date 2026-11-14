@@ -3,6 +3,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QDialog,
+    QCheckBox,
     QDialogButtonBox,
     QLabel,
     QPushButton,
@@ -52,6 +53,7 @@ class ProjectBriefDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self.autopilot_applied = False
         self.setWindowTitle(self.tr("Set up writing project"))
         self.resize(680, 650)
 
@@ -64,6 +66,8 @@ class ProjectBriefDialog(QDialog):
         self.editor.setPlainText(PROJECT_BRIEF_TEMPLATE)
         self.status = QLabel(self)
         self.status.setWordWrap(True)
+        self.retrieval = QCheckBox(self.tr("Review retrieved project context for planning and Auto-pilot"), self)
+        self.retrieval.setChecked(False)
 
         self.suggest_button = QPushButton(self.tr("Suggest"), self)
         self.suggest_button.clicked.connect(
@@ -86,6 +90,7 @@ class ProjectBriefDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(instructions)
         layout.addWidget(self.editor)
+        layout.addWidget(self.retrieval)
         layout.addWidget(self.status)
         layout.addWidget(self.suggest_button)
         layout.addWidget(self.autopilot_button)
@@ -95,6 +100,7 @@ class ProjectBriefDialog(QDialog):
         return self.editor.toPlainText()
 
     def set_suggesting(self, suggesting: bool, message: str = "") -> None:
+        self.retrieval.setEnabled(not suggesting)
         self.suggest_button.setEnabled(not suggesting)
         self.autopilot_button.setEnabled(not suggesting)
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(not suggesting)
@@ -103,6 +109,7 @@ class ProjectBriefDialog(QDialog):
         )
 
     def set_autopilot_running(self, running: bool, message: str = "") -> None:
+        self.retrieval.setEnabled(not running)
         self.cancel_button.setEnabled(True)
         self.editor.setEnabled(not running)
         self.suggest_button.setEnabled(not running)

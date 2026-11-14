@@ -112,6 +112,7 @@ from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
 from .rag_completion import request_rag_completion
 from .rag_generation import request_project_generation
+from .planning_retrieval import start_planning_retrieval
 from .inline_retrieval import InlineRetrieval
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
@@ -1227,7 +1228,7 @@ class MainWindow(QMainWindow):
         accepted = dialog.exec() == QDialog.DialogCode.Accepted
         if self._project_setup_brief_dialog is dialog:
             self._project_setup_brief_dialog = None
-        if not accepted:
+        if not accepted or dialog.autopilot_applied:
             return
         brief = dialog.brief()
         if not brief.strip():
@@ -1239,6 +1240,9 @@ class MainWindow(QMainWindow):
                 self.tr("AI project setup"),
                 self.tr("The writing brief must be no longer than 6,000 characters."),
             )
+            return
+        if dialog.retrieval.isChecked():
+            self._start_project_outline_request(project, brief, use_retrieval=True)
             return
         character_context = project_planning_context(project)
         confirmation = self.tr(
@@ -2057,7 +2061,8 @@ class MainWindow(QMainWindow):
             outcome="cancelling",
         )
 
-    def _start_project_outline_request(self, project: Project, brief: str, character_context: str = "") -> None:
+    def _start_project_outline_request(self, project: Project, brief: str, character_context: str = "", *,
+                                       use_retrieval: bool = False) -> None:
         if (
             project is not self.project
             or not self.settings.ai_enabled
@@ -2065,6 +2070,10 @@ class MainWindow(QMainWindow):
         ):
             return
         if not self._ensure_ai_context_consent():
+            return
+
+        if use_retrieval:
+            start_planning_retrieval(self, project, "outline", brief)
             return
 
         self._project_setup_generation += 1
@@ -2119,6 +2128,9 @@ class MainWindow(QMainWindow):
             return
         if len(brief) > 6000:
             dialog.set_suggesting(False, self.tr("The template must be no longer than 6,000 characters."))
+            return
+        if dialog.retrieval.isChecked():
+            start_planning_retrieval(self, project, "brief", brief, dialog)
             return
         confirmation = self.tr(
             "Send this {length}-character template to the configured model "
@@ -2195,6 +2207,9 @@ class MainWindow(QMainWindow):
             return
         if len(brief) > 6000:
             dialog.set_autopilot_running(False, self.tr("The template must be no longer than 6,000 characters."))
+            return
+        if dialog.retrieval.isChecked():
+            start_planning_retrieval(self, project, "autopilot", brief, dialog)
             return
         existing_outline = self._project_outline_metadata(project)
         character_context = project_planning_context(project)
@@ -2315,6 +2330,7 @@ class MainWindow(QMainWindow):
         )
 
     def _project_autopilot_applied(self, dialog: ProjectBriefDialog, scene_count: int) -> None:
+        dialog.autopilot_applied = True
         dialog.set_autopilot_running(
             False, format_qt(self.tr("Auto-pilot added %1 scene drafts and character notes."), scene_count)
         )
