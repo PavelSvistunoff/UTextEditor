@@ -138,17 +138,18 @@ no hits, untrusted embedded instructions and reproducible source manifests.
 
 ### RAG-05 — manual completion pilot and source review
 
-Status: OPEN. Dependencies: RAG-04.
+Status: COMPLETE. Dependencies: RAG-04. Gates RAG-05.V1 and RAG-05.V2: COMPLETE.
+Evidence: [manual completion verification](docs/rag-manual-completion.md).
 
-- [ ] Add opt-in retrieval to manual project-scene completion, reusing existing
+- [x] Add opt-in retrieval to manual project-scene completion, reusing existing
   captured-context review and activity/cancellation patterns.
-- [ ] Show exact passages, source IDs/titles, buffer/disk provenance, budget units
+- [x] Show exact passages, source IDs/titles, buffer/disk provenance, budget units
   and incomplete-coverage notices. Let authors exclude sources and rebuild the
   request before sending it; disclose the actual generation destination.
-- [ ] Bind the reviewed context to the sent request. Verify selected sources and
+- [x] Bind the reviewed context to the sent request. Verify selected sources and
   document/project/settings generations before dispatch and after generation;
   discard stale successes and obsolete failures. Preserve explicit acceptance.
-- [ ] Keep automatic completion on its existing path for this first release.
+- [x] Keep automatic completion on its existing path for this first release.
   This is an intermediate milestone; RAG-08 is required for parent completion.
   Update README, README.uk where applicable, UI translations and architecture notes.
 

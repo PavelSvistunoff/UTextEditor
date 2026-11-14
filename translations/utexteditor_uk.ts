@@ -682,6 +682,10 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>Review RAG Completion Context…</source>
+        <translation>Переглянути RAG-контекст продовження тексту…</translation>
+    </message>
     <message><source>Retrieval Index…</source><translation>Індекс пошуку контексту…</translation></message>
     <message><source>Project or AI settings changed; no files were added.</source><translation>Проєкт або налаштування ШІ змінилися; файли не додано.</translation></message>
     <message><source>Generated %1 chapters, %2 scenes, and %3 character notes. Applying the complete batch…</source><translation>Згенеровано розділів: %1, сцен: %2 та нотаток персонажів: %3. Застосування повного пакета…</translation></message>
@@ -2741,5 +2745,41 @@ Project text and reference notes are sent only to this configured model. A compl
     <message><source>Index operation failed: {error}</source><translation>Не вдалося виконати операцію з індексом: {error}</translation></message>
     <message><source>Operation cancelled. Check status before retrying.</source><translation>Операцію скасовано. Перевірте стан перед повторною спробою.</translation></message>
     <message><source>Project changed. Close and reopen index maintenance.</source><translation>Проєкт змінився. Закрийте й повторно відкрийте обслуговування індексу.</translation></message>
+</context>
+<context>
+    <name>RAGCompletionDialog</name>
+    <message><source>--- SOURCE MANIFEST (not sent) ---</source><translation>--- МАНІФЕСТ ДЖЕРЕЛ (не надсилається) ---</translation></message>
+    <message>
+        <source>Review the exact prompt and source manifest below. Buffer revisions identify open text; null revisions identify disk text. Budget values are conservative token estimates, not exact tokenizer counts. Coverage notices and omitted sources are listed in the manifest. Check sources to exclude, then rebuild before sending.</source>
+        <translation>Перегляньте точний запит і маніфест джерел нижче. Ревізії буфера позначають відкритий текст; null позначає текст із диска. Значення бюджету — консервативна оцінка токенів, а не точний підрахунок токенізатором. Маніфест містить повідомлення про покриття та пропущені джерела. Позначте джерела для виключення й перебудуйте контекст перед надсиланням.</translation>
+    </message>
+    <message>
+        <source>Sources to exclude</source>
+        <translation>Джерела для виключення</translation>
+    </message>
+    <message>
+        <source>Rebuild context</source>
+        <translation>Перебудувати контекст</translation>
+    </message>
+    <message>
+        <source>RAG completion requires an open project scene.</source>
+        <translation>Для RAG-продовження тексту відкрийте сцену проєкту.</translation>
+    </message>
+    <message>
+        <source>Set an explicit Ollama token window in AI Settings before using RAG completion.</source>
+        <translation>Перед використанням RAG-продовження тексту задайте явне токенне вікно Ollama в налаштуваннях ШІ.</translation>
+    </message>
+    <message>
+        <source>Project sources changed; review a new completion context.</source>
+        <translation>Джерела проєкту змінилися; перегляньте новий контекст продовження тексту.</translation>
+    </message>
+    <message>
+        <source>Captured role instructions</source>
+        <translation>Збережені інструкції ролі</translation>
+    </message>
+    <message>
+        <source>Token budget: window %1; output reserve %2; safety %3; message overhead %4; estimated remaining %5.</source>
+        <translation>Бюджет токенів: вікно %1; резерв відповіді %2; запас %3; накладні витрати повідомлення %4; орієнтовний залишок %5.</translation>
+    </message>
 </context>
 </TS>

@@ -109,6 +109,7 @@ from .character_relationship_dialog import CharacterRelationshipDialog
 from .conflict_dialog import ConflictDialog
 from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
+from .rag_completion import request_rag_completion
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
 from .export_preview_dialog import ExportPreviewDialog
@@ -432,6 +433,7 @@ class MainWindow(QMainWindow):
             "Completion Reference Notes…": self.tr("Completion Reference Notes…"),
             "Review Spelling and Grammar…": self.tr("Review Spelling and Grammar…"),
             "Review Completion Context…": self.tr("Review Completion Context…"),
+            "Review RAG Completion Context…": self.tr("Review RAG Completion Context…"),
             "Accept Suggestion": self.tr("Accept Suggestion"), "Reject Suggestion": self.tr("Reject Suggestion"),
             "Ollama Debug": self.tr("Ollama Debug"), "AI Settings…": self.tr("AI Settings…"),
             "Summarize Selected Scene": self.tr("Summarize Selected Scene"),
@@ -536,6 +538,7 @@ class MainWindow(QMainWindow):
             (ai_menu, "Generate..", self.generate_from_prompt, QKeySequence()),
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
             (ai_menu, "Review Completion Context…", lambda: self.request_completion(review=True), QKeySequence()),
+            (ai_menu, "Review RAG Completion Context…", lambda: request_rag_completion(self), QKeySequence()),
             (ai_menu, "Completion Reference Notes…", self.select_completion_notes, QKeySequence()),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
             (ai_menu, "Review Spelling and Grammar…", self.review_spellcheck, QKeySequence()),

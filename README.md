@@ -58,6 +58,7 @@ The editor supports standalone text files and a local project workspace. Impleme
 - Ollama connection using `http://localhost:11434` and `gemma4:12b` by default; host and model can be changed in Settings > AI Settings, including to a remote host.
 - Before sending document or project context to a destination for the first time, the app shows a non-modal disclosure of the host and data categories and asks for consent. Consent is saved for that host only, without document content; a different host requires a new decision. Declining suppresses repeated automatic prompts for that host during the session, and an explicit AI action can ask again. If an explicit action was waiting for consent, invoke it again after allowing; automatic completion and spellcheck retry with the current editor state.
 - Inline completions shown as non-destructive ghost text. `Tab` accepts a suggestion and `Esc` dismisses it. Suggestions are discarded when the relevant text, cursor, selection, or active document changes, or when resizing leaves insufficient room to display them; they are shown only at the end of a text block. This visibility check uses the Qt cursor without copying the whole document.
+- **AI > Review RAG Completion Context…** opts into local lexical retrieval for an open project scene. Configure an explicit Ollama token window and refresh the project's Retrieval Index first. Review the exact prompt, role, token estimates, source IDs/ranges, buffer revisions and coverage notices; exclude sources and rebuild before sending to the displayed host/model. Missing or unavailable indexes are disclosed and leave only mandatory scene context. Open buffers take precedence without being written to the index. Source changes discard the pending request/result. This command preserves Tab/Esc acceptance; automatic and ordinary completion retain their existing context paths.
 - Debounced completion requests with bounded context, background workers, and stale-result checks. When completing a project scene, requests also include its explicitly associated characters and up to 10,000 characters of project reference notes (using open unsaved note buffers when available). Closed notes are checked for changes before sending and after generation. AI Settings can exclude project context from automatic completions; manually requested completions still include it. AI > Completion Reference Notes can exclude individual notes for the current project session. AI > Review Completion Context captures and displays the context and destination before an explicit request, including a notice when character details are limited; Cancel sends nothing. This material is sent to the configured Ollama destination and appears in AI diagnostics.
 - For completion and spelling, automatic writing-language selection identifies clear English and Ukrainian signals, including canonically decomposed text; short, mixed-script, or otherwise uncertain text falls back to Auto. Digits and repeated words alone do not establish a language. Cyrillic text without Ukrainian-specific letters remains Auto because shared words alone are ambiguous. Explicit language choices are preserved.
 - AI Settings optionally enables a bounded streaming preview for prompt-based text generation. The preview is provisional; a completed draft still requires explicit insertion. Cancelling or changing the captured editor state discards it. Cancellation of a network read may wait for data or the connection timeout.
@@ -167,7 +168,7 @@ note and textual character/relationship sources with exact chunk offsets and
 metadata fingerprints. It keeps unsaved-buffer overlays separate from disk
 snapshots, excludes portraits and reports incomplete coverage explicitly.
 The separate SQLite FTS5 service maintains rebuildable saved-source indexes;
-retrieved passages are not yet added to AI requests. See
+manual RAG completion can add reviewed passages to its AI request. See
 [source capture boundaries](docs/rag-source-capture.md) and
 [lexical index maintenance](docs/rag-lexical-index.md).
 
@@ -176,7 +177,9 @@ scene associations, manuscript-order filters, names/alias queries and a complete
 request budget. It validates cache passages against current source snapshots,
 uses unsaved-buffer text without persisting it, and records exact included,
 shortened and omitted spans for review. Its frozen prompt can be reused for
-streaming or ordinary generation. UI request integration is still pending; see
+streaming or ordinary generation. The opt-in manual completion integration is
+described in [manual RAG completion](docs/rag-manual-completion.md); other
+workflows retain their existing context paths. See also
 [context assembly boundaries](docs/rag-context-assembly.md).
 
 AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No separate cloud AI provider is configured; a remote Ollama host can nevertheless receive document text.

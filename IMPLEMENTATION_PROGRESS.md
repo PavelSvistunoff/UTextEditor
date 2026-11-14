@@ -1,3 +1,24 @@
+## RAG-05 — manual completion pilot and source review
+
+- COMPLETE: RAG-05 / RAG-05.V1 / RAG-05.V2; RAG parent remains OPEN.
+- Previous completed task: RAG-04, commit a22429d; branch main.
+- Opt-in command: AI > Review RAG Completion Context; ordinary/automatic paths unchanged.
+- Requires a bound project scene and explicit token window; no model allocation guessed.
+- Review shows exact prompt/role, actual provider host/model, budget and source manifest.
+- Source exclusions require worker recapture; mandatory scene/associated characters retained.
+- Open scene/note buffers override disk without index writes; coverage limitations disclosed.
+- Worker checks source stamps before dispatch and after success/failure; stale generations discard.
+- Cancellation retains manuscript/undo; suggestions still require explicit Tab acceptance or Esc rejection.
+- Changed: app/ui/rag_completion.py, main_window.py, app/ai/captured_completion.py, UI tests/docs/catalogs.
+- Focused: 104 passed, 1 native-only skip in 45.33s; /private/tmp/utexteditor-rag05-focused.log.
+- Full offscreen: 1390 passed, 3 skipped (2 live-only + 1 native) in 213.29s; /private/tmp/utexteditor-rag05-final-full.log.
+- Native Cocoa: 1 passed, 24 deselected in 0.68s; macOS 27.0.1 arm64 / Qt 6.11.2; /private/tmp/utexteditor-rag05-native.log.
+- Native real-dialog keyboard automation uses a fake provider; no live Ollama, other-OS or screen-reader claims.
+- Catalog: 1078 finished translations; 1065 extracted strings validated; git diff --check passed.
+- Clean Code checklist reviewed in docs/rag-manual-completion.md; unrelated bytecode/DS_Store preserved.
+- Resume: RAG-06; first record lexical baseline and measure embedding choices before model selection; parent OPEN.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+
 ## RAG-04 — retrieval and budgeted context assembly
 
 - COMPLETE: RAG-04 / RAG-04.V1; all six acceptance criteria and the offline gate passed.
