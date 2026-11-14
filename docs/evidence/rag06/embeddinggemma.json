@@ -1,0 +1,341 @@
+{
+  "corpus_version": 1,
+  "predeclared": {
+    "recall_at_3_per_language_minimum": 0.75,
+    "warm_query_p95_seconds_maximum": 2.0,
+    "installed_model_bytes_maximum": 1000000000,
+    "selection_order": [
+      "recall_at_1",
+      "recall_at_3",
+      "warm_latency",
+      "installed_size"
+    ],
+    "rrf_constant": 60,
+    "semantic_minimum_cosine": 0.35,
+    "semantic_candidates": 20,
+    "negative_queries": "Report false evidence candidates; no universal semantic abstention guarantee"
+  },
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "identity": {
+    "host": "http://localhost:11434",
+    "model": "embeddinggemma:latest",
+    "digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+    "dimensions": 768
+  },
+  "index_seconds": 0.013715500012040138,
+  "lexical_cache_bytes": 65536,
+  "vector_cache_bytes": 81920,
+  "cold_first_query_seconds": 1.3353489162400365,
+  "warm_query_p95_seconds": 0.12794404197484255,
+  "metrics": {
+    "en": {
+      "recall_at_1": 0.8333333333333334,
+      "recall_at_3": 1,
+      "precision_at_3": 0.75,
+      "absent_queries_with_candidates": 0
+    },
+    "uk": {
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.7222222222222222,
+      "absent_queries_with_candidates": 0
+    }
+  },
+  "queries": [
+    {
+      "query": "en1",
+      "language": "en",
+      "expected": [
+        "en_key"
+      ],
+      "found": [
+        "en_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 1.3353489162400365,
+      "prompt_bytes": 1196,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 0 cached, 16 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en2",
+      "language": "en",
+      "expected": [
+        "en_cure"
+      ],
+      "found": [
+        "en_cure",
+        "en_food"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.08639491582289338,
+      "prompt_bytes": 1782,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en3",
+      "language": "en",
+      "expected": [
+        "en_signal"
+      ],
+      "found": [
+        "en_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.09058700036257505,
+      "prompt_bytes": 1206,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en4",
+      "language": "en",
+      "expected": [
+        "en_guide"
+      ],
+      "found": [
+        "en_guide",
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.12794404197484255,
+      "prompt_bytes": 1774,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en5",
+      "language": "en",
+      "expected": [
+        "en_debt"
+      ],
+      "found": [
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.07894879160448909,
+      "prompt_bytes": 1194,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en6",
+      "language": "en",
+      "expected": [
+        "uk_guide"
+      ],
+      "found": [
+        "en_guide",
+        "uk_guide"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.08290249994024634,
+      "prompt_bytes": 1891,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk1",
+      "language": "uk",
+      "expected": [
+        "uk_key"
+      ],
+      "found": [
+        "uk_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.08393508289009333,
+      "prompt_bytes": 1346,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk2",
+      "language": "uk",
+      "expected": [
+        "uk_cure"
+      ],
+      "found": [
+        "uk_cure"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.08575379103422165,
+      "prompt_bytes": 1260,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk3",
+      "language": "uk",
+      "expected": [
+        "uk_signal"
+      ],
+      "found": [
+        "uk_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.07491470780223608,
+      "prompt_bytes": 1374,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk4",
+      "language": "uk",
+      "expected": [
+        "uk_guide"
+      ],
+      "found": [
+        "uk_guide",
+        "distractor_owl"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.0761749162338674,
+      "prompt_bytes": 1872,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk5",
+      "language": "uk",
+      "expected": [
+        "uk_debt"
+      ],
+      "found": [
+        "uk_debt",
+        "uk_key",
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.07633233303204179,
+      "prompt_bytes": 2592,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk6",
+      "language": "uk",
+      "expected": [
+        "en_food"
+      ],
+      "found": [
+        "en_food",
+        "uk_food"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.08178020780906081,
+      "prompt_bytes": 1861,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en_absent1",
+      "language": "en",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.0749215423129499,
+      "prompt_bytes": 610,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en_absent2",
+      "language": "en",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.07061275001615286,
+      "prompt_bytes": 608,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk_absent1",
+      "language": "uk",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.07907845824956894,
+      "prompt_bytes": 645,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk_absent2",
+      "language": "uk",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.08425916591659188,
+      "prompt_bytes": 637,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    }
+  ]
+}

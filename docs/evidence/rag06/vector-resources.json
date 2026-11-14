@@ -1,0 +1,11 @@
+{
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "vectors": 512,
+  "dimensions": 768,
+  "cache_bytes": 2154496,
+  "traced_python_peak_bytes": 29289208,
+  "write_seconds_with_tracing": 0.08151750033721328,
+  "read_seconds_with_tracing": 0.28449087496846914,
+  "scan_median_seconds": 0.011482000350952148,
+  "scan_max_seconds": 0.013388166204094887
+}

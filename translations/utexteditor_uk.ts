@@ -2210,6 +2210,10 @@ Project text and reference notes are sent only to this configured model. A compl
 </context>
 <context>
     <name>SettingsDialog</name>
+    <message><source>Use hybrid retrieval for manual RAG completion</source><translation>Гібридний пошук для ручного RAG-продовження тексту</translation></message>
+    <message><source>Embedding host</source><translation>Адреса векторизації</translation></message>
+    <message><source>Embedding model (installed separately)</source><translation>Модель векторизації (встановлюється окремо)</translation></message>
+    <message><source>Embedding text is sent only after a separate destination confirmation. Models are never downloaded automatically. Failures use a disclosed lexical fallback.</source><translation>Текст для векторизації надсилається лише після окремого підтвердження адреси. Моделі ніколи не завантажуються автоматично. У разі збою програма повідомляє про перехід до лексичного пошуку.</translation></message>
     <message><source>Server default</source><translation>Типове значення сервера</translation></message>
     <message><source>Ollama context window (tokens)</source><translation>Вікно контексту Ollama (токени)</translation></message>
     <message><source>An explicit window uses an approximate request budget and checks model capacity. Server default leaves capacity unchecked. Larger windows require more memory.</source><translation>Явно задане вікно використовує приблизний бюджет запиту та перевірку місткості моделі. Типове значення сервера залишає місткість неперевіреною. Більші вікна потребують більше пам’яті.</translation></message>
@@ -2748,6 +2752,9 @@ Project text and reference notes are sent only to this configured model. A compl
 </context>
 <context>
     <name>RAGCompletionDialog</name>
+    <message><source>Retrieval mode: %1</source><translation>Режим пошуку контексту: %1</translation></message>
+    <message><source>Embedding destination</source><translation>Адреса векторизації</translation></message>
+    <message><source>Send the query and eligible project passages (including unsaved text) to %1 using %2 for embeddings? This destination may be remote. Requests appear in AI diagnostics. Saved-source vectors are cached locally; unsaved vectors stay in memory. Rebuilding can send newly included sources. No model is downloaded. Generation requires its separate review afterwards.</source><translation>Надіслати запит і дозволені уривки проєкту (включно з незбереженим текстом) до %1 для векторизації моделлю %2? Адреса може бути віддаленою. Запити відображаються в діагностиці ШІ. Вектори збережених джерел кешуються локально; вектори незбереженого тексту залишаються в пам’яті. Перебудова може надсилати нові включені джерела. Моделі не завантажуються. Подальша генерація потребує окремого перегляду.</translation></message>
     <message><source>--- SOURCE MANIFEST (not sent) ---</source><translation>--- МАНІФЕСТ ДЖЕРЕЛ (не надсилається) ---</translation></message>
     <message>
         <source>Review the exact prompt and source manifest below. Buffer revisions identify open text; null revisions identify disk text. Budget values are conservative token estimates, not exact tokenizer counts. Coverage notices and omitted sources are listed in the manifest. Check sources to exclude, then rebuild before sending.</source>

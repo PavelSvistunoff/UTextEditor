@@ -18,6 +18,9 @@ from app.ai.context_budget import MAX_CONTEXT_TOKENS
 class AppSettings:
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "gemma4:12b"
+    rag_embeddings_enabled: bool = False
+    embedding_host: str = "http://localhost:11434"
+    embedding_model: str = "embeddinggemma"
     ai_role: str = DEFAULT_AI_ROLE
     completion_template: str = DEFAULT_COMPLETION_TEMPLATE
     ai_enabled: bool = True
@@ -108,6 +111,11 @@ class AppSettings:
         ):
             self.ai_context_consent_host = ""
         self.ollama_model = self._string(self.ollama_model, defaults.ollama_model, 256)
+        self.embedding_host = self._string(self.embedding_host, defaults.embedding_host, 2048).rstrip("/")
+        if not self._valid_host(self.embedding_host):
+            self.embedding_host = defaults.embedding_host
+        self.embedding_model = self._string(self.embedding_model, defaults.embedding_model, 256)
+        self.rag_embeddings_enabled = self._bool(self.rag_embeddings_enabled, defaults.rag_embeddings_enabled)
         self.ai_role = self._string(self.ai_role, defaults.ai_role, 4000)
         self.completion_template = self._string(self.completion_template, defaults.completion_template, 8000)
         if "{context}" not in self.completion_template:

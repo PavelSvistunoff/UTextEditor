@@ -1,0 +1,364 @@
+{
+  "corpus_version": 1,
+  "predeclared": {
+    "recall_at_3_per_language_minimum": 0.75,
+    "warm_query_p95_seconds_maximum": 2.0,
+    "installed_model_bytes_maximum": 1000000000,
+    "selection_order": [
+      "recall_at_1",
+      "recall_at_3",
+      "warm_latency",
+      "installed_size"
+    ],
+    "rrf_constant": 60,
+    "semantic_minimum_cosine": 0.35,
+    "semantic_candidates": 20,
+    "negative_queries": "Report false evidence candidates; no universal semantic abstention guarantee"
+  },
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "identity": {
+    "host": "http://localhost:11434",
+    "model": "qwen3-embedding:0.6b",
+    "digest": "ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d",
+    "dimensions": 1024
+  },
+  "index_seconds": 0.01368866628035903,
+  "lexical_cache_bytes": 65536,
+  "vector_cache_bytes": 90112,
+  "cold_first_query_seconds": 3.964626541826874,
+  "warm_query_p95_seconds": 0.1026435000821948,
+  "metrics": {
+    "en": {
+      "recall_at_1": 0.8333333333333334,
+      "recall_at_3": 0.8333333333333334,
+      "precision_at_3": 0.41666666666666663,
+      "absent_queries_with_candidates": 2
+    },
+    "uk": {
+      "recall_at_1": 0.8333333333333334,
+      "recall_at_3": 1,
+      "precision_at_3": 0.41666666666666663,
+      "absent_queries_with_candidates": 2
+    }
+  },
+  "queries": [
+    {
+      "query": "en1",
+      "language": "en",
+      "expected": [
+        "en_key"
+      ],
+      "found": [
+        "en_key",
+        "en_debt",
+        "en_food"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 3.964626541826874,
+      "prompt_bytes": 2361,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 0 cached, 16 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en2",
+      "language": "en",
+      "expected": [
+        "en_cure"
+      ],
+      "found": [
+        "en_cure",
+        "en_debt",
+        "en_food"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.08847695915028453,
+      "prompt_bytes": 2366,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en3",
+      "language": "en",
+      "expected": [
+        "en_signal"
+      ],
+      "found": [
+        "en_signal",
+        "distractor_lantern",
+        "en_food"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.08626829227432609,
+      "prompt_bytes": 2376,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en4",
+      "language": "en",
+      "expected": [
+        "en_guide"
+      ],
+      "found": [
+        "en_guide",
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.08497004164382815,
+      "prompt_bytes": 1774,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en5",
+      "language": "en",
+      "expected": [
+        "en_debt"
+      ],
+      "found": [
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.08290370786562562,
+      "prompt_bytes": 1194,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en6",
+      "language": "en",
+      "expected": [
+        "uk_guide"
+      ],
+      "found": [
+        "en_guide",
+        "en_cure",
+        "en_key"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.08264208305627108,
+      "prompt_bytes": 2406,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk1",
+      "language": "uk",
+      "expected": [
+        "uk_key"
+      ],
+      "found": [
+        "uk_key",
+        "en_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.08575779106467962,
+      "prompt_bytes": 1924,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk2",
+      "language": "uk",
+      "expected": [
+        "uk_cure"
+      ],
+      "found": [
+        "uk_cure",
+        "uk_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.09051558375358582,
+      "prompt_bytes": 1950,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk3",
+      "language": "uk",
+      "expected": [
+        "uk_signal"
+      ],
+      "found": [
+        "en_signal",
+        "uk_signal",
+        "distractor_owl"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.09136737463995814,
+      "prompt_bytes": 2577,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk4",
+      "language": "uk",
+      "expected": [
+        "uk_guide"
+      ],
+      "found": [
+        "uk_guide",
+        "distractor_owl",
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.08811554126441479,
+      "prompt_bytes": 2456,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk5",
+      "language": "uk",
+      "expected": [
+        "uk_debt"
+      ],
+      "found": [
+        "uk_debt",
+        "en_cure"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.08777250023558736,
+      "prompt_bytes": 1908,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk6",
+      "language": "uk",
+      "expected": [
+        "en_food"
+      ],
+      "found": [
+        "en_food",
+        "uk_food",
+        "en_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.09582762513309717,
+      "prompt_bytes": 2446,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en_absent1",
+      "language": "en",
+      "expected": [],
+      "found": [
+        "en_key",
+        "en_cure",
+        "en_food"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.0947296661324799,
+      "prompt_bytes": 2352,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "en_absent2",
+      "language": "en",
+      "expected": [],
+      "found": [
+        "en_debt",
+        "en_cure",
+        "en_key"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.09873437508940697,
+      "prompt_bytes": 2353,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk_absent1",
+      "language": "uk",
+      "expected": [],
+      "found": [
+        "uk_guide"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.09969912515953183,
+      "prompt_bytes": 1291,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    },
+    {
+      "query": "uk_absent2",
+      "language": "uk",
+      "expected": [],
+      "found": [
+        "uk_cure"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.1026435000821948,
+      "prompt_bytes": 1258,
+      "method": "hybrid",
+      "notices": [
+        "Hybrid retrieval: 16 cached, 0 newly embedded passage(s)."
+      ]
+    }
+  ]
+}

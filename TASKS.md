@@ -161,19 +161,21 @@ cancel and acceptance on the tested platform. Without a native report: BLOCKED.
 
 ### RAG-06 — embeddings and hybrid retrieval
 
-Status: OPEN. Dependencies: RAG-05.V1 and a recorded lexical baseline.
+Status: COMPLETE. Dependencies: RAG-05.V1 and a recorded lexical baseline.
+Gates RAG-06.V1 and RAG-06.V2: COMPLETE.
+Evidence: [hybrid retrieval and model-selection report](docs/rag-hybrid-retrieval.md).
 
-- [ ] Select an embedding model after measuring Ukrainian/English retrieval,
+- [x] Select an embedding model after measuring Ukrainian/English retrieval,
   resource requirements and deployment cost. Keep generation and embedding model
   settings separate; do not assume `gemma4:12b` exposes suitable embeddings.
-- [ ] Add embedding operations behind an appropriate AI abstraction; keep Ollama
+- [x] Add embedding operations behind an appropriate AI abstraction; keep Ollama
   endpoints/payloads/parsing in `app/ai/ollama_client.py`. Disclose the embedding
   destination separately, including any remote host, before transmitting text.
-- [ ] Cache vectors by content, embedding model identity/version, dimensions and
+- [x] Cache vectors by content, embedding model identity/version, dimensions and
   chunking policy. Invalidate incompatible entries; bound batch sizes, storage
   and memory. Choose a vector store only from measured needs, avoiding an
   unnecessary external database or dependency.
-- [ ] Combine lexical and semantic rankings with deterministic tie handling.
+- [x] Combine lexical and semantic rankings with deterministic tie handling.
   Define a visible lexical fallback for unavailable/failed embeddings; do not
   silently change the embedding destination or download a model.
 

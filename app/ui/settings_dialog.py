@@ -39,6 +39,10 @@ class SettingsDialog(QDialog):
         # Connection
         self.host = QLineEdit(settings.ollama_host)
         self.model = QLineEdit(settings.ollama_model)
+        self.embedding_host = QLineEdit(settings.embedding_host)
+        self.embedding_model = QLineEdit(settings.embedding_model)
+        self.rag_embeddings_enabled = QCheckBox(self.tr("Use hybrid retrieval for manual RAG completion"))
+        self.rag_embeddings_enabled.setChecked(settings.rag_embeddings_enabled)
         # Role and template
         self.role = QPlainTextEdit(settings.ai_role)
         self.role.setPlaceholderText(self.tr("Instructions that define the AI's completion role"))
@@ -147,6 +151,15 @@ class SettingsDialog(QDialog):
         assistance_form = QFormLayout(assistance_tab)
         assistance_form.addRow(self.completion_enabled)
         assistance_form.addRow(self.automatic_project_context)
+        assistance_form.addRow(self.rag_embeddings_enabled)
+        assistance_form.addRow(self.tr("Embedding host"), self.embedding_host)
+        assistance_form.addRow(self.tr("Embedding model (installed separately)"), self.embedding_model)
+        embedding_notice = QLabel(self.tr(
+            "Embedding text is sent only after a separate destination confirmation. "
+            "Models are never downloaded automatically. Failures use a disclosed lexical fallback."
+        ))
+        embedding_notice.setWordWrap(True)
+        assistance_form.addRow(embedding_notice)
         assistance_form.addRow(self.streaming_preview)
         assistance_form.addRow(self.tr("Completion delay (ms)"), self.debounce)
         assistance_form.addRow(self.tr("Maximum suggestion length"), self.max_length)
@@ -206,6 +219,9 @@ class SettingsDialog(QDialog):
         defaults = AppSettings()
         self.host.setText(defaults.ollama_host)
         self.model.setText(defaults.ollama_model)
+        self.embedding_host.setText(defaults.embedding_host)
+        self.embedding_model.setText(defaults.embedding_model)
+        self.rag_embeddings_enabled.setChecked(defaults.rag_embeddings_enabled)
         self.role.setPlainText(defaults.ai_role)
         self.template.setPlainText(defaults.completion_template)
         self.completion_enabled.setChecked(defaults.completion_enabled)
@@ -258,9 +274,15 @@ class SettingsDialog(QDialog):
         except ValueError as exc:
             QMessageBox.warning(self, self.tr("Invalid context template"), str(exc))
             return
+        if not AppSettings._valid_host(self.embedding_host.text().strip()):
+            QMessageBox.warning(self, self.tr("Invalid Ollama host"), self.tr("Enter an HTTP or HTTPS host URL without credentials or a path."))
+            return
         # Save settings back to the AppSettings instance
         self.settings.ollama_host = self.host.text().strip() or self.settings.ollama_host
         self.settings.ollama_model = self.model.text().strip() or self.settings.ollama_model
+        self.settings.embedding_host = self.embedding_host.text().strip().rstrip("/")
+        self.settings.embedding_model = self.embedding_model.text().strip() or self.settings.embedding_model
+        self.settings.rag_embeddings_enabled = self.rag_embeddings_enabled.isChecked()
         self.settings.ai_role = self.role.toPlainText().strip() or self.settings.ai_role
         self.settings.completion_template = template
         self.settings.completion_debounce_ms = int(self.debounce.value())

@@ -12,6 +12,8 @@ from .models import Suggestion
 from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE, completion_prompt, spellcheck_prompt
 from .validation import parse_suggestions
 from .context_budget import ContextBudget, ContextBudgetError, MAX_CONTEXT_TOKENS
+from .embeddings import (EmbeddingError, EmbeddingIdentity, MAX_EMBEDDING_BATCH,
+                         MAX_EMBEDDING_INPUT_BYTES, MAX_EMBEDDING_BATCH_BYTES, normalized_vector)
 
 logger = logging.getLogger("utexteditor.ai")
 MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -109,6 +111,56 @@ class OllamaClient:
                     "Increase Ollama's context length or reduce project reference material; "
                     "no context was intentionally omitted.")
         return f"Ollama returned HTTP {error.code} while contacting {path}."
+
+    def embedding_identity(self) -> EmbeddingIdentity:
+        """Resolve a local model digest; do not pull models or trust mutable tags."""
+        try:
+            req = request.Request(f"{self.host}/api/tags")
+            with request.urlopen(req, timeout=self.timeout) as response:
+                raw = response.read(MAX_RESPONSE_BYTES + 1)
+            if len(raw) > MAX_RESPONSE_BYTES:
+                raise EmbeddingError("Embedding model metadata exceeds its size limit.")
+            data = json.loads(raw)
+            models = data.get("models") if isinstance(data, dict) else None
+            if not isinstance(models, list):
+                raise EmbeddingError("Embedding model inventory is malformed.")
+            name = self.model if ":" in self.model else self.model + ":latest"
+            model = next((item for item in models if isinstance(item, dict)
+                          and item.get("name") in {self.model, name}), None)
+            if model is None:
+                raise EmbeddingError("The selected embedding model is not installed; no download was attempted.")
+            metadata = self._post("/api/show", {"model": self.model})
+            capabilities = metadata.get("capabilities")
+            if not isinstance(capabilities, list) or "embedding" not in capabilities:
+                raise EmbeddingError("The selected model does not declare embedding support.")
+            info = metadata.get("model_info", {})
+            architecture = info.get("general.architecture")
+            return EmbeddingIdentity(self.host, model["name"], model.get("digest"),
+                                     info.get(f"{architecture}.embedding_length"))
+        except (OSError, ValueError, TypeError, AttributeError, OllamaError) as exc:
+            raise EmbeddingError("Could not verify embedding model identity.") from exc
+
+    def embed(self, texts: tuple[str, ...], identity: EmbeddingIdentity
+              ) -> tuple[tuple[float, ...], ...]:
+        if (not isinstance(texts, tuple) or not 1 <= len(texts) <= MAX_EMBEDDING_BATCH
+                or any(not isinstance(text, str) or not text or len(text.encode("utf-8")) > MAX_EMBEDDING_INPUT_BYTES
+                       for text in texts)
+                or sum(len(text.encode("utf-8")) for text in texts) > MAX_EMBEDDING_BATCH_BYTES):
+            raise EmbeddingError("Embedding batch exceeds its input limits.")
+        if self.embedding_identity() != identity:
+            raise EmbeddingError("Embedding model changed before the batch.")
+        try:
+            result = self._post("/api/embed", {"model": identity.model, "input": list(texts), "truncate": False})
+        except OllamaError as exc:
+            raise EmbeddingError("Embedding request failed; no model or destination was changed.") from exc
+        values = result.get("embeddings")
+        if (result.get("model") not in {self.model, identity.model}
+                or not isinstance(values, list) or len(values) != len(texts)):
+            raise EmbeddingError("Embedding response is incomplete or belongs to another model.")
+        vectors = tuple(normalized_vector(value, identity.dimensions) for value in values)
+        if self.embedding_identity() != identity:
+            raise EmbeddingError("Embedding model changed during the batch.")
+        return vectors
 
     def check_connection(self) -> bool:
         try:

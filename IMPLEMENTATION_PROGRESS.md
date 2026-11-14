@@ -1,3 +1,23 @@
+## RAG-06 — embedding provider, vector cache and hybrid retrieval
+
+- COMPLETE: RAG-06 / RAG-06.V1 / RAG-06.V2; RAG parent remains OPEN.
+- Previous RAG-05 commit 1e948a1; branch main; lexical baseline recorded first on versioned EN/UK pilot.
+- User approved both model downloads; compared embeddinggemma and qwen3-embedding:0.6b without changing generation settings.
+- Selected embeddinggemma: 768 dimensions, digest 85462619ee72…; hybrid stays disabled by default.
+- Separate embedding settings/destination consent, installed-model capability/digest checks and bounded /api/embed validation.
+- Current saved vectors use an atomic scoped SQLite cache; unsaved/query vectors remain request-local.
+- Bounds: 512 eligible chunks, 4096 dimensions, 8 inputs/batch, 16 MiB cache; no automatic downloads or alternate hosts.
+- Cosine candidates plus deterministic RRF retain exclusions, chronology, mandatory associations, diversity and request budgets.
+- Invalid/partial/failed embeddings disclose lexical fallback; cancellation/stale sources/indexes cannot publish partial cache.
+- Delete Cache removes both scopes; deleted/incompatible lexical indexes cannot be resurrected by semantic requests.
+- Pilot recall@3 EN/UK: lexical 0.50/0.50; selected hybrid 1.00/1.00; small selection sample, not RAG-07 held-out proof.
+- Focused: 204 passed, 1 native-only skip in 52.29s; /private/tmp/utexteditor-rag06-final-focused.log.
+- Full offscreen: 1443 passed, 4 skips (2 live generation + embedding + native) in 211.27s; /private/tmp/utexteditor-rag06-final-full.log.
+- Explicit live embedding smoke: 1 passed in 0.94s; warm capture 73.3 ms; /private/tmp/utexteditor-rag06-final-live.log.
+- Evidence/code/files/checklist: docs/rag-hybrid-retrieval.md and docs/evidence/rag06; README/UK/catalogs updated, unrelated changes preserved.
+- Resume RAG-07 / RAG-07.V1: new held-out corpus and predeclared gates, then Auto-writer integration retaining full mandatory references.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+
 ## RAG-05 — manual completion pilot and source review
 
 - COMPLETE: RAG-05 / RAG-05.V1 / RAG-05.V2; RAG parent remains OPEN.

@@ -198,3 +198,24 @@ def test_streaming_preview_setting_round_trips_and_rejects_invalid_values(tmp_pa
     AppSettings(streaming_preview=True).save(path)
     assert AppSettings.load(path).streaming_preview is True
     assert AppSettings(streaming_preview="yes").validated().streaming_preview is False
+
+
+def test_embedding_settings_are_separate_opt_in_and_roundtrip(tmp_path):
+    settings = AppSettings()
+    assert not settings.rag_embeddings_enabled
+    assert settings.embedding_model == "embeddinggemma"
+    settings.ollama_host = "https://generation.example"
+    settings.embedding_host = "https://embedding.example"
+    settings.embedding_model = "qwen3-embedding:0.6b"
+    settings.rag_embeddings_enabled = True
+    path = tmp_path / "settings.yaml"
+    settings.save(path)
+    loaded = AppSettings.load(path)
+    assert loaded.embedding_host == "https://embedding.example"
+    assert loaded.ollama_host == "https://generation.example"
+    assert loaded.embedding_model == "qwen3-embedding:0.6b" and loaded.rag_embeddings_enabled
+    loaded.embedding_host = "https://user:password@example.com"
+    loaded.rag_embeddings_enabled = "yes"
+    loaded.validated()
+    assert loaded.embedding_host == AppSettings().embedding_host
+    assert not loaded.rag_embeddings_enabled

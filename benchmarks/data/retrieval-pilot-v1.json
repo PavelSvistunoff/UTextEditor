@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "purpose": "Small model-selection pilot; not the held-out RAG-07 quality gate",
+  "predeclared": {
+    "recall_at_3_per_language_minimum": 0.75,
+    "warm_query_p95_seconds_maximum": 2.0,
+    "installed_model_bytes_maximum": 1000000000,
+    "selection_order": ["recall_at_1", "recall_at_3", "warm_latency", "installed_size"],
+    "rrf_constant": 60,
+    "semantic_minimum_cosine": 0.35,
+    "semantic_candidates": 20,
+    "negative_queries": "Report false evidence candidates; no universal semantic abstention guarantee"
+  },
+  "sources": [
+    {"id":"en_key","title":"Lantern","text":"Mara concealed the brass key inside the hollow lantern. That key opens the eastern gate."},
+    {"id":"en_cure","title":"Herbal remedy","text":"A blue mountain flower is the only antidote to the poison in Captain Orin's blood."},
+    {"id":"en_signal","title":"Harbour warning","text":"Three short bell rings warn the fishing boats that enemy ships are approaching."},
+    {"id":"en_guide","title":"Night Fox","text":"Night Fox is an alias used by the cartographer Liora. She charts safe paths through the flooded tunnels."},
+    {"id":"en_debt","title":"A promise","text":"Tomas owes his life to Sera, who rescued him from a burning inn. He promised to repay her."},
+    {"id":"en_food","title":"Kitchen stores","text":"The ship's cook keeps potatoes and dried apples in a locked chest below deck."},
+    {"id":"uk_key","title":"Схованка","text":"Олена сховала срібний перстень у порожній палітурці старої книги. Перстень відчиняє підземну браму."},
+    {"id":"uk_cure","title":"Зілля","text":"Відвар із білої верби лікує гарячку, від якої занедужав князь Данило."},
+    {"id":"uk_signal","title":"Сторожова вежа","text":"Два спалахи зеленого вогню означають, що міст зруйновано і мандрівникам слід обрати іншу дорогу."},
+    {"id":"uk_guide","title":"Сіра Сова","text":"Сіра Сова — псевдонім розвідниці Соломії. Вона знає таємний шлях через болота."},
+    {"id":"uk_debt","title":"Борг","text":"Марко врятував Ірину від повені. Вона пообіцяла повернути йому родинний медальйон."},
+    {"id":"uk_food","title":"Комора","text":"У льосі зберігають мішки сушених груш і борошна для зимової подорожі."},
+    {"id":"distractor_lantern","title":"Festival lights","text":"Coloured lanterns illuminate the western harbour during the annual summer festival."},
+    {"id":"distractor_poison","title":"Garden","text":"The gardener grows purple flowers beside a dry fountain, far from the captain's ship."},
+    {"id":"distractor_ring","title":"Свято","text":"На площі ювелір продає мідні персні та старі книги про морські подорожі."},
+    {"id":"distractor_owl","title":"Ліс","text":"Біла сова полює біля вежі. Міст через річку охороняє загін вершників."}
+  ],
+  "queries": [
+    {"id":"en1","language":"en","text":"Where is the key for the eastern gate hidden?","relevant":["en_key"]},
+    {"id":"en2","language":"en","text":"How can the poisoned naval officer be saved?","relevant":["en_cure"]},
+    {"id":"en3","language":"en","text":"What sound alerts sailors to an incoming attack?","relevant":["en_signal"]},
+    {"id":"en4","language":"en","text":"Who is Night Fox?","relevant":["en_guide"]},
+    {"id":"en5","language":"en","text":"Why does Tomas feel indebted to Sera?","relevant":["en_debt"]},
+    {"id":"en6","language":"en","text":"Which woman uses the Grey Owl alias and knows a route through marshland?","relevant":["uk_guide"]},
+    {"id":"uk1","language":"uk","text":"Де Олена приховала перстень для підземної брами?","relevant":["uk_key"]},
+    {"id":"uk2","language":"uk","text":"Чим можна вилікувати хворого князя?","relevant":["uk_cure"]},
+    {"id":"uk3","language":"uk","text":"Який сигнал попереджає подорожніх про пошкоджену переправу?","relevant":["uk_signal"]},
+    {"id":"uk4","language":"uk","text":"Хто така Сіра Сова?","relevant":["uk_guide"]},
+    {"id":"uk5","language":"uk","text":"Чому Ірина повинна віддати медальйон своєму рятівникові?","relevant":["uk_debt"]},
+    {"id":"uk6","language":"uk","text":"Де кухар судна тримає овочі та сушені яблука?","relevant":["en_food"]},
+    {"id":"en_absent1","language":"en","text":"What is the queen's secret password?","relevant":[]},
+    {"id":"en_absent2","language":"en","text":"Which dragon destroyed the castle?","relevant":[]},
+    {"id":"uk_absent1","language":"uk","text":"Яка справжня назва планети прибульців?","relevant":[]},
+    {"id":"uk_absent2","language":"uk","text":"Коли король одружився з чаклункою?","relevant":[]}
+  ]
+}

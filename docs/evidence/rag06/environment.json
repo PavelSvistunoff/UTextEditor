@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-14",
+  "machine": "Apple M5 Pro / Mac17,8",
+  "memory_bytes": 25769803776,
+  "ollama_version": "0.40.13",
+  "models": [
+    {
+      "name": "qwen3-embedding:0.6b",
+      "digest": "ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d",
+      "size": 639150858
+    },
+    {
+      "name": "embeddinggemma:latest",
+      "digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+      "size": 621875917
+    }
+  ],
+  "runtime_observations": [
+    {
+      "name": "qwen3-embedding:0.6b",
+      "digest": "ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d",
+      "size": 2749754245,
+      "size_vram": 2749754245,
+      "context_length": 16384
+    },
+    {
+      "name": "embeddinggemma:latest",
+      "digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+      "size": 685642874,
+      "size_vram": 685642874,
+      "context_length": 2048
+    }
+  ]
+}

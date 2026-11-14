@@ -1,4 +1,4 @@
-"""Policy-aware, budgeted project context; no provider calls or manuscript writes."""
+"""Policy-aware, budgeted project context; worker-only, no manuscript writes."""
 
 from collections import defaultdict, deque
 from collections.abc import Callable, Mapping
@@ -10,6 +10,8 @@ import unicodedata
 
 from app.ai.context_budget import ContextBudget, ContextBudgetError
 from app.ai.context_prompt import ContextPrompt
+from app.ai.embeddings import EmbeddingError, EmbeddingIdentity
+from .rag_embeddings import SemanticRetriever
 from .character_context import capture_scene_character_context
 from .model import ProjectError
 from .rag_index import IndexUnavailable, LexicalIndex
@@ -215,6 +217,8 @@ class ContextManifest:
     decisions: tuple[SourceDecision, ...]
     notices: tuple[str, ...]
     context_policy_version: int = CONTEXT_POLICY_VERSION
+    retrieval_method: str = "lexical"
+    embedding_identity: EmbeddingIdentity | None = None
 
     def to_json(self) -> str:
         return _json(asdict(self))
@@ -258,8 +262,10 @@ def _score(chunk: SourceChunk, query: QueryPlan) -> int:
     return sum(term.weight for term in query.terms if " " + term.text + " " in text)
 
 
-def _diverse_order(chunks: list[SourceChunk], query: QueryPlan) -> list[SourceChunk]:
-    ranked = sorted(chunks, key=lambda chunk: (-_score(chunk, query), chunk.source.id, chunk.start, chunk.id))
+def _diverse_order(chunks: list[SourceChunk], query: QueryPlan,
+                   ranking: Mapping[str, float] | None = None) -> list[SourceChunk]:
+    ranked = sorted(chunks, key=lambda chunk: (-(ranking[chunk.id] if ranking is not None else _score(chunk, query)),
+                                               chunk.source.id, chunk.start, chunk.id))
     groups = {}
     for chunk in ranked:
         groups.setdefault(chunk.source.id, deque()).append(chunk)
@@ -302,8 +308,9 @@ def _render(request: ContextRequest, payload: dict) -> tuple[str, str]:
 
 
 class ProjectContextService:
-    def __init__(self, index: LexicalIndex | None = None) -> None:
+    def __init__(self, index: LexicalIndex | None = None, *, semantic: SemanticRetriever | None = None) -> None:
         self.index = index
+        self.semantic = semantic
 
     def capture(self, project: Project | None, request: ContextRequest, *,
                 open_buffers: Mapping[str, BufferText] | None = None,
@@ -419,6 +426,36 @@ class ProjectContextService:
         candidates, index_state, index_generation, search_notices = self._candidates(
             capture, tuple(allowed), query, is_cancelled)
         notices.extend(search_notices)
+        ranking = None
+        retrieval_method = "lexical"
+        embedding_identity = None
+        if self.semantic is not None and request.policy.enabled and query.terms and allowed:
+            retrieval_method = "lexical_fallback"
+            if index_state == "unavailable":
+                notices.append("Embeddings were not requested because the lexical index is unavailable; lexical fallback used.")
+            else:
+                try:
+                    allowed_ids = {source.id for source in allowed}
+                    chunks = tuple(chunk for chunk in capture.chunks if chunk.source.id in allowed_ids)
+                    lexical = tuple(chunk.id for chunk in sorted(candidates,
+                                    key=lambda chunk: (-_score(chunk, query), chunk.source.id, chunk.start, chunk.id)))
+                    query_text = (request.author_request[:MAX_QUERY_CHARACTERS] + "\n"
+                                  + request.current_passage[-MAX_QUERY_CHARACTERS:] + "\n"
+                                  + " ".join(term.text for term in query.terms if term.origin == "character_name"))
+                    query_bytes = query_text.encode("utf-8")
+                    if len(query_bytes) > 4096:
+                        notices.append("The semantic query was limited to 4096 UTF-8 bytes.")
+                    query_text = query_bytes[:4096].decode("utf-8", errors="ignore")
+                    result = self.semantic.rank(capture, chunks, query_text, lexical, is_cancelled=is_cancelled)
+                    ranking = result.scores
+                    candidates = [chunk for chunk in chunks if chunk.id in ranking]
+                    embedding_identity = result.identity
+                    retrieval_method = "hybrid"
+                    notices.append(f"Hybrid retrieval: {result.cached_vectors} cached, {result.embedded_vectors} newly embedded passage(s).")
+                except (EmbeddingError, OSError, TimeoutError) as exc:
+                    _check_cancelled(is_cancelled)
+                    notices.append(f"Embeddings unavailable; lexical fallback used: {exc}")
+            payload["retrieval_method"] = retrieval_method
         if not request.policy.enabled:
             state = "disabled"
         elif not query.terms:
@@ -435,7 +472,7 @@ class ProjectContextService:
             if source.id not in matched_ids:
                 reason = "index_unavailable" if state == "unavailable" else "no_match"
                 decisions.append(_decision(source, "omitted", reason, chronology[source.id]))
-        self._select_passages(request, payload, candidates, query, chronology, decisions, is_cancelled)
+        self._select_passages(request, payload, candidates, query, chronology, decisions, is_cancelled, ranking)
         if state == "matches" and not payload["passages"]:
             state = payload["retrieval_status"] = "limited"
         context, prompt = _render(request, payload)
@@ -449,6 +486,7 @@ class ProjectContextService:
             index_generation=index_generation, retrieval_state=state, budget=request.budget,
             estimated_remaining_tokens=request.budget.remaining_tokens(request.layout.role, prompt),
             query=query, decisions=tuple(decisions), notices=tuple(notices),
+            retrieval_method=retrieval_method, embedding_identity=embedding_identity,
         )
         return CapturedContext(request.layout.role, context, prompt, manifest, capture)
 
@@ -493,11 +531,11 @@ class ProjectContextService:
     @staticmethod
     def _select_passages(request: ContextRequest, payload: dict, candidates: list[SourceChunk],
                          query: QueryPlan, chronology: dict[str, str], decisions: list[SourceDecision],
-                         is_cancelled: Callable[[], bool]) -> None:
+                         is_cancelled: Callable[[], bool], ranking: Mapping[str, float] | None = None) -> None:
         counts = defaultdict(int)
         ranges = defaultdict(list)
         seen_text = set()
-        for chunk in _diverse_order(candidates, query):
+        for chunk in _diverse_order(candidates, query, ranking):
             _check_cancelled(is_cancelled)
             source = chunk.source
             relation = chronology[source.id]
@@ -545,7 +583,8 @@ class ProjectContextService:
             passage.update(text=source.text[start:end], range=[start, end])
             shortened = start != chunk.start or end != chunk.end
             reason = "overlap_and_budget" if span != (chunk.start, chunk.end) and end < span[1] else (
-                "budget" if end < span[1] else "overlap" if shortened else "lexical_match")
+                "budget" if end < span[1] else "overlap" if shortened else
+                "hybrid_match" if ranking is not None else "lexical_match")
             decisions.append(_decision(source, "shortened" if shortened else "included", reason,
                                        relation, chunk, start=start, end=end))
             counts[source.id] += 1

@@ -1,0 +1,289 @@
+{
+  "corpus_version": 1,
+  "predeclared": {
+    "recall_at_3_per_language_minimum": 0.75,
+    "warm_query_p95_seconds_maximum": 2.0,
+    "installed_model_bytes_maximum": 1000000000,
+    "selection_order": [
+      "recall_at_1",
+      "recall_at_3",
+      "warm_latency",
+      "installed_size"
+    ],
+    "rrf_constant": 60,
+    "semantic_minimum_cosine": 0.35,
+    "semantic_candidates": 20,
+    "negative_queries": "Report false evidence candidates; no universal semantic abstention guarantee"
+  },
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "identity": null,
+  "index_seconds": 0.015466125216335058,
+  "lexical_cache_bytes": 65536,
+  "vector_cache_bytes": 0,
+  "cold_first_query_seconds": 0.013516374863684177,
+  "warm_query_p95_seconds": 0.013583958148956299,
+  "metrics": {
+    "en": {
+      "recall_at_1": 0.5,
+      "recall_at_3": 0.5,
+      "precision_at_3": 0.4166666666666667,
+      "absent_queries_with_candidates": 0
+    },
+    "uk": {
+      "recall_at_1": 0.5,
+      "recall_at_3": 0.5,
+      "precision_at_3": 0.4166666666666667,
+      "absent_queries_with_candidates": 0
+    }
+  },
+  "queries": [
+    {
+      "query": "en1",
+      "language": "en",
+      "expected": [
+        "en_key"
+      ],
+      "found": [
+        "en_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.013516374863684177,
+      "prompt_bytes": 1168,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en2",
+      "language": "en",
+      "expected": [
+        "en_cure"
+      ],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.013294083066284657,
+      "prompt_bytes": 590,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en3",
+      "language": "en",
+      "expected": [
+        "en_signal"
+      ],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.013583958148956299,
+      "prompt_bytes": 594,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en4",
+      "language": "en",
+      "expected": [
+        "en_guide"
+      ],
+      "found": [
+        "en_guide",
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.013141416944563389,
+      "prompt_bytes": 1746,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en5",
+      "language": "en",
+      "expected": [
+        "en_debt"
+      ],
+      "found": [
+        "en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.012978500220924616,
+      "prompt_bytes": 1166,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en6",
+      "language": "en",
+      "expected": [
+        "uk_guide"
+      ],
+      "found": [
+        "en_guide"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.012844458222389221,
+      "prompt_bytes": 1216,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk1",
+      "language": "uk",
+      "expected": [
+        "uk_key"
+      ],
+      "found": [
+        "uk_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.013465957716107368,
+      "prompt_bytes": 1318,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk2",
+      "language": "uk",
+      "expected": [
+        "uk_cure"
+      ],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.013123958837240934,
+      "prompt_bytes": 611,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk3",
+      "language": "uk",
+      "expected": [
+        "uk_signal"
+      ],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.012977249920368195,
+      "prompt_bytes": 657,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk4",
+      "language": "uk",
+      "expected": [
+        "uk_guide"
+      ],
+      "found": [
+        "uk_guide",
+        "distractor_owl"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.5,
+      "seconds": 0.013027708046138287,
+      "prompt_bytes": 1844,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk5",
+      "language": "uk",
+      "expected": [
+        "uk_debt"
+      ],
+      "found": [
+        "uk_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 1.0,
+      "seconds": 0.01275687525048852,
+      "prompt_bytes": 1296,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk6",
+      "language": "uk",
+      "expected": [
+        "en_food"
+      ],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.013186249881982803,
+      "prompt_bytes": 628,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en_absent1",
+      "language": "en",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.013211708050221205,
+      "prompt_bytes": 582,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "en_absent2",
+      "language": "en",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.012875709217041731,
+      "prompt_bytes": 580,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk_absent1",
+      "language": "uk",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.012697584461420774,
+      "prompt_bytes": 617,
+      "method": "lexical",
+      "notices": []
+    },
+    {
+      "query": "uk_absent2",
+      "language": "uk",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.012615915853530169,
+      "prompt_bytes": 609,
+      "method": "lexical",
+      "notices": []
+    }
+  ]
+}

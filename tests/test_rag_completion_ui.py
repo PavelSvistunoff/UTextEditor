@@ -273,3 +273,93 @@ def test_native_keyboard_review_cancel_send_accept(scene_window, monkeypatch, ap
     assert editor.toPlainText().endswith(" beyond")
     editor.undo()
     assert editor.toPlainText() == project.read_scene(scene.id)
+
+
+def test_embedding_destination_is_separate_and_declining_sends_nothing(scene_window,monkeypatch,application):
+    from PySide6.QtWidgets import QMessageBox
+    window, project, scene, note, editor = scene_window
+    window.settings.rag_embeddings_enabled = True
+    window.settings.embedding_host = "https://embedding.example"
+    window.settings.embedding_model = "separate-embedding"
+    notices = []
+    def decline(parent,title,text,*args):
+        notices.append(text)
+        return QMessageBox.StandardButton.No
+    monkeypatch.setattr(QMessageBox,"question",decline)
+    monkeypatch.setattr(RAGCompletionDialog,"exec",lambda _:pytest.fail("No capture expected"))
+    monkeypatch.setattr("app.ui.rag_completion.OllamaClient",lambda *a,**kw:pytest.fail("No embedding provider before consent"))
+    request_rag_completion(window)
+    assert "https://embedding.example" in notices[0] and "separate-embedding" in notices[0]
+    assert "Generation requires its separate review" in notices[0]
+
+
+def test_hybrid_capture_uses_separate_provider_and_generation_still_needs_review(scene_window,monkeypatch,application):
+    from PySide6.QtWidgets import QMessageBox
+    from test_rag_embeddings import FakeEmbeddings
+    window, project, scene, note, editor = scene_window
+    window.settings.rag_embeddings_enabled = True
+    window.settings.embedding_host = "https://embedding.example"
+    window.settings.embedding_model = "fake"
+    provider = FakeEmbeddings()
+    destinations = []
+    monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr("app.ui.rag_completion.OllamaClient",lambda host,model,**kw:(destinations.append((host,model)) or provider))
+    reviewed = []
+    def review(dialog):
+        reviewed.append(dialog.context.toPlainText())
+        assert '"retrieval_method":"hybrid"' in reviewed[0]
+        return QDialog.DialogCode.Rejected
+    monkeypatch.setattr(RAGCompletionDialog,"exec",review)
+    monkeypatch.setattr(window.provider,"generate_private",lambda *a,**kw:pytest.fail("Generation not approved"))
+    request_rag_completion(window)
+    wait(lambda:bool(reviewed) and window._completion_worker is None,application)
+    assert provider.calls and destinations == [("https://embedding.example","fake")]
+
+
+def test_hybrid_capture_cancellation_preserves_text_and_never_opens_review(scene_window,monkeypatch,application):
+    from threading import Event
+    from PySide6.QtWidgets import QMessageBox
+    from test_rag_embeddings import FakeEmbeddings
+    from app.project.rag_embeddings import VectorCache
+    window, project, scene, note, editor = scene_window
+    window.settings.rag_embeddings_enabled = True
+    provider = FakeEmbeddings()
+    entered,release = Event(),Event()
+    def blocked(texts,identity):
+        entered.set()
+        assert release.wait(5)
+        return ((1.0,0.0,0.0),)*len(texts)
+    provider.on_embed = blocked
+    monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr("app.ui.rag_completion.OllamaClient",lambda *a,**kw:provider)
+    monkeypatch.setattr(RAGCompletionDialog,"exec",lambda _:pytest.fail("Cancelled capture must not open review"))
+    original = editor.toPlainText()
+    request_rag_completion(window)
+    try:
+        wait(entered.is_set,application)
+        window._cancel_activity_completion(window._completion_worker)
+    finally:
+        release.set()
+    wait(lambda:window._completion_worker is None,application)
+    assert editor.toPlainText() == original
+    index = LexicalIndex(AppSettings._default_settings_path().parent,project.root,project.manifest.project_id)
+    assert not VectorCache(index).path.exists()
+
+
+def test_embedding_settings_ui_saves_separately_and_resets(application):
+    from app.ui.settings_dialog import SettingsDialog
+    settings = AppSettings()
+    dialog = SettingsDialog(settings)
+    dialog.rag_embeddings_enabled.setChecked(True)
+    dialog.embedding_host.setText("https://embedding.example")
+    dialog.embedding_model.setText("test-embedding")
+    dialog.accept()
+    assert settings.rag_embeddings_enabled
+    assert settings.embedding_host == "https://embedding.example"
+    assert settings.embedding_model == "test-embedding"
+    assert settings.ollama_model == "gemma4:12b"
+    dialog = SettingsDialog(settings)
+    dialog._reset_to_defaults()
+    assert not dialog.rag_embeddings_enabled.isChecked()
+    assert dialog.embedding_model.text() == "embeddinggemma"
+    dialog.close()

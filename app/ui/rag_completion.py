@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialogButtonBox, QListWidget, QListWidgetItem, QLabel, QPlainTextEdit
+from PySide6.QtWidgets import QDialogButtonBox, QListWidget, QListWidgetItem, QLabel, QPlainTextEdit, QMessageBox
 
 from app.i18n import format_qt
 
@@ -13,9 +13,11 @@ from app.ai.completion_service import STALE_PROJECT_CONTEXT, build_context
 from app.ai.context_budget import ContextBudget
 from app.ai.context_prompt import ContextPrompt
 from app.ai.prompts import detect_language
+from app.ai.ollama_client import OllamaClient
 from app.document.encoding import qt_position_to_python_index
 from app.project.rag_context import CapturedContext, ContextRequest, ProjectContextService, RetrievalPolicy
 from app.project.rag_index import LexicalIndex
+from app.project.rag_embeddings import SemanticRetriever
 from app.project.rag_sources import BufferText
 from app.settings.settings import AppSettings
 from .ai_activity import AIActivityPanel
@@ -43,6 +45,9 @@ class RAGCompletionDialog(CompletionContextDialog):
             "Token budget: window %1; output reserve %2; safety %3; message overhead %4; estimated remaining %5."
         ), budget.context_tokens, budget.output_tokens, budget.safety_tokens,
             budget.message_overhead_tokens, captured.manifest.estimated_remaining_tokens)
+        summary += "\n" + format_qt(self.tr("Retrieval mode: %1"), captured.manifest.retrieval_method)
+        if captured.manifest.notices:
+            summary += "\n" + "\n".join(captured.manifest.notices)
         super().__init__(destination, captured.prompt, summary, parent)
         role = QPlainTextEdit(captured.role, self)
         role.setReadOnly(True)
@@ -103,6 +108,21 @@ def request_rag_completion(window: "MainWindow") -> None:
                             maximum_characters=window.settings.context_size)
     if not passage.strip():
         return
+    embedding_provider = None
+    if window.settings.rag_embeddings_enabled:
+        host, model = window.settings.embedding_host, window.settings.embedding_model
+        consent = QMessageBox.question(window, RAGCompletionDialog.tr("Embedding destination"),
+            format_qt(RAGCompletionDialog.tr(
+                "Send the query and eligible project passages (including unsaved text) to %1 using %2 "
+                "for embeddings? This destination may be remote. Requests appear in AI diagnostics. "
+                "Saved-source vectors are cached locally; unsaved vectors stay in memory. "
+                "Rebuilding can send newly included sources. No model is downloaded. "
+                "Generation requires its separate review afterwards."
+            ), host, model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if consent != QMessageBox.StandardButton.Yes:
+            return
+        embedding_provider = OllamaClient(host, model, interaction_observer=window._emit_ai_interaction)
     window._completion_timer.stop()
     window._completion_generation += 1
     generation = window._completion_generation
@@ -179,7 +199,8 @@ def request_rag_completion(window: "MainWindow") -> None:
     def capture(request: ContextRequest) -> None:
         def work(cancelled):
             index = LexicalIndex(cache_root, project.root, project.manifest.project_id)
-            return ProjectContextService(index).capture(project, request, open_buffers=buffers,
+            semantic = SemanticRetriever(embedding_provider, index) if embedding_provider is not None else None
+            return ProjectContextService(index, semantic=semantic).capture(project, request, open_buffers=buffers,
                                                         is_cancelled=cancelled)
 
         def review(captured: CapturedContext) -> None:

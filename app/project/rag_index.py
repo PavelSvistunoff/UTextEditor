@@ -262,8 +262,9 @@ class LexicalIndex:
         with self._writing(is_cancelled):
             try:
                 self._guard_path()
-                candidates = [self.path, *(Path(str(self.path) + suffix)
-                                          for suffix in ("-journal", "-wal", "-shm"))]
+                caches = (self.path, self.path.with_suffix(".vectors.sqlite3"))
+                candidates = [path for cache in caches for path in
+                              (cache, *(Path(str(cache) + suffix) for suffix in ("-journal", "-wal", "-shm")))]
                 if self.path.parent.exists():
                     candidates.extend(self.path.parent.glob(self.path.stem + ".*.building*"))
                 for path in candidates:
