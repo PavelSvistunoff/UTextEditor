@@ -1,0 +1,18 @@
+{
+  "platform": "macOS 27.0.1 arm64",
+  "hardware": "Apple M5 Pro / 24 GiB",
+  "qt": "6.11.2",
+  "ollama": "0.40.13",
+  "models": [
+    {
+      "name": "embeddinggemma:latest",
+      "digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+      "size": 621875917
+    },
+    {
+      "name": "gemma4:12b",
+      "digest": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+      "size": 7714091504
+    }
+  ]
+}

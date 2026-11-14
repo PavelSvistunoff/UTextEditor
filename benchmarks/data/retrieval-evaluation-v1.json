@@ -1,0 +1,60 @@
+{
+  "version":1,
+  "protocol":{
+    "frozen_before_live_evaluation":true,
+    "ranking":"RAG-06 cosine >=0.35, top20, equal RRF60; no tuning on heldout",
+    "gates":{"heldout_hybrid_recall_at_3_per_language_min":0.75,"heldout_hybrid_precision_at_3_per_language_min":0.20,"heldout_hybrid_recall_not_below_lexical":true,"chronology_violations_max":0,"validated_passage_fraction_min":1.0,"absent_warning_fraction_min":1.0,"warm_query_p95_seconds_max":2.0,"vector_cache_bytes_max":16777216},
+    "metrics":"One relevant scene per positive query. Precision@3 uses three fixed slots. Absence false candidates are reported, never interpreted as consistency proof.",
+    "development_and_heldout":"Separate source/query facts; heldout is measured once after locking development behavior. Any later tuning requires a new untouched holdout."
+  },
+  "characters":[{"key":"en_guide","name":"Iris","aliases":["Moon Needle"]},{"key":"uk_guide","name":"Рута","aliases":["Сонячна Лисиця"]}],
+  "sources":[
+    {"key":"d_en_key","title":"Workshop","text":"Nora stored the copper key beneath a cracked sundial. It unlocks the observatory attic."},
+    {"key":"d_en_cure","title":"Remedy","text":"The sailor's fever can be cured only by tea brewed from the red mountain herb."},
+    {"key":"d_en_alias","title":"Guide","text":"Moon Needle is Iris, the guide who knows a route through the flooded mine."},
+    {"key":"d_en_signal","title":"Warning","text":"Four short drum beats warn the valley farmers that the dam has broken."},
+    {"key":"d_uk_key","title":"Схованка","text":"Ганна залишила золотий жетон під каменем біля млина. Жетон відмикає міську скарбницю."},
+    {"key":"d_uk_cure","title":"Лікування","text":"Чай із сушеної м'яти знімає сонну хворобу вартового Семена."},
+    {"key":"d_uk_alias","title":"Розвідниця","text":"Сонячна Лисиця — це Рута, розвідниця, яка знає обхідну стежку через очерети."},
+    {"key":"d_uk_signal","title":"Вежа","text":"П'ять жовтих спалахів попереджають караван про обвал у гірському проході."},
+    {"key":"h_en_letter","title":"Archive","text":"The missing treaty is folded inside a wooden flute kept in the monastery cellar."},
+    {"key":"h_en_bridge","title":"Crossing","text":"The northern suspension bridge collapses whenever the old iron counterweight is removed."},
+    {"key":"h_en_recipe","title":"Bakery","text":"The baker mixes ground almonds into the festival bread to honour his lost sister."},
+    {"key":"h_en_debt","title":"Rescue","text":"Evan promised to guard Mira's orchard because she had saved his daughter from a winter storm."},
+    {"key":"h_uk_map","title":"Бібліотека","text":"Карту підземних ходів заховано за портретом засновниці міста в міській бібліотеці."},
+    {"key":"h_uk_well","title":"Криниця","text":"Вода в південній криниці стає солоною, коли відчиняють морський шлюз."},
+    {"key":"h_uk_talisman","title":"Оберіг","text":"Мідний дзвіночок захищає Оксану від нічних кошмарів, доки він лежить під її подушкою."},
+    {"key":"h_uk_debt","title":"Обіцянка","text":"Тарас повертає старий годинник Лесі, бо її батько врятував його під час пожежі."},
+    {"key":"distractor1","title":"Market","text":"The trader sells glass bottles, silver bells and painted portraits in the market."},
+    {"key":"distractor2","title":"Город","text":"На городі вирощують моркву й капусту для зимового запасу; біля тину спить пес."},
+    {"key":"near1","title":"Evening","text":"The travellers ate supper and folded their blankets before darkness fell."},
+    {"key":"near2","title":"Ранок","text":"Після сніданку герої зібрали речі та вирушили в дорогу мовчки."}
+  ],
+  "future_sources":[
+    {"key":"future_en","title":"Later revelation","text":"FUTURE_TRAP. A missing treaty, copper key, monastery flute, suspension bridge and almond festival bread are revealed only in a later scene."},
+    {"key":"future_uk","title":"Майбутнє відкриття","text":"FUTURE_TRAP. Карта підземних ходів, бібліотека, солона вода криниці, оберіг від кошмарів і годинник Лесі будуть пояснені лише в майбутній сцені."}
+  ],
+  "unplaced":{"key":"unplaced","title":"Unplaced fragment","text":"UNPLACED_TRAP. The treaty is in a flute. Карта лежить за портретом. The herb cures the fever."},
+  "queries":[
+    {"key":"d_en1","split":"development","language":"en","text":"Where is the copper key for the observatory attic?","expected":["d_en_key"]},
+    {"key":"d_en2","split":"development","language":"en","text":"How can the feverish sailor recover?","expected":["d_en_cure"]},
+    {"key":"d_en3","split":"development","language":"en","text":"Who is Moon Needle and which route does the guide know?","character":"en_guide","expected":["d_en_alias"]},
+    {"key":"d_en4","split":"development","language":"en","text":"What sound warns farmers about a failed dam?","expected":["d_en_signal"]},
+    {"key":"d_uk1","split":"development","language":"uk","text":"Де Ганна приховала жетон від міської скарбниці?","expected":["d_uk_key"]},
+    {"key":"d_uk2","split":"development","language":"uk","text":"Як вилікувати сонну хворобу Семена?","expected":["d_uk_cure"]},
+    {"key":"d_uk3","split":"development","language":"uk","text":"Хто така Сонячна Лисиця і яку стежку вона знає?","character":"uk_guide","expected":["d_uk_alias"]},
+    {"key":"d_uk4","split":"development","language":"uk","text":"Яке світло попереджає мандрівників про гірський обвал?","expected":["d_uk_signal"]},
+    {"key":"h_en1","split":"heldout","language":"en","text":"Where did someone conceal the missing treaty?","expected":["h_en_letter"]},
+    {"key":"h_en2","split":"heldout","language":"en","text":"What makes the northern suspension bridge collapse?","expected":["h_en_bridge"]},
+    {"key":"h_en3","split":"heldout","language":"en","text":"Why are there almonds in the special festival bread?","expected":["h_en_recipe"]},
+    {"key":"h_en4","split":"heldout","language":"en","text":"Why is Evan protecting Mira's orchard?","expected":["h_en_debt"]},
+    {"key":"h_uk1","split":"heldout","language":"uk","text":"Де захована карта підземних ходів міста?","expected":["h_uk_map"]},
+    {"key":"h_uk2","split":"heldout","language":"uk","text":"Чому питна вода в південній криниці стає солоною?","expected":["h_uk_well"]},
+    {"key":"h_uk3","split":"heldout","language":"uk","text":"Що оберігає Оксану від поганих сновидінь?","expected":["h_uk_talisman"]},
+    {"key":"h_uk4","split":"heldout","language":"uk","text":"Чому Тарас віддає годинник Лесі?","expected":["h_uk_debt"]},
+    {"key":"d_absent_en","split":"development","language":"en","text":"Which comet destroyed the king's palace?","expected":[]},
+    {"key":"d_absent_uk","split":"development","language":"uk","text":"Яке справжнє ім'я правительки Марса?","expected":[]},
+    {"key":"h_absent_en","split":"heldout","language":"en","text":"Who built the invisible dragon's spaceship?","expected":[]},
+    {"key":"h_absent_uk","split":"heldout","language":"uk","text":"Яка дата весілля королеви з чаклуном?","expected":[]}
+  ]
+}

@@ -1,0 +1,262 @@
+{
+  "corpus_version": 1,
+  "corpus_sha256": "32a37a65339c946f11455f32ac5fef824af38ed181714aeda112218d766d1e5d",
+  "mode": "hybrid",
+  "split": "development",
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "embedding_identity": {
+    "host": "http://localhost:11434",
+    "model": "embeddinggemma:latest",
+    "digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+    "dimensions": 768
+  },
+  "lexical_cache_bytes": 90112,
+  "vector_cache_bytes": 98304,
+  "metrics": {
+    "development": {
+      "en": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 1,
+        "recall_at_3": 1,
+        "precision_at_3_fixed_slots": 0.3333333333333333,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 0,
+        "absent_warning_fraction": 1,
+        "validated_passage_fraction": 1.0,
+        "warm_query_p95_seconds": 0.10855925036594272,
+        "max_request_bytes": 1991
+      },
+      "uk": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 1,
+        "recall_at_3": 1,
+        "precision_at_3_fixed_slots": 0.3333333333333333,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 0,
+        "absent_warning_fraction": 1,
+        "validated_passage_fraction": 1.0,
+        "warm_query_p95_seconds": 0.09526237519457936,
+        "max_request_bytes": 3509
+      }
+    },
+    "heldout": {}
+  },
+  "queries": [
+    {
+      "query": "d_en1",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_key"
+      ],
+      "found": [
+        "d_en_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.7129132091067731,
+      "cold": true,
+      "request_bytes": 1789,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_en2",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_cure"
+      ],
+      "found": [
+        "d_en_cure"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.10855925036594272,
+      "cold": false,
+      "request_bytes": 1772,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_en3",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_alias"
+      ],
+      "found": [
+        "d_en_alias"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.09320749994367361,
+      "cold": false,
+      "request_bytes": 1991,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_en4",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_signal"
+      ],
+      "found": [
+        "d_en_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.09981279075145721,
+      "cold": false,
+      "request_bytes": 1768,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_uk1",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_key"
+      ],
+      "found": [
+        "d_uk_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.08647316554561257,
+      "cold": false,
+      "request_bytes": 1875,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_uk2",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_cure"
+      ],
+      "found": [
+        "d_uk_cure",
+        "d_en_cure",
+        "distractor2"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.09467216674238443,
+      "cold": false,
+      "request_bytes": 3509,
+      "validated": 3,
+      "passages": 3,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_uk3",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_alias"
+      ],
+      "found": [
+        "d_uk_alias"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.09526237519457936,
+      "cold": false,
+      "request_bytes": 2100,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_uk4",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_signal"
+      ],
+      "found": [
+        "d_uk_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.08810245804488659,
+      "cold": false,
+      "request_bytes": 1841,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_absent_en",
+      "split": "development",
+      "language": "en",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.09276708262041211,
+      "cold": false,
+      "request_bytes": 976,
+      "validated": 0,
+      "passages": 0,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    },
+    {
+      "query": "d_absent_uk",
+      "split": "development",
+      "language": "uk",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.09276129165664315,
+      "cold": false,
+      "request_bytes": 976,
+      "validated": 0,
+      "passages": 0,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "hybrid"
+    }
+  ]
+}

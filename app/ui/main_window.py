@@ -63,6 +63,7 @@ from app.project.autopilot import (
     run_autopilot,
 )
 from app.project.auto_writer import AutoWriterResult, run_auto_writer
+from app.project.auto_writer_context import AutoWriterRetrieval
 from app.project.model import Character, CharacterRelationship, CharacterStateChange
 from app.project.model import SceneCharacterAssociation
 from app.project.character_context import capture_scene_character_context, project_planning_context
@@ -115,6 +116,7 @@ from .project_translation_review_dialog import ProjectTranslationReviewDialog
 from .export_preview_dialog import ExportPreviewDialog
 from .editor_widget import EditorWidget
 from .auto_writer_review_dialog import AutoWriterReviewDialog
+from .auto_writer_context_review import AutoWriterContextReview
 from .project_brief_dialog import ProjectBriefDialog
 from .project_setup_dialog import ProjectSetupDialog
 from .revision_history_dialog import RevisionHistoryDialog
@@ -1276,6 +1278,11 @@ class MainWindow(QMainWindow):
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         mode, instructions = dialog.values()
+        use_retrieval = dialog.retrieval.isChecked()
+        use_embeddings = use_retrieval and dialog.hybrid.isChecked()
+        if use_retrieval and self.settings.ollama_context_length <= 0:
+            QMessageBox.information(self, self.tr("Auto-writer"), self.tr("Set an explicit Ollama token window before using Auto-writer retrieval."))
+            return
         operation = (
             self.tr("write into empty scenes only, leaving non-empty scenes unchanged")
             if mode == "write_empty"
@@ -1286,7 +1293,7 @@ class MainWindow(QMainWindow):
             "notes in full, all character profiles and relationships as background, explicit scene associations, "
             "your optional instructions, and current AI settings.\n\n"
             "Destination: {host} — model {model}\n\n"
-            "Project text and reference notes are sent only to this configured model. "
+            "Generation sends project text and reference notes to this configured model. "
             "A complete local revision snapshot is created before generation. All scene "
             "changes are applied together only after every scene succeeds and you "
             "review the drafts. Refine mode may replace existing text."
@@ -1300,6 +1307,17 @@ class MainWindow(QMainWindow):
             return
         if not self._ensure_ai_context_consent():
             return
+        embedding_provider = None
+        if use_embeddings:
+            embedding_host, embedding_model = self.settings.embedding_host, self.settings.embedding_model
+            if QMessageBox.question(self, self.tr("Embedding destination"), self.tr(
+                "Auto-writer retrieval sends queries and eligible scene passages, including unsaved text and provisional generated drafts, "
+                "to {host} using {model} for embeddings. This destination may be remote; requests appear in AI diagnostics. "
+                "Saved-source vectors are cached locally. No model is downloaded. Allow embeddings for this run?"
+            ).format(host=embedding_host, model=embedding_model), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+            embedding_provider = OllamaClient(embedding_host, embedding_model, interaction_observer=self._emit_ai_interaction)
         if any(
             binding.project is project and editor in self._saving_editors
             for editor, binding in tuple(self._project_documents.items())
@@ -1345,6 +1363,32 @@ class MainWindow(QMainWindow):
             "Auto-writer before "
             + datetime.now().astimezone().isoformat(timespec="seconds")
         )
+        retrieval = None
+        if use_retrieval:
+            def cancelled():
+                # Only plain Python generations/buffer revisions are read by the worker.
+                return (cancel_event.is_set() or generation != self._auto_writer_generation
+                        or settings_generation != self._settings_generation
+                        or project_generation != self._project_generation or self.project is not project
+                        or sum(binding.project is project for binding in tuple(self._project_documents.values())) != len(editor_states)
+                        or any(editor._revision != revision or self._project_documents.get(editor) is None
+                               for editor, revision in editor_states.values()))
+
+            def review_current():
+                current_editors = {binding.item_id: (editor, editor.revision)
+                                   for editor, binding in self._project_documents.items()
+                                   if binding.project is project and self.tabs.indexOf(editor) >= 0}
+                return not cancelled() and current_editors == editor_states
+
+            review_bridge = AutoWriterContextReview(
+                self.provider.host + " / " + self.provider.model, is_current=review_current,
+                is_cancelled=cancelled, cancel=self.cancel_auto_writer, parent=self,
+            )
+            retrieval = AutoWriterRetrieval(AppSettings._default_settings_path().parent,
+                                            self.settings.ollama_context_length, review_bridge.review,
+                                            embedding_provider)
+        else:
+            cancelled = cancel_event.is_set
         worker = FunctionWorker(
             run_auto_writer,
             self.provider,
@@ -1355,14 +1399,17 @@ class MainWindow(QMainWindow):
             maximum_tokens=1400,
             temperature=self.settings.temperature,
             snapshot_name=snapshot_name,
-            is_cancelled=cancel_event.is_set,
+            is_cancelled=cancelled,
             progress=lambda message: self.auto_writer_progress.emit(generation, message),
             scene_completed=lambda title, text, completed, total: (
                 self.auto_writer_scene_completed.emit(
                     generation, title, text, completed, total
                 )
             ),
+            retrieval=retrieval,
         )
+        if use_retrieval:
+            worker.signals.done.connect(review_bridge.deleteLater, Qt.ConnectionType.QueuedConnection)
         self._auto_writer_activity = self.ai_activity.add(AIActivityPanel.tr("Auto-writer"), context=project.manifest.title, cancel=self.cancel_auto_writer,
                                                          show=lambda: self._auto_writer_progress_dialog.show() if self._auto_writer_progress_dialog else None)
         activity = self._auto_writer_activity
@@ -1381,12 +1428,15 @@ class MainWindow(QMainWindow):
             ),
             Qt.ConnectionType.QueuedConnection,
         )
-        worker.signals.failed.connect(
-            lambda error: self._auto_writer_failed(
-                generation, settings_generation, project, error
-            ),
-            Qt.ConnectionType.QueuedConnection,
-        )
+        def generation_failed(error):
+            if generation != self._auto_writer_generation:
+                return
+            if use_retrieval and cancelled():
+                self.cancel_auto_writer()
+            else:
+                self._auto_writer_failed(generation, settings_generation, project, error)
+
+        worker.signals.failed.connect(generation_failed, Qt.ConnectionType.QueuedConnection)
         self.thread_pool.start(worker)
 
     def translate_project_to_ukrainian(self) -> None:
@@ -1824,9 +1874,12 @@ class MainWindow(QMainWindow):
 
         scenes = [(scene.id, scene.title, result.replacements[scene.id])
                   for scene in project.iter_scenes() if scene.id in result.replacements]
-        review = AutoWriterReviewDialog(scenes, self)
+        review = (AutoWriterReviewDialog(scenes, self, contexts=result.retrieval_contexts)
+                  if result.retrieval_contexts else AutoWriterReviewDialog(scenes, self))
         accepted = review.exec() == QDialog.DialogCode.Accepted
         selected = review.selected_ids() if accepted else set()
+        if result.retrieval_contexts:
+            review.deleteLater()
         if not current():
             self._finish_auto_writer(project, self.tr("Auto-writer drafts were not applied because the project or an open document changed."), outcome="discarded")
             return

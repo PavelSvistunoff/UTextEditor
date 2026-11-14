@@ -3,18 +3,21 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.document.revisions import RevisionStore
 from .model import ProjectError
 from .service import Project
 from .character_context import scene_character_context, complete_project_character_context
 from .reference_context import capture_project_notes, check_reference_size
+from .auto_writer_context import AutoWriterRetrieval
+from .rag_evidence import CapturedRequestEvidence, capture_request_evidence
 
 MAX_AUTOWRITER_SCENES = 80
 MAX_SCENE_INPUT_LENGTH = 16000
 MAX_SCENE_OUTPUT_LENGTH = 30000
 AUTO_WRITER_REQUEST_TIMEOUT_SECONDS = 300
+MAX_AUTOWRITER_REVIEW_BYTES = 16 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -23,6 +26,7 @@ class AutoWriterResult:
     replacements: Mapping[str, str]
     expected_disk_text: Mapping[str, str]
     expected_context_text: Mapping[str, str]
+    retrieval_contexts: Mapping[str, CapturedRequestEvidence] = field(default_factory=dict)
 
 
 def run_auto_writer(
@@ -38,6 +42,7 @@ def run_auto_writer(
     is_cancelled: Callable[[], bool],
     progress: Callable[[str], None] | None = None,
     scene_completed: Callable[[str, str, int, int], None] | None = None,
+    retrieval: AutoWriterRetrieval | None = None,
 ) -> AutoWriterResult:
     """Snapshot the project, generate all target scenes, and return staged results."""
     if mode not in {"write_empty", "refine_all"}:
@@ -140,6 +145,8 @@ def run_auto_writer(
     outline = "\n".join(outline_parts)
 
     replacements: dict[str, str] = {}
+    retrieval_contexts: dict[str, CapturedRequestEvidence] = {}
+    review_bytes = 0
     preceding: list[str] = []
     target_ids = {record[0] for record in targets}
     total_targets = len(targets)
@@ -180,23 +187,43 @@ def run_auto_writer(
             f"<current_chapter>\n{chapter_title}\n</current_chapter>\n"
             f"<current_scene>\n{current_text if mode == 'refine_all' else '[Empty scene]'}\n</current_scene>"
         )
-        references.verify_current()
-        if is_cancelled():
-            raise ProjectError("Auto-writer was cancelled; no scenes were changed.")
-        generated = provider.generate_private(
-            prompt,
-            role=(
-                "You are an author-controlled writing assistant. Return only the requested "
-                "scene text; never claim to have changed project files."
-            ),
-            maximum_tokens=min(maximum_tokens, 1400),
-            temperature=temperature,
-            timeout=AUTO_WRITER_REQUEST_TIMEOUT_SECONDS,
-            require_full_context=True,
+        role = (
+            "You are an author-controlled writing assistant. Return only the requested "
+            "scene text; never claim to have changed project files."
         )
+        captured = None
+        evidence_record = None
+        if retrieval is not None:
+            captured = retrieval.prepare(
+                project, scene_id, title, prompt, role, instructions, current_text,
+                open_text, replacements, expected_disk=expected_context,
+                output_tokens=min(maximum_tokens, 1400), is_cancelled=is_cancelled,
+            )
+            prompt, role = captured.prompt, captured.role
+            retrieval.verify(captured, is_cancelled=is_cancelled)
+            evidence_record = capture_request_evidence(captured)
+            review_bytes += evidence_record.estimated_bytes()
+            if review_bytes > MAX_AUTOWRITER_REVIEW_BYTES:
+                raise ProjectError("Auto-writer captured-request reviews exceed the 16 MiB run limit; no scenes were changed.")
+        references.verify_current()
+        if is_cancelled():
+            raise ProjectError("Auto-writer was cancelled; no scenes were changed.")
+        try:
+            generated = provider.generate_private(
+                prompt, role=role, maximum_tokens=min(maximum_tokens, 1400),
+                temperature=temperature, timeout=AUTO_WRITER_REQUEST_TIMEOUT_SECONDS,
+                require_full_context=True,
+            )
+        except Exception:
+            if captured is not None:
+                retrieval.verify(captured, is_cancelled=is_cancelled)
+            raise
         if is_cancelled():
             raise ProjectError("Auto-writer was cancelled; no scenes were changed.")
         references.verify_current()
+        if captured is not None:
+            retrieval.verify(captured, is_cancelled=is_cancelled)
+            retrieval_contexts[scene_id] = evidence_record
         if not isinstance(generated, str) or not generated.strip():
             raise ProjectError(f"The model returned an empty result for scene {title!r}.")
         if len(generated) > MAX_SCENE_OUTPUT_LENGTH or "\x00" in generated:
@@ -211,4 +238,5 @@ def run_auto_writer(
         replacements,
         {scene_id: expected_disk[scene_id] for scene_id in replacements},
         expected_context,
+        retrieval_contexts,
     )

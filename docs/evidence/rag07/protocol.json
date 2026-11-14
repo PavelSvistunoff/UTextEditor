@@ -1,0 +1,19 @@
+{
+  "corpus_sha256": "32a37a65339c946f11455f32ac5fef824af38ed181714aeda112218d766d1e5d",
+  "protocol": {
+    "frozen_before_live_evaluation": true,
+    "ranking": "RAG-06 cosine >=0.35, top20, equal RRF60; no tuning on heldout",
+    "gates": {
+      "heldout_hybrid_recall_at_3_per_language_min": 0.75,
+      "heldout_hybrid_precision_at_3_per_language_min": 0.2,
+      "heldout_hybrid_recall_not_below_lexical": true,
+      "chronology_violations_max": 0,
+      "validated_passage_fraction_min": 1.0,
+      "absent_warning_fraction_min": 1.0,
+      "warm_query_p95_seconds_max": 2.0,
+      "vector_cache_bytes_max": 16777216
+    },
+    "metrics": "One relevant scene per positive query. Precision@3 uses three fixed slots. Absence false candidates are reported, never interpreted as consistency proof.",
+    "development_and_heldout": "Separate source/query facts; heldout is measured once after locking development behavior. Any later tuning requires a new untouched holdout."
+  }
+}

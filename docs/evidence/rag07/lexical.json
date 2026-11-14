@@ -1,0 +1,498 @@
+{
+  "corpus_version": 1,
+  "corpus_sha256": "32a37a65339c946f11455f32ac5fef824af38ed181714aeda112218d766d1e5d",
+  "mode": "lexical",
+  "split": "all",
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "embedding_identity": null,
+  "lexical_cache_bytes": 90112,
+  "vector_cache_bytes": 0,
+  "metrics": {
+    "development": {
+      "en": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 1,
+        "recall_at_3": 1,
+        "precision_at_3_fixed_slots": 0.3333333333333333,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 0,
+        "absent_warning_fraction": 1,
+        "validated_passage_fraction": 1.0,
+        "warm_query_p95_seconds": 0.01881279144436121,
+        "max_request_bytes": 1963
+      },
+      "uk": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 1,
+        "recall_at_3": 1,
+        "precision_at_3_fixed_slots": 0.3333333333333333,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 0,
+        "absent_warning_fraction": 1,
+        "validated_passage_fraction": 1.0,
+        "warm_query_p95_seconds": 0.018634541891515255,
+        "max_request_bytes": 2072
+      }
+    },
+    "heldout": {
+      "en": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 1,
+        "recall_at_3": 1,
+        "precision_at_3_fixed_slots": 0.3333333333333333,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 1,
+        "absent_warning_fraction": 1,
+        "validated_passage_fraction": 1.0,
+        "warm_query_p95_seconds": 0.01800437504425645,
+        "max_request_bytes": 1762
+      },
+      "uk": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 1,
+        "recall_at_3": 1,
+        "precision_at_3_fixed_slots": 0.3333333333333333,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 1,
+        "absent_warning_fraction": 1,
+        "validated_passage_fraction": 1.0,
+        "warm_query_p95_seconds": 0.018185166642069817,
+        "max_request_bytes": 1856
+      }
+    }
+  },
+  "queries": [
+    {
+      "query": "d_en1",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_key"
+      ],
+      "found": [
+        "d_en_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.018615709152072668,
+      "cold": true,
+      "request_bytes": 1761,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_en2",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_cure"
+      ],
+      "found": [
+        "d_en_cure"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.018252250272780657,
+      "cold": false,
+      "request_bytes": 1744,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_en3",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_alias"
+      ],
+      "found": [
+        "d_en_alias"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.01881279144436121,
+      "cold": false,
+      "request_bytes": 1963,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_en4",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_signal"
+      ],
+      "found": [
+        "d_en_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.018057791981846094,
+      "cold": false,
+      "request_bytes": 1740,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_uk1",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_key"
+      ],
+      "found": [
+        "d_uk_key"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.01817591581493616,
+      "cold": false,
+      "request_bytes": 1847,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_uk2",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_cure"
+      ],
+      "found": [
+        "d_uk_cure"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.017966333776712418,
+      "cold": false,
+      "request_bytes": 1806,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_uk3",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_alias"
+      ],
+      "found": [
+        "d_uk_alias"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.018634541891515255,
+      "cold": false,
+      "request_bytes": 2072,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_uk4",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_signal"
+      ],
+      "found": [
+        "d_uk_signal"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.018005416728556156,
+      "cold": false,
+      "request_bytes": 1813,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_en1",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_letter"
+      ],
+      "found": [
+        "h_en_letter"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.01792658306658268,
+      "cold": false,
+      "request_bytes": 1750,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_en2",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_bridge"
+      ],
+      "found": [
+        "h_en_bridge"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.017938749864697456,
+      "cold": false,
+      "request_bytes": 1762,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_en3",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_recipe"
+      ],
+      "found": [
+        "h_en_recipe"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.01800437504425645,
+      "cold": false,
+      "request_bytes": 1748,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_en4",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_debt"
+      ],
+      "found": [
+        "h_en_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.017857500351965427,
+      "cold": false,
+      "request_bytes": 1760,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_uk1",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_map"
+      ],
+      "found": [
+        "h_uk_map"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.01800816599279642,
+      "cold": false,
+      "request_bytes": 1856,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_uk2",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_well"
+      ],
+      "found": [
+        "h_uk_well"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.018185166642069817,
+      "cold": false,
+      "request_bytes": 1818,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_uk3",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_talisman"
+      ],
+      "found": [
+        "h_uk_talisman"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.017949583008885384,
+      "cold": false,
+      "request_bytes": 1843,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_uk4",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_debt"
+      ],
+      "found": [
+        "h_uk_debt"
+      ],
+      "recall_at_1": 1,
+      "recall_at_3": 1,
+      "precision_at_3": 0.3333333333333333,
+      "seconds": 0.017901750281453133,
+      "cold": false,
+      "request_bytes": 1839,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_absent_en",
+      "split": "development",
+      "language": "en",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.017867041751742363,
+      "cold": false,
+      "request_bytes": 948,
+      "validated": 0,
+      "passages": 0,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "d_absent_uk",
+      "split": "development",
+      "language": "uk",
+      "expected": [],
+      "found": [],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.018263375386595726,
+      "cold": false,
+      "request_bytes": 948,
+      "validated": 0,
+      "passages": 0,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_absent_en",
+      "split": "heldout",
+      "language": "en",
+      "expected": [],
+      "found": [
+        "d_en_alias"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.017944333143532276,
+      "cold": false,
+      "request_bytes": 1736,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    },
+    {
+      "query": "h_absent_uk",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [],
+      "found": [
+        "d_uk_alias"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.01816337462514639,
+      "cold": false,
+      "request_bytes": 1841,
+      "validated": 1,
+      "passages": 1,
+      "chronology_violations": 0,
+      "partial_warning": true,
+      "actual_method": "lexical"
+    }
+  ]
+}

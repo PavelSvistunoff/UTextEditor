@@ -1,0 +1,522 @@
+{
+  "corpus_version": 1,
+  "corpus_sha256": "32a37a65339c946f11455f32ac5fef824af38ed181714aeda112218d766d1e5d",
+  "mode": "fixed",
+  "split": "all",
+  "hardware": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "embedding_identity": null,
+  "lexical_cache_bytes": 0,
+  "vector_cache_bytes": 0,
+  "metrics": {
+    "development": {
+      "en": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 0,
+        "recall_at_3": 0,
+        "precision_at_3_fixed_slots": 0.0,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 1,
+        "absent_warning_fraction": 0,
+        "validated_passage_fraction": 0.0,
+        "warm_query_p95_seconds": 9.741587564349174e-05,
+        "max_request_bytes": 207
+      },
+      "uk": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 0,
+        "recall_at_3": 0,
+        "precision_at_3_fixed_slots": 0.0,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 1,
+        "absent_warning_fraction": 0,
+        "validated_passage_fraction": 0.0,
+        "warm_query_p95_seconds": 9.562494233250618e-05,
+        "max_request_bytes": 207
+      }
+    },
+    "heldout": {
+      "en": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 0,
+        "recall_at_3": 0,
+        "precision_at_3_fixed_slots": 0.0,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 1,
+        "absent_warning_fraction": 0,
+        "validated_passage_fraction": 0.0,
+        "warm_query_p95_seconds": 0.00011654198169708252,
+        "max_request_bytes": 207
+      },
+      "uk": {
+        "positive_queries": 4,
+        "negative_queries": 1,
+        "recall_at_1": 0,
+        "recall_at_3": 0,
+        "precision_at_3_fixed_slots": 0.0,
+        "chronology_violations": 0,
+        "absent_queries_with_candidates": 1,
+        "absent_warning_fraction": 0,
+        "validated_passage_fraction": 0.0,
+        "warm_query_p95_seconds": 9.175017476081848e-05,
+        "max_request_bytes": 207
+      }
+    }
+  },
+  "queries": [
+    {
+      "query": "d_en1",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_key"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.00010287482291460037,
+      "cold": true,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_en2",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_cure"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.304191917181015e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_en3",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_alias"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.741587564349174e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_en4",
+      "split": "development",
+      "language": "en",
+      "expected": [
+        "d_en_signal"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.629083797335625e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_uk1",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_key"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.120814502239227e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_uk2",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_cure"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.562494233250618e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_uk3",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_alias"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.187497198581696e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_uk4",
+      "split": "development",
+      "language": "uk",
+      "expected": [
+        "d_uk_signal"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.516673162579536e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_en1",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_letter"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 0.00011654198169708252,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_en2",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_bridge"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.674998000264168e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_en3",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_recipe"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.249988943338394e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_en4",
+      "split": "heldout",
+      "language": "en",
+      "expected": [
+        "h_en_debt"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.799981489777565e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_uk1",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_map"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.175017476081848e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_uk2",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_well"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.137531742453575e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_uk3",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_talisman"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.012501686811447e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_uk4",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [
+        "h_uk_debt"
+      ],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.058276191353798e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_absent_en",
+      "split": "development",
+      "language": "en",
+      "expected": [],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.091664105653763e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "d_absent_uk",
+      "split": "development",
+      "language": "uk",
+      "expected": [],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.537488222122192e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_absent_en",
+      "split": "heldout",
+      "language": "en",
+      "expected": [],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.445799514651299e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    },
+    {
+      "query": "h_absent_uk",
+      "split": "heldout",
+      "language": "uk",
+      "expected": [],
+      "found": [
+        "near1",
+        "near2"
+      ],
+      "recall_at_1": 0,
+      "recall_at_3": 0,
+      "precision_at_3": 0.0,
+      "seconds": 9.058276191353798e-05,
+      "cold": false,
+      "request_bytes": 207,
+      "validated": 0,
+      "passages": 2,
+      "chronology_violations": 0,
+      "partial_warning": false,
+      "actual_method": "fixed"
+    }
+  ]
+}

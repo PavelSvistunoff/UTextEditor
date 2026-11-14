@@ -1,3 +1,23 @@
+## RAG-07 — evaluated Auto-writer manuscript retrieval
+
+- COMPLETE: RAG-07 / RAG-07.V1 / RAG-07.V2; RAG parent remains OPEN; previous commit d0e5859, branch main.
+- Frozen 20-query EN/UK evaluation: all 19 predeclared gates passed; heldout recall@3 1.00/1.00 for lexical/hybrid, fixed 0/0.
+- Published failures: both heldout absent queries retrieve unrelated guides; hybrid adds no recall benefit on this corpus.
+- Auto-writer opt-in: per-scene exact role/prompt/source review, exclusions/rebuild, separate embedding confirmation.
+- Full required notes/profiles/development and refinement scene retained; snapshots, 64 KiB reference limits and transactions unchanged.
+- Earlier generated scenes become full in-memory provisional overlays only; default manuscript-order filtering and explicit presence remain.
+- Exact evidence validation binds text/ranges/digests to the sent snapshot; compact review records have a 16 MiB estimated run budget.
+- Source/buffer/project/settings/run checks discard stale requests/errors; cancelled author edits and Undo survive; closed dialogs released.
+- Changed: auto_writer/context/evidence services, Qt options/review bridge, evaluation corpus/scripts/reports, tests and docs/catalogs.
+- Focused: 127 passed / 2 native skips in 101.50s; final domain/gates 19 passed in 1.48s; final UI/locale 36 passed / 1 skip in 23.00s.
+- Full offscreen: 1469 passed / 6 expected skips in 262.69s; /private/tmp/utexteditor-rag07-complete-full.log.
+- Native Cocoa: 2 passed / 35 deselected in 1.71s; real options/source/rebuild/final-apply and manual RAG regression; fake providers.
+- Live generation: 1 passed in 4.14s; gemma4:12b c7597fc90b86…, temporary 8192-token window, one distant source, snapshot/transaction verified.
+- Evidence/limits/checklist: docs/rag-auto-writer-evaluation.md and docs/evidence/rag07; 1095 catalog entries / 1082 extracted strings validated.
+- git diff --check passed; unrelated staged bytecode/DS_Store preserved; no screen-reader, general recall or arbitrary-writer safety claims.
+- Resume RAG-08 / RAG-08.V1: opt-in automatic inline retrieval, bounded scheduling/consent/cache and stale-result safety; parent OPEN.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+
 ## RAG-06 — embedding provider, vector cache and hybrid retrieval
 
 - COMPLETE: RAG-06 / RAG-06.V1 / RAG-06.V2; RAG parent remains OPEN.

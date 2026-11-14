@@ -3,6 +3,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QComboBox,
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -33,6 +34,10 @@ class AutoWriterDialog(QDialog):
             self.tr("Optional guidance: style, voice, point of view, pacing, or goals.")
         )
         self.instructions.setMaximumBlockCount(80)
+        self.retrieval = QCheckBox(self.tr("Review retrieved manuscript passages before each scene request"), self)
+        self.hybrid = QCheckBox(self.tr("Use embeddings for manuscript retrieval (separate destination confirmation)"), self)
+        self.hybrid.setEnabled(False)
+        self.retrieval.toggled.connect(self.hybrid.setEnabled)
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             self,
@@ -48,6 +53,8 @@ class AutoWriterDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self.description)
         layout.addLayout(form)
+        layout.addWidget(self.retrieval)
+        layout.addWidget(self.hybrid)
         layout.addWidget(self.buttons)
 
     def values(self) -> tuple[str, str]:

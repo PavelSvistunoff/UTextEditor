@@ -29,6 +29,8 @@
 </context>
 <context>
     <name>AutoWriterDialog</name>
+    <message><source>Review retrieved manuscript passages before each scene request</source><translation>Переглядати знайдені уривки рукопису перед запитом для кожної сцени</translation></message>
+    <message><source>Use embeddings for manuscript retrieval (separate destination confirmation)</source><translation>Використовувати векторизацію для пошуку в рукописі (окреме підтвердження адреси)</translation></message>
     <message><source>This project currently has %1 scenes. Auto-writer creates a snapshot and lets you review generated drafts before applying selected scenes together.</source><translation>У проєкті зараз %1 сцен. Автопис створює знімок і дає змогу переглянути створені чернетки перед спільним застосуванням вибраних сцен.</translation></message>
     <message>
         <location filename="../app/ui/auto_writer_dialog.py" line="20"/>
@@ -682,6 +684,9 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Set an explicit Ollama token window before using Auto-writer retrieval.</source><translation>Перед використанням пошуку для автоматичного написання задайте явне токенне вікно Ollama.</translation></message>
+    <message><source>Embedding destination</source><translation>Адреса векторизації</translation></message>
+    <message><source>Auto-writer retrieval sends queries and eligible scene passages, including unsaved text and provisional generated drafts, to {host} using {model} for embeddings. This destination may be remote; requests appear in AI diagnostics. Saved-source vectors are cached locally. No model is downloaded. Allow embeddings for this run?</source><translation>Пошук для автоматичного написання надсилає запити й дозволені уривки сцен, включно з незбереженим текстом та попередніми згенерованими чернетками, до {host} для векторизації моделлю {model}. Адреса може бути віддаленою; запити відображаються в діагностиці ШІ. Вектори збережених джерел кешуються локально. Моделі не завантажуються. Дозволити векторизацію для цього запуску?</translation></message>
     <message>
         <source>Review RAG Completion Context…</source>
         <translation>Переглянути RAG-контекст продовження тексту…</translation>
@@ -1815,11 +1820,11 @@ Text is sent to the configured Ollama destination:
 
 Destination: {host} — model {model}
 
-Project text and reference notes are sent only to this configured model. A complete local revision snapshot is created before generation. All scene changes are applied together only after every scene succeeds and you review the drafts. Refine mode may replace existing text.</source><translation>Автоматичне написання буде {operation}, використовуючи план проєкту, текст сцен, усі довідкові нотатки повністю, усі профілі персонажів і стосунки як тло, явні зв’язки зі сценами, ваші необов’язкові вказівки та поточні налаштування ШІ.
+Generation sends project text and reference notes to this configured model. A complete local revision snapshot is created before generation. All scene changes are applied together only after every scene succeeds and you review the drafts. Refine mode may replace existing text.</source><translation>Автоматичне написання буде {operation}, використовуючи план проєкту, текст сцен, усі довідкові нотатки повністю, усі профілі персонажів і стосунки як тло, явні зв’язки зі сценами, ваші необов’язкові вказівки та поточні налаштування ШІ.
 
 Призначення: {host} — модель {model}
 
-Текст проєкту та довідкові нотатки надсилаються лише цій налаштованій моделі. Перед генеруванням створюється повний локальний знімок редакції. Усі зміни сцен застосовуються разом лише після успішного генерування всіх сцен і перегляду чернеток. Режим покращення може замінити наявний текст.</translation></message>
+Для генерації текст проєкту та довідкові нотатки надсилаються цій налаштованій моделі. Перед генеруванням створюється повний локальний знімок редакції. Усі зміни сцен застосовуються разом лише після успішного генерування всіх сцен і перегляду чернеток. Режим покращення може замінити наявний текст.</translation></message>
 </context>
 <context>
     <name>QuickOpenDialog</name>
@@ -2592,6 +2597,9 @@ Project text and reference notes are sent only to this configured model. A compl
 </context>
 <context>
     <name>AutoWriterReviewDialog</name>
+    <message><source>Validated passages from the exact generation request (partial evidence only)</source><translation>Перевірені уривки з точного запиту генерації (лише часткові докази)</translation></message>
+    <message><source>Captured source evidence</source><translation>Захоплені докази з джерел</translation></message>
+    <message><source>Partial retrieval cannot establish project-wide consistency or prove that evidence is absent.</source><translation>Частковий пошук не може підтвердити узгодженість усього проєкту або довести відсутність доказів.</translation></message>
     <message><source>Review Auto-writer drafts</source><translation>Перегляд чернеток автопису</translation></message>
     <message><source>Select drafts to apply together. Later drafts may depend on earlier drafts, including drafts you reject.</source><translation>Виберіть чернетки для спільного застосування. Пізніші чернетки можуть залежати від попередніх, зокрема відхилених.</translation></message>
     <message><source>Scene drafts</source><translation>Чернетки сцен</translation></message>
@@ -2788,5 +2796,10 @@ Project text and reference notes are sent only to this configured model. A compl
         <source>Token budget: window %1; output reserve %2; safety %3; message overhead %4; estimated remaining %5.</source>
         <translation>Бюджет токенів: вікно %1; резерв відповіді %2; запас %3; накладні витрати повідомлення %4; орієнтовний залишок %5.</translation>
     </message>
+</context>
+<context>
+    <name>AutoWriterContextReview</name>
+    <message><source>Auto-writer keeps all full reference notes, profiles and recorded development in the mandatory prompt. The manifest describes optional manuscript retrieval; omitting a reference from that search does not remove it from the prompt. Earlier generated drafts are provisional and may later be rejected.</source><translation>Автоматичне написання зберігає всі повні довідкові нотатки, профілі та записаний розвиток в обов’язковому запиті. Маніфест описує додатковий пошук у рукописі; пропуск довідкового джерела в цьому пошуку не вилучає його із запиту. Згенеровані раніше чернетки ще не прийняті й можуть бути відхилені.</translation></message>
+    <message><source>Review Auto-writer context</source><translation>Перегляд контексту автоматичного написання</translation></message>
 </context>
 </TS>

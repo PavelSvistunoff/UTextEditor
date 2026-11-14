@@ -1,0 +1,21 @@
+{
+  "frozen_corpus_hash": true,
+  "heldout_cases_complete": true,
+  "heldout_labels_match": true,
+  "hybrid_really_used": true,
+  "vector_cache_bound": true,
+  "en_recall": true,
+  "en_precision": true,
+  "en_no_lexical_regression": true,
+  "en_chronology": true,
+  "en_validated_evidence": true,
+  "en_absence_warning": true,
+  "en_latency": true,
+  "uk_recall": true,
+  "uk_precision": true,
+  "uk_no_lexical_regression": true,
+  "uk_chronology": true,
+  "uk_validated_evidence": true,
+  "uk_absence_warning": true,
+  "uk_latency": true
+}

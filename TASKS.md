@@ -188,23 +188,25 @@ from offline correctness. Without that evidence: CHECKPOINT, not live-verified.
 
 ### RAG-07 — evaluate and extend to Auto-writer
 
-Status: OPEN. Dependencies: RAG-05, RAG-06.
+Status: COMPLETE. Dependencies: RAG-05, RAG-06.
+Gates RAG-07.V1 and RAG-07.V2: COMPLETE.
+Evidence: [Auto-writer integration and frozen evaluation](docs/rag-auto-writer-evaluation.md).
 
-- [ ] Build a versioned synthetic English/Ukrainian evaluation corpus with known
+- [x] Build a versioned synthetic English/Ukrainian evaluation corpus with known
   relevant sources, aliases, distant plot facts, distractors, chronology traps
   and questions whose evidence is absent. Record expected source IDs.
-- [ ] Compare current fixed context, lexical retrieval and hybrid retrieval on
+- [x] Compare current fixed context, lexical retrieval and hybrid retrieval on
   source recall/precision, chronology violations, latency, request size and cache
   cost. Set numerical acceptance thresholds before tuning on the evaluation set;
   include a held-out set and publish failures rather than claiming perfect recall.
-- [ ] Add opt-in manuscript retrieval to Auto-writer while retaining all required
+- [x] Add opt-in manuscript retrieval to Auto-writer while retaining all required
   notes/profiles, explicit associations and the full current scene for refinement.
   Preserve pre-generation snapshots, complete-reference limits, cancellation,
   captured-state verification and transactional application. Define how newly
   generated earlier drafts enter the in-memory retrieval corpus during a run.
-- [ ] Validate retrieved evidence against the exact sent source snapshot before
-  presenting source-backed findings. Integrate the remaining workflows through
-  RAG-08–11; partial retrieval cannot justify a whole-project consistency claim.
+- [x] Validate retrieved evidence against the exact sent source snapshot before
+  presenting source-backed findings. Remaining integrations are tracked separately
+  in RAG-08–11 (OPEN); partial retrieval cannot justify a whole-project consistency claim.
 
 Gate RAG-07.V1: evaluation report plus offline end-to-end tests for a relevant
 distant scene, missing evidence, changed sources, sequential generated drafts,

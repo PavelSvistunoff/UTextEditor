@@ -33,7 +33,9 @@ class RAGCompletionDialog(CompletionContextDialog):
     REBUILD = 2
 
     def __init__(self, destination: str, captured: CapturedContext,
-                 excluded: frozenset[str], parent=None) -> None:
+                 excluded: frozenset[str], parent=None, *,
+                 excludable_kinds: frozenset[str] = frozenset({"scene", "note"}),
+                 extra_summary: str = "") -> None:
         summary = self.tr(
             "Review the exact prompt and source manifest below. Buffer revisions identify open "
             "text; null revisions identify disk text. Budget values are conservative token "
@@ -48,6 +50,8 @@ class RAGCompletionDialog(CompletionContextDialog):
         summary += "\n" + format_qt(self.tr("Retrieval mode: %1"), captured.manifest.retrieval_method)
         if captured.manifest.notices:
             summary += "\n" + "\n".join(captured.manifest.notices)
+        if extra_summary:
+            summary += "\n" + extra_summary
         super().__init__(destination, captured.prompt, summary, parent)
         role = QPlainTextEdit(captured.role, self)
         role.setReadOnly(True)
@@ -62,7 +66,7 @@ class RAGCompletionDialog(CompletionContextDialog):
         mandatory = {item.source_id for item in captured.manifest.decisions
                      if item.disposition == "mandatory"}
         for source in captured.source_capture.sources:
-            if source.kind not in {"scene", "note"} or source.id in mandatory:
+            if source.kind not in excludable_kinds or source.id in mandatory:
                 continue
             item = QListWidgetItem(f"{source.title} [{source.id}]", self.sources)
             item.setData(Qt.ItemDataRole.UserRole, source.id)
