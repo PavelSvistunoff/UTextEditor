@@ -456,6 +456,7 @@
         <translation>Не вдалося отримати пропозиції ШІ</translation>
     </message>
     <message><source>Send the current character profile and all project reference notes (including unsaved open notes) to %1 (model %2) to suggest values for empty fields? The request and response appear in AI diagnostics.</source><translation>Надіслати поточний профіль персонажа та всі довідкові нотатки проєкту (включно з незбереженими відкритими нотатками) до %1 (модель %2), щоб запропонувати значення для порожніх полів? Запит і відповідь відображаються в діагностиці ШІ.</translation></message>
+    <message><source>Review retrieved context for character AI</source><translation>Переглядати знайдений контекст для ШІ персонажів</translation></message>
 </context>
 <context>
     <name>CharacterRelationshipDialog</name>
@@ -1831,6 +1832,9 @@ Generation sends project text and reference notes to this configured model. A co
         <source>Generate with Project Context…</source>
         <translation>Генерувати з контекстом проєкту…</translation>
     </message>
+    <message><source>Review retrieved context for scene analysis</source><translation>Переглядати знайдений контекст для аналізу сцен</translation></message>
+    <message><source>Set an explicit Ollama token window before using retrieval.</source><translation>Перед використанням пошуку явно задайте вікно токенів Ollama.</translation></message>
+    <message><source>Retrieved context will be reviewed separately before Send; required inputs cannot be excluded.</source><translation>Перед надсиланням знайдений контекст буде показано окремо; обов’язкові вхідні дані не можна виключити.</translation></message>
 </context>
 <context>
     <name>QuickOpenDialog</name>
@@ -2866,6 +2870,8 @@ Generation sends project text and reference notes to this configured model. A co
     <name>AutoWriterContextReview</name>
     <message><source>Auto-writer keeps all full reference notes, profiles and recorded development in the mandatory prompt. The manifest describes optional manuscript retrieval; omitting a reference from that search does not remove it from the prompt. Earlier generated drafts are provisional and may later be rejected.</source><translation>Автоматичне написання зберігає всі повні довідкові нотатки, профілі та записаний розвиток в обов’язковому запиті. Маніфест описує додатковий пошук у рукописі; пропуск довідкового джерела в цьому пошуку не вилучає його із запиту. Згенеровані раніше чернетки ще не прийняті й можуть бути відхилені.</translation></message>
     <message><source>Review Auto-writer context</source><translation>Перегляд контексту автоматичного написання</translation></message>
+    <message><source>Review analysis and character context</source><translation>Перегляд контексту аналізу та персонажів</translation></message>
+    <message><source>Required inputs cannot be excluded. Background coverage is partial. Earlier manuscript order does not prove story chronology; mentions do not establish presence or knowledge. Only the selected scene excerpt can support arc updates. No embeddings are sent.</source><translation>Обов’язкові вхідні дані не можна виключити. Охоплення фонових джерел часткове. Попереднє місце в рукописі не доводить хронологію подій; згадки не встановлюють присутність чи знання. Лише вибраний уривок сцени може підтверджувати зміни арки. Ембединги не надсилаються.</translation></message>
 </context>
 <context>
     <name>InlineRetrieval</name>

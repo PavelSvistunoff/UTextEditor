@@ -1,3 +1,23 @@
+## RAG-10 — reviewed analysis and character retrieval
+
+- COMPLETE: RAG-10 / RAG-10.V1; all four criteria met; broader RAG parent OPEN.
+- Default-off scene-analysis menu toggle and separate profile checkbox; exact queued source/destination/prompt/budget review.
+- Full selected scene/notes/associated profiles mandatory; contextual versus scene-only summary labels; no silent RAG truncation.
+- Continuity validates only exact sent source IDs/spans; excluded/future/invented/unassociated/cross-gap citations rejected.
+- Full notes and unsaved buffers retained for empty-field suggestions; selected excerpt alone can justify arc updates.
+- Source/read-capture race, project/settings/profile/buffer guards; after-review worker verification before staging; Save remains separate.
+- Cancelled reviews restore controls; older character requests cannot reset newer controls; no manuscript/index writes or Undo changes.
+- Owners: analysis_context, analysis_retrieval, AI analysis/profile/development, character_suggestions and existing UI callers.
+- New regressions: 21 domain + 32 UI cases; focused 130 passed in 2.26s before final generation-ownership guard.
+- Final wider focused: 424 passed / 1 name-filter deselection in 64.64s; /private/tmp/utexteditor-rag10-final-wide.log.
+- Initial full exposed an existing save-feedback test racing automatic AI; test now disables unrelated automatic spelling/completion.
+- Final full: 1656 passed / 7 expected native/live skips in 369.72s; /private/tmp/utexteditor-rag10-final-full.log.
+- Fresh translation extraction: 1113 sources; UK/English checks and runtime UK labels passed; UK QM rebuilt; diff --check passed.
+- Native/live not run; RAG-10.V1 is offline-only; no model-quality, native accessibility or arbitrary-writer lock claims.
+- Criterion matrix and all seven Clean Code review items: docs/rag-analysis-characters.md; unrelated staged bytecode/DS_Store preserved.
+- Resume RAG-11 / RAG-11.V1: inspect translation.py, spellcheck_service.py, existing snapshots/review and call-site policies.
+- Next baseline: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/test_project_translation.py tests/test_spellcheck_service.py
+
 ## RAG-09.2–4 — reviewed planning and sequential Auto-pilot
 
 - COMPLETE: RAG-09.2 / RAG-09.3 / RAG-09.4 / RAG-09.V1 / RAG-09; broader RAG parent OPEN; main, predecessor e10338b.

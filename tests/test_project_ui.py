@@ -2154,6 +2154,9 @@ def test_save_conflict_shows_translated_category_and_preserves_dirty_buffer(
     path.write_text("original", encoding="utf-8")
     with patch("app.ui.main_window.OllamaClient.check_connection", return_value=True):
         window = MainWindow()
+    # File-conflict feedback must not race unrelated automatic AI requests.
+    window.settings.automatic_spellcheck = False
+    window.settings.completion_enabled = False
     editor = window.tabs.add_document(FileManager().open(path))
     editor.setPlainText("unsaved manuscript")
     if disk_change == "edited":
@@ -4542,7 +4545,7 @@ def test_scene_summary_requires_confirmation_and_never_modifies_source(applicati
     wait_until(lambda: bool(window._analysis_windows), application)
 
     assert received and "original manuscript" in received[0]
-    assert window._analysis_windows[0].output.toPlainText() == "A review summary."
+    assert window._analysis_windows[0].output.toPlainText() == "Scene-only summary (selected excerpt).\n\nA review summary."
     assert project.read_scene(scene.id) == "original manuscript"
     window.close()
 

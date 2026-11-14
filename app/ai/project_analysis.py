@@ -1,5 +1,10 @@
 """Captured, bounded scene analysis and evidence validation for worker calls."""
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.project.analysis_context import AnalysisRetrieval
+
 from app.project.service import Project
 from app.project.character_context import capture_scene_character_context
 from .provider import AIProvider
@@ -18,6 +23,7 @@ def run_project_analysis(
     role: str,
     maximum_tokens: int,
     temperature: float,
+    *, retrieval: "AnalysisRetrieval | None" = None,
 ) -> str:
     if task not in {"summary", "continuity"}:
         raise ValueError("Unknown project analysis task.")
@@ -26,7 +32,7 @@ def run_project_analysis(
     scene = project.get_scene(scene_id)
     scene_text = open_text[scene_id] if scene_id in open_text else project.read_scene(scene_id)
     sections = [(scene_id, f"Selected scene ({scene_id}): {scene.title}\n", scene_text)]
-    if task == "continuity":
+    if task == "continuity" or retrieval is not None:
         for note_id in note_ids:
             note = project.get_note(note_id)
             text = open_text[note_id] if note_id in open_text else project.read_note(note_id)
@@ -41,8 +47,14 @@ def run_project_analysis(
             sections.append((None, "Characters explicitly associated with this scene:\n", character_context))
     context = "\n\n".join(header + text for _source_id, header, text in sections)
     source_texts = {source_id: text for source_id, _header, text in sections if source_id is not None}
+    if retrieval is not None:
+        if retrieval.scene_id != scene_id:
+            raise ValueError("Analysis retrieval must be anchored to the selected scene.")
+        retrieval.mandatory_source_ids |= frozenset({scene_id, *note_ids,
+            *(association.character_id for association in scene.character_associations)})
+        retrieval.required_texts = dict(source_texts)
     if len(context) > maximum_context:
-        if task == "continuity":
+        if task == "continuity" or retrieval is not None:
             raise ContextBudgetError(
                 "Required scene, note and character evidence exceeds the analysis character limit "
                 f"({len(context)} > {maximum_context}). Increase Context size or select fewer notes; "
@@ -62,8 +74,11 @@ def run_project_analysis(
             f"Scene ID: {scene_id}. Associated characters: "
             + ", ".join(f"{project.get_character(a.character_id).full_name} ({a.character_id})" for a in scene.character_associations)
         )
-    result = provider.generate_private(
-        f"{instruction}\n\nOnly analyze this captured context:\n{context}",
+    if retrieval is not None:
+        instruction += " Also review optional captured passages; source_id may identify any sent evidence source."
+    generate = provider.generate_private if retrieval is None else lambda prompt, **options: retrieval.generate(provider, prompt, **options)
+    result = generate(
+        f"{instruction}\n\nSelected task context:\n{context}",
         role=role,
         maximum_tokens=maximum_tokens,
         temperature=temperature,
@@ -73,12 +88,16 @@ def run_project_analysis(
         raise ValueError("The provider returned a malformed analysis response.")
     if task == "continuity":
         # Only accept quotations actually present in the bounded request.
+        if retrieval is not None:
+            source_texts.update(retrieval.citation_sources())
         findings = parse_continuity_findings(
             result, scene_id=scene_id,
             character_ids={item.character_id for item in scene.character_associations},
             sources=source_texts,
         )
-        if any(finding.quote not in context for finding in findings):
+        if retrieval is None and any(finding.quote not in context for finding in findings):
             raise ValueError("The model cited text outside the context sent for review.")
-        return format_continuity_findings(findings)
-    return result
+        result = format_continuity_findings(findings)
+        return ("Partial contextual continuity review; no whole-project audit.\n\n" + result) if retrieval is not None else result
+    label = "Contextual summary (selected scene with partial background)." if retrieval is not None else "Scene-only summary (selected excerpt)."
+    return label + "\n\n" + result

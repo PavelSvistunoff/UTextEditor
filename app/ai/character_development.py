@@ -2,6 +2,11 @@
 
 from dataclasses import dataclass
 import json
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.project.analysis_context import AnalysisRetrieval
+
 from .validation import unwrap_json_fence
 
 from app.project.model import CHARACTER_ARC_FIELDS
@@ -15,7 +20,7 @@ class CharacterProposal:
 
 
 def suggest_character_development(provider, fields: dict[str, str], scene_text: str,
-                                  language: str, temperature: float) -> tuple[CharacterProposal, ...]:
+                                  language: str, temperature: float, *, retrieval: "AnalysisRetrieval | None" = None) -> tuple[CharacterProposal, ...]:
     profile = json.dumps(fields, ensure_ascii=False)
     if len(profile) > 12_000 or len(scene_text) > 32_000 or not scene_text.strip():
         raise ValueError("The profile or scene is empty or too long for this request.")
@@ -27,7 +32,8 @@ def suggest_character_development(provider, fields: dict[str, str], scene_text: 
         + ", ".join(sorted(CHARACTER_ARC_FIELDS))
         + f". Language: {language}\nCharacter profile:\n{profile}\nScene:\n{scene_text}"
     )
-    response = provider.generate_private(prompt, role="You help an author review fictional character development.",
+    generate = provider.generate_private if retrieval is None else lambda prompt, **options: retrieval.generate(provider, prompt, **options)
+    response = generate(prompt, role="You help an author review fictional character development.",
                                          maximum_tokens=1600, temperature=temperature)
     if not isinstance(response, str) or len(response) > 30_000:
         raise ValueError("The model returned an invalid or oversized response.")

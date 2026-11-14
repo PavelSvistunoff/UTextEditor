@@ -282,21 +282,23 @@ transient drafts, stale sources and unchanged manuscript/undo on rejection.
 
 ### RAG-10 — analysis and character workflows
 
-Status: OPEN. Dependencies: RAG-05, RAG-06.V1, RAG-07.V1.
+Status: COMPLETE. Gate RAG-10.V1: COMPLETE. Dependencies: RAG-05, RAG-06.V1, RAG-07.V1.
 
-- [ ] Add optional retrieval to scene summary and continuity analysis while
+- [x] Add optional retrieval to scene summary and continuity analysis while
   retaining the selected scene, explicitly selected notes and associated
   profiles as mandatory sources. Label a scene-only versus contextual summary.
   Retrieved profiles do not establish physical presence or character knowledge.
-- [ ] Require continuity findings to cite exact source IDs/quotations present in
+- [x] Require continuity findings to cite exact source IDs/quotations present in
   the sent snapshot; validate against those passages, including retrieved scene
   evidence. Report partial coverage and never equate no findings with a full
   project audit. Chronology restrictions remain task-specific and explicit.
-- [ ] Add manuscript retrieval to empty-profile suggestions without replacing
+- [x] Add manuscript retrieval to empty-profile suggestions without replacing
   their complete-note context or changing empty-field-only application rules.
-- [ ] Add optional supporting retrieval to character development while keeping
+- [x] Add optional supporting retrieval to character development while keeping
   the selected profile and scene excerpt mandatory. Arc-update evidence must
   still come from the selected scene; background hits alone cannot justify it.
+
+[Criterion matrix and gate report](docs/rag-analysis-characters.md).
 
 Gate RAG-10.V1: tests for mandatory-source allocation, no hits/missing evidence,
 invented or excluded citations, future facts, presence/knowledge boundaries,

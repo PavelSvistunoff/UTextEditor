@@ -42,7 +42,7 @@ The current settings default for automatic project context remains unchanged.
 | Automatic inline completion, RAG-08/12 | Same, subject to automatic project-context setting | Bounded cached passages | Same exclusions; never reuse stale metadata | Skip optional retrieval on timeout; skip suggestion if mandatory capture fails; no project means paragraph only |
 | Free-prompt generation, streaming or not, RAG-09 | Author prompt and role | Explicitly enabled project sources; current scene/selection only if chosen | Task-specific scope, no implicit active-document attachment | Prompt-only generation remains available |
 | Spelling/grammar, RAG-11 | Exact target text and language | Explicitly enabled names/terminology dictionary | No unrelated scene prose | Text-only checking; same offsets and validated corrections |
-| Scene summary, RAG-10 | Selected scene or labeled bounded excerpt | Explicitly chosen contextual sources | Label contextual versus scene-only scope | Scene-only summary; requires a project-bound scene |
+| Scene summary, RAG-10 | Retrieved mode: full selected scene/notes/associated profiles; ordinary mode: labeled scene excerpt | Reviewed earlier scene/note passages | Label contextual versus scene-only; required sources protected | Explicit mandatory-only fallback; project-bound scene required |
 | Continuity, RAG-10/12 | Full selected scene, selected notes, associated bounded profiles; explicit links in RAG-12 | Additional evidence passages | Earlier facts for target-state claims; later comparisons must be explicitly labeled | Partial-coverage review, never a consistency guarantee; no project means unavailable |
 | Empty character fields, RAG-10/12 | Current staged fields and **all** project notes | Relevant manuscript passages | Background evidence does not imply presence | Existing complete-note operation; requires project/profile |
 | Scene-based character development, RAG-10/12 | Staged profile and selected associated scene excerpt | Supporting background passages | Only exact selected-scene evidence can support an arc update | Existing evidence-backed operation; requires project/profile/associated scene |
@@ -53,10 +53,11 @@ The current settings default for automatic project context remains unchanged.
 | Translation, RAG-11 | Complete target item and language direction | Captured shared glossary and usage examples | Examples are reference data, not text to emit | Translate target only; current project-translation entry point requires a project |
 
 Reviewed manual completion, Auto-writer, opt-in automatic retrieval and RAG-09
-free-prompt/planning/Auto-pilot integration are implemented. Ordinary free-prompt
+free-prompt/planning/Auto-pilot integration and opt-in RAG-10 analysis/character workflows are implemented. Ordinary free-prompt
 generation remains prompt-only and unchecked planning retains its existing inputs.
 The [RAG-09 gate report](rag-planning-autopilot.md) describes the explicit source
 review, mandatory transient chain, budget refusal and pre-application checks.
+[RAG-10 verification](rag-analysis-characters.md) covers exact sent continuity citations, full-note retention and selected-scene-only arc evidence.
 Translation has no shared glossary yet; spelling receives the full target text.
 No project implies no scanning neighboring files, other tabs or other projects.
 RAG-12 requires structured scene links independent of text/vector matches.
@@ -73,7 +74,7 @@ labeled and handled conservatively by scene-writing policies.
   profiles use existing scene-scoped limits; if those cut details, continuity
   refuses rather than silently using an incomplete profile. This does not turn
   the bounded profile schema into a complete character biography.
-- Summary still uses a labeled excerpt; its truncation notice and the task
+- Ordinary summary uses a labeled excerpt; retrieved summary requires its full selected inputs and explicitly labels contextual scope. In ordinary mode, its truncation notice and the task
   instruction are extra prompt overhead, counted by the token budget when enabled.
 - Other existing limits (10,000 completion-note characters, 5,000 scene-profile
   characters, complete-reference 64 KiB guard, scene/refinement limits) remain

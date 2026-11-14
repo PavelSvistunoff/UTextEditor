@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QPlainTextEdit,
     QTabWidget, QVBoxLayout, QWidget,
     QMessageBox, QListWidget, QListWidgetItem, QPushButton, QHBoxLayout, QInputDialog,
-    QFileDialog, QLabel, QScrollArea,
+    QFileDialog, QLabel, QScrollArea, QCheckBox,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
@@ -167,6 +167,8 @@ class CharacterDialog(QDialog):
         buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.tr("Cancel"))
         layout = QVBoxLayout(self)
         layout.addWidget(tabs)
+        self.retrieval = QCheckBox(self.tr("Review retrieved context for character AI"), self)
+        layout.addWidget(self.retrieval)
         self.ai_button = QPushButton(self.tr("Fill Empty Fields with AI…"), self)
         self.ai_button.clicked.connect(self.fill_requested.emit)
         layout.addWidget(self.ai_button)

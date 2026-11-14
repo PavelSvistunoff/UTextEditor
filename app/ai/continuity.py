@@ -17,7 +17,7 @@ class ContinuityFinding:
 
 
 def parse_continuity_findings(response: object, *, scene_id: str,
-                              character_ids: set[str], sources: dict[str, str]) -> tuple[ContinuityFinding, ...]:
+                              character_ids: set[str], sources: dict[str, str | tuple[str, ...]]) -> tuple[ContinuityFinding, ...]:
     if not isinstance(response, str) or len(response) > 60_000:
         raise ValueError("The model returned an invalid or oversized continuity response.")
     response = unwrap_json_fence(response)
@@ -40,7 +40,14 @@ def parse_continuity_findings(response: object, *, scene_id: str,
         if not isinstance(evidence, dict) or set(evidence) != {"source_id", "quote"}:
             raise ValueError("The model returned invalid evidence.")
         source_id, quote = evidence["source_id"], evidence["quote"]
-        if not isinstance(source_id, str) or source_id not in sources or not isinstance(quote, str) or not quote.strip() or len(quote) > 1000 or quote not in sources[source_id]:
+        if (not isinstance(source_id, str) or source_id not in sources
+                or not isinstance(quote, str) or not quote.strip() or len(quote) > 1000):
+            raise ValueError("The model cited evidence outside the captured source text.")
+        spans = sources[source_id]
+        if isinstance(spans, str):
+            spans = (spans,)
+        # Joining disjoint retrieved passages would fabricate evidence across gaps.
+        if not any(quote in span for span in spans):
             raise ValueError("The model cited evidence outside the captured source text.")
         for key in ("concern", "suggestion"):
             value = row[key]
