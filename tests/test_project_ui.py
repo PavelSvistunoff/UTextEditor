@@ -3322,6 +3322,27 @@ def test_settings_connection_test_runs_and_reports_result(application, monkeypat
     window.close()
 
 
+def test_context_window_change_replaces_provider_without_mutating_old_requests(application, monkeypatch):
+    monkeypatch.setattr("app.ui.main_window.OllamaClient.check_connection", lambda _self: True)
+    window = MainWindow()
+    original = window.provider
+    try:
+        def accept_settings(dialog):
+            dialog.ollama_context_length.setValue(8192)
+            dialog.accept()
+            return QDialog.DialogCode.Accepted
+
+        monkeypatch.setattr(SettingsDialog, "exec", accept_settings)
+        window.show_settings()
+        assert original.context_length == 0
+        assert window.provider is not original
+        assert window.provider.context_length == 8192
+        assert window.completion_service.provider is window.provider
+        assert window.spellcheck_service.provider is window.provider
+    finally:
+        window.close()
+
+
 def test_project_open_failure_keeps_previous_project_and_documents(application, tmp_path, monkeypatch):
     project = Project.create(tmp_path / "working", "Working")
     bad_project = tmp_path / "bad"

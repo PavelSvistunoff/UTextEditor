@@ -11,6 +11,7 @@ import yaml
 
 from app.ai.prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
 from app.ai.prompts import completion_prompt
+from app.ai.context_budget import MAX_CONTEXT_TOKENS
 
 
 @dataclass
@@ -27,6 +28,7 @@ class AppSettings:
     maximum_suggestion_length: int = 100
     temperature: float = 0.2
     context_size: int = 2048
+    ollama_context_length: int = 0  # Tokens; zero preserves the server default.
     spellcheck_enabled: bool = True
     automatic_spellcheck: bool = True
     language: str = "Auto"
@@ -169,6 +171,9 @@ class AppSettings:
         self.completion_debounce_ms = self._bounded_int(self.completion_debounce_ms, 100, 5000, defaults.completion_debounce_ms)
         self.maximum_suggestion_length = self._bounded_int(self.maximum_suggestion_length, 1, 10000, defaults.maximum_suggestion_length)
         self.context_size = self._bounded_int(self.context_size, 64, 65536, defaults.context_size)
+        self.ollama_context_length = self._bounded_int(
+            self.ollama_context_length, 0, MAX_CONTEXT_TOKENS, defaults.ollama_context_length
+        )
         try:
             temperature = float(self.temperature) if not isinstance(self.temperature, bool) else math.nan
         except (TypeError, ValueError, OverflowError):

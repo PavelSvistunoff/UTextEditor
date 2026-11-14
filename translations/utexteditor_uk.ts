@@ -2205,6 +2205,9 @@ Project text and reference notes are sent only to this configured model. A compl
 </context>
 <context>
     <name>SettingsDialog</name>
+    <message><source>Server default</source><translation>Типове значення сервера</translation></message>
+    <message><source>Ollama context window (tokens)</source><translation>Вікно контексту Ollama (токени)</translation></message>
+    <message><source>An explicit window uses an approximate request budget and checks model capacity. Server default leaves capacity unchecked. Larger windows require more memory.</source><translation>Явно задане вікно використовує приблизний бюджет запиту та перевірку місткості моделі. Типове значення сервера залишає місткість неперевіреною. Більші вікна потребують більше пам’яті.</translation></message>
     <message><source>Invalid Ollama host</source><translation>Некоректна адреса Ollama</translation></message>
     <message><source>Enter an HTTP or HTTPS host URL without credentials or a path.</source><translation>Введіть адресу HTTP або HTTPS без облікових даних і шляху.</translation></message>
     <message><source>Invalid context template</source><translation>Некоректний шаблон контексту</translation></message>

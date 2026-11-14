@@ -11,6 +11,7 @@ from urllib import request
 from .models import Suggestion
 from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE, completion_prompt, spellcheck_prompt
 from .validation import parse_suggestions
+from .context_budget import ContextBudget, ContextBudgetError, MAX_CONTEXT_TOKENS
 
 logger = logging.getLogger("utexteditor.ai")
 MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -28,11 +29,16 @@ class OllamaClient:
         model: str = "gemma4:12b",
         timeout: float = 30.0,
         interaction_observer: Callable[[str, str, dict[str, Any]], None] | None = None,
+        *,
+        context_length: int = 0,
     ) -> None:
+        if type(context_length) is not int or not 0 <= context_length <= MAX_CONTEXT_TOKENS:
+            raise ValueError(f"Context length must be 0 (server default) or up to {MAX_CONTEXT_TOKENS} tokens.")
         self.host = host.rstrip("/")
         self.model = model
         self.timeout = timeout
         self.interaction_observer = interaction_observer
+        self.context_length = context_length
 
     def _observe(self, event: str, path: str, details: dict[str, Any]) -> None:
         if self.interaction_observer is None:
@@ -65,15 +71,7 @@ class OllamaClient:
                     raise ValueError("Ollama response exceeded the 16 MiB size limit")
                 result = json.loads(raw.decode("utf-8"))
         except HTTPError as exc:
-            body = exc.read(MAX_ERROR_BODY_BYTES).decode("utf-8", errors="replace")
-            if "model" in body.lower() and "not found" in body.lower():
-                message = f"Ollama model '{self.model}' was not found. Pull it with `ollama pull {self.model}` or choose another model in AI Settings."
-            elif exc.code in {400, 413} and payload.get("truncate") is False and "context" in body.lower():
-                message = ("The complete request exceeds or cannot use the model context window. "
-                           "Increase Ollama's context length or reduce project reference material; "
-                           "no context was intentionally omitted.")
-            else:
-                message = f"Ollama returned HTTP {exc.code} while contacting {path}."
+            message = self._http_error_message(exc, path, payload)
             duration = time.time() - start
             if observe:
                 self._observe("Error", path, {"message": message, "duration": duration})
@@ -96,9 +94,31 @@ class OllamaClient:
         logger.info("Ollama %s %s completed in %.3fs", path, self.model, duration)
         return result
 
+    def _http_error_message(self, error: HTTPError, path: str, payload: dict) -> str:
+        """Classify failures without echoing a body that may contain manuscript text."""
+        body = error.read(MAX_ERROR_BODY_BYTES).decode("utf-8", errors="replace").lower()
+        if "model" in body and "not found" in body:
+            return (f"Ollama model '{self.model}' was not found. Pull it with `ollama pull {self.model}` "
+                    "or choose another model in AI Settings.")
+        if error.code in {400, 413, 422} and payload.get("options", {}).get("num_ctx"):
+            return ("Ollama rejected the explicitly configured context request. "
+                    "Check server/model support for num_ctx and available memory; "
+                    "the request was not retried with a smaller window.")
+        if error.code in {400, 413} and payload.get("truncate") is False and "context" in body:
+            return ("The complete request exceeds or cannot use the model context window. "
+                    "Increase Ollama's context length or reduce project reference material; "
+                    "no context was intentionally omitted.")
+        return f"Ollama returned HTTP {error.code} while contacting {path}."
+
     def check_connection(self) -> bool:
         try:
-            self._post("/api/generate", {"model": self.model, "prompt": "", "stream": False, "options": {"num_predict": 1}})
+            payload = {"model": self.model, "prompt": "", "stream": False, "options": {"num_predict": 1}}
+            if self.context_length:
+                self._check_context_capacity()
+                payload["options"]["num_ctx"] = self.context_length
+                payload["truncate"] = False
+                payload["shift"] = False
+            self._post("/api/generate", payload)
             return True
         except OllamaError:
             return False
@@ -151,10 +171,14 @@ class OllamaClient:
                         is_cancelled: Callable[[], bool], role: str = DEFAULT_AI_ROLE,
                         maximum_tokens: int = 300, temperature: float = 0.2) -> str:
         """Read bounded NDJSON generation output, emitting provisional text in the caller's thread."""
+        if is_cancelled():
+            return ""
         path = "/api/chat"
         payload = self._chat_payload(
             prompt, role=role, maximum_tokens=maximum_tokens, temperature=temperature, stream=True,
         )
+        if is_cancelled():
+            return ""
         self._observe("Request", path, payload)
         req = request.Request(f"{self.host}{path}", data=json.dumps(payload).encode("utf-8"),
                               headers={"Content-Type": "application/json"})
@@ -188,6 +212,10 @@ class OllamaClient:
                         result = "".join(parts)
                         self._observe("Response", path, {"message": {"content": result}, "done": True})
                         return result
+        except HTTPError as exc:
+            message = self._http_error_message(exc, path, payload)
+            self._observe("Error", path, {"message": message, "duration": time.time() - start})
+            raise OllamaError(message) from exc
         except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             self._observe("Error", path, {"message": str(exc), "duration": time.time() - start})
             raise OllamaError(str(exc)) from exc
@@ -225,7 +253,7 @@ class OllamaClient:
         stream: bool = False,
     ) -> dict[str, Any]:
         """Keep the shared generation protocol in the Ollama boundary."""
-        return {
+        payload = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": role},
@@ -235,6 +263,38 @@ class OllamaClient:
             "think": False,
             "options": {"num_predict": maximum_tokens, "temperature": temperature},
         }
+        if self.context_length:
+            try:
+                ContextBudget(self.context_length, maximum_tokens).require_fit(role, prompt)
+            except ContextBudgetError as exc:
+                raise OllamaError(str(exc)) from exc
+            self._check_context_capacity()
+            payload["options"]["num_ctx"] = self.context_length
+            payload["truncate"] = False
+            payload["shift"] = False
+        return payload
+
+    def _check_context_capacity(self) -> None:
+        """Check advertised architecture capacity, never infer it from a model tag.
+
+        Recheck per configured request so a replaced model tag cannot reuse stale
+        metadata. This does not prove the runtime allocated the requested window.
+        Call only in workers, just like generation itself.
+        """
+        result = self._post("/api/show", {"model": self.model})
+        info = result.get("model_info")
+        architecture = info.get("general.architecture") if isinstance(info, dict) else None
+        capacity = info.get(f"{architecture}.context_length") if isinstance(architecture, str) else None
+        if type(capacity) is not int or capacity <= 0:
+            raise OllamaError(
+                "Ollama did not report model context capacity. The explicit context window "
+                "cannot be checked; use a supported server/model or select server default."
+            )
+        if self.context_length > capacity:
+            raise OllamaError(
+                f"Requested context window ({self.context_length} tokens) exceeds the model's "
+                f"reported capacity ({capacity} tokens). No generation was sent."
+            )
 
     def _generate(
         self,
@@ -269,25 +329,16 @@ class OllamaClient:
         return result
 
     def check_spelling(self, text: str, language: str) -> list[Suggestion]:
+        payload = self._chat_payload(
+            spellcheck_prompt(text, language),
+            role=("You are a strict spellcheck engine. Return only valid JSON that matches the user's requested schema. "
+                  "Never return markdown fences or an empty JSON object."),
+            maximum_tokens=256, temperature=0.0,
+        )
+        payload["format"] = "json"
         response = self._post(
             "/api/chat",
-            {
-                "model": self.model,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a strict spellcheck engine. Return only valid JSON that matches the user's requested schema. "
-                            "Never return markdown fences or an empty JSON object."
-                        ),
-                    },
-                    {"role": "user", "content": spellcheck_prompt(text, language)},
-                ],
-                "stream": False,
-                "think": False,
-                "format": "json",
-                "options": {"temperature": 0.0, "num_predict": 256},
-            },
+            payload,
         )
         message = response.get("message")
         raw = message.get("content", "[]") if isinstance(message, dict) else "[]"

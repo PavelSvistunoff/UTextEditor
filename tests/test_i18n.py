@@ -247,9 +247,29 @@ def test_settings_dialog_uses_loaded_ukrainian_catalog(application):
         assert language == "uk"
         assert dialog.windowTitle() == "Налаштування ШІ"
         assert dialog.ui_language.itemText(0) == "Мова системи"
+        assert dialog.ollama_context_length.text() == "Типове значення сервера"
         dialog.close()
     finally:
         application.removeTranslator(translator)
+
+
+def test_settings_context_window_accept_cancel_and_reset(application):
+    settings = AppSettings(ollama_context_length=4096)
+    dialog = SettingsDialog(settings)
+    dialog.ollama_context_length.setValue(8192)
+    dialog.reject()
+    assert settings.ollama_context_length == 4096
+    dialog = SettingsDialog(settings)
+    dialog.ollama_context_length.setValue(8192)
+    dialog.accept()
+    assert settings.ollama_context_length == 8192
+    dialog = SettingsDialog(settings)
+    dialog._reset_to_defaults()
+    assert dialog.ollama_context_length.value() == 0
+    assert settings.ollama_context_length == 8192
+    dialog.accept()
+    assert settings.ollama_context_length == 0
+    dialog.close()
 
 
 def test_goal_and_revision_workflows_use_ukrainian_catalog(application):

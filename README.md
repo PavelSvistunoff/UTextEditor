@@ -62,6 +62,8 @@ The editor supports standalone text files and a local project workspace. Impleme
 - For completion and spelling, automatic writing-language selection identifies clear English and Ukrainian signals, including canonically decomposed text; short, mixed-script, or otherwise uncertain text falls back to Auto. Digits and repeated words alone do not establish a language. Cyrillic text without Ukrainian-specific letters remains Auto because shared words alone are ambiguous. Explicit language choices are preserved.
 - AI Settings optionally enables a bounded streaming preview for prompt-based text generation. The preview is provisional; a completed draft still requires explicit insertion. Cancelling or changing the captured editor state discards it. Cancellation of a network read may wait for data or the connection timeout.
 - AI-assisted spelling and grammar suggestions with underlines, context-menu replace/ignore actions, response validation, and undo support for edits. AI > Review Spelling and Grammar lets you select current findings and apply them as one undoable edit. Both typed provider results and JSON results reject malformed ranges and fields; reviews retain at most 200 non-overlapping findings, with replacements limited to 2,000 characters and explanations to 1,000. A slow spellcheck runs at most one provider call at a time; repeated requests retain only the latest unchanged pending document state.
+- AI Settings > Connection can request an Ollama context window in tokens. Server default preserves existing behavior without checking capacity. An explicit window checks the model's reported architecture capacity and estimates the complete rendered request, including instructions, response reserve and a safety margin, before generation. Estimates use UTF-8 bytes and are deliberately conservative, not exact tokenizer counts. Oversized or unsupported requests fail without retrying with a smaller window. Reported model capacity does not prove that the server allocated the requested window; larger windows also need more memory.
+- Continuity analysis requires the complete selected scene, selected notes and bounded associated-character context to fit the analysis character limit. If they do not fit, or character details were limited, it refuses before generation instead of dropping later sources. Increase Context size, select fewer notes or reduce profile detail before retrying. Summaries retain explicitly labeled scene excerpts. The character limit remains separate from the optional token window.
 - In spelling and Auto-writer reviews, arrow keys navigate the lists and Space includes or excludes an item; the lists expose these instructions to accessibility tools.
 - Prompt-based text generation runs in the background, can be cancelled, and appears in a review dialog; generated text is inserted at the captured cursor or over the captured selection only after explicit acceptance. Results for a changed document or another active tab are discarded, and the cancel action follows the current request when requests overlap.
 - Settings are grouped into Connection, Writing, AI assistance, and Advanced prompts tabs, with a reset-to-defaults option; the Connection tab can test the configured Ollama host/model and suggests how to install a missing model.
@@ -159,6 +161,13 @@ The application separates document state and file handling (`app/document/`), AI
 
 Project persistence and captured manuscript operations live in `app/project/`; planning and evidence-checked analysis live in `app/ai/`. `MainWindow` captures widget state, dispatches workers and checks whether results are still current before presentation or application. These worker services can be imported and tested without constructing Qt widgets.
 
+The retrieval foundation in `app/project/rag_sources.py` captures bounded scene,
+note and textual character/relationship sources with exact chunk offsets and
+metadata fingerprints. It keeps unsaved-buffer overlays separate from disk
+snapshots, excludes portraits and reports incomplete coverage explicitly.
+It does not yet index sources or add retrieved passages to AI requests; see
+[source capture boundaries](docs/rag-source-capture.md).
+
 AI completions are suggestions and do not enter the document until accepted. Model responses are untrusted: spellcheck output is parsed and checked against the captured document snapshot before it is used. No separate cloud AI provider is configured; a remote Ollama host can nevertheless receive document text.
 
 ## Interface localization
@@ -205,6 +214,7 @@ The project-workspace, character reference, Ollama AI planning and review, manus
 ## Documentation map
 
 - [Clean Code guidelines for Codex](docs/clean-code-codex.md) — practical, scope-limited code quality rules and a completion checklist.
+- [AI context policies and budgets](docs/ai-context-policy.md) — current context boundaries, planned per-workflow RAG coverage, request budget units and provider verification limits.
 
 - [Український огляд](README.uk.md) — concise Ukrainian guide aligned with the current feature set.
 - [Codex task backlog](TASKS.md) and [execution rules](AGENTS.md) — active tickets with reproducible acceptance criteria.

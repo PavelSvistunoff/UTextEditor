@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from urllib.parse import urlsplit
 
 from app.ai.prompts import completion_prompt
+from app.ai.context_budget import MAX_CONTEXT_TOKENS
 from app.settings.settings import AppSettings
 from app.ui.font_utils import editor_font
 from app.i18n import format_qt
@@ -65,6 +66,10 @@ class SettingsDialog(QDialog):
         self.context_size = QSpinBox()
         self.context_size.setRange(64, 65536)
         self.context_size.setValue(settings.context_size)
+        self.ollama_context_length = QSpinBox()
+        self.ollama_context_length.setRange(0, MAX_CONTEXT_TOKENS)
+        self.ollama_context_length.setSpecialValueText(self.tr("Server default"))
+        self.ollama_context_length.setValue(settings.ollama_context_length)
         # Spellcheck settings
         self.spellcheck_enabled = QCheckBox(self.tr("Enable spellchecking"))
         self.spellcheck_enabled.setChecked(settings.spellcheck_enabled)
@@ -111,6 +116,13 @@ class SettingsDialog(QDialog):
             QLabel(self.tr("Text used for AI requests is sent to this configured Ollama host."))
         )
         connection_form.addRow(self.tr("Model"), self.model)
+        connection_form.addRow(self.tr("Ollama context window (tokens)"), self.ollama_context_length)
+        context_notice = QLabel(self.tr(
+            "An explicit window uses an approximate request budget and checks model capacity. "
+            "Server default leaves capacity unchecked. Larger windows require more memory."
+        ))
+        context_notice.setWordWrap(True)
+        connection_form.addRow(context_notice)
         self.test_connection_button = QPushButton(self.tr("Test connection"), connection_tab)
         self.test_connection_button.clicked.connect(self._request_connection_test)
         self.connection_status = QLabel(connection_tab)
@@ -203,6 +215,7 @@ class SettingsDialog(QDialog):
         self.max_length.setValue(defaults.maximum_suggestion_length)
         self.temperature.setValue(defaults.temperature)
         self.context_size.setValue(defaults.context_size)
+        self.ollama_context_length.setValue(defaults.ollama_context_length)
         self.spellcheck_enabled.setChecked(defaults.spellcheck_enabled)
         self.automatic_spellcheck.setChecked(defaults.automatic_spellcheck)
         self.language.setCurrentIndex(self.language.findData(defaults.language))
@@ -254,6 +267,7 @@ class SettingsDialog(QDialog):
         self.settings.maximum_suggestion_length = int(self.max_length.value())
         self.settings.temperature = float(self.temperature.value())
         self.settings.context_size = int(self.context_size.value())
+        self.settings.ollama_context_length = int(self.ollama_context_length.value())
         self.settings.completion_enabled = bool(self.completion_enabled.isChecked())
         self.settings.automatic_project_context = bool(self.automatic_project_context.isChecked())
         self.settings.streaming_preview = bool(self.streaming_preview.isChecked())

@@ -1,8 +1,9 @@
 """Captured, bounded scene analysis and evidence validation for worker calls."""
 
 from app.project.service import Project
-from app.project.character_context import scene_character_context
+from app.project.character_context import capture_scene_character_context
 from .provider import AIProvider
+from .context_budget import ContextBudgetError
 from .continuity import parse_continuity_findings, format_continuity_findings
 
 
@@ -18,6 +19,10 @@ def run_project_analysis(
     maximum_tokens: int,
     temperature: float,
 ) -> str:
+    if task not in {"summary", "continuity"}:
+        raise ValueError("Unknown project analysis task.")
+    if type(maximum_context) is not int or maximum_context <= 0:
+        raise ValueError("Analysis context character limit must be positive.")
     scene = project.get_scene(scene_id)
     scene_text = open_text[scene_id] if scene_id in open_text else project.read_scene(scene_id)
     sections = [(scene_id, f"Selected scene ({scene_id}): {scene.title}\n", scene_text)]
@@ -26,22 +31,23 @@ def run_project_analysis(
             note = project.get_note(note_id)
             text = open_text[note_id] if note_id in open_text else project.read_note(note_id)
             sections.append((note_id, f"Selected reference note ({note_id}, {note.type}): {note.title}\n", text))
-        character_context = scene_character_context(project, scene_id)
+        character_context, limited = capture_scene_character_context(project, scene_id)
+        if limited:
+            raise ContextBudgetError(
+                "Required character evidence exceeds the scene profile limits. "
+                "No continuity request was sent; reduce associated profile details before retrying."
+            )
         if character_context:
             sections.append((None, "Characters explicitly associated with this scene:\n", character_context))
-    parts = []
-    source_texts = {}
-    offset = 0
-    for source_id, header, text in sections:
-        if parts:
-            offset += 2
-        visible = max(0, maximum_context - offset - len(header))
-        if source_id is not None:
-            source_texts[source_id] = text[:visible]
-        parts.append(header + text)
-        offset += len(header) + len(text)
-    context = "\n\n".join(parts)
+    context = "\n\n".join(header + text for _source_id, header, text in sections)
+    source_texts = {source_id: text for source_id, _header, text in sections if source_id is not None}
     if len(context) > maximum_context:
+        if task == "continuity":
+            raise ContextBudgetError(
+                "Required scene, note and character evidence exceeds the analysis character limit "
+                f"({len(context)} > {maximum_context}). Increase Context size or select fewer notes; "
+                "no continuity request was sent and no source was truncated."
+            )
         context = context[:maximum_context] + "\n[Selected context truncated to the configured limit.]"
     if task == "summary":
         instruction = "Summarize the selected scene. Keep the response concise and cite source details when useful."
@@ -61,6 +67,7 @@ def run_project_analysis(
         role=role,
         maximum_tokens=maximum_tokens,
         temperature=temperature,
+        require_full_context=task == "continuity",
     )
     if not isinstance(result, str):
         raise ValueError("The provider returned a malformed analysis response.")

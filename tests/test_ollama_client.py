@@ -215,3 +215,138 @@ def test_context_window_failure_does_not_expose_note_contents():
         with pytest.raises(OllamaError, match="context window") as caught:
             client.generate_private("All references", require_full_context=True)
     assert "PRIVATE NOTE" not in str(caught.value)
+
+
+def model_metadata(capacity=8192):
+    return {"model_info": {"general.architecture": "test", "test.context_length": capacity}}
+
+
+@pytest.mark.parametrize("operation", ["generate", "generate_private", "complete", "check_spelling", "stream"])
+def test_explicit_window_checks_model_capacity_and_budgets_every_chat_path(operation):
+    client = OllamaClient(context_length=4096)
+    stream = MagicMock()
+    stream.__enter__.return_value = stream
+    stream.readline.return_value = b'{"message":{"content":"done"},"done":true}\n'
+    reply = stream if operation == "stream" else response_with({"message": {"content": "[]"}})
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=[response_with(model_metadata()), reply]) as urlopen:
+        if operation == "complete":
+            client.complete("text", "English")
+        elif operation == "check_spelling":
+            client.check_spelling("text", "English")
+        elif operation == "stream":
+            client.generate_stream("text", on_chunk=lambda _: None, is_cancelled=lambda: False)
+        else:
+            getattr(client, operation)("text")
+    requests = [call.args[0] for call in urlopen.call_args_list]
+    assert [req.full_url.rsplit("/", 1)[1] for req in requests] == ["show", "chat"]
+    assert json.loads(requests[0].data) == {"model": client.model}
+    payload = json.loads(requests[1].data)
+    assert payload["options"]["num_ctx"] == 4096
+    assert payload["truncate"] is False and payload["shift"] is False
+
+
+@pytest.mark.parametrize("metadata", [
+    {}, {"model_info": []}, model_metadata(True), model_metadata(0), model_metadata("8192"),
+    {"model_info": {"general.architecture": "other", "test.context_length": 8192}},
+])
+def test_unknown_model_capacity_never_guesses_from_model_name(metadata):
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response_with(metadata)) as urlopen:
+        with pytest.raises(OllamaError, match="did not report model context capacity"):
+            OllamaClient(model="gemma4:12b", context_length=4096).generate("text")
+    assert urlopen.call_count == 1
+
+
+def test_window_above_model_capacity_is_not_silently_clamped():
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response_with(model_metadata(2048))) as urlopen:
+        with pytest.raises(OllamaError, match="exceeds the model's reported capacity"):
+            OllamaClient(context_length=4096).generate("text")
+    assert urlopen.call_count == 1
+
+
+@pytest.mark.parametrize("prompt,role,output", [
+    ("x" * 4096, "role", 100), ("корисні дані " * 300, "role", 100),
+    ("text", "role" * 1100, 100), ("text", "role", 4000),
+])
+def test_estimated_overflow_refuses_before_any_network_call(prompt, role, output):
+    with patch("app.ai.ollama_client.request.urlopen") as urlopen:
+        with pytest.raises(OllamaError, match="Estimated complete request"):
+            OllamaClient(context_length=4096).generate(prompt, role=role, maximum_tokens=output)
+    urlopen.assert_not_called()
+
+
+@pytest.mark.parametrize("endpoint", ["show", "chat"])
+def test_unsupported_context_request_is_reported_without_retry_or_raw_body(endpoint):
+    error = HTTPError("http://localhost/api/" + endpoint, 400, "Bad Request", {},
+                      BytesIO(b"unsupported num_ctx: PRIVATE MANUSCRIPT"))
+    responses = [error] if endpoint == "show" else [response_with(model_metadata()), error]
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=responses) as urlopen:
+        with pytest.raises(OllamaError) as caught:
+            OllamaClient(context_length=4096).generate("text")
+    assert "PRIVATE MANUSCRIPT" not in str(caught.value)
+    assert urlopen.call_count == len(responses)
+    if endpoint == "chat":
+        assert "not retried" in str(caught.value)
+
+
+def test_capacity_is_rechecked_when_server_replaces_a_model_tag():
+    responses = [response_with(model_metadata()), response_with({"message": {"content": "first"}}),
+                 response_with(model_metadata(1024))]
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=responses) as urlopen:
+        client = OllamaClient(context_length=4096)
+        assert client.generate("text") == "first"
+        with pytest.raises(OllamaError, match="reported capacity"):
+            client.generate("text")
+    assert urlopen.call_count == 3
+
+
+def test_explicit_connection_test_sends_window_without_manuscript():
+    responses = [response_with(model_metadata()), response_with({"done": True})]
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=responses) as urlopen:
+        assert OllamaClient(context_length=4096).check_connection() is True
+    payload = json.loads(urlopen.call_args.args[0].data)
+    assert payload["options"] == {"num_predict": 1, "num_ctx": 4096}
+    assert payload["prompt"] == ""
+    assert payload["truncate"] is False and payload["shift"] is False
+
+
+def test_explicit_connection_test_reports_rejected_option_as_unavailable():
+    error = HTTPError("http://localhost/api/generate", 400, "Bad Request", {}, BytesIO(b"unknown num_ctx"))
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=[response_with(model_metadata()), error]) as urlopen:
+        assert OllamaClient(context_length=4096).check_connection() is False
+    assert urlopen.call_count == 2
+
+
+def test_cancelled_explicit_stream_does_not_query_model_or_send_prompt():
+    with patch("app.ai.ollama_client.request.urlopen") as urlopen:
+        assert OllamaClient(context_length=4096).generate_stream(
+            "text", on_chunk=lambda _: pytest.fail("cancelled chunk"), is_cancelled=lambda: True,
+        ) == ""
+    urlopen.assert_not_called()
+
+
+def test_stream_cancelled_during_capacity_check_does_not_send_chat():
+    cancelled = iter([False, True])
+    with patch("app.ai.ollama_client.request.urlopen", return_value=response_with(model_metadata())) as urlopen:
+        result = OllamaClient(context_length=4096).generate_stream(
+            "text", on_chunk=lambda _: pytest.fail("cancelled chunk"),
+            is_cancelled=lambda: next(cancelled),
+        )
+    assert result == "" and urlopen.call_count == 1
+
+
+def test_stream_unsupported_window_is_actionable_without_retry_or_body_leak():
+    error = HTTPError("http://localhost/api/chat", 400, "Bad Request", {},
+                      BytesIO(b"unsupported num_ctx: PRIVATE MANUSCRIPT"))
+    with patch("app.ai.ollama_client.request.urlopen", side_effect=[response_with(model_metadata()), error]) as urlopen:
+        with pytest.raises(OllamaError, match="not retried") as caught:
+            OllamaClient(context_length=4096).generate_stream(
+                "text", on_chunk=lambda _: None, is_cancelled=lambda: False,
+            )
+    assert "PRIVATE MANUSCRIPT" not in str(caught.value)
+    assert urlopen.call_count == 2
+
+
+@pytest.mark.parametrize("length", [-1, True, 1.5, 1048577])
+def test_invalid_context_length_is_rejected(length):
+    with pytest.raises(ValueError, match="Context length"):
+        OllamaClient(context_length=length)

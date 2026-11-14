@@ -8,6 +8,10 @@ from .prompts import DEFAULT_AI_ROLE, DEFAULT_COMPLETION_TEMPLATE
 
 
 class AIProvider(Protocol):
+    # Requested token window; zero delegates to the server. This is not a
+    # measured allocation or a model capability inferred from its name.
+    context_length: int
+
     def generate_stream(self, prompt: str, *, on_chunk: Callable[[str], None],
                         is_cancelled: Callable[[], bool], role: str = DEFAULT_AI_ROLE,
                         maximum_tokens: int = 300, temperature: float = 0.2) -> str:

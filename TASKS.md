@@ -4,9 +4,9 @@ Repository-wide refactoring history remains in [docs/refactoring-progress.md](do
 
 ## RAG — project context retrieval for local AI
 
-Parent status: OPEN. This is an implementation plan, not shipped behavior.
-The current request authorizes recording the plan; implement only when selected
-for execution. Inspect the current implementation before each batch.
+Parent status: OPEN. Implementation is proceeding in sequential checked batches.
+Completed tickets are marked below; remaining tickets describe planned behavior.
+Inspect the current implementation before each batch.
 
 ### Scope and invariants
 
@@ -32,25 +32,27 @@ for execution. Inspect the current implementation before each batch.
 
 ### RAG-01 — context policy, budgets and provider capability contract
 
-Status: OPEN. Dependencies: none.
+Status: COMPLETE. Dependencies: none. Gate RAG-01.V1: COMPLETE.
+Evidence: [context policy and verification](docs/ai-context-policy.md),
+IMPLEMENTATION_PROGRESS.md; final full offscreen suite: 1248 passed, 2 skipped.
 
-- [ ] Document a workflow matrix covering manual/automatic inline completion,
+- [x] Document a workflow matrix covering manual/automatic inline completion,
   free-prompt generation (including streaming), spelling/grammar, summary,
   continuity, character suggestions/development, brief suggestions, outline
   planning, Auto-pilot, Auto-writer and translation. Assign every workflow an
   explicit policy and an integration ticket (RAG-05, RAG-07–11); include
   standalone/no-project operation and intermediate milestone behavior.
-- [ ] Define mandatory sources, optional retrieval sources, chronology policy,
+- [x] Define mandatory sources, optional retrieval sources, chronology policy,
   source exclusions, no-hit behavior and explicit refusal conditions per workflow.
   Keep automatic project context opt-in and honor completion note exclusions.
-- [ ] Distinguish character counts, UTF-8 bytes, input tokens and output tokens.
+- [x] Distinguish character counts, UTF-8 bytes, input tokens and output tokens.
   Define one request budget including role, instructions, wrappers, mandatory
   content, retrieved passages, response reserve and a safety margin.
-- [ ] Define configurable Ollama context length through the provider boundary;
+- [x] Define configurable Ollama context length through the provider boundary;
   verify capability/unsupported-option handling without assuming a model name
   guarantees a usable window. Mark token estimates as estimates; do not call
   character-based heuristics exact token counts.
-- [ ] Fix analysis allocation so long scene text cannot silently consume the
+- [x] Fix analysis allocation so long scene text cannot silently consume the
   entire budget before selected notes and associated profiles. Make incomplete
   coverage visible; refuse requests whose required evidence cannot fit.
 
@@ -60,18 +62,20 @@ long-scene source starvation and unchanged behavior outside selected workflows.
 
 ### RAG-02 — source capture, chunks and provenance
 
-Status: OPEN. Dependencies: RAG-01.
+Status: COMPLETE. Dependencies: RAG-01. Gate RAG-02.V1: COMPLETE.
+Evidence: [source capture verification](docs/rag-source-capture.md),
+IMPLEMENTATION_PROGRESS.md; full offscreen suite: 1286 passed, 2 skipped.
 
-- [ ] Reuse existing project captures/path validation. Capture scenes, notes and
+- [x] Reuse existing project captures/path validation. Capture scenes, notes and
   textual character metadata with project/source IDs, source type, title,
   content fingerprint, source offsets and manuscript order where applicable.
-- [ ] Split prose at paragraph boundaries with bounded overlap; split profiles
+- [x] Split prose at paragraph boundaries with bounded overlap; split profiles
   by semantic fields. Retain exact source text and deterministic chunk identities.
   Exclude portraits and application recovery/debug artifacts.
-- [ ] Treat open buffers as authoritative for retrieval in that request. Overlay
+- [x] Treat open buffers as authoritative for retrieval in that request. Overlay
   unsaved chunks without overwriting disk-derived cache entries; keep provenance
   sufficient to verify both buffer revisions and external disk changes.
-- [ ] Define limits for chunk size/count and project indexing work; report
+- [x] Define limits for chunk size/count and project indexing work; report
   incomplete coverage explicitly instead of silently treating a partial index
   as complete. Handle unreadable, invalid and removed sources safely.
 

@@ -249,6 +249,7 @@ class MainWindow(QMainWindow):
             self.settings.ollama_host,
             self.settings.ollama_model,
             interaction_observer=self._emit_ai_interaction,
+            context_length=self.settings.ollama_context_length,
         )
         self.completion_service = CompletionService(self.provider)
         self.spellcheck_service = SpellcheckService(self.provider)
@@ -5960,12 +5961,14 @@ class MainWindow(QMainWindow):
                     self.tr("The interface language will change after you restart UTextEditor."),
                 )
             if (self.provider.host != self.settings.ollama_host.rstrip("/")
-                    or self.provider.model != self.settings.ollama_model):
+                    or self.provider.model != self.settings.ollama_model
+                    or getattr(self.provider, "context_length", 0) != self.settings.ollama_context_length):
                 # Existing workers keep their original destination, even if
                 # settings change before a queued provider call starts.
                 self.provider = OllamaClient(
                     self.settings.ollama_host, self.settings.ollama_model,
                     interaction_observer=self._emit_ai_interaction,
+                    context_length=self.settings.ollama_context_length,
                 )
                 self.completion_service = CompletionService(self.provider)
                 self.spellcheck_service = SpellcheckService(self.provider)
@@ -6007,7 +6010,8 @@ class MainWindow(QMainWindow):
             lambda _result, generation=generation: self._invalidate_settings_test(generation)
         )
         client = OllamaClient(
-            host, model, interaction_observer=self._emit_ai_interaction
+            host, model, interaction_observer=self._emit_ai_interaction,
+            context_length=dialog.ollama_context_length.value(),
         )
         worker = FunctionWorker(client.check_connection)
         self._track_ai_activity(worker, AIActivityPanel.tr("Test AI connection"),

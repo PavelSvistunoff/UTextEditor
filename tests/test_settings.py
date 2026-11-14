@@ -1,10 +1,25 @@
 from app.ai.prompts import DEFAULT_AI_ROLE
 from app.settings.settings import AppSettings
+import pytest
 
 
 def test_default_ai_role_predicts_the_next_user_text() -> None:
     assert AppSettings().ai_role == DEFAULT_AI_ROLE
     assert DEFAULT_AI_ROLE == "You are a medium. Predict what I will say next."
+
+
+@pytest.mark.parametrize("length", [0, 4096, 65536, 1048576])
+def test_ollama_token_window_round_trips_separately_from_excerpt_chars(tmp_path, length):
+    path = tmp_path / "settings.yaml"
+    AppSettings(ollama_context_length=length, context_size=2048).save(path)
+    loaded = AppSettings.load(path)
+    assert loaded.ollama_context_length == length
+    assert loaded.context_size == 2048
+
+
+@pytest.mark.parametrize("length", [-1, True, "8192", 1.5, 1048577])
+def test_invalid_ollama_token_window_uses_server_default(length):
+    assert AppSettings(ollama_context_length=length).validated().ollama_context_length == 0
 
 
 def test_settings_load_recovers_from_malformed_and_out_of_range_values(tmp_path) -> None:
