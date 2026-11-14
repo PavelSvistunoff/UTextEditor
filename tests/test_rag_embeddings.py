@@ -61,6 +61,22 @@ def test_rrf_combines_ranks_and_deduplicates():
     assert scores == fuse_rankings(("b","a"),("a","c"))
 
 
+def test_automatic_cached_only_never_creates_source_vectors(corpus):
+    project, relevant, distractor, index, provider = corpus
+    automatic = ProjectContextService(index, semantic=SemanticRetriever(provider, index, cached_only=True))
+    result = automatic.capture(project, request())
+    assert result.manifest.retrieval_method == "lexical_fallback"
+    assert provider.calls == []
+    ProjectContextService(index, semantic=SemanticRetriever(provider, index)).capture(project, request())
+    provider.calls.clear()
+    result = automatic.capture(project, request())
+    assert result.manifest.retrieval_method == "hybrid"
+    assert len(provider.calls) == 1  # Query only; no project-vector generation.
+    provider.calls.clear()
+    automatic.capture(project, request(), open_buffers={relevant.id: BufferText("Unsaved medicine reference", 2)})
+    assert provider.calls == []
+
+
 def test_semantic_only_match_reuses_saved_vectors_and_excludes_before_embedding(corpus):
     project, relevant, distractor, index, provider = corpus
     service = ProjectContextService(index,semantic=SemanticRetriever(provider,index))

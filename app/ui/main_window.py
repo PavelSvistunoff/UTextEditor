@@ -111,6 +111,7 @@ from .conflict_dialog import ConflictDialog
 from .completion_notes_dialog import CompletionNotesDialog
 from .completion_context_dialog import CompletionContextDialog
 from .rag_completion import request_rag_completion
+from .inline_retrieval import InlineRetrieval
 from .spellcheck_review_dialog import SpellcheckReviewDialog
 from .project_translation_review_dialog import ProjectTranslationReviewDialog
 from .export_preview_dialog import ExportPreviewDialog
@@ -290,6 +291,7 @@ class MainWindow(QMainWindow):
         self._quit_discards = {}
         self._focus_mode = False
         self._completion_worker = None
+        self._inline_retrieval = InlineRetrieval(self)
         self._completion_timer = QTimer(self)
         self._completion_timer.setSingleShot(True)
         self._completion_timer.timeout.connect(lambda: self.request_completion(automatic=True))
@@ -436,6 +438,7 @@ class MainWindow(QMainWindow):
             "Review Spelling and Grammar…": self.tr("Review Spelling and Grammar…"),
             "Review Completion Context…": self.tr("Review Completion Context…"),
             "Review RAG Completion Context…": self.tr("Review RAG Completion Context…"),
+            "Inspect Inline Retrieval Context…": self.tr("Inspect Inline Retrieval Context…"),
             "Accept Suggestion": self.tr("Accept Suggestion"), "Reject Suggestion": self.tr("Reject Suggestion"),
             "Ollama Debug": self.tr("Ollama Debug"), "AI Settings…": self.tr("AI Settings…"),
             "Summarize Selected Scene": self.tr("Summarize Selected Scene"),
@@ -541,6 +544,7 @@ class MainWindow(QMainWindow):
             (ai_menu, "Generate Completion", self.request_completion, QKeySequence("Ctrl+Space")),
             (ai_menu, "Review Completion Context…", lambda: self.request_completion(review=True), QKeySequence()),
             (ai_menu, "Review RAG Completion Context…", lambda: request_rag_completion(self), QKeySequence()),
+            (ai_menu, "Inspect Inline Retrieval Context…", self._inline_retrieval.inspect, QKeySequence()),
             (ai_menu, "Completion Reference Notes…", self.select_completion_notes, QKeySequence()),
             (ai_menu, "Check Spelling", self.check_spelling, QKeySequence("F7")),
             (ai_menu, "Review Spelling and Grammar…", self.review_spellcheck, QKeySequence()),
@@ -6344,6 +6348,12 @@ class MainWindow(QMainWindow):
         editor = self.tabs.current_editor()
         if not editor or not self.settings.ai_enabled or not self.settings.completion_enabled:
             return
+        binding = self._project_documents.get(editor)
+        if (automatic and self.settings.automatic_project_context and self.settings.automatic_retrieval
+                and binding and binding.project is self.project and binding.kind == "scene"):
+            self._inline_retrieval.request()
+            return
+        self._inline_retrieval.forget_display()
         self._completion_timer.stop()
         self._completion_generation += 1
         generation = self._completion_generation
@@ -6516,6 +6526,7 @@ class MainWindow(QMainWindow):
 
     def schedule_completion(self) -> None:
         if self.settings.ai_enabled and self.settings.completion_enabled:
+            self._inline_retrieval.forget_display()
             self._completion_generation += 1
             if self._completion_worker:
                 self._discard_ai_worker(self._completion_worker)
@@ -6535,6 +6546,7 @@ class MainWindow(QMainWindow):
         self._spellcheck_timer.start(delay)
 
     def _on_active_document_changed(self, _: int) -> None:
+        self._inline_retrieval.forget_display()
         if self._markdown_preview is not None:
             self._markdown_preview.set_editor(self.tabs.current_editor())
         self._active_document_generation += 1
@@ -6711,6 +6723,9 @@ class MainWindow(QMainWindow):
         self.status.showMessage(message)
 
     def _cancel_pending_ai(self) -> None:
+        inline_retrieval = getattr(self, "_inline_retrieval", None)
+        if inline_retrieval is not None:
+            inline_retrieval.forget_display()
         self._completion_timer.stop()
         self._spellcheck_timer.stop()
         self._spellcheck_pending = None

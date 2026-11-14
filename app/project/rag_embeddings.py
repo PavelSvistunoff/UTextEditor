@@ -133,9 +133,10 @@ class SemanticRanking:
 
 
 class SemanticRetriever:
-    def __init__(self, provider: EmbeddingProvider, index: LexicalIndex) -> None:
+    def __init__(self, provider: EmbeddingProvider, index: LexicalIndex, *, cached_only: bool = False) -> None:
         self.provider = provider
         self.cache = VectorCache(index)
+        self.cached_only = cached_only
 
     def rank(self, capture: ProjectSourceCapture, chunks: tuple[SourceChunk, ...],
              query: str, lexical: tuple[str, ...], *,
@@ -182,6 +183,8 @@ class SemanticRetriever:
                 hits += 1
                 vectors[chunk.id] = vector
                 saved[key] = vector
+        if missing and self.cached_only:
+            raise EmbeddingError("Automatic retrieval needs cached saved vectors; missing or open-buffer vectors use lexical fallback.")
         for offset in range(0, len(missing), MAX_EMBEDDING_BATCH):
             _check_cancelled(is_cancelled)
             batch = missing[offset:offset + MAX_EMBEDDING_BATCH]
@@ -205,7 +208,7 @@ class SemanticRetriever:
         verify()
         semantic = semantic_order(vectors, query_vector)
         # No partial cache publication on provider/query failure or cancellation.
-        if saved != cached:
+        if saved != cached and not self.cached_only:
             self.cache.write(identity, saved, verify=verify, is_cancelled=is_cancelled)
         verify()
         return SemanticRanking(fuse_rankings(lexical, semantic), identity, hits, len(missing))

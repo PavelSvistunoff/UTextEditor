@@ -1825,6 +1825,8 @@ Generation sends project text and reference notes to this configured model. A co
 Призначення: {host} — модель {model}
 
 Для генерації текст проєкту та довідкові нотатки надсилаються цій налаштованій моделі. Перед генеруванням створюється повний локальний знімок редакції. Усі зміни сцен застосовуються разом лише після успішного генерування всіх сцен і перегляду чернеток. Режим покращення може замінити наявний текст.</translation></message>
+
+    <message><source>Inspect Inline Retrieval Context…</source><translation>Переглянути контекст пошуку inline-підказки…</translation></message>
 </context>
 <context>
     <name>QuickOpenDialog</name>
@@ -2427,6 +2429,9 @@ Generation sends project text and reference notes to this configured model. A co
         <source>Could not connect or find “%1”. Check Ollama is running and run `ollama pull %1` if needed.</source>
         <translation>Не вдалося з’єднатися або знайти модель «%1». Перевірте, чи запущено Ollama, і за потреби виконайте `ollama pull %1`.</translation>
     </message>
+
+    <message><source>Use retrieval for automatic inline completion</source><translation>Використовувати пошук контексту для автоматичних inline-підказок</translation></message>
+    <message><source>Use hybrid retrieval for RAG completion</source><translation>Використовувати гібридний пошук для RAG-продовження тексту</translation></message>
 </context>
 <context>
     <name>WritingGoalDialog</name>
@@ -2801,5 +2806,16 @@ Generation sends project text and reference notes to this configured model. A co
     <name>AutoWriterContextReview</name>
     <message><source>Auto-writer keeps all full reference notes, profiles and recorded development in the mandatory prompt. The manifest describes optional manuscript retrieval; omitting a reference from that search does not remove it from the prompt. Earlier generated drafts are provisional and may later be rejected.</source><translation>Автоматичне написання зберігає всі повні довідкові нотатки, профілі та записаний розвиток в обов’язковому запиті. Маніфест описує додатковий пошук у рукописі; пропуск довідкового джерела в цьому пошуку не вилучає його із запиту. Згенеровані раніше чернетки ще не прийняті й можуть бути відхилені.</translation></message>
     <message><source>Review Auto-writer context</source><translation>Перегляд контексту автоматичного написання</translation></message>
+</context>
+<context>
+    <name>InlineRetrieval</name>
+    <message><source>Automatic embedding destination</source><translation>Адреса автоматичних ембедингів</translation></message>
+    <message><source>Allow automatic query embeddings at the destination below? Only existing saved-source vectors are reused; typing never creates document vectors. The query may include unsaved text and associated character names. This host may be remote; requests appear in AI diagnostics. Declining keeps lexical retrieval for this settings session. No model is downloaded.</source><translation>Дозволити автоматичні ембединги запитів за вказаною нижче адресою? Використовуються лише готові вектори збережених джерел; набір тексту не створює векторів документів. Запит може містити незбережений текст та імена пов’язаних персонажів. Сервер може бути віддаленим; запити відображаються в діагностиці ШІ. Відмова залишає лексичний пошук на час цього сеансу налаштувань. Моделі не завантажуються.</translation></message>
+    <message><source>Automatic retrieval needs an explicit Ollama token window; suggestion skipped.</source><translation>Для автоматичного пошуку явно задайте вікно токенів Ollama; підказку пропущено.</translation></message>
+    <message><source>Open project buffers exceed automatic capture limits; suggestion skipped.</source><translation>Відкриті буфери проєкту перевищують межі автоматичного захоплення; підказку пропущено.</translation></message>
+    <message><source>Project sources changed; automatic suggestion discarded.</source><translation>Джерела проєкту змінилися; автоматичну підказку відкинуто.</translation></message>
+    <message><source>Automatic context capture expired; suggestion skipped.</source><translation>Час захоплення автоматичного контексту вичерпано; підказку пропущено.</translation></message>
+    <message><source>No retrieved inline suggestion is displayed.</source><translation>Зараз немає показаної inline-підказки з пошуком контексту.</translation></message>
+    <message><source>Apply exclusions for future suggestions</source><translation>Застосувати виключення для наступних підказок</translation></message>
 </context>
 </TS>

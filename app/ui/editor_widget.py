@@ -1,5 +1,7 @@
 """QPlainTextEdit with non-destructive inline completions."""
 
+from collections.abc import Callable
+
 from PySide6.QtCore import QRect, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QKeySequence, QPainter, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget
@@ -61,6 +63,7 @@ class EditorWidget(QPlainTextEdit):
         self._ghost_position = -1
         self._ghost_selection = (0, 0)
         self._ghost_revision = -1
+        self.completion_accept_handler: Callable[[], None] | None = None
         self._revision = 0
         self._history_action: str | None = None
         self._show_line_numbers = False
@@ -151,6 +154,7 @@ class EditorWidget(QPlainTextEdit):
         return QFontMetrics(self.font()).horizontalAdvance(text) <= available
 
     def clear_completion(self) -> None:
+        self.completion_accept_handler = None
         if self._ghost_text:
             self._ghost_text = ""
             self._ghost_position = -1
@@ -161,6 +165,11 @@ class EditorWidget(QPlainTextEdit):
     def accept_completion(self) -> bool:
         if not self.has_completion:
             return False
+        if self.completion_accept_handler is not None:
+            # Context-aware suggestions verify off-thread after explicit Tab;
+            # their controller resumes acceptance only if the snapshot is current.
+            self.completion_accept_handler()
+            return True
         cursor = self.textCursor()
         text = self._ghost_text
         cursor.beginEditBlock()

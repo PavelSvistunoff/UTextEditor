@@ -1,0 +1,4 @@
+Native GUI callback while fake provider blocked: 1.314 ms; no live-model latency measured.
+Native fake-provider typing-to-visible suggestion including 100 ms debounce: 129.451 ms.
+.
+1 passed, 29 deselected in 0.68s

@@ -26,6 +26,7 @@ class AppSettings:
     ai_enabled: bool = True
     completion_enabled: bool = True
     automatic_project_context: bool = True
+    automatic_retrieval: bool = False
     streaming_preview: bool = False
     completion_debounce_ms: int = 500
     maximum_suggestion_length: int = 100
@@ -116,6 +117,7 @@ class AppSettings:
             self.embedding_host = defaults.embedding_host
         self.embedding_model = self._string(self.embedding_model, defaults.embedding_model, 256)
         self.rag_embeddings_enabled = self._bool(self.rag_embeddings_enabled, defaults.rag_embeddings_enabled)
+        self.automatic_retrieval = self._bool(self.automatic_retrieval, defaults.automatic_retrieval)
         self.ai_role = self._string(self.ai_role, defaults.ai_role, 4000)
         self.completion_template = self._string(self.completion_template, defaults.completion_template, 8000)
         if "{context}" not in self.completion_template:

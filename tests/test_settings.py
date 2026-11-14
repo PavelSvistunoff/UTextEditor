@@ -8,6 +8,14 @@ def test_default_ai_role_predicts_the_next_user_text() -> None:
     assert DEFAULT_AI_ROLE == "You are a medium. Predict what I will say next."
 
 
+def test_automatic_retrieval_is_separate_opt_in_and_round_trips(tmp_path):
+    assert AppSettings().automatic_retrieval is False
+    assert AppSettings(automatic_retrieval="yes").validated().automatic_retrieval is False
+    path = tmp_path / "settings.yaml"
+    AppSettings(automatic_retrieval=True).save(path)
+    assert AppSettings.load(path).automatic_retrieval is True
+
+
 @pytest.mark.parametrize("length", [0, 4096, 65536, 1048576])
 def test_ollama_token_window_round_trips_separately_from_excerpt_chars(tmp_path, length):
     path = tmp_path / "settings.yaml"

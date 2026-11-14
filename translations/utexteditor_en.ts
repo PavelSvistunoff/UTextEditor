@@ -88,4 +88,24 @@
     <name>SpellcheckReviewDialog</name>
     <message><source>Use arrow keys to choose a finding and Space to include or exclude it.</source><translation>Use arrow keys to choose a finding and Space to include or exclude it.</translation></message>
 </context>
+<context>
+    <name>InlineRetrieval</name>
+    <message><source>Automatic embedding destination</source><translation>Automatic embedding destination</translation></message>
+    <message><source>Allow automatic query embeddings at the destination below? Only existing saved-source vectors are reused; typing never creates document vectors. The query may include unsaved text and associated character names. This host may be remote; requests appear in AI diagnostics. Declining keeps lexical retrieval for this settings session. No model is downloaded.</source><translation>Allow automatic query embeddings at the destination below? Only existing saved-source vectors are reused; typing never creates document vectors. The query may include unsaved text and associated character names. This host may be remote; requests appear in AI diagnostics. Declining keeps lexical retrieval for this settings session. No model is downloaded.</translation></message>
+    <message><source>Automatic retrieval needs an explicit Ollama token window; suggestion skipped.</source><translation>Automatic retrieval needs an explicit Ollama token window; suggestion skipped.</translation></message>
+    <message><source>Open project buffers exceed automatic capture limits; suggestion skipped.</source><translation>Open project buffers exceed automatic capture limits; suggestion skipped.</translation></message>
+    <message><source>Project sources changed; automatic suggestion discarded.</source><translation>Project sources changed; automatic suggestion discarded.</translation></message>
+    <message><source>Automatic context capture expired; suggestion skipped.</source><translation>Automatic context capture expired; suggestion skipped.</translation></message>
+    <message><source>No retrieved inline suggestion is displayed.</source><translation>No retrieved inline suggestion is displayed.</translation></message>
+    <message><source>Apply exclusions for future suggestions</source><translation>Apply exclusions for future suggestions</translation></message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Inspect Inline Retrieval Context…</source><translation>Inspect Inline Retrieval Context…</translation></message>
+</context>
+<context>
+    <name>SettingsDialog</name>
+    <message><source>Use retrieval for automatic inline completion</source><translation>Use retrieval for automatic inline completion</translation></message>
+    <message><source>Use hybrid retrieval for RAG completion</source><translation>Use hybrid retrieval for RAG completion</translation></message>
+</context>
 </TS>

@@ -206,7 +206,7 @@ Evidence: [Auto-writer integration and frozen evaluation](docs/rag-auto-writer-e
   generated earlier drafts enter the in-memory retrieval corpus during a run.
 - [x] Validate retrieved evidence against the exact sent source snapshot before
   presenting source-backed findings. Remaining integrations are tracked separately
-  in RAG-08–11 (OPEN); partial retrieval cannot justify a whole-project consistency claim.
+  in RAG-08 (COMPLETE) and RAG-09–11 (OPEN); partial retrieval cannot justify a whole-project consistency claim.
 
 Gate RAG-07.V1: evaluation report plus offline end-to-end tests for a relevant
 distant scene, missing evidence, changed sources, sequential generated drafts,
@@ -216,27 +216,29 @@ invoked live generation smoke; report native and live outcomes separately.
 
 ### RAG-08 — automatic inline completion
 
-Status: OPEN. Dependencies: RAG-05, RAG-06.V1.
+Status: COMPLETE. RAG-08.V1: COMPLETE. RAG-08.V2: COMPLETE.
+Dependencies: RAG-05, RAG-06.V1. Parent RAG remains OPEN.
+Evidence: [bounded inline retrieval and native/performance report](docs/rag-inline-retrieval.md).
 
-- [ ] Route automatic project-scene completion through the shared service when
+- [x] Route automatic project-scene completion through the shared service when
   automatic project context and retrieval are enabled. Use the current paragraph
   ending at the cursor, explicit associations and bounded preceding context as
   retrieval inputs; retain standalone completion when no project is bound.
-- [ ] Reuse the ready index and cached embeddings/results. Debounce typing,
+- [x] Reuse the ready index and cached embeddings/results. Debounce typing,
   coalesce pending requests and bound worker concurrency, passage count and
   retrieval time. Do not rebuild the index or embed the whole project for each
   keystroke. Record a numerical latency target and representative workload
   before tuning; measure retrieval and end-to-end latency separately.
-- [ ] Key caches by project/index generation, query, source fingerprints,
+- [x] Key caches by project/index generation, query, source fingerprints,
   embedding settings, chronology policy and exclusions. A cache hit must not
   bypass current-buffer precedence or source verification.
-- [ ] Define visible timeout/unavailable-index behavior: omit optional retrieved
+- [x] Define visible timeout/unavailable-index behavior: omit optional retrieved
   passages and use valid mandatory context, or skip the suggestion if that
   cannot be captured safely. Never reuse stale passages as a fallback.
-- [ ] Preserve destination consent and source exclusions without a modal review
+- [x] Preserve destination consent and source exclusions without a modal review
   on every keystroke. Provide an on-demand view of the actual context used for
   the displayed suggestion. Changing retrieval settings invalidates pending work.
-- [ ] Discard results after edits, cursor/selection movement, tab/project/settings
+- [x] Discard results after edits, cursor/selection movement, tab/project/settings
   changes, source edits or cancellation. Keep Tab acceptance, Esc rejection and
   undo intact; no generated text is inserted without author acceptance.
 

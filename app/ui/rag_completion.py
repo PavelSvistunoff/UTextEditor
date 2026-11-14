@@ -93,6 +93,7 @@ class RAGCompletionDialog(CompletionContextDialog):
 
 
 def request_rag_completion(window: "MainWindow") -> None:
+    window._inline_retrieval.forget_display()
     editor = window.tabs.current_editor()
     binding = window._project_documents.get(editor)
     if not editor or not window.settings.ai_enabled or not window.settings.completion_enabled:

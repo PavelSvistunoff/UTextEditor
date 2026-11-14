@@ -1,3 +1,23 @@
+## RAG-08 — bounded automatic inline retrieval
+
+- COMPLETE: RAG-08 / RAG-08.V1 / RAG-08.V2; RAG parent OPEN; branch main, predecessor 715fc4f.
+- Separate automatic-retrieval opt-in; bound scenes only; standalone/manual paths retained; explicit token window required.
+- Inputs: current paragraph, at most 1024 preceding characters, explicit cast; at most four optional earlier-scene/note passages.
+- One automatic worker plus latest pending intent; existing debounce; open-buffer capture bounded before copying Qt text.
+- One estimated 16 MiB memory entry keyed by scope/index/request/policy/source fingerprints/buffers/embedding identity; byte-verified hits.
+- No automatic index/source-vector rebuild; cached-only hybrid uses saved vectors and query embeddings after non-modal session consent; decline uses lexical mode.
+- Cooperative 1s retrieval deadline, separate 1s mandatory recapture; visible timeout/unavailable/no-hit behavior; unsafe mandatory capture skips.
+- Worker source checks before/after generation, advisory watchers/1s polling, and explicit Tab verification before insertion; Esc/Undo preserved.
+- Stale edits/cursor/selection/tab/project/settings/source/buffer/cancel/errors cannot apply; old auto callbacks preserve newer manual work.
+- Frozen-workload final p95: retrieval cache 34.22 ms / distinct 180.49 ms (<250 ms target); fake pipeline 76.76 / 223.37 ms.
+- Focused final: 234 passed / 2 native skips in 54.01s; /private/tmp/utexteditor-rag08-source-frozen-wide.log.
+- Full final: 1515 passed / 7 expected skips in 278.08s; /private/tmp/utexteditor-rag08-source-frozen-full.log.
+- Native Cocoa: 1 passed / 29 deselected in 0.68s; callback 1.314 ms while blocked; fake typing-to-ghost 129.451 ms incl. 100ms debounce.
+- Evidence/checklist: docs/rag-inline-retrieval.md and docs/evidence/rag08; README/UK, services, UI, tests and catalogs updated.
+- git diff --check passed; unrelated staged bytecode/DS_Store preserved; no live-model latency or human accessibility claims.
+- Resume RAG-09 / RAG-09.V1: explicit free-prompt retrieval, planning and Auto-pilot with consent/review/stale/transaction gates.
+- Command: QT_QPA_PLATFORM=offscreen PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q
+
 ## RAG-07 — evaluated Auto-writer manuscript retrieval
 
 - COMPLETE: RAG-07 / RAG-07.V1 / RAG-07.V2; RAG parent remains OPEN; previous commit d0e5859, branch main.

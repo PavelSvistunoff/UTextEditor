@@ -1,0 +1,100 @@
+{
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.10"
+  },
+  "workload": {
+    "saved_scenes": 101,
+    "scene_bytes_min": 12100,
+    "scene_bytes_max": 12210,
+    "total_earlier_scene_bytes": 1219900,
+    "open_buffers": 1,
+    "samples_per_mode": 20,
+    "p95_retrieval_target_ms": 250
+  },
+  "modes": {
+    "repeated": {
+      "retrieval": {
+        "median_ms": 33.05743797682226,
+        "p95_ms": 34.21987500041723,
+        "maximum_ms": 35.3262503631413
+      },
+      "generation_with_source_verification_fake_provider": {
+        "median_ms": 38.775187684223056,
+        "p95_ms": 43.06491604074836,
+        "maximum_ms": 49.461458809673786
+      },
+      "end_to_end_fake_provider": {
+        "median_ms": 72.07777071744204,
+        "p95_ms": 76.75775000825524,
+        "maximum_ms": 84.79125006124377
+      },
+      "cache_hits": 20,
+      "states": [
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches"
+      ],
+      "target_met": true
+    },
+    "distinct": {
+      "retrieval": {
+        "median_ms": 168.50281204096973,
+        "p95_ms": 180.49241695553064,
+        "maximum_ms": 180.86791690438986
+      },
+      "generation_with_source_verification_fake_provider": {
+        "median_ms": 37.13387553580105,
+        "p95_ms": 43.3003343641758,
+        "maximum_ms": 47.092792112380266
+      },
+      "end_to_end_fake_provider": {
+        "median_ms": 206.58541657030582,
+        "p95_ms": 223.36845798417926,
+        "maximum_ms": 225.76295910403132
+      },
+      "cache_hits": 0,
+      "states": [
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches",
+        "matches"
+      ],
+      "target_met": true
+    }
+  },
+  "index_bytes": 3522560
+}
